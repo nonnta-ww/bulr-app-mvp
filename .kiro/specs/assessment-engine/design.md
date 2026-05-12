@@ -21,7 +21,8 @@
 - `apps/web/lib/audio/recorder.ts` に MediaRecorder ラッパー、`apps/web/lib/audio/blob-client.ts` に Vercel Blob ヘルパーを実装
 - `apps/web/lib/actions/create-session.ts` にセッション作成 Server Action を実装
 - `apps/web/app/(interviewer)/interviews/` 配下に 4 ページ（一覧 / 新規 / 面接中 / 面接後レポート）を実装
-- `apps/web/app/api/interview/turns/next/route.ts` に 1 ターン処理 API を実装（runtime: 'nodejs'）
+- `apps/web/app/api/interview/turns/next/route.ts` に 1 ターン処理 API を実装（Core/Prepare 分離 + クライアント生成 turnId 冪等性、runtime: 'nodejs'）
+- `apps/web/app/api/interview/proposal/regenerate/route.ts` に Prepare-2 失敗時の提案再生成 API を実装（runtime: 'nodejs'）
 - `apps/web/app/api/interview/finalize/route.ts` にセッション終了 API を実装
 - `apps/web/app/api/cron/audio-purge/route.ts` に Vercel Cron 音声削除を実装
 - `apps/web/next.config.ts` に `Permissions-Policy: microphone=(self)` を含むセキュリティヘッダーを追加
@@ -72,7 +73,8 @@
 - `apps/web/app/(interviewer)/interviews/new/page.tsx`（候補者情報入力フォーム、Server Component + Client Form）
 - `apps/web/app/(interviewer)/interviews/[sessionId]/page.tsx`（面接中 UI、`'use client'` 状態 A/B Component）
 - `apps/web/app/(interviewer)/interviews/[sessionId]/report/page.tsx`（面接後レポート、Server Component）
-- `apps/web/app/api/interview/turns/next/route.ts`（1 ターン処理 API、`runtime: 'nodejs'`）
+- `apps/web/app/api/interview/turns/next/route.ts`（1 ターン処理 API、Core/Prepare 分離 + クライアント生成 turnId 冪等性、`runtime: 'nodejs'`）
+- `apps/web/app/api/interview/proposal/regenerate/route.ts`（Prepare-2 失敗時の提案再生成 API、`runtime: 'nodejs'`）
 - `apps/web/app/api/interview/finalize/route.ts`（セッション終了 API、`runtime: 'nodejs'`）
 - `apps/web/app/api/cron/audio-purge/route.ts`（Vercel Cron 音声削除、`runtime: 'nodejs'`）
 - `apps/web/next.config.ts` 更新（`Permissions-Policy: microphone=(self)` 等のセキュリティヘッダー追加）
@@ -175,7 +177,8 @@ graph TB
     end
 
     subgraph ApiLayer[API Routes runtime nodejs]
-        TurnsNext[/api/interview/turns/next<br/>multipart audio + auth + rate limit + LLM orchestration]
+        TurnsNext[/api/interview/turns/next<br/>Core/Prepare 分離 + client turnId 冪等性]
+        ProposalRegen[/api/interview/proposal/regenerate<br/>Prepare-2 失敗時の提案再生成]
         Finalize[/api/interview/finalize<br/>残り coverage + report 生成]
         AudioPurge[/api/cron/audio-purge<br/>CRON_SECRET Bearer + Blob 削除]
     end
@@ -229,6 +232,10 @@ graph TB
 
     MR -.録音 audio Blob.-> InterviewSession
     InterviewSession -.multipart POST.-> TurnsNext
+    InterviewSession -.regenerate POST.-> ProposalRegen
+    ProposalRegen --> CreateCtx
+    ProposalRegen --> Proposal
+    ProposalRegen --> RateLimit
     InterviewSession -.select choice.-> SelectChoice
 
     TurnsNext --> CreateCtx
@@ -351,7 +358,10 @@ bulr-app-mvp/
 │       │       ├── interview/
 │       │       │   ├── turns/
 │       │       │   │   └── next/
-│       │       │   │       └── route.ts                    # 新規: 1 ターン処理 API
+│       │       │   │       └── route.ts                    # 新規: 1 ターン処理 API（Core/Prepare 分離、クライアント生成 turnId 冪等性）
+│       │       │   ├── proposal/
+│       │       │   │   └── regenerate/
+│       │       │   │       └── route.ts                    # 新規: Prepare-2 失敗時の提案再生成 API
 │       │       │   └── finalize/
 │       │       │       └── route.ts                        # 新規: セッション終了 API
 │       │       └── cron/
@@ -484,7 +494,7 @@ stateDiagram-v2
     end note
 ```
 
-### 1 ターン処理シーケンス（POST /api/interview/turns/next）
+### 1 ターン処理シーケンス（POST /api/interview/turns/next、Core/Prepare 分離 + 冪等性）
 
 ```mermaid
 sequenceDiagram
@@ -497,36 +507,114 @@ sequenceDiagram
     participant LLM as Claude Sonnet 4.6
     participant DB as Neon Postgres
 
-    B->>A: POST multipart/form-data audio + sessionId + questionSource
+    Note over B: クライアントが turnId = nanoid() を事前生成
+    B->>A: POST multipart audio + turnId + sessionId + questionSource + durationMs
     A->>G: requireUser + requireSessionOwnership
     G-->>A: { userId } or AuthError
-    A->>A: Zod 検証 (MIME / size 50MB / questionSource enum)
-    A->>RL: check api:userId:minute 30/min
-    A->>RL: check llm:sessionId 100/sess
-    A->>RL: check turn:sessionId 50/sess
-    A->>RL: check msg:sessionId 200/sess
-    RL-->>A: allowed
-    A->>V: uploadToBlob(audio) → audio_key
-    V-->>A: audio_key + audio_expires_at = now+30d
-    A->>W: transcribeAudio(audio)
+    A->>A: Zod 検証 (MIME / size 50MB / turnId 21 文字 / enum)
+
+    rect rgb(245, 245, 220)
+    Note over A,DB: 冪等性チェック (Requirement 7.13)
+    A->>DB: SELECT interview_turn WHERE id = turnId
+    alt 既存ターンあり (リトライ)
+        DB-->>A: existingTurn + 関連 proposal + coverage
+        A-->>B: 200 { turn, coverage?, proposal? } 既存をそのまま返却
+        Note over A: ここで終了 (Whisper / LLM 再呼び出しなし)
+    else 既存ターンなし
+        DB-->>A: null → 通常処理へ
+    end
+    end
+
+    A->>RL: check api / turn / msg / llm (increment しない)
+    RL-->>A: allowed or 429
+
+    rect rgb(220, 240, 245)
+    Note over A,DB: Core フェーズ (失敗時 5xx、状態巻き戻し)
+    A->>V: withRetry( uploadToBlob(audio, "interview-turn/{sessionId}/{turnId}.{ext}") )
+    V-->>A: audio_key (同 key 再 PUT で上書き、orphan なし)
+    A->>W: withRetry( transcribeAudio(audio) )
     W-->>A: raw transcript
-    alt questionSource = manual
-        A->>LLM: splitInterviewerCandidate(transcript, ctx)
+    opt questionSource = manual
+        A->>LLM: withRetry( splitInterviewerCandidate )
         LLM-->>A: { interviewer_text, candidate_text }
     end
-    A->>LLM: analyzeTurn(transcript, currentPattern, history, ctx)
+    A->>LLM: withRetry( analyzeTurn )
     LLM-->>A: LlmAnalysis (Zod parsed + fallback)
-    A->>DB: INSERT interview_turn
-    A->>RL: increment msg:sessionId by N (LLM calls used)
-    alt pattern 完了判定 level_reached=4 or stuck_type 確定
-        A->>LLM: aggregatePatternCoverage(turns, pattern, ctx)
-        LLM-->>A: LlmEvaluation (Zod parsed + fallback)
-        A->>DB: UPSERT pattern_coverage
+    A->>DB: BEGIN
+    A->>DB: INSERT interview_turn (id = turnId)
+    A->>DB: INCREMENT api / turn / msg / llm カウンタ
+    A->>DB: COMMIT (Requirement 7.16: 単一 Tx)
     end
-    A->>LLM: proposeNextQuestions(sessionState, plannedPatterns, ctx)
-    LLM-->>A: 3 候補 必ず 1 つは next_pattern
-    A->>DB: INSERT question_proposal
-    A-->>B: { turn, coverage?, proposal }
+
+    rect rgb(245, 230, 230)
+    Note over A,DB: Prepare フェーズ (ベストエフォート、失敗してもターン確定済み)
+    alt パターン完了判定 (level_reached_estimate=4 or stuck)
+        A->>LLM: try withRetry( aggregatePatternCoverage )
+        alt 成功
+            LLM-->>A: LlmEvaluation
+            A->>DB: UPSERT pattern_coverage
+        else 失敗
+            A->>A: console.error、coverage = null で続行
+        end
+    end
+    A->>LLM: try withRetry( proposeNextQuestions )
+    alt 成功
+        LLM-->>A: 3 候補 (必ず 1 つは next_pattern)
+        A->>DB: INSERT question_proposal
+    else 失敗
+        A->>A: console.error、proposal = null で続行
+    end
+    end
+
+    A-->>B: 200 { turn, coverage: nullable, proposal: nullable }
+    Note over B: proposal=null なら状態 B UI が ProposalRegenerateRoute を呼ぶ
+```
+
+### 提案再生成シーケンス（POST /api/interview/proposal/regenerate）
+
+Prepare-2 失敗で `proposal=null` を受け取った状態 B UI が、[再試行] ボタンから呼び出すフロー。
+
+```mermaid
+sequenceDiagram
+    participant B as Browser 状態 B UI
+    participant A as proposal/regenerate API
+    participant G as guards.ts
+    participant RL as rate-limit.ts
+    participant LLM as Claude Sonnet 4.6
+    participant DB as Neon Postgres
+
+    B->>A: POST { sessionId, afterTurnId }
+    A->>G: requireUser + requireSessionOwnership
+    G-->>A: { userId } or AuthError
+    A->>A: Zod 検証 (sessionId / afterTurnId)
+    A->>DB: SELECT interview_turn WHERE id = afterTurnId
+    DB-->>A: afterTurn (or 404)
+
+    rect rgb(245, 245, 220)
+    Note over A,DB: 冪等性チェック (Requirement 23.4)
+    A->>DB: SELECT question_proposal WHERE preparedForTurnNo = afterTurn.sequenceNo+1
+    alt 既存 proposal あり (クライアント二度押し)
+        DB-->>A: existingProposal
+        A-->>B: 200 { proposal } 既存返却
+    else なし
+        DB-->>A: null → LLM 呼び出しへ
+    end
+    end
+
+    A->>RL: check api / llm (increment しない)
+    A->>LLM: withRetry( proposeNextQuestions )
+    alt 成功
+        LLM-->>A: 3 候補
+        A->>DB: BEGIN
+        A->>DB: INCREMENT api / llm カウンタ
+        A->>DB: INSERT question_proposal
+        A->>DB: COMMIT
+        A-->>B: 200 { proposal }
+    else リトライ後も失敗
+        A->>A: console.error、カウンタは未増加
+        A-->>B: 503 { error, retryable: true }
+        Note over B: UI は再試行可能、[自分で次を聞く] / [面接終了] も選べる
+    end
 ```
 
 ### Vercel Cron 音声削除フロー
@@ -567,7 +655,8 @@ sequenceDiagram
 | 4.1-4.7 | セッション一覧 + 再開 | InterviewsListPage | Server Component | session list flow |
 | 5.1-5.12 | 状態 A 録音中 UI | InterviewSessionPage, RecordingState, AudioRecorder | use client component | state machine 2A |
 | 6.1-6.8 | 状態 B 候補選択 UI | InterviewSessionPage, ProposalChoiceState, SelectProposalChoiceAction | use client component | state machine 2B |
-| 7.1-7.11 | 1 ターン処理 API | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit | POST /api/interview/turns/next | 1 turn sequence |
+| 7.1-7.16 | 1 ターン処理 API（Core/Prepare 分離 + 冪等性） | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit | POST /api/interview/turns/next | 1 turn sequence |
+| 23.1-23.7 | 提案再生成 API | ProposalRegenerateRoute, CreateLlmContext, ProposeNextQuestions, ValidateLLMOutput, RateLimit | POST /api/interview/proposal/regenerate | proposal regenerate sequence |
 | 8.1-8.12 | 5 LLM 関数 | AnalyzeTurn, SplitInterviewerCandidate, ProposeNextQuestions, AggregatePatternCoverage, GenerateSessionReport, CreateLlmContext, ValidateLLMOutput, ClientPackagesAi | packages/ai functions | LLM orchestration |
 | 9.1-9.6 | システムプロンプト | BuildSystemPrompt | packages/ai prompts | LLM orchestration |
 | 10.1-10.11 | Whisper + 音声処理 | Transcribe, AudioRecorder, BlobClient, NextConfigCSP | packages/ai whisper + apps/web lib/audio | 1 turn sequence |
@@ -624,7 +713,8 @@ sequenceDiagram
 | ProposalChoiceState | apps/web/(interviewer)/interviews/_components | 'use client' 状態 B UI | 6.1-6.8 | SelectProposalChoiceAction (P0) | State (UI) |
 | InterviewsReportPage | apps/web/(interviewer)/interviews/[sessionId]/report | 面接後レポート Server Component | 11.9-11.14, 20.5 | requireUser + requireSessionOwnership (P0), SchemaSessionReport (P0), SchemaPatternCoverage (P0), Heatmap (P0), react-markdown (P0) | State (UI) |
 | Heatmap | apps/web/(interviewer)/interviews/_components | CSS 横棒ヒートマップ Server Component | 11.11, 12.6 | TypesEvaluation (P0), Tailwind (P0) | State (UI) |
-| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs | 7.1-7.11, 12.3, 15.3-15.6, 18.3, 20.1 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
+| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId による冪等性 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
+| ProposalRegenerateRoute | apps/web/app/api/interview/proposal/regenerate | Prepare-2 失敗時の提案再生成 API runtime nodejs、proposal の冪等性チェックあり | 23.1-23.7, 20.1 | requireUser + requireSessionOwnership (P0), CreateLlmContext (P0), ProposeNextQuestions (P0), ValidateLLMOutput (P0), RateLimit (P0), SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal (P0), LoadSessionWithTurns (P0), LoadCompletedPatternCodes (P0) | Service (API) |
 | FinalizeRoute | apps/web/app/api/interview/finalize | セッション終了 API runtime nodejs | 11.1-11.8, 20.2 | requireUser + requireSessionOwnership (P0), AggregatePatternCoverage (P0), GenerateSessionReport (P0), SchemaPatternCoverage + SchemaSessionReport + SchemaInterviewSession (P0) | Service (API) |
 | AudioPurgeRoute | apps/web/app/api/cron/audio-purge | Vercel Cron 音声削除 runtime nodejs | 16.1-16.8, 20.3 | CRON_SECRET (P0), BlobClient (P0), SchemaInterviewTurn (P0) | Service (Cron) |
 | NextConfigCSP | apps/web | Permissions-Policy + CSP セキュリティヘッダー | 17.1-17.5 | Next.js 16 headers() (P0) | State |
@@ -979,112 +1069,275 @@ export async function proposeNextQuestions(input: { sessionState: ...; plannedPa
 }
 ```
 
-#### TurnsNextRoute (1 ターン処理 API)
+#### TurnsNextRoute (1 ターン処理 API、Core/Prepare 分離 + クライアント生成 turnId による冪等性)
+
+本ルートは Requirement 7.12-7.16 に従い、**Core フェーズ**（必須）と **Prepare フェーズ**（ベストエフォート）に分離する。クライアントが事前生成した `turnId` で冪等性を保証し、Prepare 失敗時は `proposal: null` を返して状態 B UI の再生成フロー（`ProposalRegenerateRoute`）に委ねる。
 
 ```typescript
 // apps/web/app/api/interview/turns/next/route.ts (概要)
 export const runtime = 'nodejs';  // Drizzle + pg.Pool 利用
 
 const inputFormSchema = z.object({
+  turnId: z.string().length(21),  // クライアント生成 nanoid（冪等性キー）
   sessionId: z.string(),
   questionSource: z.enum(['llm_candidate_1', 'llm_candidate_2', 'llm_candidate_3', 'manual']),
   questionText: z.string().max(1000).optional(),
   proposalId: z.string().optional(),
   patternId: z.string().optional(),
-  // audio は別途 multipart で受け取る
+  durationMs: z.number().int().min(0),
 });
+
+// 外部 API 呼び出しを 1 回までリトライするヘルパー（Requirement 7.14）
+async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    console.warn(`[turns/next] ${label} failed, retrying once`, e);
+    return await fn();  // 2 回目失敗は throw で上位 catch に流す
+  }
+}
 
 export async function POST(request: Request) {
   const user = await requireUser();
   const formData = await request.formData();
   const audio = formData.get('audio') as File;
 
-  // 1. MIME / size 検証
+  // ===== Step 1: 入力検証 =====
   if (!['audio/webm', 'audio/mp4', 'audio/wav'].includes(audio.type)) {
-    return new Response('Unsupported audio type', { status: 400 });
+    return Response.json({ error: 'unsupported_audio_type' }, { status: 400 });
   }
   if (audio.size > 50 * 1024 * 1024) {
-    return new Response('Audio too large (>50MB)', { status: 400 });
+    return Response.json({ error: 'audio_too_large' }, { status: 400 });
   }
-
-  // 2. Zod 入力検証
   const input = inputFormSchema.parse(/* formData の他フィールド */);
 
-  // 3. セッション所有権チェック
-  const session = await db.query.interviewSession.findFirst(...);
+  // ===== Step 2: 認証・所有権 =====
+  const session = await db.query.interviewSession.findFirst({ where: eq(interviewSession.id, input.sessionId) });
   await requireSessionOwnership(session, user.id);
 
-  // 4. レート制限 (api / llm / turn / msg)
-  // authentication spec の checkAndIncrement(key, { limit, windowMs }) を使用
-  // turn:/msg:/llm: はセッションライフタイム累積カウンタとして 24h 窓を採用（1 セッション 30-40 分なので実質セッション内のみリセットされる）
-  await checkAndIncrement('api:' + user.id + ':minute', { limit: 30, windowMs: 60_000 });
-  await checkAndIncrement('turn:' + input.sessionId, { limit: 50, windowMs: 86_400_000 });  // セッション累積、24h 窓
-  await checkAndIncrement('msg:' + input.sessionId, { limit: 200, windowMs: 86_400_000 });
-  await checkAndIncrement('llm:' + input.sessionId, { limit: 100, windowMs: 86_400_000 });
-
-  // 5. オーケストレーション
-  const turnId = nanoid();
-  const audioKey = `interview-turn/${input.sessionId}/${turnId}.${ext(audio.type)}`;
-  const { audio_key: blobAudioKey } = await uploadToBlob(audio, audioKey);
-  const audioExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  const rawTranscript = await transcribeAudio(audio);
-  let transcript = { candidate: rawTranscript, raw: rawTranscript };
-
-  const llm = createLlmContext({ sessionId: input.sessionId, userId: user.id });
-
-  if (input.questionSource === 'manual') {
-    const split = await llm.splitInterviewerCandidate({ transcript: rawTranscript });
-    transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript };
+  // ===== Step 3: 冪等性チェック（Requirement 7.13）=====
+  // クライアントがタイムアウトや NW 切れで同じ turnId で再送した場合、既存ターンをそのまま返す
+  const existingTurn = await db.query.interviewTurn.findFirst({
+    where: eq(interviewTurn.id, input.turnId),
+  });
+  if (existingTurn) {
+    // 既存ターンに紐づく最新 proposal / coverage を組み立てて返す
+    const existingProposal = await db.query.questionProposal.findFirst({
+      where: and(
+        eq(questionProposal.sessionId, input.sessionId),
+        eq(questionProposal.preparedForTurnNo, existingTurn.sequenceNo + 1),
+      ),
+      orderBy: desc(questionProposal.generatedAt),
+    });
+    const existingCoverage = existingTurn.patternId ? await db.query.patternCoverage.findFirst({
+      where: and(eq(patternCoverage.sessionId, input.sessionId), eq(patternCoverage.patternId, existingTurn.patternId)),
+    }) : null;
+    return Response.json({ turn: existingTurn, coverage: existingCoverage ?? null, proposal: existingProposal ?? null });
   }
 
-  const currentPattern = input.patternId ? await db.query.assessmentPattern.findFirst(...) : null;
-  const history = await loadRecentTurns(input.sessionId, 10);
+  // ===== Step 4: レート制限「チェックのみ」（Requirement 7.15 Core フェーズ前半）=====
+  // ここでは increment せず、Core 成功後（Step 9 の DB トランザクション内）に increment する
+  await checkRateLimit('api:' + user.id + ':minute', { limit: 30, windowMs: 60_000 });
+  await checkRateLimit('turn:' + input.sessionId, { limit: 50, windowMs: 86_400_000 });
+  await checkRateLimit('msg:' + input.sessionId, { limit: 200, windowMs: 86_400_000 });
+  await checkRateLimit('llm:' + input.sessionId, { limit: 100, windowMs: 86_400_000 });
 
-  const analysis = await llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history });
+  // ============================================================
+  // ===== Core フェーズ（Requirement 7.15、失敗時 5xx で全状態巻き戻し）=====
+  // ============================================================
+  try {
+    // ===== Step 5: Blob upload（同 key で再 PUT は上書きされ idempotent）=====
+    const audioKey = `interview-turn/${input.sessionId}/${input.turnId}.${ext(audio.type)}`;
+    const { audio_key: blobAudioKey } = await withRetry(() => uploadToBlob(audio, audioKey), 'uploadToBlob');
+    const audioExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  // Drizzle insert は JS プロパティ名（camelCase）で渡す
-  const turn = await db.insert(interviewTurn).values({
-    id: turnId,
-    sessionId: input.sessionId,
-    sequenceNo: (await getNextSequenceNo(input.sessionId)),
-    patternId: analysis.pattern_match_confidence === 'off_pattern' ? null : (input.patternId ?? null),
-    proposalId: input.proposalId ?? null,
-    questionSource: input.questionSource,
-    questionText: input.questionText ?? '',
-    audioKey: blobAudioKey,
-    audioExpiresAt: audioExpiresAt,
-    transcript,
-    llmAnalysis: analysis,
-    patternMatchConfidence: analysis.pattern_match_confidence,
-    offPatternSummary: analysis.off_pattern_summary ?? null,
-    durationMs: /* MediaRecorder から計算 */,
-  }).returning();
+    // ===== Step 6: Whisper（try/catch + 1 リトライ）=====
+    const rawTranscript = await withRetry(() => transcribeAudio(audio), 'transcribeAudio');
+    let transcript = { candidate: rawTranscript, raw: rawTranscript };
 
-  let coverage = null;
-  // パターン完了判定
-  if (currentPattern && (analysis.level_reached_estimate === 4 || /* stuck 確定 */)) {
-    const turns = await db.query.interviewTurn.findMany({ where: ... });
-    const llmEvaluation = await llm.aggregatePatternCoverage({ turns, pattern: currentPattern });
-    coverage = await db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning();
+    const llm = createLlmContext({ sessionId: input.sessionId, userId: user.id });
+
+    // ===== Step 7: manual ターンの話者分離（try/catch + 1 リトライ）=====
+    if (input.questionSource === 'manual') {
+      const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript }), 'splitIC');
+      transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript };
+    }
+
+    // ===== Step 8: analyzeTurn（try/catch + 1 リトライ）=====
+    const currentPattern = input.patternId
+      ? await db.query.assessmentPattern.findFirst({ where: eq(assessmentPattern.id, input.patternId) })
+      : null;
+    const history = await loadRecentTurns(input.sessionId, 10);
+    const analysis = await withRetry(
+      () => llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history }),
+      'analyzeTurn',
+    );
+
+    // ===== Step 9: DB トランザクション（Requirement 7.16）=====
+    // interview_turn INSERT と rate_limit INCREMENT を単一トランザクションで commit する
+    // LLM 呼び出しはトランザクション外（commit 前・後）に置き、長時間保持しない
+    const sequenceNo = await getNextSequenceNo(input.sessionId);
+    const turn = await db.transaction(async (tx) => {
+      const [inserted] = await tx.insert(interviewTurn).values({
+        id: input.turnId,  // クライアント生成 turnId（冪等性キー）
+        sessionId: input.sessionId,
+        sequenceNo,
+        patternId: analysis.pattern_match_confidence === 'off_pattern' ? null : (input.patternId ?? null),
+        proposalId: input.proposalId ?? null,
+        questionSource: input.questionSource,
+        questionText: input.questionText ?? '',
+        audioKey: blobAudioKey,
+        audioExpiresAt,
+        transcript,
+        llmAnalysis: analysis,
+        patternMatchConfidence: analysis.pattern_match_confidence,
+        offPatternSummary: analysis.off_pattern_summary ?? null,
+        durationMs: input.durationMs,
+      }).returning();
+      // レート制限カウンタはここで INCREMENT（Requirement 7.15 Core 後半）
+      await incrementRateLimit(tx, 'api:' + user.id + ':minute');
+      await incrementRateLimit(tx, 'turn:' + input.sessionId);
+      await incrementRateLimit(tx, 'msg:' + input.sessionId);
+      await incrementRateLimit(tx, 'llm:' + input.sessionId);
+      return inserted;
+    });
+
+    // ============================================================
+    // ===== Prepare フェーズ（Requirement 7.15、失敗してもターンは確定済み）=====
+    // ============================================================
+    let coverage: PatternCoverage | null = null;
+    let proposal: QuestionProposal | null = null;
+
+    // ===== Step 10: パターン完了判定 + 集約（Prepare-1）=====
+    try {
+      if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal)) {
+        const turns = await db.query.interviewTurn.findMany({
+          where: and(eq(interviewTurn.sessionId, input.sessionId), eq(interviewTurn.patternId, currentPattern.id)),
+        });
+        const llmEvaluation = await withRetry(
+          () => llm.aggregatePatternCoverage({ turns, pattern: currentPattern }),
+          'aggregateCov',
+        );
+        [coverage] = await db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning();
+      }
+    } catch (e) {
+      console.error(`[turns/next] Prepare-1 aggregateCov failed for turn=${turn.id}`, e);
+      // coverage は null のまま継続（finalize でカバー）
+    }
+
+    // ===== Step 11: 次の質問候補生成（Prepare-2）=====
+    try {
+      const completed = await loadCompletedPatternCodes(input.sessionId);
+      const proposalDraft = await withRetry(
+        () => llm.proposeNextQuestions({ sessionState: ..., plannedPatterns: ..., completed }),
+        'proposeNextQ',
+      );
+      [proposal] = await db.insert(questionProposal).values({
+        id: nanoid(),
+        sessionId: input.sessionId,
+        preparedForTurnNo: turn.sequenceNo + 1,
+        candidate1Text: proposalDraft.candidates[0].text,
+        candidate1Intent: proposalDraft.candidates[0].intent,
+        candidate2Text: proposalDraft.candidates[1].text,
+        candidate2Intent: proposalDraft.candidates[1].intent,
+        candidate3Text: proposalDraft.candidates[2].text,
+        candidate3Intent: proposalDraft.candidates[2].intent,
+        selectedIndex: null,
+      }).returning();
+    } catch (e) {
+      console.error(`[turns/next] Prepare-2 proposeNextQ failed for turn=${turn.id}`, e);
+      // proposal は null。クライアントは ProposalRegenerateRoute を呼ぶ（Requirement 23）
+    }
+
+    return Response.json({ turn, coverage, proposal });
+  } catch (e) {
+    // Core フェーズ失敗：5xx、rate_limit 未増加、interview_turn 未 INSERT
+    // クライアントは同じ turnId で再送可能（Step 3 の冪等性チェックは existingTurn なしのため再実行）
+    console.error(`[turns/next] Core phase failed for turnId=${input.turnId}`, e);
+    return Response.json({ error: 'core_phase_failed', retryable: true }, { status: 503 });
+  }
+}
+```
+
+**運用上の重要な特性**:
+
+- **冪等性**: 同じ `turnId` での再送は Step 3 で既存ターンを返す。クライアントが Core 失敗後にリトライしても、Whisper/LLM の再課金は **Step 3 をすり抜けた最初の 1 回のみ**
+- **Blob 上書き安全性**: `interview-turn/{sessionId}/{turnId}.{ext}` の key は turnId に依存するため、Step 5 のリトライ／クライアント再送ともに同じ key で上書きされ orphan Blob は生まれない
+- **レート制限の正確性**: Core 成功時のみカウンタが増えるため、Whisper/LLM 失敗で面接官のクォータが減らない
+- **Prepare 部分失敗の UX**: `coverage=null` は次回 turn または `/api/interview/finalize` でカバー、`proposal=null` は状態 B UI が `/api/interview/proposal/regenerate` を呼んで再生成（Requirement 23）
+
+#### ProposalRegenerateRoute（Prepare フェーズ失敗時の提案再生成 API）
+
+`TurnsNextRoute` の Prepare-2（`proposeNextQuestions`）が失敗して `proposal: null` で返された時に、状態 B UI から呼ばれる。`proposeNextQuestions` だけを再実行し、新規 turn は作成しない。
+
+```typescript
+// apps/web/app/api/interview/proposal/regenerate/route.ts (概要)
+export const runtime = 'nodejs';
+
+const inputSchema = z.object({
+  sessionId: z.string(),
+  afterTurnId: z.string().length(21),  // 提案の起点となる直前ターン ID
+});
+
+export async function POST(request: Request) {
+  const user = await requireUser();
+  const input = inputSchema.parse(await request.json());
+
+  const session = await db.query.interviewSession.findFirst({ where: eq(interviewSession.id, input.sessionId) });
+  await requireSessionOwnership(session, user.id);
+
+  const afterTurn = await db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.afterTurnId) });
+  if (!afterTurn || afterTurn.sessionId !== input.sessionId) {
+    return Response.json({ error: 'turn_not_found' }, { status: 404 });
+  }
+  const targetTurnNo = afterTurn.sequenceNo + 1;
+
+  // 冪等性: 既に proposal があれば再 LLM 呼び出しせず返す（クライアント二度押し対応、Requirement 23.4）
+  const existing = await db.query.questionProposal.findFirst({
+    where: and(
+      eq(questionProposal.sessionId, input.sessionId),
+      eq(questionProposal.preparedForTurnNo, targetTurnNo),
+    ),
+    orderBy: desc(questionProposal.generatedAt),
+  });
+  if (existing) {
+    return Response.json({ proposal: existing });
   }
 
-  const completed = await loadCompletedPatternCodes(input.sessionId);
-  const proposal = await llm.proposeNextQuestions({ sessionState: ..., plannedPatterns: ..., completed });
-  const savedProposal = await db.insert(questionProposal).values({
-    id: nanoid(),
-    sessionId: input.sessionId,
-    preparedForTurnNo: turn[0].sequenceNo + 1,
-    candidate1Text: proposal.candidates[0].text,
-    candidate1Intent: proposal.candidates[0].intent,
-    candidate2Text: proposal.candidates[1].text,
-    candidate2Intent: proposal.candidates[1].intent,
-    candidate3Text: proposal.candidates[2].text,
-    candidate3Intent: proposal.candidates[2].intent,
-    selectedIndex: null,
-  }).returning();
+  // レート制限（Requirement 23.3）
+  await checkRateLimit('api:' + user.id + ':minute', { limit: 30, windowMs: 60_000 });
+  await checkRateLimit('llm:' + input.sessionId, { limit: 100, windowMs: 86_400_000 });
 
-  return Response.json({ turn: turn[0], coverage, proposal: savedProposal[0] });
+  try {
+    const llm = createLlmContext({ sessionId: input.sessionId, userId: user.id });
+    const completed = await loadCompletedPatternCodes(input.sessionId);
+    const sessionState = await loadSessionWithTurns(input.sessionId, user.id);
+    const proposalDraft = await withRetry(
+      () => llm.proposeNextQuestions({ sessionState, plannedPatterns: session.plannedPatternCodes, completed }),
+      'proposeNextQ.regenerate',
+    );
+    const [proposal] = await db.transaction(async (tx) => {
+      // 成功時のみカウンタ INCREMENT
+      await incrementRateLimit(tx, 'api:' + user.id + ':minute');
+      await incrementRateLimit(tx, 'llm:' + input.sessionId);
+      return await tx.insert(questionProposal).values({
+        id: nanoid(),
+        sessionId: input.sessionId,
+        preparedForTurnNo: targetTurnNo,
+        candidate1Text: proposalDraft.candidates[0].text,
+        candidate1Intent: proposalDraft.candidates[0].intent,
+        candidate2Text: proposalDraft.candidates[1].text,
+        candidate2Intent: proposalDraft.candidates[1].intent,
+        candidate3Text: proposalDraft.candidates[2].text,
+        candidate3Intent: proposalDraft.candidates[2].intent,
+        selectedIndex: null,
+      }).returning();
+    });
+    return Response.json({ proposal });
+  } catch (e) {
+    console.error(`[proposal/regenerate] failed sessionId=${input.sessionId} afterTurnId=${input.afterTurnId}`, e);
+    return Response.json({ error: 'proposal_generation_failed', retryable: true }, { status: 503 });
+  }
 }
 ```
 

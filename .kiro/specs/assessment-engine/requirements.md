@@ -6,7 +6,7 @@ bulr Stage 1 MVP プロトタイプ（AI 面接アシスタント型）の **中
 
 v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + streamText によるチャット UI）から **全面書き直し**。新たに **音声録音 + Whisper 文字起こし + 5 LLM 関数（generateObject + Zod）+ 状態 A/B UI + 面接後レポート画面 + Vercel Cron 音声 30 日削除 + フリー質問の許容** を実装する。主たるユーザーは **面接官**、候補者は bulr に直接ログインしない。候補者情報は面接官が新規セッション作成時に入力する。LLM は「次の質問候補 3 つを面接官に提案する黒子」として動作し、採用推奨コメントは生成しない（`assessment-design.md` / `evaluation-rubric.md` 哲学）。
 
-本スペックは、6 つの新規テーブル（`candidate` / `interview_session` / `question_proposal` / `interview_turn` / `pattern_coverage` / `session_report`）、`packages/types/src/profile.ts` + `packages/types/src/evaluation.ts` の共通型実体、`packages/ai/src/functions/` 配下の 5 LLM 関数、`packages/ai/src/prompts/system-prompt.ts` の `buildSystemPrompt(ctx)` 純関数、`packages/ai/src/whisper/transcribe.ts` の Whisper ラッパー、`apps/web/lib/audio/` の MediaRecorder + Vercel Blob クライアント、面接官向け 4 ページ（セッション一覧 / 新規作成 / 面接中 / 面接後レポート）、3 API ルート（`/api/interview/turns/next` / `/api/interview/finalize` / `/api/cron/audio-purge`）を所有する。`authentication` spec で一時設置された `/admin/_health/` smoke test ページは本スペックで削除する（`admin-review-panel` spec の `/admin/sessions` が次に来るが、本スペックの完了時に「面接官向け基本フロー」が一通り動くため、smoke test の役目を終える）。
+本スペックは、6 つの新規テーブル（`candidate` / `interview_session` / `question_proposal` / `interview_turn` / `pattern_coverage` / `session_report`）、`packages/types/src/profile.ts` + `packages/types/src/evaluation.ts` の共通型実体、`packages/ai/src/functions/` 配下の 5 LLM 関数、`packages/ai/src/prompts/system-prompt.ts` の `buildSystemPrompt(ctx)` 純関数、`packages/ai/src/whisper/transcribe.ts` の Whisper ラッパー、`apps/web/lib/audio/` の MediaRecorder + Vercel Blob クライアント、面接官向け 4 ページ（セッション一覧 / 新規作成 / 面接中 / 面接後レポート）、4 API ルート（`/api/interview/turns/next` / `/api/interview/proposal/regenerate` / `/api/interview/finalize` / `/api/cron/audio-purge`）を所有する。`authentication` spec で一時設置された `/admin/_health/` smoke test ページは本スペックで削除する（`admin-review-panel` spec の `/admin/sessions` が次に来るが、本スペックの完了時に「面接官向け基本フロー」が一通り動くため、smoke test の役目を終える）。
 
 ## Boundary Context
 
@@ -47,8 +47,9 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
     - `packages/db/src/queries/interview/load-completed-pattern-codes.ts`（現セッションの完了 pattern_code リスト）
     - `packages/db/src/queries/interview/load-recent-turns.ts`（直近 5-10 ターン）
     - 注: `packages/db/src/queries/admin/` は `admin-review-panel` が初導入予定、本スペックは `queries/interview/` に閉じる
-  - **API ルート（3 つ）**:
-    - `apps/web/app/api/interview/turns/next/route.ts`（multipart/form-data audio + 認証 + レート制限 + LLM 関数オーケストレーション、`runtime: 'nodejs'`）
+  - **API ルート（4 つ）**:
+    - `apps/web/app/api/interview/turns/next/route.ts`（multipart/form-data audio + 認証 + レート制限 + LLM 関数オーケストレーション、Core/Prepare 分離 + クライアント生成 turnId による冪等性、`runtime: 'nodejs'`）
+    - `apps/web/app/api/interview/proposal/regenerate/route.ts`（Prepare フェーズ失敗時に状態 B UI から呼ばれ、`proposeNextQuestions` のみを再実行して `question_proposal` を作成、`runtime: 'nodejs'`）
     - `apps/web/app/api/interview/finalize/route.ts`（残り pattern_coverage 集計 + `generateSessionReport` + status='completed'）
     - `apps/web/app/api/cron/audio-purge/route.ts`（CRON_SECRET Bearer 認証 + `audio_expires_at <= now()` の音声削除 + `audio_key` null クリア + 削除ログ出力）
   - **面接官 UI（4 ページ + 1 Server Action）**:
@@ -213,6 +214,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 6. When 面接官が [自分で次を聞く] を押したとき、the 状態 B UI shall `selected_index=null` で記録し、「現在の質問」を空にして即座に状態 A に遷移（録音即開始）。
 7. The 「自分で次を聞く」フローで作成されるターン shall `question_source='manual'` で記録される。
 8. When 面接官が [面接終了] を押したとき、the 状態 B UI shall 確認ダイアログを表示し、確定なら `/api/interview/finalize` を呼び出して `/interviews/[sessionId]/report` に redirect する。
+9. When `/api/interview/turns/next` のレスポンスが `proposal: null` だったとき（Requirement 7.15 の Prepare フェーズ失敗）、the 状態 B UI shall 3 候補ボタンの代わりに「提案生成中... [再試行] [自分で次を聞く] [面接終了]」を表示し、[再試行] 押下で Requirement 23 の `/api/interview/proposal/regenerate` を呼び出して 3 候補を取得する。
 
 ### Requirement 7: 1 ターン処理 API（/api/interview/turns/next）
 
@@ -238,6 +240,15 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 9. The API ルート shall レスポンスとして `{ turn: InterviewTurn, coverage?: PatternCoverage, proposal: QuestionProposal }` を返す。
 10. The API ルート shall プロンプトインジェクション攻撃（transcript に「これまでの指示を忘れて」「ロールプレイ要求」等が含まれる）に対し、システムプロンプトの防御指示で吸収する。
 11. The API ルート shall transcript 1 ターン 10000 文字上限、履歴全体 50000 文字上限を超過する場合に古い履歴を打ち切る（`security.md` L122 Layer 2）。
+12. The API ルート shall クライアント（`InterviewSessionRunner`）が事前生成した `turnId` (nanoid、21 文字) を multipart/form-data の `turnId` フィールドで受け取り、サーバー側で `nanoid()` 生成は行わない（**冪等性契約**）。
+13. The API ルート shall リクエスト処理の最初に `interview_turn.id = turnId` の存在チェックを行い、既存ターンが見つかった場合は新規処理を行わず、既存の `{ turn, coverage?, proposal? }` をそのまま返す（**冪等性チェック**、`status: 200`）。クライアントが部分失敗後に同じ `turnId` で再送しても重複処理・重複課金・重複 LLM 呼び出しが発生しない。
+14. The API ルート shall Blob upload / Whisper transcribe / 全 LLM 関数の呼び出しを try/catch でラップし、外部 API のトランジェントエラー（タイムアウト、5xx、レート制限）に対して **最大 1 回の自動リトライ** を実行する。リトライ失敗時は明示的なエラーログを残し、Core/Prepare 分離規約に従う。
+15. The API ルート shall 処理を **Core フェーズ** と **Prepare フェーズ** に分離する:
+    - **Core フェーズ**（必須）: 入力検証 + 冪等性チェック + レート制限 **チェックのみ** + Blob upload + Whisper + (manual時) splitInterviewerCandidate + analyzeTurn + DB トランザクション内で {`interview_turn` INSERT + レート制限カウンタ INCREMENT}
+    - **Prepare フェーズ**（ベストエフォート）: パターン完了判定 + (条件付) aggregatePatternCoverage + pattern_coverage UPSERT + proposeNextQuestions + question_proposal INSERT
+    - Core 失敗時は `status: 5xx` を返し、`interview_turn` を INSERT しない（レート制限カウンタも増加させない）
+    - Prepare 失敗時は `status: 200` を返し、`{ turn, coverage: null, proposal: null }` の形でレスポンスする（`turn` は保存済み）。クライアントは Requirement 23 の `/api/interview/proposal/regenerate` を呼んで提案を再生成する
+16. The API ルート shall `interview_turn` INSERT + レート制限カウンタ INCREMENT を **単一 DB トランザクション** で実行し、片方のみ成立する状態を防ぐ。LLM 関数の呼び出しはトランザクション外（コミット前または後）に置き、トランザクションを長時間保持しない。
 
 ### Requirement 8: 5 LLM 関数（generateObject + Zod）
 
@@ -466,3 +477,17 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 3. The 本スペック shall LLM 出力検証ヘルパー（`validateAndFallback`）の単体動作確認をスクリプトで実施可能にする（手動実行、`tsx scripts/validate-llm-output.ts` 等、必要時に追加）。
 4. The 本スペック shall Vercel Cron 音声削除を 1 回手動実行（`curl` で Bearer token 付き呼び出し）し、削除件数のログ確認を完了条件とする。
 5. The 本スペック shall Playwright 等の自動 E2E は Stage 2 で導入する旨を `docs/setup/` または README で明示する（本スペックの out of scope）。
+
+### Requirement 23: 提案再生成 API（/api/interview/proposal/regenerate）
+
+**Objective:** As a 面接官（クライアント `InterviewSessionRunner`）, I want 1 ターン処理の Prepare フェーズで `proposeNextQuestions` が失敗し `proposal=null` で返ってきた場合に、状態 B 画面の「提案を再生成」ボタンから提案だけを別途生成したい, so that 部分失敗からの UX 復旧が可能となり、面接官は失敗を意識せず面接を続行できる（Requirement 7.15 の Core/Prepare 分離規約のクライアント側受け皿）。
+
+#### Acceptance Criteria
+
+1. The apps/web shall `apps/web/app/api/interview/proposal/regenerate/route.ts` に POST ハンドラを実装し、`export const runtime = 'nodejs'` を宣言する。
+2. The API ルート shall body の Zod 検証で `sessionId: string`、`afterTurnId: string`（提案の起点となる直前ターン ID）を受け取り、`requireUser()` + `requireSessionOwnership(session, userId)` で認証・所有権を独立検証する。
+3. The API ルート shall レート制限を以下の通り適用する: `checkAndIncrement('api:' + userId + ':minute', { limit: 30, windowMs: 60_000 })`、`checkAndIncrement('llm:' + sessionId, { limit: 100, windowMs: 86_400_000 })`。`turn:` / `msg:` カウンタは増加させない（新規ターンは作成しないため）。
+4. The API ルート shall 該当セッションの最新 `question_proposal`（`prepared_for_turn_no` が `afterTurnId` の `sequence_no + 1` のもの）が既に存在する場合、新規 LLM 呼び出しを行わず既存の proposal を返す（**冪等性**：クライアントの二度押し対応）。
+5. The API ルート shall 既存 proposal が無い場合、`createLlmContext({ sessionId, userId })` 経由で `proposeNextQuestions(sessionState, plannedPatterns, completed)` を呼び出し、try/catch + 1 回リトライを行う（Requirement 7.14 と同等の堅牢性）。
+6. The API ルート shall LLM 呼び出し成功時に `question_proposal` レコードを INSERT し、`{ proposal: QuestionProposal }` を返す。LLM 呼び出しがリトライ後も失敗した場合は `status: 503` + `{ error: 'proposal_generation_failed', retryable: true }` を返し、レート制限カウンタは増加させない（リトライ可能性を保証）。
+7. The API ルート shall プロンプトインジェクション防御・LLM 出力 Zod 検証・採用推奨禁止など、Requirement 7 / 8 / 9 の全制約を継承する。

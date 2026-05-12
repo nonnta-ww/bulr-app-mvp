@@ -407,36 +407,102 @@
 - _Depends: G1.9_
 - _Requirements: 6.5, 6.6_
 
-### G4.8 `/api/interview/turns/next` ルートを実装
+### G4.8 `/api/interview/turns/next` ルートを実装（Core/Prepare 分離 + 冪等性）
 
 - `bulr-app-mvp/apps/web/app/api/interview/turns/next/route.ts` を新規作成
 - `export const runtime = 'nodejs';`
 - `POST(request: Request)` ハンドラ
-- 内部処理（design.md L500-565 のシーケンス図準拠）:
+- 内部処理（design.md「TurnsNextRoute」擬似コード + 「1 ターン処理シーケンス」mermaid に準拠）:
+
+  **Step 1-2: 入力検証 + 認証**
   1. `requireUser()` で認証
-  2. `request.formData()` で multipart 受信、`audio` (File)、`sessionId`、`questionSource`、`questionText?`、`proposalId?`、`patternId?` を抽出
+  2. `request.formData()` で multipart 受信、`audio` (File)、**`turnId` (string、クライアント生成 nanoid 21 文字)**、`sessionId`、`questionSource`、`questionText?`、`proposalId?`、`patternId?`、`durationMs` を抽出
   3. MIME / size 検証（audio/webm | audio/mp4 | audio/wav、50MB 以下）
-  4. Zod スキーマで他フィールド検証
+  4. Zod スキーマで他フィールド検証（`turnId` は `z.string().length(21)`）
   5. `db.query.interviewSession.findFirst({...})` で session 取得 → `requireSessionOwnership(session, user.id)`
-  6. レート制限（authentication spec の `checkAndIncrement(key, { limit, windowMs })` を使用）: `checkAndIncrement('api:' + userId + ':minute', { limit: 30, windowMs: 60_000 })`、`checkAndIncrement('turn:' + sessionId, { limit: 50, windowMs: 86_400_000 })`、`checkAndIncrement('msg:' + sessionId, { limit: 200, windowMs: 86_400_000 })`、`checkAndIncrement('llm:' + sessionId, { limit: 100, windowMs: 86_400_000 })`（turn:/msg:/llm: は 1 セッション 30-40 分のため 24h 窓で実質セッション累積カウンタ）
-  7. `uploadToBlob(audio, 'interview-turn/${sessionId}/${turnId}.${ext}')` → `audioKey`、`audioExpiresAt = now + 30 days`
-  8. `transcribeAudio(audio)` → 生 transcript
-  9. `const llm = createLlmContext({ sessionId, userId })`
-  10. `if (questionSource === 'manual') { const split = await llm.splitInterviewerCandidate({ transcript: rawTranscript }); transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript }; }`
-  11. `const currentPattern = patternId ? await db.query.assessmentPattern.findFirst({...}) : null`
-  12. `const history = await loadRecentTurns(sessionId, 10)`
-  13. `const analysis = await llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history })`
-  14. `db.insert(interviewTurn).values({ ...analysis 結果含む... })`
-  15. パターン完了判定（`level_reached_estimate === 4` または stuck_type 確定 → `aggregatePatternCoverage` 実行 → `pattern_coverage` UPSERT）
-  16. `const completed = await loadCompletedPatternCodes(sessionId)`
-  17. `const proposal = await llm.proposeNextQuestions({ sessionState, plannedPatterns, completed })`
-  18. `db.insert(questionProposal).values({ candidate1Text/Intent, candidate2Text/Intent, candidate3Text/Intent, selectedIndex: null })`
-  19. `Response.json({ turn, coverage, proposal })`
-- 全例外を catch して 4xx / 5xx を返す（429 はレート制限超過時、400 は Zod 失敗、401/403 は認証 / 所有権、500 は LLM/Whisper/Blob 失敗）
-- 完了時の観察可能状態: `pnpm typecheck` 成功、curl で multipart 送信して 200 + JSON レスポンス、DB に turn + proposal レコード追加
+
+  **Step 3: 冪等性チェック（Requirement 7.13）**
+  6. `db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.turnId) })` で既存ターン検索
+  7. 既存ターンが見つかった場合、関連する `question_proposal` (preparedForTurnNo = sequenceNo+1) と `pattern_coverage` (patternId 一致) を読み込み、`{ turn, coverage, proposal }` を 200 で返却して終了（**Whisper/LLM 再呼び出しなし**）
+
+  **Step 4: レート制限「チェックのみ」**
+  8. `checkRateLimit(key, { limit, windowMs })` を呼ぶ（INCREMENT はしない）: `api:userId:minute` 30/分、`turn:sessionId` 50/24h、`msg:sessionId` 200/24h、`llm:sessionId` 100/24h
+  9. 制限超過時は 429 を返す
+
+  **Core フェーズ（try/catch で外側を包む、失敗時 503 + retryable: true）**
+
+  10. `const audioKey = 'interview-turn/${sessionId}/${turnId}.${ext}'`（turnId 依存で idempotent）
+  11. `await withRetry(() => uploadToBlob(audio, audioKey), 'uploadToBlob')` — 1 回リトライ
+  12. `audioExpiresAt = now + 30 days`
+  13. `await withRetry(() => transcribeAudio(audio), 'transcribeAudio')` — 1 回リトライ
+  14. `const llm = createLlmContext({ sessionId, userId })`
+  15. `if (questionSource === 'manual') { const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript }), 'splitIC'); transcript = { interviewer, candidate, raw }; }`
+  16. `const currentPattern = patternId ? await db.query.assessmentPattern.findFirst({...}) : null`
+  17. `const history = await loadRecentTurns(sessionId, 10)`
+  18. `const analysis = await withRetry(() => llm.analyzeTurn({...}), 'analyzeTurn')` — 1 回リトライ
+  19. **DB トランザクション**: `db.transaction(async (tx) => { ... })` 内で:
+      - `tx.insert(interviewTurn).values({ id: input.turnId, ... }).returning()` — 主キーはクライアント turnId
+      - `incrementRateLimit(tx, 'api:' + userId + ':minute')`
+      - `incrementRateLimit(tx, 'turn:' + sessionId)`
+      - `incrementRateLimit(tx, 'msg:' + sessionId)`
+      - `incrementRateLimit(tx, 'llm:' + sessionId)`
+      - return inserted
+
+  **Prepare フェーズ（個別 try/catch、失敗してもターン確定済み、レスポンスは 200）**
+
+  20. Prepare-1（パターン完了判定 + 集約）: try ブロック内で `if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal))` → `await withRetry(() => llm.aggregatePatternCoverage({turns, pattern}), 'aggregateCov')` → `db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning()` → catch で `console.error` + `coverage = null` 続行（finalize でカバー）
+  21. Prepare-2（次の質問候補生成）: try ブロック内で `await withRetry(() => llm.proposeNextQuestions({...}), 'proposeNextQ')` → `db.insert(questionProposal).values({...}).returning()` → catch で `console.error` + `proposal = null` 続行（クライアントは `/api/interview/proposal/regenerate` を呼ぶ）
+
+  **Step 12: レスポンス**
+  22. `Response.json({ turn, coverage: nullable, proposal: nullable })` を 200 で返す
+
+- 補助ヘルパー: `withRetry<T>(fn, label)` を route.ts 内ローカル関数として定義（1 回リトライ、2 回目失敗で throw、ログに `[turns/next] ${label} failed, retrying once` を出力）
+- エラー応答:
+  - 400: Zod / MIME / size 失敗（`{ error, code, details? }`）
+  - 401/403: 認証 / 所有権失敗
+  - 429: レート制限超過（`{ error: 'rate_limit_exceeded', limit, windowMs }`）
+  - 503 + `{ error: 'core_phase_failed', retryable: true }`: Core フェーズ失敗（クライアントは同じ turnId で再送可能）
+  - 200 with `proposal: null` または `coverage: null`: Prepare フェーズ部分失敗（正常応答扱い）
+- 完了時の観察可能状態:
+  - `pnpm typecheck` 成功
+  - curl で multipart 送信（`turnId` 付き）して 200 + JSON レスポンス
+  - 同じ turnId で再送 → 既存 turn が返り、Whisper/LLM が再実行されないことを `console.log` で確認
+  - `pnpm db:studio` で `interview_turn.id` がクライアント送信 turnId と一致することを確認
+  - Whisper API キーを一時的に無効化して 503 + `core_phase_failed` を確認（リカバリ確認）
 - _Boundary: TurnsNextRoute_
 - _Depends: G1.9, G2.2, G2.3, G3.4, G3.5, G3.6, G3.7, G3.9, G4.1, G4.2, G4.3_
-- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1_
+- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1_
+
+### G4.8.1 `/api/interview/proposal/regenerate` ルートを実装
+
+- `bulr-app-mvp/apps/web/app/api/interview/proposal/regenerate/route.ts` を新規作成
+- `export const runtime = 'nodejs';`
+- `POST(request: Request)` ハンドラ
+- 内部処理（design.md「ProposalRegenerateRoute」擬似コード + 「提案再生成シーケンス」mermaid に準拠）:
+  1. `requireUser()` で認証
+  2. `await request.json()` で `{ sessionId, afterTurnId }` を取得し Zod 検証（`afterTurnId` は `z.string().length(21)`）
+  3. `db.query.interviewSession.findFirst({...})` で session 取得 → `requireSessionOwnership(session, user.id)`
+  4. `const afterTurn = await db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.afterTurnId) })`、`sessionId` 不一致または未発見なら 404
+  5. `const targetTurnNo = afterTurn.sequenceNo + 1`
+  6. **冪等性チェック（Requirement 23.4）**: `db.query.questionProposal.findFirst({ where: and(eq(sessionId), eq(preparedForTurnNo, targetTurnNo)), orderBy: desc(generatedAt) })` で既存 proposal を検索 → 存在すれば `{ proposal }` 200 で即返却（クライアント二度押し対応、新規 LLM 呼び出しなし）
+  7. レート制限「チェックのみ」: `checkRateLimit('api:userId:minute', { limit: 30, windowMs: 60_000 })`、`checkRateLimit('llm:sessionId', { limit: 100, windowMs: 86_400_000 })`。`turn:` / `msg:` は増加させない
+  8. try ブロック内で `await withRetry(() => llm.proposeNextQuestions({ sessionState, plannedPatterns, completed }), 'proposeNextQ.regenerate')` — 1 回リトライ
+  9. 成功時 DB トランザクション内で: `incrementRateLimit(tx, 'api:' + userId + ':minute')` + `incrementRateLimit(tx, 'llm:' + sessionId)` + `tx.insert(questionProposal).values({...}).returning()` → `{ proposal }` 200 を返す
+  10. catch（リトライ後失敗）: レート制限カウンタは未増加のまま、`console.error` + `Response.json({ error: 'proposal_generation_failed', retryable: true }, { status: 503 })`
+- エラー応答:
+  - 400: Zod 失敗
+  - 401/403: 認証 / 所有権失敗
+  - 404: `afterTurn` 未発見
+  - 429: レート制限超過
+  - 503: LLM 失敗（リトライ可）
+- 完了時の観察可能状態:
+  - `pnpm typecheck` 成功
+  - curl で `{ sessionId, afterTurnId }` を JSON 送信して 200 + `{ proposal }`
+  - 同じパラメータで再送 → 既存 proposal が返り、LLM が再実行されないことを `console.log` で確認
+  - LLM API キーを一時的に無効化して 503 + `proposal_generation_failed` を確認
+- _Boundary: ProposalRegenerateRoute_
+- _Depends: G1.9, G3.6, G3.9, G4.1, G4.2, G4.3, G4.8_
+- _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6, 23.7, 20.1_
 
 ### G4.9 `/api/interview/finalize` ルートを実装
 
@@ -552,32 +618,43 @@
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/proposal-choice-state.tsx` を新規作成
 - `'use client';`
-- props: `lastTurnTranscript: { candidate: string }`、`lastTurnAnalysisNotes: string`、`proposal: { candidate_1_text, candidate_1_intent, candidate_2_text, candidate_2_intent, candidate_3_text, candidate_3_intent }`、`onChoice: (selectedIndex: 1|2|3|null, questionText: string) => Promise<void>`、`onFinalize: () => Promise<void>`
+- props: `lastTurnTranscript: { candidate: string }`、`lastTurnAnalysisNotes: string`、`proposal: { candidate_1_text, candidate_1_intent, candidate_2_text, candidate_2_intent, candidate_3_text, candidate_3_intent } | null`、`onChoice: (selectedIndex: 1|2|3|null, questionText: string) => Promise<void>`、`onFinalize: () => Promise<void>`、`onRegenerate: () => Promise<void>`、`regenerating: boolean`
 - 直前 transcript を折り畳み (`<details>`) で表示
 - 評価サマリー (`lastTurnAnalysisNotes`) 表示
-- 3 候補をカード形式で intent ラベル付き表示（intent → 表示テキスト: `deep_dive='① 深掘りを続ける'`, `meta_cognition='② メタ認知や別視点'`, `next_pattern='③ 次のパターンに進む'`、ただし候補位置順は `candidate_1/2/3` のまま）
-- ボタン [①] [②] [③] [自分で次を聞く] [面接終了]
+- **`proposal != null` の場合**: 3 候補をカード形式で intent ラベル付き表示（intent → 表示テキスト: `deep_dive='① 深掘りを続ける'`, `meta_cognition='② メタ認知や別視点'`, `next_pattern='③ 次のパターンに進む'`、ただし候補位置順は `candidate_1/2/3` のまま）+ ボタン [①] [②] [③] [自分で次を聞く] [面接終了]
+- **`proposal === null` の場合（Prepare-2 失敗時、Requirement 6.9）**: 「提案生成中... 再試行してください」メッセージ + ボタン [再試行] [自分で次を聞く] [面接終了]。[再試行] 押下で `onRegenerate()` を呼ぶ。`regenerating=true` の間はボタン disabled + スピナー表示
 - ①/②/③ 押下 → `onChoice(N, candidate_N_text)`
 - 「自分で次を聞く」→ `onChoice(null, '')`
 - 「面接終了」→ 確認ダイアログ → `onFinalize()`
-- 完了時の観察可能状態: `pnpm typecheck` 成功、UI が状態 B の表示通り
+- 完了時の観察可能状態: `pnpm typecheck` 成功、proposal あり / null の両ケースで UI が想定通り表示、[再試行] クリックで `onRegenerate` が呼ばれる
 - _Boundary: ProposalChoiceState_
 - _Depends: G4.7_
-- _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
+- _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
 
 ### G6.3 `InterviewSessionRunner` Client Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/interview-session-runner.tsx` を新規作成
 - `'use client';`
 - props: 初期 `session`、`turns`、`latestProposal`、`candidate`
-- React state: `mode: 'recording' | 'choosing' | 'loading' | 'finalizing'`、`currentQuestion: string`、`currentProposal`、`turns`
-- 状態 A (`mode='recording'`) → `<RecordingState />` レンダリング、`onSubmit` で `mode='loading'` → `/api/interview/turns/next` に multipart POST → レスポンスから turn / proposal / coverage を更新 → `mode='choosing'`
-- 状態 B (`mode='choosing'`) → `<ProposalChoiceState />` レンダリング、`onChoice` で `selectProposalChoice` Server Action 呼び出し + `mode='recording'` (currentQuestion を更新)、`onFinalize` で `mode='finalizing'` → `/api/interview/finalize` POST → 成功で `router.push('/interviews/' + sessionId + '/report')`
-- エラー（429 / 500）時はトースト表示
-- 完了時の観察可能状態: `pnpm typecheck` 成功、ローカルでクリック → 状態遷移
+- React state: `mode: 'recording' | 'choosing' | 'loading' | 'finalizing'`、`currentQuestion: string`、`currentProposal: QuestionProposal | null`、`turns`、`currentTurnId: string`（次に POST 予定の turnId）、`regenerating: boolean`、`lastInsertedTurnId: string | null`（再生成 API 呼び出し時の `afterTurnId`）
+- `nanoid` (21 文字) を `apps/web` の依存として使用（または `crypto.randomUUID()` でも可、ただし spec は nanoid を採用）
+- **turnId 生成タイミング**: `mode='recording'` に遷移する瞬間に `setCurrentTurnId(nanoid())` を呼ぶ（初期化時と、`onChoice` 後の状態 A 復帰時の両方）
+- 状態 A (`mode='recording'`) → `<RecordingState />` レンダリング、`onSubmit(audio, durationMs)` 内で:
+  - `mode='loading'` にセット
+  - `FormData` に `audio`、`turnId: currentTurnId`、`sessionId`、`questionSource`、`questionText?`、`proposalId?`、`patternId?`、`durationMs` を詰める
+  - `/api/interview/turns/next` に multipart POST
+  - 200 レスポンス: turn / proposal / coverage を state に反映、`setLastInsertedTurnId(turn.id)`、`mode='choosing'`
+  - 503 + `core_phase_failed`: トースト「処理に失敗しました。同じ録音で再試行できます」+ `mode='recording'` に戻す（**同じ turnId を保持**、再送で冪等性発動）
+  - 429: トースト「レート制限超過」+ `mode='choosing'` に戻す
+- 状態 B (`mode='choosing'`) → `<ProposalChoiceState proposal={currentProposal} regenerating={regenerating} onChoice={...} onRegenerate={...} onFinalize={...} />` レンダリング
+  - `onChoice(idx, qText)`: `selectProposalChoice` Server Action 呼び出し → 新規 turnId 生成 → `setCurrentQuestion(qText)` + `mode='recording'`
+  - `onRegenerate()` (Requirement 23 連携): `setRegenerating(true)` → `fetch('/api/interview/proposal/regenerate', { method: 'POST', body: JSON.stringify({ sessionId, afterTurnId: lastInsertedTurnId }) })` → 200 なら `setCurrentProposal(data.proposal)`、503 ならトースト「再試行してください」、必ず `setRegenerating(false)`
+  - `onFinalize()`: 確認ダイアログ → `mode='finalizing'` → `/api/interview/finalize` POST → 成功で `router.push('/interviews/' + sessionId + '/report')`
+- エラー（429 / 503 / 500）時はトースト表示、UI 操作を維持
+- 完了時の観察可能状態: `pnpm typecheck` 成功、ローカルで状態遷移 + Core 失敗時のリトライで冪等性が機能する（DevTools Network で同じ `turnId` が再送されることを確認）+ `proposal=null` で [再試行] が動作
 - _Boundary: InterviewSessionRunner_
-- _Depends: G4.7, G4.8, G4.9, G6.1, G6.2_
-- _Requirements: 5.1, 6.1_
+- _Depends: G4.7, G4.8, G4.8.1, G4.9, G6.1, G6.2_
+- _Requirements: 5.1, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15_
 
 ### G6.4 `/interviews/[sessionId]` 面接中ページを実装
 
@@ -719,3 +796,23 @@
 - 完了時の観察可能状態: 404 返却
 - _Depends: G8.1_
 - _Requirements: 19.3_
+
+### G9.7 冪等性 + Core/Prepare 分離の動作確認
+
+- **冪等性確認（Requirement 7.13）**:
+  - 面接中、DevTools Network タブで `/api/interview/turns/next` の POST リクエストを確認、リクエストボディに `turnId` (21 文字 nanoid) が含まれることを確認
+  - curl で同じ `turnId` を含む multipart リクエストを 2 回送信 → 2 回目は **Whisper / LLM の課金が発生せず**、既存 turn データがそのまま返ることをサーバーログで確認
+- **Core 失敗時のリトライ確認（Requirement 7.14, 7.15）**:
+  - `.env.local` の `OPENAI_API_KEY` を一時的に無効値に書き換え → 1 ターン処理 → 503 `core_phase_failed` レスポンスを確認
+  - DB に `interview_turn` レコードが **作成されていない** こと、`rate_limit` カウンタが **増加していない** ことを確認（`pnpm db:studio` または `psql`）
+  - `OPENAI_API_KEY` を正値に戻して同じ `turnId` で再送 → 200 + 新規 turn 作成成功
+- **Prepare-2 失敗時の挙動確認（Requirement 7.15, 6.9, 23.x）**:
+  - `proposeNextQuestions` 内で意図的に throw する一時的なデバッグコードを入れる（または `ANTHROPIC_API_KEY` を Prepare フェーズだけ無効化）
+  - 1 ターン処理 → 200 + `proposal: null` レスポンスを確認、`interview_turn` レコードは作成済み
+  - 状態 B UI で「提案生成中... [再試行] [自分で次を聞く] [面接終了]」が表示されることを確認
+  - デバッグコードを外して [再試行] 押下 → `/api/interview/proposal/regenerate` が呼ばれ 200 + `proposal` 取得、UI が 3 候補表示に切り替わる
+- **冪等性 + リトライの組み合わせ確認（Requirement 23.4）**:
+  - [再試行] を素早く 2 連打 → 2 回目のリクエストは **既存 proposal を返し**、LLM が再実行されないことをサーバーログで確認
+- 完了時の観察可能状態: 上記すべてのシナリオが成功、冪等性により無駄な課金が発生しないことを確認
+- _Depends: G9.2, G4.8, G4.8.1, G6.2, G6.3_
+- _Requirements: 7.12, 7.13, 7.14, 7.15, 7.16, 6.9, 23.1-23.7_
