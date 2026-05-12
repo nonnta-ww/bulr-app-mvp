@@ -301,6 +301,7 @@ graph TB
 - **Domain/feature boundaries**: LLM 関数は `packages/ai` に閉じ、外部からは `@bulr/ai` 経由でしか呼ばない。DB アクセスは LLM 関数の中ではなく、`packages/db/src/queries/interview/` 経由でサーバー側オーケストレーションから渡す（hallucination 防止）。Server Component はデータ取得 + 認証、Client Component は MediaRecorder + 状態管理のみ。
 - **Existing patterns preserved**: `authentication` spec の 4 層多層認証（proxy.ts → Server Component → Server Action → API Route）、`safe-action.ts` ラッパー、`rate-limit.ts` ユーティリティ、`requireSessionOwnership` ガードを再利用。`packages/db` の Drizzle スキーマ配置、`packages/types` exports map サブパス、`packages/ai` 構造をすべて踏襲。
 - **New components rationale**: `createLlmContext(ctx)` クロージャパターンは LLM の hallucination 攻撃（出力で別 sessionId を指定する等）に対する構造的防御。Zod スキーマ + `validateAndFallback` は LLM 出力の信頼境界の物理的な分離。`packages/db/src/queries/interview/` サブディレクトリ初導入は `admin-review-panel` が `queries/admin/` を初導入する想定に合わせ、boundary を明確にする狙い。
+- **全ターン話者分離の判断根拠（Requirement 25）**: 1 マイク録音では非 manual ターンでも面接官の質問音読が混入する。`analyzeTurn` の 5 次元評価精度は bulr の中核価値であり、面接官の発話を「候補者観察シグナル」として誤検出することを構造的に防ぐ必要がある。`splitInterviewerCandidate` を全ターンで実行する設計を採用し、非 manual ターンには `questionTextHint`（提案から面接官が選んだ質問テキスト）を渡して分離精度を高める。コスト増は Stage 1 全体で $0.06〜0.10、レイテンシ増は +1〜2 秒/ターンと許容範囲内。Stage 2 では Deepgram 等の専用 API への置き換えを検討（`assessment-design.md` 方針）。
 - **Steering compliance**:
   - `tech.md` L42-53（Vercel AI SDK 6 generateObject、Claude Sonnet 4.6、OpenAI Whisper、Vercel Blob、Drizzle、no useChat/streamText/Tool Use）
   - `assessment-design.md`（面接アシスタント型、4 段階深掘り、AI 横断軸、詰まり判定 4 種、フリー質問の許容、自然対話指針、AI は黒子）
@@ -534,11 +535,13 @@ sequenceDiagram
     V-->>A: audio_key (同 key 再 PUT で上書き、orphan なし)
     A->>W: withRetry( transcribeAudio(audio) )
     W-->>A: raw transcript
-    opt questionSource = manual
-        A->>LLM: withRetry( splitInterviewerCandidate )
-        LLM-->>A: { interviewer_text, candidate_text }
-    end
-    A->>LLM: withRetry( analyzeTurn )
+    Note over A,LLM: 全ターン共通の話者分離 (Requirement 25)
+    A->>LLM: withRetry( splitInterviewerCandidate(rawTranscript, questionTextHint) )
+    Note over A: questionTextHint = manual ? null : input.questionText
+    LLM-->>A: { interviewer_text, candidate_text }
+    A->>A: transcript = { interviewer, candidate, raw }
+    A->>LLM: withRetry( analyzeTurn(transcript.candidate) )
+    Note over A: 候補者発話のみを analyzeTurn に渡す
     LLM-->>A: LlmAnalysis (Zod parsed + fallback)
     A->>DB: BEGIN
     A->>DB: INSERT interview_turn (id = turnId)
@@ -676,6 +679,7 @@ sequenceDiagram
 | 7.1-7.16 | 1 ターン処理 API（Core/Prepare 分離 + 冪等性） | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit | POST /api/interview/turns/next | 1 turn sequence |
 | 23.1-23.7 | 提案再生成 API | ProposalRegenerateRoute, CreateLlmContext, ProposeNextQuestions, ValidateLLMOutput, RateLimit | POST /api/interview/proposal/regenerate | proposal regenerate sequence |
 | 24.1-24.5 | パターン遷移時の集約トリガ（Prepare-1a） | TurnsNextRoute, AnalyzeTurn, AggregatePatternCoverage, LoadRecentTurns, SchemaPatternCoverage | TurnsNextRoute Prepare phase | 1 turn sequence (Prepare-1a branch) |
+| 25.1-25.8 | 全ターン話者分離（面接官質問音読の構造的除去） | TurnsNextRoute, SplitInterviewerCandidate | splitInterviewerCandidate w/ questionTextHint | 1 turn sequence (Step 7) |
 | 8.1-8.12 | 5 LLM 関数 | AnalyzeTurn, SplitInterviewerCandidate, ProposeNextQuestions, AggregatePatternCoverage, GenerateSessionReport, CreateLlmContext, ValidateLLMOutput, ClientPackagesAi | packages/ai functions | LLM orchestration |
 | 9.1-9.6 | システムプロンプト | BuildSystemPrompt | packages/ai prompts | LLM orchestration |
 | 10.1-10.11 | Whisper + 音声処理 | Transcribe, AudioRecorder, BlobClient, NextConfigCSP | packages/ai whisper + apps/web lib/audio | 1 turn sequence |
@@ -713,7 +717,7 @@ sequenceDiagram
 | CreateLlmContext | packages/ai/lib | sessionId / userId 束縛クロージャ | 7.7, 8.8 | TypesEvaluation (P0) | Service |
 | ValidateLLMOutput | packages/ai/lib | safeParse + フォールバック | 8.12, 14.1-14.8 | Zod 4.x (P0) | Service |
 | AnalyzeTurn | packages/ai/functions | このターン 5 次元シグナル + 到達段階 + match confidence + matched_pattern_id + stuck_signal | 8.1, 8.2, 12.2, 13.1, 13.6, 18.2, 24.1 | BuildSystemPrompt (P0), CreateLlmContext (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0), assessment_pattern (P0) | Service |
-| SplitInterviewerCandidate | packages/ai/functions | manual ターン用、質問+回答分離 | 8.3 | BuildSystemPrompt (P0), Claude Sonnet 4.6 (P0) | Service |
+| SplitInterviewerCandidate | packages/ai/functions | 全ターン共通の話者分離（questionTextHint で精度向上） | 8.3, 25.1-25.5 | BuildSystemPrompt (P0), Claude Sonnet 4.6 (P0) | Service |
 | ProposeNextQuestions | packages/ai/functions | 3 候補 (必ず 1 つは next_pattern) | 8.4, 8.5, 12.7, 13.4 | BuildSystemPrompt (P0), LoadCompletedPatternCodes (P0), LoadRecentTurns (P0), Claude Sonnet 4.6 (P0) | Service |
 | AggregatePatternCoverage | packages/ai/functions | 複数ターン統合 5 次元最終スコア | 8.6, 13.2, 13.3, 13.5 | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0) | Service |
 | GenerateSessionReport | packages/ai/functions | HeatmapData + summary_text | 8.7, 11.5, 12.5, 13.6 | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0) | Service |
@@ -732,7 +736,7 @@ sequenceDiagram
 | ProposalChoiceState | apps/web/(interviewer)/interviews/_components | 'use client' 状態 B UI | 6.1-6.8 | SelectProposalChoiceAction (P0) | State (UI) |
 | InterviewsReportPage | apps/web/(interviewer)/interviews/[sessionId]/report | 面接後レポート Server Component | 11.9-11.14, 20.5 | requireUser + requireSessionOwnership (P0), SchemaSessionReport (P0), SchemaPatternCoverage (P0), Heatmap (P0), react-markdown (P0) | State (UI) |
 | Heatmap | apps/web/(interviewer)/interviews/_components | CSS 横棒ヒートマップ Server Component | 11.11, 12.6 | TypesEvaluation (P0), Tailwind (P0) | State (UI) |
-| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId 冪等性、Prepare-1a パターン遷移集約 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1, 24.1-24.5 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), LoadRecentTurns (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
+| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId 冪等性、Prepare-1a パターン遷移集約、全ターン話者分離 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1, 24.1-24.5, 25.1-25.8 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), LoadRecentTurns (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
 | ProposalRegenerateRoute | apps/web/app/api/interview/proposal/regenerate | Prepare-2 失敗時の提案再生成 API runtime nodejs、proposal の冪等性チェックあり | 23.1-23.7, 20.1 | requireUser + requireSessionOwnership (P0), CreateLlmContext (P0), ProposeNextQuestions (P0), ValidateLLMOutput (P0), RateLimit (P0), SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal (P0), LoadSessionWithTurns (P0), LoadCompletedPatternCodes (P0) | Service (API) |
 | FinalizeRoute | apps/web/app/api/interview/finalize | セッション終了 API runtime nodejs | 11.1-11.8, 20.2 | requireUser + requireSessionOwnership (P0), AggregatePatternCoverage (P0), GenerateSessionReport (P0), SchemaPatternCoverage + SchemaSessionReport + SchemaInterviewSession (P0) | Service (API) |
 | AudioPurgeRoute | apps/web/app/api/cron/audio-purge | Vercel Cron 音声削除 runtime nodejs | 16.1-16.8, 20.3 | CRON_SECRET (P0), BlobClient (P0), SchemaInterviewTurn (P0) | Service (Cron) |
@@ -1172,17 +1176,29 @@ export async function POST(request: Request) {
 
     // ===== Step 6: Whisper（try/catch + 1 リトライ）=====
     const rawTranscript = await withRetry(() => transcribeAudio(audio), 'transcribeAudio');
-    let transcript = { candidate: rawTranscript, raw: rawTranscript };
 
     const llm = createLlmContext({ sessionId: input.sessionId, userId: user.id });
 
-    // ===== Step 7: manual ターンの話者分離（try/catch + 1 リトライ）=====
-    if (input.questionSource === 'manual') {
-      const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript }), 'splitIC');
-      transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript };
-    }
+    // ===== Step 7: 全ターン共通の話者分離（Requirement 25、try/catch + 1 リトライ）=====
+    // 非 manual ターンも面接官の質問音読がマイクに乗るため、常に話者分離して
+    // 候補者発話のみを analyzeTurn に渡す。これにより 5 次元評価の精度が構造的に保護される。
+    // 非 manual: input.questionText を questionTextHint としてプロンプトに渡し、面接官音読の特定を助ける
+    // manual:    questionTextHint = null（LLM が文脈から推定）
+    const split = await withRetry(
+      () => llm.splitInterviewerCandidate({
+        transcript: rawTranscript,
+        questionTextHint: input.questionSource === 'manual' ? null : (input.questionText ?? null),
+      }),
+      'splitIC',
+    );
+    const transcript = {
+      interviewer: split.interviewer_text,
+      candidate: split.candidate_text,
+      raw: rawTranscript,
+    };
 
     // ===== Step 8: analyzeTurn（try/catch + 1 リトライ）=====
+    // 候補者発話のみ (transcript.candidate) を渡す。interviewer 部分は監査用に保存するが分析には使わない。
     const currentPattern = input.patternId
       ? await db.query.assessmentPattern.findFirst({ where: eq(assessmentPattern.id, input.patternId) })
       : null;

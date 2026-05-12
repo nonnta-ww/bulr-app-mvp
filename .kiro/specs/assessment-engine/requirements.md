@@ -230,9 +230,9 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 6. When 認証 + バリデーション通過後、the API ルート shall 以下の順序で処理を実行する:
    1. `uploadToBlob(audio)` → `audio_key` + `audio_expires_at = now + 30 days` を取得
    2. `transcribeAudio(audio)` → 生 transcript テキスト
-   3. (`questionSource === 'manual'` の場合のみ) `splitInterviewerCandidate(transcript, ctx)` → `{ interviewer_text, candidate_text }` を分離
-   4. `analyzeTurn(transcript, currentPattern, history, ctx)` → `LlmAnalysis`（5 次元シグナル + 到達段階 + `pattern_match_confidence` + `nearest_patterns?` + `off_pattern_summary?`）
-   5. `interview_turn` を DB insert（`audio_key`、`audio_expires_at`、`transcript`、`llm_analysis`、`pattern_match_confidence` 等）
+   3. **全ターン共通**で `splitInterviewerCandidate(rawTranscript, questionTextHint, ctx)` を呼び `{ interviewer_text, candidate_text }` に分離する。非 manual ターンは `input.questionText`（LLM 提案候補から面接官が選択した質問テキスト）を `questionTextHint` として渡し、面接官の質問音読部分の特定を助ける。manual ターンは `questionTextHint = null` で呼び、LLM が文脈から推定する。本処理により `transcript.candidate` は常に「候補者発話のみ」を表し、`analyzeTurn` の 5 次元評価精度を構造的に保護する（Requirement 25 参照）
+   4. `analyzeTurn(transcript.candidate, currentPattern, history, ctx)` → `LlmAnalysis`（5 次元シグナル + 到達段階 + `pattern_match_confidence` + `matched_pattern_id` + `stuck_signal` + `nearest_patterns?` + `off_pattern_summary?`）
+   5. `interview_turn` を DB insert（`audio_key`、`audio_expires_at`、`transcript`（`{ interviewer, candidate, raw }` 3 フィールド構造）、`llm_analysis`、`pattern_match_confidence` 等）
    6. パターン完了判定（`level_reached=4` または `stuck_type` 確定）→ 完了なら `aggregatePatternCoverage(turns, pattern, ctx)` → `pattern_coverage` upsert
    7. `proposeNextQuestions(sessionState, plannedPatterns, ctx)` → 3 候補生成 → `question_proposal` insert
 7. The API ルート shall 全 LLM 関数を `createLlmContext({ sessionId, userId })` のクロージャ束縛経由で呼び出し、AI が出力で他セッション ID を指定しても内部では `ctx.sessionId` のみを使用する。
@@ -258,7 +258,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 
 1. The packages/ai shall `packages/ai/src/functions/analyze-turn.ts` に `analyzeTurn(input, ctx)` を実装し、Vercel AI SDK 6 の `generateObject` + Zod スキーマで構造化出力を強制する。
 2. The `analyzeTurn` 出力 Zod スキーマ shall `signals` (`authenticity/judgment/meta_cognition/ai_literacy` 各 `'observed' | 'partial' | 'absent'`)、`scope_signal` (`1|2|3|4|5 | null`)、`level_reached_estimate` (`0|1|2|3|4`)、`pattern_match_confidence` (4 値 enum)、`matched_pattern_id` (`string | null`、`pattern_match_confidence` が `'exact'` / `'inferred_high'` / `'inferred_low'` の場合に LLM が判定したパターン ID、`'off_pattern'` 時は null。Requirement 24 のパターン遷移検出に使用)、`stuck_signal` (`StuckType | null`、Prepare-1b 発火条件)、`nearest_patterns?` (string[]、off_pattern 時の類似候補)、`off_pattern_summary?` (string)、`notes` (string) を定義する。
-3. The packages/ai shall `packages/ai/src/functions/split-interviewer-candidate.ts` に `splitInterviewerCandidate(transcript, ctx)` を実装し、出力 Zod スキーマで `{ interviewer_text: string, candidate_text: string }` を定義する。
+3. The packages/ai shall `packages/ai/src/functions/split-interviewer-candidate.ts` に `splitInterviewerCandidate(input: { transcript: string; questionTextHint?: string | null; ctx: LlmContext })` を実装し、出力 Zod スキーマで `{ interviewer_text: string, candidate_text: string }` を定義する。`questionTextHint` は LLM 提案候補ターンで面接官が選んだ質問テキスト（既知）を渡してプロンプトで「冒頭の面接官音読はこれに近い」と指示する。manual ターンは null で渡す。本関数は **manual / 非 manual を問わず全ターンで呼ばれる**（Requirement 7.6 / 25 参照）。
 4. The packages/ai shall `packages/ai/src/functions/propose-next-questions.ts` に `proposeNextQuestions(sessionState, plannedPatterns, ctx)` を実装し、出力 Zod スキーマで 3 候補（各 `text: string`、`intent: 'deep_dive' | 'meta_cognition' | 'next_pattern'`、`pattern_id?: string`）を返す。
 5. The `proposeNextQuestions` shall 3 候補のうち **必ず 1 つは `intent='next_pattern'`** を含むよう、システムプロンプトで指示する。
 6. The packages/ai shall `packages/ai/src/functions/aggregate-pattern-coverage.ts` に `aggregatePatternCoverage(turns, pattern, ctx)` を実装し、出力 Zod スキーマで `LlmEvaluation`（`authenticity` 0-3 整数、`judgment` 0-3、`scope` 1-5、`meta_cognition` 0-3、`ai_literacy` 0-3、`level_reached` 0-4、`stuck_type` enum or null、`notes`、`evaluated_at`）を返す。
@@ -505,3 +505,20 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 3. When パターン遷移が発生したとき、the API ルート shall `aggregatePatternCoverage(previousPatternTurns, previousPatternDef, ctx)` を `withRetry` で呼び出し、結果を `pattern_coverage` に **UPSERT**（UNIQUE(session_id, pattern_id) で上書き）する。これにより A→B→A の往復シナリオで A の coverage が最新ターンを含む形に更新される。
 4. The Prepare-1a の集約失敗時 shall `console.error('[turns/next] Prepare-1a transition aggregateCov failed for previousPatternId={X}', e)` を出力して処理を続行する（`coverage = null` で返す、Prepare-1b と同じ失敗ハンドリング）。`/api/interview/finalize` 側で残り coverage を補完する。
 5. The Prepare-1a と Prepare-1b shall 互いに独立に動作する。同一ターンで両方発火することがあり得る（例：前ターン pattern A → 現ターン pattern B、かつ B の最初のターンで稀に `level_reached_estimate=4` 到達）が、Prepare-1a は A の coverage、Prepare-1b は B の coverage を書き込むため衝突しない。
+
+### Requirement 25: 全ターンでの話者分離（面接官質問音読の構造的除去）
+
+**Objective:** As a `analyzeTurn` + `aggregatePatternCoverage` + `generateSessionReport`, I want 1 つのマイクで録音された面接音声から **候補者発話のみ** を抽出した transcript を受け取りたい, so that 5 次元スコアリング（真贋・判断力・射程・メタ認知・AI 活用）が面接官の質問音読フレーズを「候補者観察シグナル」として誤検出することがなく、bulr の中核価値である構造化評価の精度が構造的に保護される。
+
+本要件は Requirement 7.6 のステップ 3 と Requirement 8.3 の実装を **manual / 非 manual を問わず全ターンで** `splitInterviewerCandidate` を呼ぶ形に統一する。`assessment-design.md` の「話者分離はプロンプトで吸収（Stage 2 で Deepgram 等の専用 API 導入を検討）」方針の Stage 1 における具体実装。
+
+#### Acceptance Criteria
+
+1. The API ルート (`TurnsNextRoute`) shall `transcribeAudio` から得た生 transcript に対し、**`input.questionSource` の値に関わらず常に** `splitInterviewerCandidate({ transcript: rawTranscript, questionTextHint, ctx })` を呼び出す。manual ターンは `questionTextHint = null`、非 manual ターンは `input.questionText`（提案候補から面接官が選んだ質問テキスト）を `questionTextHint` として渡す。
+2. The API ルート shall 分離結果を `transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript }` の 3 フィールド構造で `interview_turn.transcript` jsonb に保存する。`raw` は生 transcript を監査用に保持（30 日間音声と同じ TTL ではなく、`interview_turn` レコードの寿命に従う）。
+3. The API ルート shall `analyzeTurn(transcript.candidate, ...)` のように **`candidate` フィールドのみ** を `analyzeTurn` の入力に渡す。`interviewer` フィールドは保存するが LLM 分析には渡さない。
+4. The `splitInterviewerCandidate` LLM プロンプト shall `questionTextHint` が non-null の場合、「冒頭の面接官音読部分はこの質問テキストに近い内容のため、これを `interviewer_text` に分類し、残りを `candidate_text` に分類してください」と動的に指示を組み立てる。
+5. The `splitInterviewerCandidate` フォールバック値 shall 失敗時（Zod 検証 NG または LLM タイムアウト）に `{ interviewer_text: '', candidate_text: rawTranscript }` を返す（全部を候補者発話扱い、Stage 1 簡略フォールバック）。失敗ログを `console.warn('[splitIC] fallback applied for turnId={X}', e)` で残し、Stage 2 で改善判断する。
+6. The LLM コスト目安 shall 全ターン分離適用により 1 セッション +$0.002（splitIC は短文タスクで $0.0002/呼び出し × 平均 12 ターン）、Stage 1 全体（30-50 セッション）で +$0.06〜0.10 程度の増加に留まり、`assessment-design.md` のコスト目安（$1〜2/セッション）には影響しない。
+7. The レイテンシ目安 shall 全ターン分離適用により 1 ターン処理時間が +1〜2 秒増加（`splitIC` は短文タスクで Claude Sonnet 4.6 の生成時間 ~1.5 秒）、既存パイプライン（Whisper + 3-4 LLM 呼び出し = 15〜30 秒）の中で許容される。
+8. The Stage 2 では shall Deepgram 等の専用話者分離 API への置き換え、または チャンク単位ストリーミング処理への変更を検討する。本要件は Stage 1 における「LLM ベース話者分離」の実装規約として機能する。

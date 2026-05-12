@@ -280,9 +280,18 @@
 
 - `bulr-app-mvp/packages/ai/src/functions/split-interviewer-candidate.ts` を新規作成
 - `splitOutputSchema = z.object({ interviewer_text: z.string().max(5000), candidate_text: z.string().max(10000) })`
-- `splitInterviewerCandidate(input: { transcript: string; ctx: LlmContext }): Promise<{ interviewer_text: string; candidate_text: string }>` を実装
-- `generateObject` + Zod、フォールバック: `{ interviewer_text: '', candidate_text: input.transcript }`（分離失敗時は全部を candidate 扱い）
-- 完了時の観察可能状態: `pnpm typecheck` 成功
+- **シグネチャ**（Requirement 8.3、25.1、25.4 準拠）: `splitInterviewerCandidate(input: { transcript: string; questionTextHint?: string | null; ctx: LlmContext }): Promise<{ interviewer_text: string; candidate_text: string }>` を実装
+- 本関数は **全ターン共通** で呼ばれる（manual / 非 manual を問わず）。非 manual ターンは面接官が選んだ質問テキスト（既知）を `questionTextHint` で受け取り、面接官音読部分の特定精度を上げる
+- `generateObject` + Zod で structured output
+- システムプロンプトの動的部分（Requirement 25.4）:
+  - `questionTextHint` が non-null の場合: 「冒頭の面接官音読部分はこの質問テキストに近い内容のため、これを `interviewer_text` に分類し、残りを `candidate_text` に分類してください。質問テキスト: 「{{questionTextHint}}」」
+  - `questionTextHint` が null（manual ターン）の場合: 「transcript の文脈から面接官の発話と候補者の発話を分離してください。一般に面接官は短く、候補者の回答が長いです」
+- **フォールバック値**（Requirement 25.5）: 失敗時 `{ interviewer_text: '', candidate_text: input.transcript }`（全部を candidate 扱い、Stage 1 簡略フォールバック）。失敗ログ `console.warn('[splitIC] fallback applied for turnId={X}', e)`
+- transcript サイズ上限（10000 文字）を呼び出し前に enforce
+- 完了時の観察可能状態: `pnpm typecheck` 成功、`questionTextHint` non-null / null の両ケースでサンプル transcript を渡し、`interviewer_text` と `candidate_text` の分離が想定通り動作することを確認
+- _Boundary: SplitInterviewerCandidate_
+- _Depends: G2.1, G3.1, G3.2, G3.3_
+- _Requirements: 8.3, 8.10, 8.11, 8.12, 25.1, 25.4, 25.5_
 - _Boundary: SplitInterviewerCandidate_
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.3, 8.10, 8.11, 8.12_
@@ -447,10 +456,11 @@
   12. `audioExpiresAt = now + 30 days`
   13. `await withRetry(() => transcribeAudio(audio), 'transcribeAudio')` — 1 回リトライ
   14. `const llm = createLlmContext({ sessionId, userId })`
-  15. `if (questionSource === 'manual') { const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript }), 'splitIC'); transcript = { interviewer, candidate, raw }; }`
+  15. **全ターン共通の話者分離**（Requirement 25）: `const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript, questionTextHint: input.questionSource === 'manual' ? null : (input.questionText ?? null) }), 'splitIC')` — 1 回リトライ
+  15a. `const transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript }`（DB 保存形式）
   16. `const currentPattern = patternId ? await db.query.assessmentPattern.findFirst({...}) : null`
   17. `const history = await loadRecentTurns(sessionId, 10)`
-  18. `const analysis = await withRetry(() => llm.analyzeTurn({...}), 'analyzeTurn')` — 1 回リトライ
+  18. `const analysis = await withRetry(() => llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history }), 'analyzeTurn')` — **候補者発話のみ** を渡す（Requirement 25.3）、1 回リトライ
   19. **DB トランザクション**: `db.transaction(async (tx) => { ... })` 内で:
       - `tx.insert(interviewTurn).values({ id: input.turnId, ... }).returning()` — 主キーはクライアント turnId
       - `incrementRateLimit(tx, 'api:' + userId + ':minute')`
@@ -499,7 +509,7 @@
   - Whisper API キーを一時的に無効化して 503 + `core_phase_failed` を確認（リカバリ確認）
 - _Boundary: TurnsNextRoute_
 - _Depends: G1.9, G2.2, G2.3, G3.4, G3.5, G3.6, G3.7, G3.9, G4.1, G4.2, G4.3_
-- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1, 24.1, 24.2, 24.3, 24.4, 24.5_
+- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1, 24.1, 24.2, 24.3, 24.4, 24.5, 25.1, 25.2, 25.3_
 
 ### G4.8.1 `/api/interview/proposal/regenerate` ルートを実装
 
@@ -875,3 +885,29 @@
 - 完了時の観察可能状態: 上記すべてのシナリオで `pattern_coverage` が想定通り作成・更新される、孤立ターンが発生しないことを `interview_turn` と `pattern_coverage` の JOIN クエリで確認（`pattern_id` non-null のターンはすべて対応する `pattern_coverage` 行を持つ、または `/api/finalize` 未実行）
 - _Depends: G9.2, G4.8, G3.4 (analyzeTurn の matched_pattern_id 出力)_
 - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
+
+### G9.9 全ターン話者分離（Requirement 25）の動作確認
+
+- **非 manual ターンでの分離確認（Requirement 25.1, 25.2）**:
+  - 自己面接で 1 ターン実行（LLM 提案候補①を選択 → 質問音読 → 候補者役の回答）
+  - `pnpm db:studio` で `interview_turn.transcript` を確認、`{ interviewer, candidate, raw }` 3 フィールドが揃っていることを確認
+  - `interviewer` に質問音読部分が、`candidate` に候補者の回答部分が分離されていることを目視確認
+  - `raw` に生 transcript（両者混在）が監査用に保持されていることを確認
+- **manual ターンでの分離確認（Requirement 25.1）**:
+  - 別ターンで [自分で次を聞く] を選択し、面接官が自由質問を投げる → 候補者が回答
+  - `interview_turn.transcript` の `{ interviewer, candidate, raw }` が同様に分離されていることを確認
+  - 非 manual と異なり、`questionTextHint=null` で呼ばれることをサーバーログで確認
+- **`analyzeTurn` の精度確認（Requirement 25.3、bulr 中核価値の保護）**:
+  - 非 manual ターンで「面接官が音読した質問」に固有名詞（例: 「Datadog」「Redis」）が含まれているケースを意図的に作る
+  - `interview_turn.llm_analysis.notes` を確認し、面接官の発話で言及された固有名詞が「候補者の authenticity シグナル」として誤検出されていないことを確認
+  - 比較対照: 一時的に splitIC を無効化（フォールバックパスを強制発火、`questionTextHint=null` で呼ぶ等）してテストし、誤検出が発生することを確認 → splitIC を戻して誤検出が消えることを確認
+- **splitIC フォールバック動作確認（Requirement 25.5）**:
+  - 一時的に `splitInterviewerCandidate` 内で意図的に throw → サーバーログで `[splitIC] fallback applied for turnId={X}` を確認
+  - `interview_turn.transcript = { interviewer: '', candidate: rawTranscript, raw: rawTranscript }` で記録される
+  - `analyzeTurn` は `rawTranscript` 全体を `candidate` として受け取る（精度劣化はあるが処理続行）
+- **コスト・レイテンシ確認（Requirement 25.6, 25.7）**:
+  - 1 ターン処理時間が +1〜2 秒増加していることを DevTools Network で確認（非 manual ターンは旧設計より +1.5 秒程度）
+  - Anthropic コンソールで splitIC 関連の呼び出しコストが 1 セッションあたり $0.002 程度であることを確認
+- 完了時の観察可能状態: 上記すべてのシナリオで話者分離が機能、5 次元評価精度が面接官発話による汚染を受けないことを確認
+- _Depends: G9.2, G3.5, G4.8_
+- _Requirements: 25.1, 25.2, 25.3, 25.4, 25.5, 25.6, 25.7_
