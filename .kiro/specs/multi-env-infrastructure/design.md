@@ -1,171 +1,182 @@
-# Design Document: multi-env-infrastructure
+# Design Document — multi-env-infrastructure
 
 ## Overview
 
-**Purpose**: bulr Stage 1 MVP プロトタイプの本番デプロイ・PR Preview デプロイ・ローカル開発接続を成立させるため、Vercel Hobby + Neon Postgres (dev / production 2 ブランチ) + Resend Free + Anthropic API キー + GitHub Actions 最小 CI を統合する。`monorepo-foundation` で骨組みが用意された `apps/web` と `packages/db` に対し、**コードを増やすのではなく「環境変数規約」と「外部サービスのセットアップ手順書」と「最小 CI 設定」**を提供することで、後続 4 spec が本番運用可能な状態で機能を積み上げられるようにする。
+**Purpose**: 本機能は、`monorepo-foundation` で構築されたモノレポ基盤の上に、bulr Stage 1 MVP プロトタイプ（AI 面接アシスタント型）を **Vercel に本番デプロイ可能な状態** まで持ち上げるためのインフラ基盤を確立する。具体的には、Vercel プロジェクト `bulr-web`、Neon Postgres の dev/production 2 ブランチ、Resend / OpenAI / Anthropic / Vercel Blob の 4 外部サービス連携、Vercel Cron スケジュール定義、環境変数規約（12 変数）、ローカル開発の `.env.local` 運用、最小 CI（typecheck + lint + audit）を整える。
 
-**Users**:
-- **Owner（創業者）**: Vercel / Neon / Resend / Anthropic のアカウント作成と初期設定を手動実施する。本スペック完了後は管理画面 (`/admin`) と本番デプロイの URL を保有する。
-- **後続 4 spec 実装者**: `authentication` / `assessment-pattern-seed` / `assessment-engine` / `admin-review-panel` の実装者は、本スペックで整備された `.env.example` のキー・Vercel 環境変数の存在・Neon ブランチ運用ルール・Resend API キーを前提として機能を積む。
-- **ローカル開発者**: `cp apps/web/.env.local.example apps/web/.env.local` で雛形を取得し、Owner から共有された Neon dev branch DATABASE_URL 等を記入することでローカル開発を開始できる。
+**Users**: 後続 4 spec（`authentication` / `assessment-pattern-seed` / `assessment-engine` / `admin-review-panel`）の実装担当者、および Stage 1 期間中に参画する開発者・プロジェクトオーナー。本スペックの成果物により、各 spec の実装者は「環境変数の名前付け」「DB 接続」「Vercel Blob トークン取得」「Cron スケジュール調整」を一切意識せず、各 spec の本来の機能（認証 / シード / LLM / 管理画面）の実装に集中できる。
 
-**Impact**: `monorepo-foundation` 完了直後の状態（ルート設定 + apps/web スケルトン + 4 packages スケルトン）に対し、(1) リポジトリルート `.env.example` と `apps/web/.env.local.example` の追加、(2) `docs/setup/` ディレクトリ配下に 6 つのセットアップ手順書追加、(3) `.github/workflows/ci.yml` 追加、(4) `README.md` への簡潔な setup ポインタ追記、(5) `packages/db/drizzle.config.ts` の `.env.local` 自動読込ロジックの確認・補強（既存実装が適切なら変更しない）を行う。**コードファイルの新規作成は最小化**し、設定ファイル・ドキュメント・CI 定義が中心となる。
+**Impact**: `monorepo-foundation` 完了時点では Vercel / Neon / Resend / OpenAI / Anthropic / Vercel Blob / Vercel Cron が一切設定されておらず、ローカルで `pnpm dev` が動くのみの状態。本スペックは「設定ファイル群（`.env.example` / `apps/web/.env.local.example` / `apps/web/vercel.json` / `.github/workflows/ci.yml` / `docs/setup/*.md`）の作成」と「Owner 手動セットアップ手順の文書化」のみを所有し、route handler / LLM 関数 / 認証ロジックは追加しない。本スペック完了で、Vercel に main ブランチ push で本番デプロイ・PR で Preview デプロイが自動実行される状態と、CI で型チェック・lint・audit が自動実行される状態を達成する。
 
 ### Goals
 
-- リポジトリルート `.env.example` で Stage 1 の全環境変数 (9 変数) を一元文書化する
-- `apps/web/.env.local.example` でローカル開発者が雛形をコピーして使える状態を提供する
-- `docs/setup/` 配下に Vercel / Neon / Resend / Anthropic / GitHub / Local の 6 つの手順書を配置し、Owner が再現可能な手順で外部サービスを初期化できる状態を作る
-- Vercel プロジェクト `bulr-web` の Build Command / Install Command / Root Directory / 環境変数スコープ (Production / Preview / Development) の設定方針を文書化する
-- Neon Postgres の dev / production 2 ブランチ運用ルール (push は dev、migrate は production) を文書化する
-- `.github/workflows/ci.yml` で PR 時に typecheck + lint + `pnpm audit --audit-level=moderate` を自動実行する
-- `monorepo-foundation` で導入された `drizzle.config.ts` が `.env.local` を読み取って動作する経路を確認・必要なら補強する
+- ルート `.env.example` に Stage 1 環境変数 12 個（`DATABASE_URL` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `NEXT_PUBLIC_APP_URL` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET` / `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD`）をプレースホルダ + コメント付きで網羅
+- `apps/web/.env.local.example` をローカル開発者向けコピー元として整備
+- `apps/web/vercel.json` に Vercel Cron 定義（`/api/cron/audio-purge` を `0 18 * * *` UTC = 03:00 JST 毎日）を作成
+- `.github/workflows/ci.yml` で `pnpm install --frozen-lockfile` → `pnpm typecheck` → `pnpm lint` → `pnpm audit --audit-level=moderate` を PR / main push で自動実行
+- `packages/db/drizzle.config.ts` の `dbCredentials.url` を `process.env.DATABASE_URL` から確実に読み取る形に整える（`monorepo-foundation` の空設定を有効化）
+- `docs/setup/` ディレクトリに Vercel / Neon / Resend / OpenAI / Anthropic / Vercel Blob / Cron / 環境変数 / drizzle-kit 運用 / CI の手順を集約し、`docs/setup/README.md` インデックスを提供
+- README.md にセットアップ概要セクションを追記し、`docs/setup/` への入り口を明示
 
 ### Non-Goals
 
-- Better Auth 設定、Magic Link 送信ロジック、Cookie 設計の実装 → `authentication` spec
-- DB アプリケーションテーブル定義、Drizzle migration の実 DB 反映 → `assessment-pattern-seed` および `assessment-engine` spec
-- Resend のメールテンプレート (Magic Link 本文) 実装 → `authentication` spec
-- Resend カスタムドメイン認証 (DNS SPF / DKIM 設定) → Stage 2
-- Cloudflare R2、PostHog、Sentry、Helicone、BetterStack の導入 → Stage 2
-- Custom domain (`bulr.net` 等) の Vercel 接続と SSL 設定 → Stage 1 末期に必要なら追加 (本スペックは `*.vercel.app` 前提)
-- staging 環境の追加 → Stage 2
-- Resend Pro プラン契約 → Stage 2
-- Neon の IP 制限 (Vercel IP のみ許可) → Stage 2
-- Dependabot / CodeQL / gitleaks 等の追加セキュリティスキャン → Stage 2
-- テストフレームワーク (Vitest / Playwright) の CI 統合 → 必要になった spec で導入時に追加
-- `pnpm build` の CI 実行 (Vercel が PR 時に Preview ビルドを実行するため重複を避ける)
-- 自動化シークレットローテーション (本スペックは手動手順を文書化するに留める)
+- Better Auth 設定・Magic Link 実装・proxy.ts のセキュリティロジック → `authentication` spec
+- DB テーブル実体定義 → `assessment-pattern-seed` および `assessment-engine` spec
+- LLM 関数本体（5 関数）、システムプロンプト、Whisper クライアント実装、Vercel Blob アップロード関数 → `assessment-engine` spec
+- 音声削除 Cron の **ロジック実装**（`/api/cron/audio-purge/route.ts` 中身）→ `assessment-engine` spec（本スペックでは vercel.json のスケジュール定義のみ）
+- 管理画面 UI、Basic 認証ロジック、`requireAdmin` ヘルパー → `admin-review-panel` spec
+- セキュリティヘッダー（CSP / HSTS / Permissions-Policy）の `next.config.ts` 設定 → 後続 spec（`assessment-engine` でマイク CSP、`authentication` で HSTS / X-Frame-Options 等）
+- 監視スタック（PostHog / Sentry / Helicone / BetterStack）→ Stage 2
+- Cloudflare R2 への移行 → Stage 2
+- カスタムドメイン（bulr.net 等）の SSL / DNS 設定 → Stage 1 末で必要なら別途
+- staging 環境構築 → Stage 2
+- Resend のカスタムドメイン認証 → Stage 2
+- Vercel API 経由の自動セットアップスクリプト（Owner 手動実施を前提とする）
+- レート制限実装 → 後続 spec
 
 ## Boundary Commitments
 
 ### This Spec Owns
 
-- リポジトリルート `.env.example` (Stage 1 全環境変数 9 個 + コメント)
-- `apps/web/.env.local.example` (ルートと同等のテンプレート)
-- `docs/setup/README.md` (セットアップ手順インデックスとチェックリスト)
-- `docs/setup/vercel.md` (Vercel プロジェクト初期化手順、Build / Install / 環境変数スコープ設定)
-- `docs/setup/neon.md` (Neon プロジェクト + dev / production ブランチ作成、DATABASE_URL 取得、ブランチ運用ルール)
-- `docs/setup/resend.md` (Resend Free アカウント、API キー取得、Stage 1 でのテストドメイン利用方針)
-- `docs/setup/anthropic.md` (Anthropic Console アカウント、API キー取得、月額予算アラート設定)
-- `docs/setup/github.md` (GitHub Actions のためのリポジトリ設定、ブランチ保護ルール推奨)
-- `docs/setup/local.md` (ローカル開発の `.env.local` 整備手順、Drizzle push 運用)
-- `docs/setup/env-vars.md` (環境変数早見表、`NEXT_PUBLIC_` 規約、シークレットローテーション手順)
-- `.github/workflows/ci.yml` (typecheck + lint + audit の最小 CI)
-- リポジトリルート `README.md` への setup ポインタ追記 (既存内容を最小限にしか変更しない)
-- 環境変数の命名・スコープ規約 (Production / Preview / Development の使い分け)
-- Vercel Preview = Neon dev branch DATABASE_URL 共有、Vercel Production = Neon production branch DATABASE_URL の運用ルール
+- ルート `.env.example` の作成と内容（Stage 1 環境変数 12 項目 + コメント + Vercel 登録先指定）
+- `apps/web/.env.local.example` の作成と内容（ローカル開発者向けコピー元）
+- `apps/web/vercel.json` の作成と内容（Cron 定義 1 エントリ、それ以外の `headers` / `rewrites` / `redirects` は持たない）
+- `.github/workflows/ci.yml` の作成と内容（install / typecheck / lint / audit の 4 ステップ）
+- `packages/db/drizzle.config.ts` の `dbCredentials.url` 設定の有効化（`monorepo-foundation` で空のまま残されていた箇所）
+- `docs/setup/` ディレクトリ配下の各セットアップ手順ドキュメント（vercel.md / neon.md / resend.md / openai.md / anthropic.md / vercel-blob.md / cron.md / env-vars.md / drizzle-kit.md / README.md インデックス）
+- README.md のセットアップセクション追加または更新
 
 ### Out of Boundary
 
-- `packages/db/src/client.ts` の DATABASE_URL 読み取りロジック実装 — `monorepo-foundation` で実装済み。本スペックは存在を前提として動作確認する
-- `packages/db/drizzle.config.ts` の構造変更 — `monorepo-foundation` で `.env.local` 自動読込が実装されている前提。動作しない場合のみ最小修正を許容するが、構造変更はしない
-- Vercel / Neon / Resend / Anthropic アカウントの実際の作成 (Claude Code が API 経由で作成不可、Owner の手動作業)
-- 各サービスの API キーの実値 (シークレットなのでリポジトリには絶対に含めない)
-- Better Auth の設定実装、Magic Link 機能、Basic 認証ガード — 後続 spec
-- DB スキーマ実体定義、Drizzle migration の実 DB 反映実行 — 後続 spec
-- LLM 呼び出し実装、システムプロンプト、評価ロジック — `assessment-engine` spec
-- カスタムドメイン (`bulr.net`) の DNS / SSL 設定 — Stage 1 末期 / Stage 2
-- 監視・分析ツール統合 — Stage 2
+- `apps/web/app/api/cron/audio-purge/route.ts` の実装（route handler 中身）→ `assessment-engine` spec
+- `apps/web/lib/audio/` の Vercel Blob クライアント実装 → `assessment-engine` spec
+- `packages/ai/src/whisper/transcribe.ts` の Whisper ラッパー実装 → `assessment-engine` spec
+- `packages/db/src/schema/*.ts` の実テーブル定義 → 後続 spec
+- `apps/web/lib/auth/` の Better Auth 設定 → `authentication` spec
+- `apps/web/lib/email/` の Resend Magic Link テンプレ → `authentication` spec
+- `next.config.ts` のセキュリティヘッダー設定 → 後続 spec
+- Vercel / Neon / Resend / OpenAI / Anthropic / Vercel Blob 各社の **アカウント実作成・API キー実発行**（本スペックでは手順書のみ提供、Owner が手動実施）
+- 実 Vercel 環境変数の値 setting（本スペックでは `.env.example` のプレースホルダと手順書のみ）
+- 初回の `pnpm drizzle-kit push` 実行（後続 `assessment-pattern-seed` spec が初回スキーマ確定時に実行）
 
 ### Allowed Dependencies
 
-- 外部サービス: Vercel (Hobby プラン)、Neon Postgres (Free プラン)、Resend (Free プラン)、Anthropic API、GitHub (リポジトリホスティング + Actions)
-- 既存ファイル参照のみ:
-  - `monorepo-foundation` で導入された `package.json`、`pnpm-workspace.yaml`、`turbo.json`、`packages/db/drizzle.config.ts`、`packages/db/src/client.ts`、`apps/web/next.config.ts`、`.gitignore`
-- 新規 npm パッケージ追加はなし (本スペックは設定とドキュメントが中心)
-- ホスト環境: Node.js 22 LTS 以上、pnpm 10 以上 (`monorepo-foundation` の制約を引き継ぐ)
+- pnpm 10+、Node.js 22+（`monorepo-foundation` で設定済み）
+- Turborepo 2.x（`monorepo-foundation` で設定済み）
+- Drizzle ORM 0.45.x、drizzle-kit 0.31.x、`pg` 8.x（`monorepo-foundation` で設定済み）
+- Vercel ランタイム（外部）：本スペックは Vercel ダッシュボード上の手動操作と `vercel.json` の宣言のみ
+- GitHub Actions の公式アクション（`actions/checkout` / `actions/setup-node` / `pnpm/action-setup`）
+- 外部サービス（Vercel / Neon / Resend / OpenAI / Anthropic）：API キーの取得と Vercel 環境変数登録のみ、SDK の追加は `monorepo-foundation` で完了済み
+- 制約: 本スペックでは `dependencies` / `devDependencies` の追加は行わない（`monorepo-foundation` で全 SDK 導入済み）。新規 npm パッケージの追加は不要
 
 ### Revalidation Triggers
 
-以下が発生した場合、本スペック完了後に整合性を再検証する:
-
-- Stage 1 環境変数リストの増減 (例: 後続 spec が新規 API キーを追加 → `.env.example` への追記)
-- Vercel プラン変更 (Hobby → Pro)、Neon プラン変更 (Free → Pro)、Resend プラン変更 (Free → Pro)
-- Vercel Build Command / Install Command / Root Directory の変更が必要になる構造変化 (例: apps/admin 分離 = Stage 2)
-- Neon ブランチ戦略の変更 (例: staging branch 追加 = Stage 2)
-- Resend テストドメイン → カスタムドメイン認証への切替 (Stage 2)
-- カスタムドメイン (`bulr.net`) の追加
-- 監視スタック (PostHog / Sentry / Helicone) 追加に伴う環境変数増 (Stage 2)
-- CI ジョブの追加 (テスト導入時に jobs を追加する場合)
-- `monorepo-foundation` の `drizzle.config.ts` 構造変更 (`.env.local` 読込経路が変わる場合)
+- 環境変数名の追加・改名（例: 新たに `DEEPGRAM_API_KEY` を追加） → `.env.example` / `apps/web/.env.local.example` / Vercel 環境変数登録手順 / 後続 spec の参照箇所すべてを更新
+- Vercel Cron スケジュール変更（`0 18 * * *` 以外に変更） → `vercel.json` 更新 + `assessment-engine` spec の Cron 想定時刻と整合確認
+- 2 環境構成 → 3 環境以上（staging 追加）への移行 → 環境マッピング規約・Vercel 環境変数登録手順・Neon ブランチ運用すべてを再設計
+- Vercel Hobby → Pro プランへの移行 → Cron 制限緩和、Custom Domain SSL 等の前提が変わる
+- Cloudflare R2 への音声ストレージ移行 → `BLOB_READ_WRITE_TOKEN` を `R2_ACCESS_KEY_ID` 等に置換、後続 spec の音声 I/O 全体に影響
+- Neon ブランチ命名（`dev` / `production`）の変更 → drizzle-kit 運用手順 / Vercel 環境変数登録手順を再執筆
+- `apps/web/vercel.json` 配置位置の変更（例: ルート直下に移動） → `structure.md` 更新 + Vercel プロジェクト Root Directory 設定の見直し
 
 ## Architecture
+
+### Existing Architecture Analysis
+
+`monorepo-foundation` 完了時点で以下が整備済み：
+
+- ルート設定 8 ファイル（`package.json` / `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` / `eslint.config.mjs` / `prettier.config.mjs` / `.npmrc` / `.gitignore`）
+- `apps/web` の Next.js 16 + React 19 + Tailwind CSS 4 スケルトン
+- `packages/{db,types,lib,ai}` の 4 パッケージスケルトン
+- `packages/db/drizzle.config.ts`（`dbCredentials` は `process.env.DATABASE_URL ?? ''` の形で初期化済み、本スペックで「未定義時のエラー検知」を確認）
+- `packages/db/src/client.ts`（`DATABASE_URL` 未定義時の throw が実装済み）
+- `.gitignore` に `.env*.local` 含む（本スペックで `.env` も除外対象に追加することを再確認）
+
+`monorepo-foundation` で **意図的に未着手で残された箇所**:
+
+- 環境変数の値設定 / `.env.example` / Vercel プロジェクト / Cron / CI / セットアップドキュメント（すべて本スペックで担当）
+- Vercel Blob / OpenAI / Resend の SDK は `monorepo-foundation` で `packages/ai` に依存追加済み（`ai` / `@ai-sdk/anthropic` / `openai` / `zod`）。Vercel Blob の SDK（`@vercel/blob`）は `assessment-engine` spec で必要時に追加（本スペックではトークン環境変数の登録のみ）
+
+参照プロジェクト `dishxdish-app-mvp` は同じく `multi-env-infrastructure` spec を持つが 4 環境構成（local / dev / preview / prod）。本スペックでは Stage 1 規模に合わせて **2 環境構成（dev branch + production）** に簡略化し、Vercel Blob と Vercel Cron を新規追加（dishxdish にはない bulr 独自）。
 
 ### Architecture Pattern & Boundary Map
 
 ```mermaid
 graph TB
-    subgraph Repo["bulr-app-mvp Repository"]
-        EnvExample[.env.example<br/>Stage 1 全環境変数]
-        WebEnvExample[apps/web/.env.local.example<br/>ローカル雛形]
-        SetupDocs[docs/setup/<br/>6 つの手順書]
-        CiYml[.github/workflows/ci.yml<br/>typecheck + lint + audit]
-        Readme[README.md<br/>setup ポインタ追記]
+    subgraph LocalDev[ローカル開発者]
+        EnvLocal[.env.local<br/>dev branch DATABASE_URL]
+        DevServer[pnpm dev<br/>port 3000]
     end
 
-    subgraph Existing["monorepo-foundation 既存資産"]
-        DbClient[packages/db/src/client.ts<br/>DATABASE_URL 読み取り]
-        DrizzleConfig[packages/db/drizzle.config.ts<br/>.env.local 自動読込]
-        WebApp[apps/web<br/>Next.js 16 スケルトン]
-        Gitignore[.gitignore<br/>.env*.local 除外]
+    subgraph Repo[Repository]
+        EnvExample[.env.example]
+        WebEnvExample[apps/web/.env.local.example]
+        VercelJson[apps/web/vercel.json<br/>Cron: /api/cron/audio-purge<br/>0 18 * * * UTC]
+        DrizzleConfig[packages/db/drizzle.config.ts<br/>process.env.DATABASE_URL]
+        CIYml[.github/workflows/ci.yml<br/>typecheck + lint + audit]
+        DocsSetup[docs/setup/*.md<br/>手動セットアップ手順]
+        Readme[README.md<br/>setup セクション]
     end
 
-    subgraph External["外部サービス（Owner 手動セットアップ）"]
-        Vercel[Vercel Hobby<br/>bulr-web プロジェクト<br/>Production / Preview / Development]
-        Neon[Neon Postgres Free<br/>production branch + dev branch]
-        Resend[Resend Free<br/>API キー + テストドメイン]
-        Anthropic[Anthropic Console<br/>API キー + 月額予算アラート]
-        GitHub[GitHub Actions<br/>PR / push トリガー]
+    subgraph Vercel[Vercel: bulr-web]
+        VercelProd[Production<br/>main branch]
+        VercelPreview[Preview<br/>PR ごと]
+        VercelEnvProd[Env: Production<br/>production branch URL]
+        VercelEnvPreview[Env: Preview<br/>dev branch URL]
+        VercelCron[Vercel Cron<br/>毎日 03:00 JST]
+        VercelBlob[Vercel Blob<br/>bulr-audio store]
     end
 
-    EnvExample -.documents.-> Vercel
-    EnvExample -.documents.-> Neon
-    EnvExample -.documents.-> Resend
-    EnvExample -.documents.-> Anthropic
-    WebEnvExample -.derived from.-> EnvExample
-    SetupDocs -.guides Owner to setup.-> Vercel
-    SetupDocs -.guides Owner to setup.-> Neon
-    SetupDocs -.guides Owner to setup.-> Resend
-    SetupDocs -.guides Owner to setup.-> Anthropic
-    CiYml -.runs on.-> GitHub
-    Readme -.points to.-> SetupDocs
+    subgraph External[外部サービス]
+        Neon[Neon Postgres<br/>dev branch + production branch]
+        Resend[Resend<br/>Magic Link 配信]
+        OpenAI[OpenAI<br/>Whisper API]
+        Anthropic[Anthropic<br/>Claude Sonnet 4.6]
+    end
 
-    Vercel -.deploys.-> WebApp
-    Neon -.connection url consumed by.-> DbClient
-    DrizzleConfig -.reads.-> WebEnvExample
-    Gitignore -.protects.-> WebEnvExample
+    subgraph CI[GitHub Actions]
+        CIRun[on: pull_request + push main<br/>install + typecheck + lint + audit]
+    end
+
+    EnvLocal --> DevServer
+    EnvExample -.copy.-> EnvLocal
+    WebEnvExample -.copy.-> EnvLocal
+    DocsSetup -.guides.-> Vercel
+    DocsSetup -.guides.-> External
+    VercelJson --> VercelCron
+    VercelEnvProd --> VercelProd
+    VercelEnvPreview --> VercelPreview
+    VercelProd --> Neon
+    VercelPreview --> Neon
+    VercelProd --> Resend
+    VercelProd --> OpenAI
+    VercelProd --> Anthropic
+    VercelProd --> VercelBlob
+    DevServer --> Neon
+    CIYml --> CIRun
 ```
 
 **Architecture Integration**:
-
-- **Selected pattern**: 「設定 + ドキュメント駆動」のインフラ層スペック。コード変更を最小化し、`.env.example` を中心とした環境変数規約と Owner 向け手順書で外部サービスを統合する。
-- **Domain/feature boundaries**: 環境変数規約 (`.env.example` / `.env.local.example`)、外部サービスセットアップ手順 (`docs/setup/`)、CI 設定 (`.github/workflows/`) の 3 つが明確な担当領域。`packages/db` と `apps/web` のコードは `monorepo-foundation` の領域なので、本スペックは触らないことを原則とする (ただし `drizzle.config.ts` が `.env.local` を読み取れない場合のみ最小修正を許容)。
-- **Existing patterns preserved**: `monorepo-foundation` で導入された `.gitignore` の `.env*.local` 除外、`packages/db/drizzle.config.ts` の `.env.local` 自動読込、`packages/db/src/client.ts` の `DATABASE_URL` 起動時 throw を尊重する。
-- **New components rationale**:
-  - `.env.example`: Stage 1 環境変数の唯一の真実。後続 spec が新規変数追加時の追記対象となる。
-  - `docs/setup/*.md`: Owner が手動実施する手順を網羅し、知識を文書化する (Owner 1 人運用前提)。
-  - `.github/workflows/ci.yml`: Vercel Preview ビルド前にコード品質と既知脆弱性を検出する最小ゲート。
-- **Steering compliance**:
-  - `tech.md`: Vercel Hobby / Neon Free / Resend Free / Anthropic Console、Stage 1 環境変数 9 個、Node.js 22 LTS + pnpm 10+ をすべて遵守
-  - `security.md`: シークレット環境変数を `NEXT_PUBLIC_` 非プレフィックスで管理、`.env.local` を gitignore、Vercel 環境変数で Production / Preview を分離、`pnpm audit --audit-level=moderate` を CI で強制
-  - `structure.md`: `apps/web` 単一アプリ + `packages/{db, types, lib, ai}` 構成を維持、`docs/setup/` を新規ディレクトリとして追加 (既存 `docs/` の他ファイルは触らない)
+- **Selected pattern**: 2 環境構成（dev branch + production）で運用するシンプルなインフラ。Vercel Preview = dev branch DATABASE_URL を共有、Vercel Production = production branch DATABASE_URL を使用。staging は持たない
+- **Domain/feature boundaries**: 本スペックは「設定ファイル + 文書化された手動手順」のみ所有。route handler / DB schema / LLM 関数 / 認証ロジック / Cron 実装は後続 spec
+- **Existing patterns preserved**: `monorepo-foundation` で確立した Turborepo パイプライン・パッケージ依存方向・`process.env.DATABASE_URL` を起点とする DB 接続パターンを維持
+- **New components rationale**: 後続 4 spec が必要とする全環境変数を本スペックで先に定義し、各 spec が「変数名の決定」に時間を取られないようにする。Vercel Cron スケジュール定義も本スペックで先取りすることで、`assessment-engine` spec の実装者は route handler 実装に集中できる
+- **Steering compliance**: `tech.md` L212-236 の Stage 1 環境変数リスト全 12 項目を `.env.example` に網羅、`tech.md` L242-251 のデプロイ構成（Vercel `bulr-web` + `vercel.json` で Cron）に従う、`security.md` L203-216 のシークレット管理 + CI セキュリティに準拠、`structure.md` L97 の vercel.json 配置（`apps/web/vercel.json`）に従う
 
 ### Technology Stack
 
 | Layer | Choice / Version | Role in Feature | Notes |
 |-------|------------------|-----------------|-------|
-| Hosting | Vercel Hobby (無料) | apps/web のホスティング、Preview 自動デプロイ、本番自動デプロイ | Stage 1 規模で十分。Stage 2 で Pro 検討 |
-| Database | Neon Postgres Free (1 プロジェクト + 複数ブランチ) | dev / production 2 ブランチ運用、サーバーレス Postgres | Stage 1 規模 (70 セッション) で Free プラン十分 |
-| Email | Resend Free (100 通/日、月 3,000 通) | Magic Link 配信用 API キー提供 | Stage 1 規模 (月数百通) で Free プラン十分。テストドメイン (`onboarding@resend.dev`) 利用 |
-| LLM | Anthropic Console (Claude Sonnet 4.6 API) | API キー提供、月額予算アラート | $50-150/月の予算想定。Console で $300 警告 / $500 停止 |
-| CI/CD | GitHub Actions (`pull_request` / `push` to main) | typecheck + lint + audit の最小ゲート | Vercel Preview ビルドと並行実行 |
-| Build orchestration | Turborepo 2.9 + pnpm 10 | `pnpm typecheck` / `lint` を CI と Vercel 両方で実行 | `monorepo-foundation` で導入済み |
-| Type Safety | TypeScript 5.4+ (strict、`noUncheckedIndexedAccess`) | 環境変数アクセス時の型安全 | `monorepo-foundation` で導入済み |
-| Secrets management | Vercel 環境変数 (Production / Preview / Development) + ローカル `.env.local` | サーバー側のみシークレット参照、`.env.local` は gitignore | `security.md` の方針に準拠 |
-| Documentation | Markdown (日本語) | `docs/setup/` 配下 6 ファイル | Owner と新規開発者向け |
-
-> 詳細な代替案検討 (4 環境構成 vs 2 環境構成、Vercel vs Cloudflare Pages、Neon vs Supabase 等) は `research.md` に格納。本セクションは決定された選定と役割のみを提示する。
+| Hosting | Vercel Hobby | apps/web のホスティング、Cron 実行、Vercel Blob | Owner 手動でプロジェクト作成 |
+| Database | Neon Postgres（サーバーレス） | dev / production の 2 ブランチ運用 | 各ブランチの DATABASE_URL を Vercel 環境変数に登録 |
+| Storage | Vercel Blob | 音声ファイル保存（30 日後自動削除） | 単一ストア `bulr-audio`、`BLOB_READ_WRITE_TOKEN` 自動付与 |
+| Email | Resend Free | Magic Link 配信（100 通/日） | Stage 1 はテストドメイン、カスタムドメインは Stage 2 |
+| LLM | Anthropic Claude Sonnet 4.6 | LLM 分析・候補生成 | API キー: `ANTHROPIC_API_KEY` |
+| Speech-to-Text | OpenAI Whisper（whisper-1） | 音声文字起こし | API キー: `OPENAI_API_KEY` |
+| Cron | Vercel Cron（Hobby: 1 日 2 回まで） | `/api/cron/audio-purge` を毎日 03:00 JST | `vercel.json` で定義、`CRON_SECRET` で認証 |
+| Migration | drizzle-kit 0.31.x | dev: push、production: generate + migrate | `monorepo-foundation` で導入済み |
+| CI | GitHub Actions | typecheck + lint + audit | シークレット不要、外部接続なし |
+| Secret Management | Vercel 環境変数 + ローカル `.env.local` | サーバー専用シークレットの管理 | `NEXT_PUBLIC_` プレフィックスのみクライアント露出 |
 
 ## File Structure Plan
 
@@ -173,761 +184,534 @@ graph TB
 
 ```
 bulr-app-mvp/
-├── .env.example                                # ★ NEW: Stage 1 全環境変数 (9 個) + コメント
-├── README.md                                    # MOD: setup ポインタを 1-2 行追記
+├── .env.example                          # 新規: Stage 1 全 12 環境変数のプレースホルダ + コメント + Vercel 登録先指定
+├── README.md                             # 更新: セットアップセクションを追加し docs/setup/README.md へリンク
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                               # ★ NEW: typecheck + lint + audit の最小 CI
+│       └── ci.yml                        # 新規: PR / main push で install + typecheck + lint + audit
 │
 ├── apps/
 │   └── web/
-│       └── .env.local.example                   # ★ NEW: ローカル開発者向け雛形 (ルート .env.example と同期)
+│       ├── .env.local.example            # 新規: ローカル開発者向けコピー元、12 変数すべて含む
+│       └── vercel.json                   # 新規: Vercel Cron 定義 1 エントリ（/api/cron/audio-purge を 0 18 * * * UTC）
 │
-├── docs/
-│   └── setup/                                   # ★ NEW: 手順書ディレクトリ
-│       ├── README.md                            # ★ NEW: セットアップインデックス + チェックリスト
-│       ├── vercel.md                            # ★ NEW: Vercel プロジェクト初期化手順
-│       ├── neon.md                              # ★ NEW: Neon プロジェクト + dev / production ブランチ手順
-│       ├── resend.md                            # ★ NEW: Resend Free アカウント + API キー手順
-│       ├── anthropic.md                         # ★ NEW: Anthropic Console + API キー + 予算アラート
-│       ├── github.md                            # ★ NEW: GitHub Actions + ブランチ保護ルール推奨
-│       ├── local.md                             # ★ NEW: ローカル開発の .env.local 整備 + Drizzle push
-│       └── env-vars.md                          # ★ NEW: 環境変数早見表 + NEXT_PUBLIC_ 規約 + ローテーション手順
+├── packages/
+│   └── db/
+│       └── drizzle.config.ts             # 更新: dbCredentials.url を process.env.DATABASE_URL から確実に読み取る形に整える（monorepo-foundation で空のまま残された場合）
 │
-└── packages/
-    └── db/
-        ├── drizzle.config.ts                    # 既存 (monorepo-foundation): .env.local 自動読込が動作することを確認
-        └── src/
-            └── client.ts                        # 既存 (monorepo-foundation): DATABASE_URL 起動時 throw が動作することを確認
+└── docs/
+    └── setup/
+        ├── README.md                     # 新規: セットアップ手順インデックス（推奨実行順序を明示）
+        ├── env-vars.md                   # 新規: 12 環境変数の用途・参照元・公開可否・Vercel 登録先の総合リファレンス
+        ├── vercel.md                     # 新規: Vercel プロジェクト bulr-web の作成手順、Root Directory = apps/web、環境変数登録方法
+        ├── neon.md                       # 新規: Neon プロジェクト + dev / production ブランチ作成、各 DATABASE_URL の取得と Vercel 登録
+        ├── resend.md                     # 新規: Resend Free アカウント作成 + RESEND_API_KEY 取得 + Vercel 登録
+        ├── openai.md                     # 新規: OpenAI アカウント作成 + Whisper API 利用設定 + OPENAI_API_KEY 取得 + Vercel 登録 + Usage Limit
+        ├── anthropic.md                  # 新規: Anthropic アカウント作成 + Claude Sonnet 4.6 利用設定 + ANTHROPIC_API_KEY 取得 + Vercel 登録 + Usage Limit
+        ├── vercel-blob.md                # 新規: Vercel Blob ストア bulr-audio の作成、BLOB_READ_WRITE_TOKEN 自動登録の確認
+        ├── cron.md                       # 新規: CRON_SECRET 生成（openssl rand -base64 32）+ Vercel 登録 + vercel.json の説明
+        ├── drizzle-kit.md                # 新規: dev branch には push、production branch には generate + migrate の運用手順、SQL ファイル名は drizzle-kit が決定
+        └── ci.md                         # 新規: .github/workflows/ci.yml の構成説明と PR レビュー時の確認事項
 ```
 
 ### Modified Files
 
-- `README.md` — `monorepo-foundation` で書かれた既存 README に「セットアップ手順は `docs/setup/README.md` を参照」のポインタを 1-2 行で追記。既存内容は変更しない。
+- `bulr-app-mvp/README.md`: `monorepo-foundation` で作成された README に、セットアップセクションまたは「セットアップ手順は `docs/setup/README.md` 参照」のリンクを追加
+- `bulr-app-mvp/packages/db/drizzle.config.ts`: `monorepo-foundation` で `dbCredentials.url: process.env.DATABASE_URL ?? ''` の形で空文字 fallback されていた場合、本スペックで `process.env.DATABASE_URL!` または `process.env.DATABASE_URL` 未定義時の明示的エラーメッセージに置き換える（DATABASE_URL 未定義時は drizzle-kit が即時失敗する形）
 
-### Files NOT Created
-
-- `vercel.json` — Vercel ダッシュボード設定 + monorepo の Build Command 指定で Stage 1 要件は満たせるため、本スペックでは作成しない。Stage 2 で Function 設定や Edge 設定が必要になった時に作成判断する。
-- `apps/web/.env.local` — シークレットを含むため絶対にコミットしない。`.env.local.example` から開発者が手動コピー。
-- `docs/setup/cloudflare-r2.md`、`docs/setup/posthog.md` 等 — Stage 2 で導入時に追加する。
-
-> File Structure Plan の各ファイルは「責務 1 つ」の原則を守る。本スペックは新規コードを書かないため、ファイルはすべて設定 (`.env.example` / `.github/workflows/ci.yml`) または Markdown ドキュメント。
-
-## System Flows
-
-### フロー 1: Owner の初期セットアップフロー
-
-```mermaid
-sequenceDiagram
-    actor Owner
-    participant Docs as docs/setup/README.md
-    participant Vercel
-    participant Neon
-    participant Resend
-    participant Anthropic
-    participant GitHub
-    participant Local as ローカル .env.local
-
-    Owner->>Docs: 手順インデックスを開く
-    Docs-->>Owner: 推奨実施順 (1) Vercel → (6) Local
-
-    Note over Owner,Vercel: 手順 (1)
-    Owner->>Vercel: アカウント作成 + GitHub 連携
-    Owner->>Vercel: bulr-web プロジェクト作成 (Root Dir = apps/web)
-    Vercel-->>Owner: Production URL (vercel.app 自動生成)
-
-    Note over Owner,Neon: 手順 (2)
-    Owner->>Neon: アカウント + bulr プロジェクト作成
-    Owner->>Neon: dev branch 作成 (production からブランチ)
-    Neon-->>Owner: production / dev DATABASE_URL × 2
-
-    Note over Owner,Vercel: 環境変数登録 (Production scope = production DB、Preview scope = dev DB)
-    Owner->>Vercel: DATABASE_URL を Production / Preview に登録
-
-    Note over Owner,Resend: 手順 (3)
-    Owner->>Resend: アカウント + API キー生成
-    Resend-->>Owner: RESEND_API_KEY
-    Owner->>Vercel: RESEND_API_KEY を全 scope に登録
-
-    Note over Owner,Anthropic: 手順 (4)
-    Owner->>Anthropic: Console + API キー生成 + 予算アラート
-    Anthropic-->>Owner: ANTHROPIC_API_KEY
-    Owner->>Vercel: ANTHROPIC_API_KEY を全 scope に登録
-
-    Note over Owner,Vercel: BETTER_AUTH_SECRET / NEXT_PUBLIC_APP_URL / ADMIN_* も登録
-    Owner->>Vercel: openssl rand で BETTER_AUTH_SECRET 生成 → 全 scope に登録
-    Owner->>Vercel: ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_* を全 scope に登録
-
-    Note over Owner,GitHub: 手順 (5)
-    Owner->>GitHub: ブランチ保護ルール (main) で CI 必須化
-
-    Note over Owner,Local: 手順 (6)
-    Owner->>Local: cp apps/web/.env.local.example apps/web/.env.local
-    Owner->>Local: 各値を記入 (Owner 自身のローカル開発用)
-    Local-->>Owner: pnpm dev で http://localhost:3000 動作
-```
-
-### フロー 2: PR 作成時の自動デプロイ + CI フロー
-
-```mermaid
-sequenceDiagram
-    actor Dev as Developer
-    participant GH as GitHub
-    participant CI as GitHub Actions (ci.yml)
-    participant Vercel
-    participant NeonDev as Neon dev branch
-
-    Dev->>GH: feature ブランチを push + PR 作成
-    GH->>CI: pull_request トリガー
-    GH->>Vercel: Webhook 通知
-
-    par CI ジョブ
-        CI->>CI: pnpm install --frozen-lockfile
-        CI->>CI: pnpm typecheck
-        CI->>CI: pnpm lint
-        CI->>CI: pnpm audit --audit-level=moderate
-        CI-->>GH: PR チェック結果 (成功 / 失敗)
-    and Vercel Preview デプロイ
-        Vercel->>Vercel: pnpm install + pnpm turbo build --filter=web
-        Vercel->>NeonDev: DATABASE_URL = Preview scope (dev branch)
-        Vercel-->>GH: Preview URL を PR コメント投稿
-    end
-
-    Dev->>GH: PR レビュー + Preview URL で動作確認
-    Dev->>GH: main にマージ (CI 必須通過後)
-    GH->>Vercel: production デプロイ起動 (DATABASE_URL = Production scope = production branch)
-```
-
-### フロー 3: 開発者のローカル開発接続フロー
-
-```mermaid
-sequenceDiagram
-    actor Dev as Developer
-    participant Local as apps/web/.env.local
-    participant DrizzleConfig as packages/db/drizzle.config.ts
-    participant Client as packages/db/src/client.ts
-    participant NeonDev as Neon dev branch
-
-    Dev->>Local: cp apps/web/.env.local.example apps/web/.env.local
-    Dev->>Local: Owner から共有された DATABASE_URL (dev) を記入
-    Dev->>Local: BETTER_AUTH_SECRET / 他値も記入
-
-    Dev->>DrizzleConfig: pnpm --filter @bulr/db push 実行
-    DrizzleConfig->>Local: .env.local を自動読込 (monorepo-foundation 既存ロジック)
-    DrizzleConfig->>NeonDev: dev branch にスキーマ反映 (履歴なし)
-    NeonDev-->>Dev: スキーマ反映完了
-
-    Dev->>Client: pnpm dev 経由で apps/web から import { db } from '@bulr/db'
-    Client->>Local: process.env.DATABASE_URL を読む
-    Client->>NeonDev: pg.Pool で接続成立
-    NeonDev-->>Client: クエリ応答
-    Client-->>Dev: ブラウザで http://localhost:3000 が dev DB データで動作
-```
+> 各ファイルは単一責務。新規作成: `.env.example` 1 個、`apps/web/.env.local.example` 1 個、`apps/web/vercel.json` 1 個、`.github/workflows/ci.yml` 1 個、`docs/setup/*.md` 11 個（README.md インデックス + 10 手順書）。更新: `README.md` 1 個、`packages/db/drizzle.config.ts` 1 個。コード変更は最小限で、実質的にはドキュメントと設定ファイルが中心。
 
 ## Requirements Traceability
 
 | Requirement | Summary | Components | Interfaces | Flows |
 |-------------|---------|------------|------------|-------|
-| 1.1 | `.env.example` に 9 環境変数を網羅 | EnvExampleRoot | env vars listing | フロー 1 |
-| 1.2 | 各変数にコメント (用途・例・scope) | EnvExampleRoot | env vars commenting | — |
-| 1.3 | `apps/web/.env.local.example` をルートと同期 | EnvExampleWeb | env vars mirror | フロー 1, 3 |
-| 1.4 | 実シークレット値を `.env.example` に書かない | EnvExampleRoot, EnvExampleWeb | placeholder only | — |
-| 1.5 | 後続 spec が新規変数追加時の追記規約 | EnvVarsDoc | documentation | — |
-| 1.6 | `.gitignore` の `.env.local` 除外確認 | (existing GitignoreConfig) | gitignore check | フロー 3 |
-| 1.7 | `NEXT_PUBLIC_` 規約の明示 | EnvExampleRoot, EnvVarsDoc | comment | — |
-| 2.1 | `docs/setup/vercel.md` の手順書 | VercelDoc | manual procedure | フロー 1 |
-| 2.2 | Build Command / Install Command / Output 指定 | VercelDoc | Vercel config | フロー 2 |
-| 2.3 | 環境変数を Production / Preview / Development の 3 scope に登録 | VercelDoc | scope assignment | フロー 1 |
-| 2.4 | main マージで本番自動デプロイ | VercelDoc | trigger doc | フロー 2 |
-| 2.5 | PR で Preview 自動デプロイ + URL コメント | VercelDoc | trigger doc | フロー 2 |
-| 2.6 | `vercel.json` の必要性判定 → 不要なら作らない | VercelDoc | decision doc | — |
-| 2.7 | Vercel 標準ドメイン (`*.vercel.app`) で Stage 1 運用 | VercelDoc | constraint doc | — |
-| 3.1 | `docs/setup/neon.md` の手順書 | NeonDoc | manual procedure | フロー 1 |
-| 3.2 | branching strategy 記述 (production source / dev branch / Preview 共有) | NeonDoc | strategy doc | フロー 2, 3 |
-| 3.3 | migration workflow (push for dev, migrate for production) | NeonDoc | workflow doc | フロー 3 |
-| 3.4 | Vercel Preview = dev branch DATABASE_URL | VercelDoc, NeonDoc | constraint | フロー 2 |
-| 3.5 | Vercel Production = production branch DATABASE_URL | VercelDoc, NeonDoc | constraint | フロー 2 |
-| 3.6 | Preview から本番データへ書き込まない警告 | NeonDoc | warning | — |
-| 3.7 | Neon Free プランで十分な明記 | NeonDoc | constraint doc | — |
-| 4.1 | `docs/setup/resend.md` の手順書 | ResendDoc | manual procedure | フロー 1 |
-| 4.2 | テストドメイン利用、カスタムドメインは Stage 2 | ResendDoc | constraint doc | — |
-| 4.3 | `RESEND_API_KEY` を全 scope で同じキー共有 | ResendDoc | scope strategy | フロー 1 |
-| 4.4 | Magic Link 送信ロジックは本 spec で実装しない | (Out of Boundary) | — | — |
-| 4.5 | Free プラン制限 (100/日、3000/月) が Stage 1 に十分 | ResendDoc | constraint doc | — |
-| 4.6 | `RESEND_API_KEY` ローテーション手順 | ResendDoc, EnvVarsDoc | troubleshooting | — |
-| 5.1 | `docs/setup/anthropic.md` の手順書 + 予算アラート | AnthropicDoc | manual procedure | フロー 1 |
-| 5.2 | `ANTHROPIC_API_KEY` を全 scope に登録 | AnthropicDoc | scope strategy | フロー 1 |
-| 5.3 | Claude API 呼び出しは本 spec で実装しない | (Out of Boundary) | — | — |
-| 5.4 | $50-150/月の予算目安 + Console アラート必須 | AnthropicDoc | budget guidance | — |
-| 5.5 | `ANTHROPIC_API_KEY` は server-only、`NEXT_PUBLIC_` 禁止 | AnthropicDoc, EnvVarsDoc | security warning | — |
-| 6.1 | `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_*` を `.env.example` に + コメント | EnvExampleRoot | env vars + comment | — |
-| 6.2 | `ADMIN_BASIC_AUTH_PASSWORD` は強パスワード生成 (`openssl rand -base64 24` 等) | EnvVarsDoc | secret generation | — |
-| 6.3 | Basic 認証ロジックは本 spec で実装しない | (Out of Boundary) | — | — |
-| 6.4 | `ADMIN_*` を全 scope に登録 | VercelDoc, EnvVarsDoc | scope strategy | フロー 1 |
-| 7.1 | `.github/workflows/ci.yml` の `pull_request` / `push` トリガー | CiYml | GitHub Actions trigger | フロー 2 |
-| 7.2 | typecheck + lint + audit の各 job | CiYml | jobs definition | フロー 2 |
-| 7.3 | audit moderate 以上で fail | CiYml | exit code propagation | フロー 2 |
-| 7.4 | Node.js 22 LTS + pnpm 10+ | CiYml | runtime spec | フロー 2 |
-| 7.5 | `pnpm build` は CI で実行しない (Vercel と重複回避) | CiYml | scope decision | — |
-| 7.6 | テスト実行は本 spec では含めない | CiYml | scope decision | — |
-| 7.7 | ブランチ保護ルール推奨を `docs/setup/github.md` に | GithubDoc | branch protection guidance | — |
-| 8.1 | ローカル開発で apps/web から `@bulr/db` 経由で Neon dev branch に接続 | (existing DbClient + Local setup) | env loading | フロー 3 |
-| 8.2 | `drizzle.config.ts` が `.env.local` を自動読込 | (existing DrizzleConfig from monorepo-foundation) | env loading | フロー 3 |
-| 8.3 | `pnpm --filter @bulr/db push` で dev branch に反映 | NeonDoc, LocalDoc | command doc | フロー 3 |
-| 8.4 | `pnpm --filter @bulr/db migrate` で production branch に履歴付き反映 | NeonDoc | command doc (実行は後続 spec) | — |
-| 8.5 | ローカル setup フローを `docs/setup/local.md` に文書化 | LocalDoc | step-by-step doc | フロー 3 |
-| 8.6 | `DATABASE_URL` を production branch にローカル接続しない警告 | LocalDoc | warning | — |
-| 9.1 | `docs/setup/README.md` インデックス + 推奨実施順 | SetupReadme | navigation | フロー 1 |
-| 9.2 | Owner 用チェックリスト | SetupReadme | checklist | フロー 1 |
-| 9.3 | 各 setup ドキュメントは単一目的 | (全 setup docs) | doc structure | — |
-| 9.4 | リポジトリルート `README.md` に setup ポインタ追記 | ReadmePointer | minimal change | — |
-| 9.5 | steering 内容を setup docs で重複させない | (全 setup docs) | doc principle | — |
-| 9.6 | 後続 spec が外部サービス追加時に新 setup md と checklist 更新 | SetupReadme | extension rule | — |
-| 10.1 | sensitive 環境変数は `NEXT_PUBLIC_` 禁止、server-only | EnvVarsDoc, AnthropicDoc | security rule | — |
-| 10.2 | `NEXT_PUBLIC_APP_URL` のみクライアント公開可 | EnvVarsDoc, EnvExampleRoot | comment | — |
-| 10.3 | Vercel Production / Preview の env scope 分離 | VercelDoc, EnvVarsDoc | scope strategy | フロー 1 |
-| 10.4 | `.env.local` の gitignore による誤コミット防止 | (existing GitignoreConfig) | gitignore | フロー 3 |
-| 10.5 | 各シークレットのローテーション手順 | EnvVarsDoc, ResendDoc, AnthropicDoc | rotation procedure | — |
-| 10.6 | `pnpm audit` CI step は強制 (PR merge ブロック) | CiYml, GithubDoc | branch protection | フロー 2 |
+| 1.1 | `.env.example` ルート存在 | EnvExampleConfig | filesystem | — |
+| 1.2 | 12 変数を網羅 | EnvExampleConfig | .env.example | — |
+| 1.3 | プレースホルダで記載 | EnvExampleConfig | .env.example | — |
+| 1.4 | `NEXT_PUBLIC_` の公開可否を明示 | EnvExampleConfig | .env.example | — |
+| 1.5 | apps/web/.env.local.example | WebEnvLocalExample | filesystem | — |
+| 1.6 | `.gitignore` 確認 | EnvExampleConfig | .gitignore | — |
+| 1.7 | コピーで pnpm dev 起動 | WebEnvLocalExample + DrizzleConfigUpdate | .env.local | local dev フロー |
+| 1.8 | Vercel 登録先（Production / Preview / 両方）を明示 | EnvExampleConfig | .env.example | — |
+| 2.1 | docs/setup/vercel.md 存在 | VercelSetupDoc | filesystem | — |
+| 2.2 | Vercel プロジェクト設定（Root Directory 等） | VercelSetupDoc | docs/setup/vercel.md | Vercel プロジェクト作成フロー |
+| 2.3 | 環境変数の Production / Preview 使い分け | VercelSetupDoc + EnvVarsDoc | docs | Vercel 環境変数登録フロー |
+| 2.4 | GitHub 連携手順 | VercelSetupDoc | docs/setup/vercel.md | デプロイ自動化フロー |
+| 2.5 | Vercel Hobby プラン前提 | VercelSetupDoc | docs/setup/vercel.md | — |
+| 2.6 | Owner 手動実施明示 | VercelSetupDoc | docs/setup/vercel.md | — |
+| 2.7 | main push で本番 / PR で Preview | VercelSetupDoc | Vercel ダッシュボード | デプロイ自動化フロー |
+| 3.1 | docs/setup/neon.md 存在 | NeonSetupDoc | filesystem | — |
+| 3.2 | production プライマリ + dev 分岐 | NeonSetupDoc | docs/setup/neon.md | Neon ブランチ作成フロー |
+| 3.3 | DATABASE_URL を Production / Preview に登録 | NeonSetupDoc + EnvVarsDoc | docs | Vercel 環境変数登録フロー |
+| 3.4 | drizzle.config.ts の DATABASE_URL 参照 | DrizzleConfigUpdate | drizzle.config.ts | drizzle-kit 実行フロー |
+| 3.5 | client.ts の fail fast 確認 | DrizzleConfigUpdate | packages/db/src/client.ts | DB 接続フロー |
+| 3.6 | dev branch への push 手順 | DrizzleKitOpsDoc | docs/setup/drizzle-kit.md | drizzle-kit push フロー |
+| 3.7 | production branch への generate + migrate 手順 | DrizzleKitOpsDoc | docs/setup/drizzle-kit.md | drizzle-kit migrate フロー |
+| 3.8 | SQL ファイル名は drizzle-kit が決定 | DrizzleKitOpsDoc | docs/setup/drizzle-kit.md | — |
+| 3.9 | DATABASE_URL を読み取り接続成立 | DrizzleConfigUpdate + WebEnvLocalExample | packages/db | local dev フロー |
+| 4.1 | docs/setup/{resend,openai,anthropic}.md 存在 | ResendSetupDoc + OpenAISetupDoc + AnthropicSetupDoc | filesystem | — |
+| 4.2 | Resend Free + テストドメイン | ResendSetupDoc | docs/setup/resend.md | Resend セットアップフロー |
+| 4.3 | OpenAI Whisper API + Usage Limit | OpenAISetupDoc | docs/setup/openai.md | OpenAI セットアップフロー |
+| 4.4 | Anthropic Sonnet 4.6 + Usage Limit | AnthropicSetupDoc | docs/setup/anthropic.md | Anthropic セットアップフロー |
+| 4.5 | API キーを Vercel 環境変数登録 | 各 SetupDoc + EnvVarsDoc | docs | Vercel 環境変数登録フロー |
+| 4.6 | API キーをローカル .env.local 設定 | 各 SetupDoc + WebEnvLocalExample | docs + .env.local.example | local dev フロー |
+| 4.7 | 3 サービスが Production / Preview 両方に登録 | 各 SetupDoc + EnvVarsDoc | Vercel ダッシュボード | Vercel 環境変数登録フロー |
+| 5.1 | docs/setup/vercel-blob.md 存在 | VercelBlobSetupDoc | filesystem | — |
+| 5.2 | BLOB_READ_WRITE_TOKEN 自動登録 | VercelBlobSetupDoc | docs/setup/vercel-blob.md | Vercel Blob 作成フロー |
+| 5.3 | 無料枠 + 30 日保存方針 | VercelBlobSetupDoc | docs/setup/vercel-blob.md | — |
+| 5.4 | docs/setup/cron.md + CRON_SECRET 生成 | CronSetupDoc | docs/setup/cron.md | CRON_SECRET 登録フロー |
+| 5.5 | Authorization Bearer 検証は assessment-engine の責務 | CronSetupDoc | docs/setup/cron.md | — |
+| 5.6 | BLOB_READ_WRITE_TOKEN が Production / Preview 両方 | VercelBlobSetupDoc | Vercel ダッシュボード | — |
+| 5.7 | CRON_SECRET が Production / Preview 両方 | CronSetupDoc | Vercel ダッシュボード | — |
+| 6.1 | apps/web/vercel.json 存在 | VercelJsonConfig | filesystem | — |
+| 6.2 | crons 配列 1 エントリ（0 18 * * *） | VercelJsonConfig | apps/web/vercel.json | Vercel Cron スケジュールフロー |
+| 6.3 | Hobby プラン制限内 | VercelJsonConfig | apps/web/vercel.json | — |
+| 6.4 | Cron 以外の余分な設定なし | VercelJsonConfig | apps/web/vercel.json | — |
+| 6.5 | Vercel が読み取り Cron 登録 | VercelJsonConfig | Vercel ダッシュボード | デプロイフロー |
+| 6.6 | route handler は本スペックで作らない（明示） | VercelJsonConfig + DocsSetupReadme | docs | — |
+| 6.7 | route handler 未実装で 404 許容 | VercelJsonConfig | — | — |
+| 7.1 | .github/workflows/ci.yml 存在 | CIWorkflow | filesystem | — |
+| 7.2 | PR + main push で起動 | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.3 | Node 22+ / pnpm 10+ セットアップ | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.4 | pnpm install --frozen-lockfile | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.5 | pnpm typecheck | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.6 | pnpm lint | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.7 | pnpm audit --audit-level=moderate | CIWorkflow | ci.yml | CI 実行フロー |
+| 7.8 | シークレット不要 | CIWorkflow | ci.yml | — |
+| 7.9 | PR で 4 ステップ実行 | CIWorkflow | GitHub Actions | CI 実行フロー |
+| 8.1 | README.md にセットアップリンク | DocsSetupReadme + RootReadme | README.md | — |
+| 8.2 | docs/setup/ インデックス | DocsSetupReadme | docs/setup/README.md | — |
+| 8.3 | 推奨実行順序明示 | DocsSetupReadme | docs/setup/README.md | セットアップフロー |
+| 8.4 | 手動実施前提 | DocsSetupReadme + 各 SetupDoc | docs | — |
+| 8.5 | 完了確認方法を含む | 各 SetupDoc | docs | — |
+| 8.6 | 新規開発者が手順で構築可能 | DocsSetupReadme + 各 SetupDoc | docs | セットアップ全体フロー |
+| 9.1 | 環境マッピング規約明示 | EnvVarsDoc + DocsSetupReadme | docs | — |
+| 9.2 | staging 不要を明示 | EnvVarsDoc + DocsSetupReadme | docs | — |
+| 9.3 | 各変数の Production / Preview 使い分け | EnvExampleConfig + EnvVarsDoc | docs + .env.example | Vercel 環境変数登録フロー |
+| 9.4 | DATABASE_URL の Production = production / Preview = dev | NeonSetupDoc + EnvVarsDoc | docs | — |
+| 9.5 | 本番 DB に push 禁止、migrate のみ | DrizzleKitOpsDoc | docs/setup/drizzle-kit.md | — |
+| 9.6 | Preview デプロイが本番 DB に影響しない | EnvVarsDoc + NeonSetupDoc | Vercel 環境変数 | デプロイフロー |
+| 10.1 | .gitignore で .env / .env.local 除外 | EnvExampleConfig | .gitignore | — |
+| 10.2 | .env.example はプレースホルダのみ | EnvExampleConfig + WebEnvLocalExample | .env.example | — |
+| 10.3 | NEXT_PUBLIC_ のみクライアント露出 | EnvExampleConfig + EnvVarsDoc | docs | — |
+| 10.4 | CI で audit | CIWorkflow | ci.yml | CI 実行フロー |
+| 10.5 | シークレットは Vercel ダッシュボード経由のみ | EnvVarsDoc + 各 SetupDoc | docs | — |
+| 10.6 | CRON_SECRET は最低 32 バイトランダム | CronSetupDoc | docs/setup/cron.md | — |
+| 10.7 | diff に実シークレットが含まれない | EnvExampleConfig + 各 SetupDoc | git diff | PR レビューフロー |
 
 ## Components and Interfaces
 
-### Component Summary
-
 | Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
 |-----------|--------------|--------|--------------|--------------------------|-----------|
-| EnvExampleRoot | Repo configuration | Stage 1 全環境変数 (9 個) を一元文書化 | 1.1, 1.2, 1.4, 1.7, 6.1, 10.2 | (none) | Documentation |
-| EnvExampleWeb | Repo configuration | ローカル開発者用テンプレート | 1.3, 1.4, 8.1 | EnvExampleRoot (P0) | Documentation |
-| SetupReadme | Documentation | セットアップインデックス + Owner チェックリスト | 9.1, 9.2, 9.6 | 各 setup ドキュメント (P0) | Documentation |
-| VercelDoc | Documentation | Vercel プロジェクト初期化手順 + 環境変数登録 | 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3.4, 3.5, 6.4, 10.3 | Vercel Hobby (P0)、EnvExampleRoot (P0) | Documentation |
-| NeonDoc | Documentation | Neon プロジェクト + dev / production ブランチ + migration 戦略 | 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 8.3, 8.4 | Neon Free (P0) | Documentation |
-| ResendDoc | Documentation | Resend Free アカウント + API キー + テストドメイン | 4.1, 4.2, 4.3, 4.5, 4.6 | Resend Free (P0)、EnvExampleRoot (P0) | Documentation |
-| AnthropicDoc | Documentation | Anthropic Console + API キー + 予算アラート | 5.1, 5.2, 5.4, 5.5, 10.1 | Anthropic Console (P0) | Documentation |
-| GithubDoc | Documentation | GitHub Actions + ブランチ保護ルール | 7.7, 10.6 | GitHub (P0)、CiYml (P0) | Documentation |
-| LocalDoc | Documentation | ローカル開発の `.env.local` 整備 + Drizzle 接続 | 8.1, 8.5, 8.6 | EnvExampleWeb (P0)、(existing DbClient/DrizzleConfig) (P0) | Documentation |
-| EnvVarsDoc | Documentation | 環境変数早見表 + `NEXT_PUBLIC_` 規約 + ローテーション | 1.5, 1.7, 6.2, 10.1, 10.2, 10.3, 10.5 | EnvExampleRoot (P0) | Documentation |
-| CiYml | CI/CD | typecheck + lint + audit の最小 GitHub Actions ワークフロー | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 10.6 | GitHub Actions (P0)、`monorepo-foundation` の pnpm scripts (P0) | Service |
-| ReadmePointer | Documentation | リポジトリルート README に setup ポインタ追記 | 9.4 | SetupReadme (P0) | Documentation |
+| EnvExampleConfig | Root | ルート `.env.example` の作成と内容 | 1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 9.3, 10.1, 10.2, 10.7 | `.gitignore`（既設）(P0) | State |
+| WebEnvLocalExample | apps/web | ローカル開発者向けコピー元 | 1.5, 1.7, 3.9, 4.6 | EnvExampleConfig (P0) | State |
+| VercelJsonConfig | apps/web | Vercel Cron 定義 | 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7 | Vercel Hobby プラン (P0) | State |
+| DrizzleConfigUpdate | packages/db | drizzle.config.ts の DATABASE_URL 読み取り設定有効化 | 3.4, 3.5, 3.9, 1.7 | `monorepo-foundation` の packages/db スケルトン (P0) | State |
+| CIWorkflow | .github/workflows | CI 最小構成（install + typecheck + lint + audit） | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 10.4 | GitHub Actions ランタイム (P0)、pnpm 10+ (P0)、Node 22+ (P0) | Batch |
+| DocsSetupReadme | docs/setup | セットアップ手順インデックス | 8.1, 8.2, 8.3, 8.4, 8.6, 9.1, 9.2 | 各 SetupDoc (P0) | State |
+| EnvVarsDoc | docs/setup | 12 環境変数の総合リファレンス | 1.4, 1.8, 4.5, 4.7, 5.6, 5.7, 9.1, 9.3, 9.4, 9.6, 10.3, 10.5 | EnvExampleConfig (P0) | State |
+| VercelSetupDoc | docs/setup | Vercel プロジェクト bulr-web 作成手順 | 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 8.5 | Vercel Hobby (P0)、GitHub リポジトリ (P0) | State |
+| NeonSetupDoc | docs/setup | Neon dev / production ブランチ作成手順 | 3.1, 3.2, 3.3, 9.4, 9.6, 8.5 | Neon Free プラン (P0) | State |
+| ResendSetupDoc | docs/setup | Resend アカウント + RESEND_API_KEY | 4.1, 4.2, 4.5, 4.7, 8.5 | Resend Free プラン (P0) | State |
+| OpenAISetupDoc | docs/setup | OpenAI Whisper + OPENAI_API_KEY | 4.1, 4.3, 4.5, 4.7, 8.5 | OpenAI 従量課金 (P0) | State |
+| AnthropicSetupDoc | docs/setup | Anthropic Claude + ANTHROPIC_API_KEY | 4.1, 4.4, 4.5, 4.7, 8.5 | Anthropic 従量課金 (P0) | State |
+| VercelBlobSetupDoc | docs/setup | Vercel Blob ストア bulr-audio 作成 | 5.1, 5.2, 5.3, 5.6, 8.5 | Vercel Blob 無料枠 (P0) | State |
+| CronSetupDoc | docs/setup | CRON_SECRET 生成 + Vercel 登録 | 5.4, 5.5, 5.7, 6.6, 10.6, 8.5 | openssl CLI (P1)、Vercel ダッシュボード (P0) | State |
+| DrizzleKitOpsDoc | docs/setup | drizzle-kit push / generate / migrate 運用 | 3.6, 3.7, 3.8, 9.5, 8.5 | drizzle-kit 0.31.x (P0、`monorepo-foundation` 既設) | State |
+| RootReadme | Root | README.md にセットアップリンク追加 | 8.1 | DocsSetupReadme (P0) | State |
 
-### Configuration Components
+### Root / Configuration Layer
 
-#### EnvExampleRoot
+#### EnvExampleConfig
 
 | Field | Detail |
 |-------|--------|
-| Intent | Stage 1 で必要なすべての環境変数を一元文書化し、Owner と新規開発者が漏れなく準備できる状態を作る |
-| Requirements | 1.1, 1.2, 1.4, 1.7, 6.1, 10.2 |
+| Intent | Stage 1 全 12 環境変数をプレースホルダ + コメント付きで網羅し、後続 spec の実装者と新規開発者が「変数名」「用途」「Vercel 登録先」を即座に把握できる単一リファレンスとする |
+| Requirements | 1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 9.3, 10.1, 10.2, 10.7 |
+| Owner / Reviewers | プロジェクトオーナー |
 
 **Responsibilities & Constraints**
-- リポジトリルート直下に `.env.example` を配置
-- 含む変数 (Stage 1 確定 9 個):
-  - `DATABASE_URL` (Neon Postgres、scope: Production = production branch、Preview = dev branch、Development = dev branch)
-  - `BETTER_AUTH_SECRET` (Auth 暗号化キー、生成例: `openssl rand -hex 32`、全 scope)
-  - `BETTER_AUTH_URL` (認証コールバック URL、Production = `https://<vercel-prod>.vercel.app`、Preview = `https://<vercel-preview>.vercel.app`、Development = `http://localhost:3000`)
-  - `RESEND_API_KEY` (Magic Link 配信、全 scope で同じ Free プランキー)
-  - `NEXT_PUBLIC_APP_URL` (アプリベース URL、`NEXT_PUBLIC_` プレフィックスでクライアント公開可、各 scope の URL に対応)
-  - `ANTHROPIC_API_KEY` (Claude Sonnet 4.6、server-only、全 scope に登録)
-  - `ADMIN_ALLOWED_EMAILS` (CSV 形式、例: `taro@example.com,hanako@example.com`、全 scope)
-  - `ADMIN_BASIC_AUTH_USER` (Basic 認証ユーザー名、全 scope)
-  - `ADMIN_BASIC_AUTH_PASSWORD` (Basic 認証パスワード、生成例: `openssl rand -base64 24`、全 scope)
-- 各変数の前に 1-3 行コメントで (a) 用途、(b) 例・生成コマンド、(c) Production / Preview / Development scope を記述
-- 実シークレット値は絶対に書かない (placeholder only)
+- ルート直下 `.env.example` を所有
+- 12 変数を以下の順序・グループでコメント付きで記載:
+  - **共通**: `DATABASE_URL` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `NEXT_PUBLIC_APP_URL`
+  - **LLM**: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`
+  - **ストレージ**: `BLOB_READ_WRITE_TOKEN`
+  - **Cron**: `CRON_SECRET`
+  - **管理画面**: `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD`
+- 各変数の直前または同行コメントで以下を明示:
+  - 用途（一行）
+  - Vercel 登録先（Production / Preview / 両方）
+  - 公開可否（`NEXT_PUBLIC_` のみクライアント露出、それ以外サーバー専用）
+  - 値の例（プレースホルダ、実シークレットを含まない）
+- `.gitignore` に `.env`、`.env.local`、`.env.*.local` が含まれていることを再確認（含まれていない場合は本スペックで追加）
+- 不変条件: `.env.example` 内に実シークレット値を一切含まない
 
 **Dependencies**
-- Outbound: なし (純粋にドキュメント)
-- External: 後続 spec の実装者が `process.env.<変数名>` を読む際の唯一の真実
+- Inbound: `WebEnvLocalExample` がコピー元として参照、`EnvVarsDoc` が網羅性のリファレンスとして参照
+- Outbound: なし
+- External: `.gitignore`（`monorepo-foundation` 既設、本スペックで `.env` 除外を再確認）（P0）
 
-**Contracts**: Documentation [x]
+**Contracts**: State
 
-##### Documentation Interface (`.env.example` 構造例)
-
-```bash
-# ─────────────────────────────────────────────────────────
-# bulr Stage 1 環境変数 (.env.example)
-# ─────────────────────────────────────────────────────────
-# このファイルはコミット可。実際の値は .env.local (gitignore 対象) または
-# Vercel 環境変数に登録すること。
-# ─────────────────────────────────────────────────────────
-
-# === DB ===
-# Neon Postgres 接続文字列。
-# Production scope = production branch、Preview / Development scope = dev branch。
-# 取得手順: docs/setup/neon.md
-DATABASE_URL=postgres://user:password@ep-xxx.neon.tech/bulr?sslmode=require
-
-# === 認証 ===
-# Better Auth の暗号化キー。生成: openssl rand -hex 32
-# 全 scope で同じ値で良い (本番と Preview で意図的に分けたい場合のみ別値)
-BETTER_AUTH_SECRET=replace-me-with-openssl-rand-hex-32
-
-# 認証コールバック URL。各 scope の APP URL に合わせる。
-# Production: https://<your-prod>.vercel.app
-# Preview:    https://<vercel-preview-url>.vercel.app
-# Development: http://localhost:3000
-BETTER_AUTH_URL=http://localhost:3000
-
-# === メール配信 ===
-# Resend Free プランの API キー。Stage 1 は全 scope 同じキー共有。
-# 取得手順: docs/setup/resend.md
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxx
-
-# === アプリ ===
-# クライアント側に公開される URL。NEXT_PUBLIC_ プレフィックス必須。
-# 各 scope の APP URL に合わせる。
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# === LLM ===
-# Anthropic Claude API キー (Sonnet 4.6)。server-only、絶対に NEXT_PUBLIC_ を付けない。
-# 月額予算アラートを Anthropic Console で設定 ($300 警告、$500 停止)。
-# 取得手順: docs/setup/anthropic.md
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
-
-# === 管理画面 ===
-# 管理者メール許可リスト (CSV)。/admin にアクセスできるユーザー。
-ADMIN_ALLOWED_EMAILS=owner@example.com,reviewer@example.com
-
-# Basic 認証のユーザー名・パスワード。
-# パスワード生成: openssl rand -base64 24
-ADMIN_BASIC_AUTH_USER=admin
-ADMIN_BASIC_AUTH_PASSWORD=replace-me-with-openssl-rand-base64-24
-```
+##### State Management
+- State model: ファイル存在 + 12 変数すべて + コメント
+- Persistence & consistency: git にコミット
+- Concurrency strategy: 該当なし
 
 **Implementation Notes**
-- Integration: 後続 spec の実装者は `process.env.<変数名>` を読む際にこのリストを参照する。新変数追加時は本ファイルへの追記を必須とする (Requirement 1.5)
-- Validation: `cp .env.example apps/web/.env.local` してすべての値を埋め、`pnpm dev` が起動することで動作確認 (本スペックでは Owner が手動で実施)
-- Risks: 実シークレット値を誤って書くと履歴に残る → PR レビュー時に必ず placeholder のみであることを確認
+- Integration: `tech.md` L212-236 の Stage 1 環境変数リストを忠実に転記、各変数に Vercel 登録先（Production / Preview）と用途コメントを追加
+- Validation: 開発者が `.env.example` を `.env.local` にコピーし、実値を埋めれば `pnpm dev` 起動時に必須変数が読み取れる
+- Risks: コメントが冗長になりすぎてファイルが読みづらくなる → 各変数 1-2 行コメントに収める
 
-#### EnvExampleWeb
+#### WebEnvLocalExample
 
 | Field | Detail |
 |-------|--------|
-| Intent | ローカル開発者が `cp` で雛形を取得できる、ルート `.env.example` の同期コピー |
-| Requirements | 1.3, 1.4, 8.1 |
+| Intent | ローカル開発者が `cp apps/web/.env.local.example apps/web/.env.local` でコピーして利用できる、ローカル開発に必要な環境変数のみを含む雛形ファイル |
+| Requirements | 1.5, 1.7, 3.9, 4.6 |
 
 **Responsibilities & Constraints**
-- `apps/web/.env.local.example` に配置 (Next.js が `apps/web/.env.local` を自動読込するため、ここに置く意義がある)
-- 内容はリポジトリルート `.env.example` と同一 (差分が出ないよう、1 ファイルに統一する選択肢もあるが、Next.js 標準の `.env.local` 探索パスに合わせる)
-- placeholder only
+- `apps/web/.env.local.example` を所有
+- 内容はルート `.env.example` とほぼ同等（12 変数すべて）だが、`NEXT_PUBLIC_APP_URL` のデフォルト値を `http://localhost:3000` にする等、ローカル特化のコメントを含む
+- `BETTER_AUTH_URL` も `http://localhost:3000` をプレースホルダとして記載
+- `DATABASE_URL` には Neon dev branch の URL を入れる旨をコメントで明示
 
 **Dependencies**
-- Outbound: EnvExampleRoot (P0) — 同期元
+- Inbound: 開発者が `cp` で `.env.local` を作成（local dev フロー）
+- Outbound: なし
+- External: なし
 
-**Contracts**: Documentation [x]
+**Contracts**: State
 
 **Implementation Notes**
-- Integration: `monorepo-foundation` で導入された `apps/web/next.config.ts` および `packages/db/drizzle.config.ts` がそれぞれ `apps/web/.env.local` を読む経路を想定
-- Risks: ルート `.env.example` との同期がずれると混乱する → タスクで「ルートと web の両方を同時更新」を明記、env-vars.md にも規約として記載
-- 代替案: 唯一の `.env.example` をルートに置き、`apps/web/.env.local` で symlink する案もあるが、Windows 開発者考慮と Next.js の標準探索を踏まえコピー方式を採用
+- Integration: ルート `.env.example` のサブセットでなく、apps/web の dev 起動に必要な変数を一通り含む
+- Validation: 開発者が `cp apps/web/.env.local.example apps/web/.env.local` で実行可能
+- Risks: ルートの `.env.example` と内容が乖離するリスク → 本スペック完了時点では同期、後続 spec で変数追加時には両ファイル更新を docs に明記
 
-### Documentation Components
-
-#### SetupReadme
+#### VercelJsonConfig
 
 | Field | Detail |
 |-------|--------|
-| Intent | `docs/setup/` のインデックスと Owner 用チェックリストで、初期セットアップを迷わず完了させる |
-| Requirements | 9.1, 9.2, 9.6 |
+| Intent | Vercel Cron スケジュール定義（`/api/cron/audio-purge` を毎日 03:00 JST）を `vercel.json` で宣言 |
+| Requirements | 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7 |
 
 **Responsibilities & Constraints**
-- 推奨実施順を明示: (1) Vercel → (2) Neon → (3) Resend → (4) Anthropic → (5) GitHub → (6) Local
-- Owner 用チェックリスト (Markdown チェックボックス) を含む:
+- `apps/web/vercel.json` を所有（`structure.md` L97 配置方針に従う）
+- 内容は `crons` 配列のみ:
+  ```json
+  {
+    "crons": [
+      {
+        "path": "/api/cron/audio-purge",
+        "schedule": "0 18 * * *"
+      }
+    ]
+  }
   ```
-  - [ ] Vercel アカウント作成 + bulr-web プロジェクト作成 (Root Dir = apps/web)
-  - [ ] Neon プロジェクト作成 + production branch DATABASE_URL 取得
-  - [ ] Neon dev branch 作成 + DATABASE_URL 取得
-  - [ ] Vercel に DATABASE_URL を Production / Preview の各 scope に登録
-  - [ ] Resend アカウント作成 + RESEND_API_KEY 取得 + Vercel に登録
-  - [ ] Anthropic Console + API キー取得 + 月額予算アラート設定 + Vercel に登録
-  - [ ] BETTER_AUTH_SECRET 生成 + Vercel に登録
-  - [ ] ADMIN_* 値生成 + Vercel に登録
-  - [ ] GitHub ブランチ保護ルール設定 (main + CI 必須)
-  - [ ] ローカル apps/web/.env.local を整備 + pnpm dev 動作確認
-  ```
-- 各 setup ドキュメントへのリンクと 1 行サマリー
-- 後続 spec が新外部サービス導入時の追加規約を末尾に記載
-
-**Contracts**: Documentation [x]
-
-#### VercelDoc
-
-| Field | Detail |
-|-------|--------|
-| Intent | Vercel プロジェクト初期化手順、Build 設定、環境変数登録手順を網羅する |
-| Requirements | 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3.4, 3.5, 6.4, 10.3 |
-
-**Responsibilities & Constraints**
-- 章構成:
-  1. 前提 (Vercel Hobby プラン無料、GitHub アカウント必要)
-  2. アカウント作成 + GitHub 連携手順
-  3. プロジェクト作成 (`bulr-web`、Root Directory = `apps/web`)
-  4. Build 設定:
-     - Framework Preset: Next.js
-     - Build Command: `cd ../.. && pnpm turbo build --filter=web` (monorepo ルートから実行)
-     - Install Command: `cd ../.. && pnpm install --frozen-lockfile`
-     - Output Directory: `.next` (Next.js デフォルト、変更不要)
-  5. Production Branch を `main` に設定
-  6. 環境変数登録 (Production / Preview / Development の 3 scope に対する各変数の割り当て表):
-     | 変数名 | Production | Preview | Development |
-     |---|---|---|---|
-     | DATABASE_URL | production branch URL | dev branch URL | dev branch URL (任意) |
-     | BETTER_AUTH_SECRET | 同じ値 | 同じ値 | 同じ値 |
-     | BETTER_AUTH_URL | https://prod-url | https://preview-url (Vercel が ${VERCEL_URL} を提供) | http://localhost:3000 (.env.local 推奨) |
-     | RESEND_API_KEY | 同じ Free key | 同じ | 同じ |
-     | NEXT_PUBLIC_APP_URL | https://prod-url | preview URL | http://localhost:3000 |
-     | ANTHROPIC_API_KEY | 同じキー | 同じ | 同じ |
-     | ADMIN_ALLOWED_EMAILS | Owner email + reviewers | 同じ | 同じ |
-     | ADMIN_BASIC_AUTH_USER | 同じ | 同じ | 同じ |
-     | ADMIN_BASIC_AUTH_PASSWORD | 同じ強パスワード | 同じ | 同じ |
-  7. 動作確認 (PR を立てて Preview URL がコメントされること、main マージで本番デプロイが起動すること)
-  8. `vercel.json` 不要の判断と理由
-  9. カスタムドメイン (`bulr.net` 等) は Stage 1 末期に必要なら追加 (リンクのみ)
+- スケジュール `0 18 * * *` は UTC 18:00 = JST 03:00 毎日（日本ユーザーが少ない時間帯）
+- Vercel Hobby プランの Cron 制限（1 日 2 回まで）を超えない（本スペックでは 1 日 1 回のみ）
+- `headers` / `rewrites` / `redirects` 等の余分な設定は持たない（後続 spec で必要時に追加）
+- 不変条件: route handler ファイル（`apps/web/app/api/cron/audio-purge/route.ts`）は **本スペックでは作成しない**（`assessment-engine` spec の責務）。Cron が呼び出された時点で route が未実装の場合、Vercel は 404 を返すが、これは `assessment-engine` spec 完了までの一時状態として許容
 
 **Dependencies**
-- Outbound: EnvExampleRoot (環境変数リストの参照元)、Vercel ダッシュボード (P0)
+- Inbound: Vercel ランタイム（デプロイ時に読み取る）（P0）
+- Outbound: なし
+- External: Vercel ホスティング（P0）
 
-**Contracts**: Documentation [x]
+**Contracts**: State
 
-**Implementation Notes**
-- Integration: Vercel ダッシュボードの UI 操作中心。スクリーンショットは付けず、文章で項目名を列挙 (Vercel UI 変更時の差分が小さいため)
-- Risks: Build Command の `cd ../..` パターンが Vercel 上で動作するか、Owner が初回セットアップ時に検証する必要 (代替: `vercel.json` で明示)。Stage 1 では「ダッシュボード設定で試行 → 動かなければ `vercel.json` 作成」の段階的アプローチを採る
-
-#### NeonDoc
-
-| Field | Detail |
-|-------|--------|
-| Intent | Neon Postgres プロジェクト作成、dev / production 2 ブランチ運用、migration 戦略を文書化 |
-| Requirements | 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 8.3, 8.4 |
-
-**Responsibilities & Constraints**
-- 章構成:
-  1. 前提 (Neon Free プラン、1 プロジェクト + 複数ブランチ可)
-  2. アカウント作成 + `bulr` プロジェクト作成
-  3. production branch (デフォルト) DATABASE_URL 取得手順
-  4. dev branch 作成 (production からブランチ) + DATABASE_URL 取得手順
-  5. ブランチ運用ルール:
-     - production = 本番データの単一の真実
-     - dev = 開発・スキーマ変更検証用、いつでも production からリブランチ可
-     - Vercel Preview は dev DATABASE_URL を共有 (Preview 同士で DB 競合の可能性は受容)
-  6. Migration workflow:
-     - ローカルで schema 変更 → `pnpm --filter @bulr/db generate` で migration ファイル生成
-     - dev branch には `pnpm --filter @bulr/db push` で高速反映 (履歴なし、開発反復用)
-     - production branch には `pnpm --filter @bulr/db migrate` で履歴付き反映 (PR レビュー後 main マージ前 or 直後に Owner が実施)
-  7. 警告: ローカル `.env.local` の `DATABASE_URL` を production branch に向けて誤書き込みしないこと (Owner ルール)
-  8. Free プラン制限 (storage 0.5 GB、compute 100 hours/月) が Stage 1 規模で十分
-
-**Contracts**: Documentation [x]
+##### State Management
+- State model: JSON ファイルの存在 + 内容
+- Persistence & consistency: git にコミット、Vercel デプロイ時に Vercel が読み取る
+- Concurrency strategy: 該当なし（宣言的設定）
 
 **Implementation Notes**
-- Integration: `packages/db/drizzle.config.ts` の `dbCredentials.url` が `DATABASE_URL` を読む経路 (`monorepo-foundation` 既存ロジック)
-- Risks: dev branch を production からリブランチすると過去の dev データが消える → 「dev はいつでも壊れて良い前提」を明文化
-- Stage 2 検討: production branch IP 制限 (Vercel IP のみ許可)、自動バックアップ確認
+- Integration: `tech.md` L246-250 のデプロイ構成に従い、`apps/web/vercel.json` 配置（Vercel プロジェクトの Root Directory `apps/web` 配下）
+- Validation: Vercel デプロイ後、Vercel ダッシュボードの Cron Jobs ページで `/api/cron/audio-purge` がスケジュール登録されていることを確認
+- Risks:
+  - Cron が登録されたのに route handler が未実装で Vercel ログに 404 が連日記録される → `assessment-engine` spec 完了までの一時的な状況として許容、ログを Vercel ダッシュボードで確認する程度の対応
+  - スケジュール表記の誤り（UTC と JST の取り違え） → コメントで明示、本スペックの docs/setup/cron.md でも明記
 
-#### ResendDoc
-
-| Field | Detail |
-|-------|--------|
-| Intent | Resend Free アカウント作成、API キー取得、Stage 1 のテストドメイン利用方針 |
-| Requirements | 4.1, 4.2, 4.3, 4.5, 4.6 |
-
-**Responsibilities & Constraints**
-- 章構成:
-  1. 前提 (Resend Free プラン、100 通/日、月 3,000 通)
-  2. アカウント作成
-  3. API キー生成 (`re_xxxxxxxx` 形式)
-  4. Vercel 環境変数 + ローカル `.env.local` への登録 (全 scope 同じキー)
-  5. Stage 1 では Resend テストドメイン (`onboarding@resend.dev` 等) を `from` に使う方針
-  6. カスタムドメイン認証 (DNS SPF / DKIM) は Stage 2 (`bulr.net` 接続時)
-  7. Free プラン制限が Stage 1 規模 (月数百通の Magic Link) に対して十分
-  8. トラブルシューティング: API キー漏洩時のローテーション (Resend ダッシュボードで再発行 → Vercel 環境変数更新 → 再デプロイ)
-
-**Contracts**: Documentation [x]
-
-#### AnthropicDoc
+#### DrizzleConfigUpdate
 
 | Field | Detail |
 |-------|--------|
-| Intent | Anthropic Console アカウント作成、API キー取得、月額予算アラート設定 |
-| Requirements | 5.1, 5.2, 5.4, 5.5, 10.1 |
+| Intent | `monorepo-foundation` で空文字 fallback されていた `dbCredentials.url` を、`process.env.DATABASE_URL` を確実に読み取る形に整える |
+| Requirements | 3.4, 3.5, 3.9, 1.7 |
 
 **Responsibilities & Constraints**
-- 章構成:
-  1. 前提 (Anthropic Console、Claude Sonnet 4.6 利用)
-  2. アカウント作成
-  3. API キー生成 (`sk-ant-xxxxxxxx` 形式)
-  4. Vercel 環境変数 + ローカル `.env.local` への登録 (全 scope 同じキー)
-  5. **必須**: 月額予算アラート設定 ($300 で警告、$500 で停止)
-  6. Stage 1 コスト目安 ($50-150/月、70 セッション × Sonnet 4.6) を提示
-  7. **警告**: `ANTHROPIC_API_KEY` は server-only。`NEXT_PUBLIC_` を絶対に付けない、クライアントコードから絶対に参照しない
-  8. トラブルシューティング: API キー漏洩時のローテーション + 予算超過時の挙動
+- `packages/db/drizzle.config.ts` を更新
+- `dbCredentials.url: process.env.DATABASE_URL!`（TypeScript の non-null assertion）または明示的な検証コードに置き換え
+- `monorepo-foundation` の `packages/db/src/client.ts` は既に `DATABASE_URL` 未定義時に throw する実装が入っているため、本スペックでは drizzle.config.ts の側のみ修正（client.ts は触らず、動作確認のみ）
 
-**Contracts**: Documentation [x]
+**Dependencies**
+- Inbound: `pnpm drizzle-kit push` / `migrate` / `generate` 実行時に読み取られる（drizzle-kit 実行フロー）
+- Outbound: `process.env.DATABASE_URL`
+- External: drizzle-kit 0.31.x（P0、`monorepo-foundation` 既設）
 
-#### GithubDoc
+**Contracts**: State
+
+**Implementation Notes**
+- Integration: `monorepo-foundation` の drizzle.config.ts が `?? ''` の形になっている場合、本スペックで `process.env.DATABASE_URL!` または明示的な validation に置き換える
+- Validation: `.env.local` に DATABASE_URL を設定して `pnpm --filter @bulr/db generate` が空 schema でも実行成功（migration ファイルは生成されないが、エラーも出ない）
+- Risks: `process.env.DATABASE_URL!` の non-null assertion は実行時 undefined だと runtime error になるが、drizzle-kit 実行時にすぐ判明するため許容
+
+### CI Layer
+
+#### CIWorkflow
 
 | Field | Detail |
 |-------|--------|
-| Intent | GitHub Actions 利用に必要なリポジトリ設定とブランチ保護ルール推奨 |
-| Requirements | 7.7, 10.6 |
+| Intent | PR ごと・main ブランチ push ごとに型チェック・lint・依存性脆弱性スキャンを自動実行し、本番ブランチにバグや脆弱性を混入させない |
+| Requirements | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 10.4 |
 
 **Responsibilities & Constraints**
-- 章構成:
-  1. GitHub Actions は本リポジトリで自動有効 (`.github/workflows/ci.yml` 配置で起動)
-  2. ブランチ保護ルール推奨設定 (Owner が GitHub UI で手動設定):
-     - `main` ブランチを保護対象に追加
-     - 「Require a pull request before merging」を有効化
-     - 「Require status checks to pass before merging」を有効化、必須 status check として `ci.yml` の job を指定 (typecheck / lint / audit)
-     - 「Require branches to be up to date before merging」を有効化 (推奨)
-     - 「Do not allow bypassing the above settings」を有効化 (Owner も含めて適用、Stage 1 では緩めて Owner 緊急 push を許容するか検討)
-  3. CI 失敗時は merge 不可、これにより `pnpm audit` の moderate 以上 fail も merge ブロックされる
-  4. Vercel との関係: Vercel デプロイの成否は branch protection には含めない (Vercel 側で Preview 失敗時に PR コメントで通知される)
+- `.github/workflows/ci.yml` を所有
+- トリガ: `pull_request` の `opened` / `synchronize` および `push` の `branches: [main]`
+- ジョブ構成: 単一ジョブ `ci`（runs-on: `ubuntu-latest`）
+- ステップ:
+  1. `actions/checkout@v4` でリポジトリ取得
+  2. `pnpm/action-setup@v4` で pnpm 10 セットアップ
+  3. `actions/setup-node@v4` で Node.js 22 LTS セットアップ + `cache: 'pnpm'`
+  4. `pnpm install --frozen-lockfile`
+  5. `pnpm typecheck`
+  6. `pnpm lint`
+  7. `pnpm audit --audit-level=moderate`
+- 不変条件: シークレット（DATABASE_URL 等）を必要としない（外部接続なし）
 
-**Contracts**: Documentation [x]
+**Dependencies**
+- Inbound: GitHub Actions ランタイム（P0）
+- Outbound: pnpm install / pnpm scripts（`monorepo-foundation` 既設）
+- External: GitHub 公式アクション（actions/checkout、actions/setup-node、pnpm/action-setup）（P0）
 
-#### LocalDoc
+**Contracts**: Batch
+
+##### Batch / Job Contract
+- Trigger: GitHub の `pull_request` および `push` イベント
+- Input / validation: PR ブランチまたは main ブランチの最新コミット
+- Output / destination: GitHub Actions の checks（成功/失敗ステータス）
+- Idempotency & recovery: 同一コミットに対しては再実行可能、フェイル時は PR 上で「checks failed」表示。`pnpm audit` での既知脆弱性は依存性更新で解決
+
+**Implementation Notes**
+- Integration: dishxdish の `multi-env-infrastructure` spec の CI 構成を参考に最小化（Stage 1 では gitleaks / Dependabot / CodeQL は導入せず、Stage 2 で追加）
+- Validation: PR 作成時に GitHub Actions タブで 4 ステップが順次実行され、全成功で「all checks passed」表示
+- Risks:
+  - `pnpm audit --audit-level=moderate` で false positive がある場合、PR が頻繁に fail するリスク → 必要時に `--ignore` オプションで個別除外（本スペックでは初期は何も除外しない）
+  - pnpm キャッシュが効かない場合、CI 時間が長くなる → `actions/setup-node` の `cache: 'pnpm'` で対応
+
+### Documentation Layer
+
+#### DocsSetupReadme
 
 | Field | Detail |
 |-------|--------|
-| Intent | ローカル開発者が `.env.local` を整備し、Drizzle で Neon dev branch に接続する手順 |
-| Requirements | 8.1, 8.5, 8.6 |
+| Intent | `docs/setup/` ディレクトリのインデックス。新規開発者・Owner が「どの順序で何をすればいいか」を 1 ページで把握できる |
+| Requirements | 8.1, 8.2, 8.3, 8.4, 8.6, 9.1, 9.2 |
 
 **Responsibilities & Constraints**
-- 章構成:
-  1. 前提 (`monorepo-foundation` 完了済み、Owner から Neon dev DATABASE_URL を共有済み)
-  2. 手順:
-     - `cp apps/web/.env.local.example apps/web/.env.local`
-     - 各値を記入 (Owner から共有された DATABASE_URL / RESEND_API_KEY / ANTHROPIC_API_KEY、自分で生成する BETTER_AUTH_SECRET 等)
-     - `pnpm install` (リポジトリルート)
-     - `pnpm dev` で `http://localhost:3000` 起動
-     - `pnpm --filter @bulr/db push` で dev branch にスキーマ反映 (後続 spec が schema を追加した後)
-  3. 警告: `DATABASE_URL` を production branch に向けないこと
-  4. トラブルシューティング: `DATABASE_URL is required` エラー → `.env.local` 配置場所を確認
+- `docs/setup/README.md` を所有
+- 推奨実行順序を明示（例: 1. Neon → 2. Resend → 3. OpenAI → 4. Anthropic → 5. Vercel プロジェクト作成 → 6. Vercel Blob → 7. CRON_SECRET 登録 → 8. 環境変数の Vercel 登録 → 9. CI 確認 → 10. drizzle-kit 初回 push）
+- 各ステップへの相対リンク（`./neon.md` 等）
+- 環境マッピング規約（local / Vercel Preview / Vercel Production の 3 段階、staging なし）を明示
+- すべて Owner 手動実施の前提
 
-**Contracts**: Documentation [x]
+**Dependencies**
+- Inbound: `RootReadme` がリンク（README.md → docs/setup/README.md）
+- Outbound: 各 SetupDoc（`./vercel.md` 等）（P0）
+
+**Contracts**: State
+
+**Implementation Notes**
+- Integration: dishxdish の `docs/setup/README.md` 構造を参考に、bulr Stage 1 用に簡略化（4 環境構成 → 2 環境構成、加えて Vercel Blob と Cron を追加）
+- Validation: 新規開発者がこのインデックスから順番にリンクを辿れば全セットアップが完了する
+- Risks: 推奨順序が実情と合わなくなる → 後続 spec の実装フィードバックで都度更新
 
 #### EnvVarsDoc
 
 | Field | Detail |
 |-------|--------|
-| Intent | 環境変数の早見表、`NEXT_PUBLIC_` 規約、シークレットローテーション手順を集約 |
-| Requirements | 1.5, 1.7, 6.2, 10.1, 10.2, 10.3, 10.5 |
+| Intent | 12 環境変数の総合リファレンス。各変数の用途・参照元・公開可否・Vercel 登録先・ローカル設定方法を 1 ページに集約 |
+| Requirements | 1.4, 1.8, 4.5, 4.7, 5.6, 5.7, 9.1, 9.3, 9.4, 9.6, 10.3, 10.5 |
 
 **Responsibilities & Constraints**
-- 章構成:
-  1. Stage 1 環境変数早見表 (変数名 / 用途 / scope / `NEXT_PUBLIC_` 可否 / 取得元 setup ドキュメント)
-  2. `NEXT_PUBLIC_` 規約: クライアントバンドルに含まれるため公開可の値のみ。サーバー専用は絶対に付けない
-  3. 後続 spec が新変数を追加する際の規約: ルート `.env.example` と `apps/web/.env.local.example` の両方を更新する
-  4. シークレット強パスワード生成コマンド集:
-     - `BETTER_AUTH_SECRET`: `openssl rand -hex 32`
-     - `ADMIN_BASIC_AUTH_PASSWORD`: `openssl rand -base64 24`
-  5. ローテーション手順 (各シークレットごとに):
-     - Resend API キー: Resend ダッシュボードで再発行 → Vercel 環境変数更新 → 再デプロイ
-     - Anthropic API キー: 同上 (Anthropic Console)
-     - Better Auth Secret: ローテーション時は全セッション無効化される副作用を理解した上で実施
-     - Admin Basic Auth Password: 同様に Vercel 環境変数を更新 → 再デプロイ
-
-**Contracts**: Documentation [x]
-
-#### ReadmePointer
-
-| Field | Detail |
-|-------|--------|
-| Intent | リポジトリルート `README.md` に setup ポインタを最小限追記 |
-| Requirements | 9.4 |
-
-**Responsibilities & Constraints**
-- `monorepo-foundation` が書いた既存 `README.md` の内容を保ったまま、「初期セットアップは `docs/setup/README.md` を参照」を 1-2 行追加するのみ
-- 既存セクションを書き換えない、新セクションは追加可
-
-**Contracts**: Documentation [x]
-
-### CI/CD Components
-
-#### CiYml
-
-| Field | Detail |
-|-------|--------|
-| Intent | PR 時と main push 時に typecheck + lint + audit を自動実行する最小 GitHub Actions ワークフロー |
-| Requirements | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 10.6 |
-
-**Responsibilities & Constraints**
-- ファイル: `.github/workflows/ci.yml`
-- トリガー: `pull_request` to `main` および `push` to `main`
-- ジョブ構成 (単一 job 内で順次実行 or 並列 job 化、後者を推奨):
-  - `setup` job: Node.js 22 LTS + pnpm 10 セットアップ + `pnpm install --frozen-lockfile`
-  - `typecheck` job: `pnpm typecheck`
-  - `lint` job: `pnpm lint`
-  - `audit` job: `pnpm audit --audit-level=moderate`
-- 各 job は `setup` 完了後に並列実行可能 (キャッシュ活用)
-- `pnpm build` は CI で実行しない (Vercel が PR で実施するため)
-- テスト実行は本スペックでは含めない (テストフレームワーク導入 spec で追加)
+- `docs/setup/env-vars.md` を所有
+- 12 変数すべてについて、テーブル形式または変数ごとのセクションで以下を記述:
+  - 用途
+  - 参照元（どの spec / どのファイル）
+  - 公開可否（クライアント / サーバー専用）
+  - Vercel 登録先（Production / Preview / 両方）
+  - ローカル `.env.local` での設定方法
+  - 値の取得元（Neon ダッシュボード / Resend ダッシュボード / 手動生成 等）
+- DATABASE_URL の Production / Preview 使い分け（Production = production branch、Preview = dev branch）を強調
+- すべての NEXT_PUBLIC_ 以外の変数がサーバー専用である旨を明示
 
 **Dependencies**
-- Outbound: `monorepo-foundation` の pnpm scripts (`typecheck`、`lint`) (P0)
-- External: GitHub Actions、`pnpm/action-setup`、`actions/setup-node`、`actions/checkout` (P0)
+- Inbound: `DocsSetupReadme` からリンク、各 SetupDoc からも詳細リファレンスとして参照
+- Outbound: なし
+- External: `tech.md` L212-236 の環境変数リストを 1:1 でカバー
 
-**Contracts**: Service [x] (CI ワークフロー)
-
-##### Service Interface (`.github/workflows/ci.yml` 構造例)
-
-```yaml
-name: CI
-
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm audit --audit-level=moderate
-```
-
-- Preconditions: リポジトリに `package.json` (`monorepo-foundation` 提供) と各 workspace の typecheck / lint script が存在
-- Postconditions: 全 step 成功で exit 0、いずれか失敗で exit 非 0 → GitHub PR チェックが赤
-- Invariants: シークレットを CI ログに出力しない (今は使わないが将来 secrets 追加時に注意)
+**Contracts**: State
 
 **Implementation Notes**
-- Integration: `monorepo-foundation` の `pnpm typecheck` / `pnpm lint` がエラーなく通る前提
-- Validation: 本スペック完了後に test PR を作成して CI が走ることを確認
-- Risks:
-  - `pnpm audit` が moderate 脆弱性を新たに検出した場合、PR が止まる → 本スペック完了直後に脆弱性が出る可能性は低いが、出た場合は依存パッケージ更新で対応
-  - 並列 job 化すると workflow が複雑化する → Stage 1 では単一 job で順次実行を採用 (`ci` job 内に複数 step)。並列化は必要になった時点で再検討
+- Integration: `tech.md` の環境変数セクションを拡張する形で、Vercel 登録先と公開可否の列を追加
+- Validation: 全 12 変数が `.env.example` と一致、各変数の用途が後続 spec のレビューで誤解されないこと
+- Risks: 後続 spec で変数が追加された際に同期漏れ → 後続 spec の design.md レビュー時に「.env.example と env-vars.md を更新したか」を確認項目に含める
+
+#### VercelSetupDoc / NeonSetupDoc / ResendSetupDoc / OpenAISetupDoc / AnthropicSetupDoc / VercelBlobSetupDoc / CronSetupDoc / DrizzleKitOpsDoc
+
+各セットアップ手順ドキュメントは以下の共通構造を持つ:
+
+| Field | Detail |
+|-------|--------|
+| Intent | 各サービスのアカウント作成・API キー取得・Vercel 環境変数登録の手順を Owner が再現可能な形で記述 |
+| Owner / Reviewers | プロジェクトオーナー |
+
+**Responsibilities & Constraints**
+- 該当サービスのアカウント作成 URL とプラン選択（Free / Hobby）を明示
+- API キー（または接続文字列）取得手順を画面操作レベルで記述
+- Vercel 環境変数への登録手順（Production / Preview / 両方）
+- ローカル `.env.local` への設定手順
+- 完了確認方法（例: ダッシュボードで API キーが表示される、Vercel 環境変数一覧に登録されている）
+
+**Per-Doc 個別事項**:
+- **VercelSetupDoc** (`vercel.md`): Vercel プロジェクト `bulr-web` 作成、Root Directory = `apps/web`、Framework Preset = Next.js、GitHub 連携、Vercel Hobby プラン前提（Req 2.x）
+- **NeonSetupDoc** (`neon.md`): Neon プロジェクト作成、production プライマリ + dev ブランチ分岐、各 DATABASE_URL（pooled connection 推奨）取得、Vercel Production / Preview 別々登録（Req 3.1, 3.2, 3.3, 9.4, 9.6）
+- **ResendSetupDoc** (`resend.md`): Resend Free アカウント、テストドメイン送信、`RESEND_API_KEY` 取得、カスタムドメイン認証は Stage 2 で（Req 4.1, 4.2, 4.5）
+- **OpenAISetupDoc** (`openai.md`): OpenAI アカウント、Whisper API（whisper-1）利用、`OPENAI_API_KEY` 取得、Usage Limit 月 $50-100 推奨（Req 4.1, 4.3, 4.5）
+- **AnthropicSetupDoc** (`anthropic.md`): Anthropic アカウント、Claude Sonnet 4.6 利用、`ANTHROPIC_API_KEY` 取得、Usage Limit 月 $150-300 推奨（Req 4.1, 4.4, 4.5）
+- **VercelBlobSetupDoc** (`vercel-blob.md`): Vercel ダッシュボードから Blob ストア `bulr-audio` 単一ストア作成、`BLOB_READ_WRITE_TOKEN` が自動的に Vercel 環境変数（Production / Preview 両方）に追加されることを確認、無料枠 1GB/月、保存期間 30 日（後続 Cron で削除）（Req 5.1, 5.2, 5.3, 5.6）
+- **CronSetupDoc** (`cron.md`): `CRON_SECRET` を `openssl rand -base64 32` で生成（最低 32 バイト推奨）、Vercel Production / Preview 両方に登録、Vercel Cron からの呼び出しは `Authorization: Bearer <CRON_SECRET>` ヘッダで送信される旨説明、route handler 側の検証は `assessment-engine` spec の責務（Req 5.4, 5.5, 5.7, 6.6, 10.6）
+- **DrizzleKitOpsDoc** (`drizzle-kit.md`): dev branch には `pnpm --filter @bulr/db push`、production branch には `pnpm --filter @bulr/db generate` で `packages/db/drizzle/<番号>_<suffix>.sql` を生成（drizzle-kit が決定するファイル名、ハードコードしない）→ git コミット → レビュー → `pnpm --filter @bulr/db migrate` で本番反映、本番に直接 push を実行しない方針を明示（Req 3.6, 3.7, 3.8, 9.5）
+
+**Contracts**: State
+
+**Implementation Notes**
+- Integration: dishxdish の `docs/setup/` の各サービス手順を bulr Stage 1 用に簡略化（4 環境 → 2 環境）、Vercel Blob と Cron は bulr 独自の追加
+- Validation: 各手順を Owner が実際に実行して完了確認方法を満たせること
+- Risks: 各サービスのダッシュボード UI が変わると手順スクリーンショットが古くなる → スクリーンショットを画像でなくテキスト手順で記述、UI 変更があった際の更新を README で促す
+
+### Root README Update
+
+#### RootReadme
+
+| Field | Detail |
+|-------|--------|
+| Intent | リポジトリのトップレベル README に「セットアップ手順は `docs/setup/README.md` を参照」のリンクを追加し、新規開発者の入り口を明示 |
+| Requirements | 8.1 |
+
+**Responsibilities & Constraints**
+- `monorepo-foundation` で作成された `README.md` に、セットアップセクションまたは `docs/setup/README.md` へのリンクを追記
+- 既存の README 内容を尊重し、過剰な書き換えはしない
+- リンク先 `docs/setup/README.md` がインデックスとして機能していることを確認
+
+**Dependencies**
+- Inbound: なし（リポジトリのトップエントリ）
+- Outbound: `DocsSetupReadme`（リンク先）
+
+**Contracts**: State
+
+**Implementation Notes**
+- Integration: `monorepo-foundation` の README をベースに、Setup セクションを 1 つ追加するだけの最小変更
+- Validation: GitHub のリポジトリトップで README が表示され、Setup リンクをクリックして `docs/setup/README.md` に遷移できる
+- Risks: なし（最小変更）
 
 ## Data Models
 
-本スペックでは「環境変数の構造」と「Vercel 環境変数 scope」のみがデータと言える。アプリケーションテーブル定義 (`assessment_session` 等) は対象外 (`monorepo-foundation` の Out of Boundary、後続 spec が追加)。
+本スペックでは新規データモデルを定義しない。
 
-### Logical Data Model（環境変数）
-
-| Variable | Type | Source | Vercel Production | Vercel Preview | Vercel Development | Local `.env.local` | NEXT_PUBLIC_ |
-|----------|------|--------|-------------------|----------------|--------------------|--------------------| ---|
-| `DATABASE_URL` | string (URL) | Neon | production branch | dev branch | dev branch (任意) | dev branch | NO |
-| `BETTER_AUTH_SECRET` | string (hex 32) | `openssl rand -hex 32` | 同値 | 同値 | 同値 | 同値 | NO |
-| `BETTER_AUTH_URL` | string (URL) | scope ごとに調整 | https prod | preview URL | http://localhost:3000 | http://localhost:3000 | NO |
-| `RESEND_API_KEY` | string (`re_*`) | Resend | 同 Free key | 同 | 同 | 同 | NO |
-| `NEXT_PUBLIC_APP_URL` | string (URL) | scope ごとに調整 | https prod | preview URL | http://localhost:3000 | http://localhost:3000 | YES |
-| `ANTHROPIC_API_KEY` | string (`sk-ant-*`) | Anthropic | 同キー | 同 | 同 | 同 | NO |
-| `ADMIN_ALLOWED_EMAILS` | string (CSV) | Owner | 本番許可リスト | 同 (Stage 1 簡略化) | 同 | 同 | NO |
-| `ADMIN_BASIC_AUTH_USER` | string | Owner | 共通値 | 同 | 同 | 同 | NO |
-| `ADMIN_BASIC_AUTH_PASSWORD` | string | `openssl rand -base64 24` | 強パスワード | 同 | 同 | 同 | NO |
-
-### Schema location
-
-- リポジトリルート `.env.example` (placeholder + コメント)
-- `apps/web/.env.local.example` (同期コピー)
-- Vercel 環境変数 (実値、ダッシュボードで管理)
-- ローカル `apps/web/.env.local` (gitignore、開発者個別)
-
-### Out of scope (後続 spec で定義)
-
-- DB アプリケーションテーブル (`user_profile`、`assessment_session` 等)
-- DB の seed データ (57 状況パターン)
+- 環境変数は OS / Vercel ランタイムが管理する key-value ペア（`process.env.X` で参照）
+- DB スキーマ実体は後続 spec（`assessment-pattern-seed` / `authentication` / `assessment-engine`）が `packages/db/src/schema/*.ts` に追加
+- `vercel.json` の `crons` 配列は Vercel が読み取る宣言的設定で、独自データモデルではない
 
 ## Error Handling
 
 ### Error Strategy
 
-本スペックは設定とドキュメント中心のため、ランタイムエラーは限定的:
+本スペックは設定ファイルとドキュメント中心のため、独自のエラーハンドリングは持たない。代わりに以下の標準的なエラーが発生する：
 
-- **`DATABASE_URL` 未設定エラー**: `monorepo-foundation` で実装済みの `packages/db/src/client.ts` が起動時に `throw new Error('DATABASE_URL is required')` を発行 (Fail Fast)。本スペックは `.env.local` / Vercel 環境変数で `DATABASE_URL` を必ず提供する責任を持つ。
-- **CI 失敗 (typecheck / lint / audit)**: GitHub Actions が exit 非 0 で PR チェックを失敗させる。Owner / 開発者は Logs で原因確認 → 修正 → 再 push。
-- **Vercel ビルド失敗**: Vercel ダッシュボードと PR コメントで通知。Owner が Vercel Logs で原因確認 → 修正。
-- **Resend / Anthropic / Neon API 障害**: 本スペックでは API 呼び出しを行わないため発生しない (後続 spec の責務)。
+- **`pnpm install --frozen-lockfile` 失敗（CI）**: lockfile と `package.json` の不整合 → 開発者が `pnpm install` で lockfile を更新してコミット
+- **`pnpm typecheck` 失敗（CI）**: TypeScript エラー → 該当ファイル位置と型エラーメッセージを GitHub Actions ログに表示
+- **`pnpm lint` 失敗（CI）**: ESLint エラー → 該当ルール違反位置を表示
+- **`pnpm audit --audit-level=moderate` 失敗（CI）**: moderate 以上の依存性脆弱性 → 該当パッケージを更新するか、レビュー後に許容判断
+- **`pnpm drizzle-kit *` 失敗（DATABASE_URL 未定義）**: drizzle-kit が標準エラー出力 → 開発者が `.env.local` に DATABASE_URL を設定
+- **Vercel Cron が 404 を返す**: route handler 未実装（`assessment-engine` spec 完了まで）→ 一時状態として許容、Vercel ダッシュボードのログで観測
 
 ### Error Categories and Responses
 
-- **環境変数欠落**: 起動時に明示的エラー → 開発者は `docs/setup/local.md` のトラブルシューティングを参照
-- **CI 設定不備**: 例えば `pnpm` バージョン不一致 → ci.yml の `pnpm/action-setup` の `version: 10` を確認
-- **`pnpm audit` で脆弱性検出**: 該当パッケージを更新 (推奨) または audit `--audit-level=high` への一時緩和 (非推奨、最終手段)
-- **シークレット誤コミット**: `.gitignore` で `.env.local` / `.env*.local` を除外。万一コミットされた場合は: (1) git history を `git filter-branch` 等で除去、(2) 該当シークレットを即座にローテーション (`docs/setup/env-vars.md` のローテーション手順に従う)
+該当なし（本スペックには runtime コードがほぼ存在しない）。
 
 ### Monitoring
 
-本スペックではアプリケーションモニタリングは導入しない (Stage 2 で PostHog / Sentry / Helicone 検討)。Vercel 標準ダッシュボードと Anthropic Console での手動コスト確認のみ。
+本スペックでは独自の監視を追加しない。Vercel ダッシュボード（Deployments / Logs / Cron Jobs）の標準機能で監視。Stage 2 で Sentry / PostHog / Helicone / BetterStack を導入。
 
 ## Testing Strategy
 
-本スペックは設定とドキュメントが中心のため、自動テストは導入しない。動作確認は Owner と新規開発者の Manual Smoke Tests で行う。
+本スペックではテストフレームワーク（Vitest / Playwright 等）を導入しない。代わりに以下の **動作確認手順** を完了条件とする：
 
-### Default sections
+### Manual Smoke Test Items
 
-- **Unit Tests**: 本スペックでは導入しない
-- **Integration Tests**: 本スペックでは導入しない
-- **E2E/UI Tests**: 本スペックでは導入しない
-- **Manual Smoke Tests**（本スペックの完了確認、`tasks.md` の Validation フェーズで実施）:
-  1. リポジトリルート `.env.example` を `cat` で開き、Stage 1 環境変数 9 個がすべて記載され、各々にコメントがあることを確認
-  2. `apps/web/.env.local.example` がルート `.env.example` と同期していることを diff で確認
-  3. `docs/setup/README.md` を開き、推奨実施順とチェックリストが含まれることを確認
-  4. `docs/setup/{vercel,neon,resend,anthropic,github,local,env-vars}.md` 7 ファイルがすべて存在し、各々が章立てされていることを確認
-  5. `.github/workflows/ci.yml` を開き、`pull_request` トリガー、Node.js 22、pnpm 10、`typecheck` / `lint` / `audit` step が記載されていることを確認
-  6. test PR を作成し、GitHub Actions の CI が走り、各 step が成功 (or 既知の audit 警告のみ) で exit することを確認
-  7. (Owner 実施) Vercel プロジェクトを `docs/setup/vercel.md` 通りに作成し、PR で Preview デプロイ + main マージで本番デプロイが起動することを確認
-  8. (Owner 実施) Neon dev / production の 2 ブランチ DATABASE_URL が Vercel に登録され、Vercel Preview から dev branch にクエリ可能なことを (`assessment-engine` spec 実装後に) 確認
-  9. (Owner 実施) `cp apps/web/.env.local.example apps/web/.env.local` してすべての値を埋め、`pnpm dev` で http://localhost:3000 が動作することを確認
-  10. (Owner 実施) `pnpm --filter @bulr/db push` が dev branch に対してエラーなく完了すること (空スキーマでも成功する想定)
+1. **`.env.example` 完整性**
+   - ルート `.env.example` を開き、12 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）が含まれていること、コメントが記載されていること、実シークレットを含まないことを目視確認
+   - 検証要件: 1.1, 1.2, 1.3, 1.4, 1.8, 10.2, 10.7
 
-> 上記の Manual Smoke Tests を `tasks.md` の Validation フェーズタスクとして配置する。
+2. **ローカル `.env.local` 経由で `pnpm dev` 起動**
+   - `cp apps/web/.env.local.example apps/web/.env.local` を実行、Neon dev branch の DATABASE_URL を埋める
+   - `pnpm dev` で apps/web (port 3000) が起動し、HTTP 200 を返すことを確認
+   - 検証要件: 1.5, 1.7, 3.9
+
+3. **`apps/web/vercel.json` の構造検証**
+   - JSON として有効、`crons` 配列に `path: "/api/cron/audio-purge"` と `schedule: "0 18 * * *"` が含まれていることを確認
+   - `headers` / `rewrites` / `redirects` 等が含まれていないことを確認
+   - 検証要件: 6.1, 6.2, 6.3, 6.4
+
+4. **`packages/db/drizzle.config.ts` の DATABASE_URL 読み取り検証**
+   - DATABASE_URL を設定した状態で `pnpm --filter @bulr/db generate` を実行、空 schema でもエラーなく完了
+   - DATABASE_URL を未設定で実行すると drizzle-kit がエラーを返すことを確認
+   - 検証要件: 3.4, 3.5
+
+5. **CI workflow の動作確認**
+   - PR を立てて GitHub Actions が起動、4 ステップ（install / typecheck / lint / audit）が順次実行され、すべて成功して「all checks passed」表示
+   - 検証要件: 7.1, 7.2, 7.5, 7.6, 7.7, 7.9
+
+6. **Vercel デプロイ確認（Owner 手動）**
+   - Owner がドキュメント手順通りに Vercel プロジェクト `bulr-web` を作成、main ブランチ push で本番デプロイが成功し、`https://bulr-web.vercel.app/` が HTTP 200 を返すことを確認
+   - PR を立てると Preview デプロイが自動生成されることを確認
+   - 検証要件: 2.7
+
+7. **Vercel Cron 登録確認（Owner 手動、デプロイ後）**
+   - Vercel ダッシュボードの Cron Jobs ページで `/api/cron/audio-purge` がスケジュール登録されていることを確認（route handler 未実装で 404 になるが、Cron 登録自体は成功）
+   - 検証要件: 6.5, 6.7
+
+8. **Vercel 環境変数登録確認（Owner 手動）**
+   - Vercel 環境変数ページで Production / Preview に 12 変数すべてが登録されていることを確認、特に DATABASE_URL は Production = production branch、Preview = dev branch であることを確認
+   - 検証要件: 2.3, 4.7, 5.6, 5.7, 9.3, 9.4, 9.6
+
+9. **`docs/setup/README.md` インデックス確認**
+   - インデックスから各セットアップ手順への相対リンクが正しく機能、推奨実行順序が明記されていることを確認
+   - 検証要件: 8.1, 8.2, 8.3
+
+10. **README.md セットアップリンク確認**
+    - リポジトリトップ README にセットアップセクションまたは `docs/setup/README.md` へのリンクが追加されていることを確認
+    - 検証要件: 8.1
+
+> 上記 10 項目は手動スモークテスト。Owner 手動実施を要する項目（6, 7, 8）は本スペック完了の最終確認として、Owner がチェックリスト形式で実行する。
 
 ## Security Considerations
 
-`security.md` の Stage 1 必須項目のうち、本スペックで担う部分:
+`security.md` の脅威カテゴリのうち、本スペックは以下に直接該当する：
 
-- **シークレット環境変数分離**: Vercel Production / Preview を分離 scope で登録 (Requirement 10.3)、Production = production branch / Preview = dev branch DB
-- **`NEXT_PUBLIC_` 規約**: `NEXT_PUBLIC_APP_URL` 以外はクライアント公開禁止 (Requirement 10.1, 10.2)
-- **`.env.local` の gitignore**: `monorepo-foundation` で導入済み、本スペックで存在を確認 (Requirement 10.4)
-- **`pnpm audit --audit-level=moderate` を CI で強制**: PR で moderate 以上検出時 fail → branch protection で merge ブロック (Requirement 10.6)
-- **シークレット強パスワード生成**: `openssl rand` 系コマンドを `docs/setup/env-vars.md` で文書化 (Requirement 6.2)
-- **シークレットローテーション手順**: 各シークレットの再発行 → Vercel 更新 → 再デプロイ手順を文書化 (Requirement 10.5)
+- **シークレット漏洩**: `.env.example` に実シークレット値を含めない、`.gitignore` で `.env*.local` を除外、Vercel 環境変数はダッシュボード経由のみで登録、CI で `pnpm audit` を実行（`security.md` L203-216 準拠）
+- **CRON_SECRET 認証**: 本スペックでは `CRON_SECRET` の生成と Vercel 登録のみ（最低 32 バイトランダム）、route handler 側の `Authorization: Bearer` 検証は `assessment-engine` spec の責務（`security.md` L255-267 参照）
+- **本番 DB の保護**: Vercel Preview = dev branch DATABASE_URL を共有する規約、Production には production branch のみ登録する規約を docs で明示。本番 DB に対する直接 push を禁止し、`drizzle-kit migrate` のみを許可
 
-本スペックでは認証ロジック / Zod 入力検証 / SQL injection 対策 / LLM 防御は範囲外 (後続 spec で対応)。
+`security.md` の他の項目（多層認証、Zod 入力検証、LLM スコープ束縛、CSP / マイク権限ヘッダー、レート制限、SQL インジェクション対策、音声 30 日自動削除のロジック）はすべて後続 spec の責務。本スペックではそれらが実装可能な土台（環境変数 + Cron スケジュール + DB 接続）を提供する。
 
-### 追加検討 (Stage 2)
+## Open Questions / Risks
 
-- gitleaks / Dependabot / CodeQL の有効化
-- Neon production branch IP 制限 (Vercel IP のみ)
-- 監査ログ
-- DB IP allowlist
-
-## Performance & Scalability
-
-本スペックは性能要求対象外 (設定とドキュメント中心)。間接的な性能影響:
-
-- **Vercel Hobby プラン制限**: 100 GB-hours/月 の Function 実行時間。Stage 1 規模 (70 セッション × 30-40 分) では十分余裕。Stage 2 で Pro 検討。
-- **Neon Free プラン制限**: storage 0.5 GB、compute 100 hours/月。Stage 1 規模で十分。
-- **Resend Free プラン制限**: 100 通/日。Stage 1 規模 (Magic Link 月数百通) で十分。
-- **CI 実行時間**: typecheck + lint + audit で 1-2 分程度。GitHub Actions 無料枠 2,000 分/月 の範囲内。
-
-## Migration Strategy
-
-`monorepo-foundation` 完了直後の状態に対する追加であり、既存ファイルの破壊的変更はなし。`README.md` のみ最小追記 (1-2 行)。Owner と既存開発者への影響:
-
-- 既存開発者 (もしいれば): `git pull` 後に `cp apps/web/.env.local.example apps/web/.env.local` を実行 → 各値を記入 (Owner から共有)。`pnpm install` 不要 (新規パッケージ追加なし)。
-- Owner: 本スペック完了後、`docs/setup/README.md` のチェックリストに沿って Vercel / Neon / Resend / Anthropic / GitHub の手動セットアップを実施。
-
-## Supporting References
-
-- 参照プロジェクト: `/Users/takaaki.tanno/Documents/workspace/github/dishxdish-app-mvp/.kiro/specs/multi-env-infrastructure/` (4 環境構成、bulr では 2 環境に簡略化)
-- steering: `.kiro/steering/tech.md`、`.kiro/steering/security.md`、`.kiro/steering/structure.md`
-- 上流 spec: `.kiro/specs/monorepo-foundation/design.md` (drizzle.config.ts、packages/db/src/client.ts、`.gitignore` の `.env.local` 除外を導入済み)
-- brief: `.kiro/specs/multi-env-infrastructure/brief.md`
-- 公式ドキュメント:
-  - Vercel Monorepo: https://vercel.com/docs/monorepos
-  - Neon Branching: https://neon.tech/docs/introduction/branching
-  - Resend Send Email: https://resend.com/docs/send-with-nodejs
-  - Anthropic Console: https://console.anthropic.com/
-  - GitHub Actions for Node.js: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+- **Neon の接続プール選択（pooled vs unpooled）**: Vercel サーバーレスでは pooled connection が推奨だが、`drizzle-kit migrate` 実行時には unpooled（direct connection）が必要なケースがある。`docs/setup/neon.md` で「Vercel ランタイム = pooled、ローカル drizzle-kit = unpooled」のように使い分け方針を明示するか、pooled 1 本で運用するかを Owner と要相談（本スペックでは pooled で開始、必要時に追記）
+- **Vercel Hobby プランの Cron 1 日 2 回制限**: 現状 `/api/cron/audio-purge` 1 回のみで余裕あるが、Stage 1 後半で別 Cron（例: 健全性チェック）が必要になる場合 Hobby では収まらない可能性 → Stage 2 で Pro プラン移行を検討
+- **`pnpm audit --audit-level=moderate` の false positive 頻度**: 既知の脆弱性が頻繁に検出される場合、PR がしばしば fail するリスク → 必要時に `--ignore` オプションで個別除外、ただし本スペックでは初期は何も除外せずに開始
+- **`apps/web/.env.local.example` と ルート `.env.example` の同期**: 後続 spec で変数追加時に両方の更新を忘れるリスク → 後続 spec の PR レビュー時に「.env.example 系を 2 つとも更新したか」を必須チェック項目とすることを `docs/setup/env-vars.md` に明記
+- **Vercel Blob の単一ストア `bulr-audio` 命名**: Stage 2 で Cloudflare R2 移行時に bucket 名と一致させたいが、bulr-audio が R2 で利用可能か未確認 → Stage 1 では Vercel Blob のみ、R2 移行時に再検討
+- **`vercel.json` 配置位置**: `apps/web/vercel.json` か ルート `vercel.json` か。Vercel プロジェクトの Root Directory を `apps/web` に設定するため `apps/web/vercel.json` が正解（`structure.md` L97 準拠）。仮にルート配置にすると Vercel が読まないリスクがあるため、本スペックでは `apps/web/vercel.json` で固定

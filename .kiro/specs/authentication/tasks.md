@@ -1,347 +1,368 @@
-# Implementation Plan: authentication
+# Implementation Plan — authentication
 
-> 本タスクリストは bulr Stage 1 MVP の認証境界 2 種（受験者 = Magic Link、創業者/管理者 = Basic 認証 + 許可メール二重チェック）を、Better Auth 1.6.x + Resend + Drizzle ORM + Next.js 16 で構築する。`monorepo-foundation` で整備された apps/web スケルトンと packages/db、`multi-env-infrastructure` で確立された環境変数規約 (`BETTER_AUTH_*` / `RESEND_API_KEY` / `ADMIN_*`) を前提とする。
-> ファイルパスはすべてリポジトリルート `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/` を起点とした相対パスで記載する。
-> 後続 spec (`assessment-engine` / `admin-review-panel`) は本スペックが提供する `apps/web/lib/guards.ts` と `apps/web/lib/safe-action.ts` の API のみを依存先とする。
+> 本スペックは bulr Stage 1 の認証基盤（Better Auth 1.6.x + Magic Link + Resend + Basic 認証 + DB ベースレート制限）を確立する。すべての作業は `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/` 配下で行う。
+>
+> 完了の最終条件:
+> (a) `pnpm dev` で `/sign-in` フォームが表示され、メール送信 → Resend で受信 → クリック → `/interviews` リダイレクト + DB に `user` / `session` / `user_profile` が作成される、
+> (b) `/admin/_health` で Basic 認証 + Magic Link サインイン済み + ADMIN_ALLOWED_EMAILS 一致の 3 条件すべて通過時のみ「OK: admin authenticated」が表示される、
+> (c) 同じメールに 4 回連続 Magic Link 送信を試みると 4 回目が拒否される、
+> (d) `pnpm --filter @bulr/db push` で Neon dev branch に 6 テーブル（user / session / account / verification / user_profile / rate_limit）が作成される、
+> (e) `pnpm typecheck` / `pnpm lint` がエラーなく通る。
 
-## Foundation: 依存追加と DB スキーマ整備
+## Foundation: 依存関係追加と DB スキーマ
 
-- [ ] 1. apps/web に Better Auth + Resend の依存を追加
-- [ ] 1.1 `apps/web/package.json` に `better-auth` と `resend` を追加
-  - `dependencies` に `"better-auth": "^1.6.0"` と `"resend": "^4.0.0"` を追記
-  - リポジトリルートで `pnpm install` を実行し、`pnpm-lock.yaml` を更新する
-  - 観測完了条件: `apps/web/node_modules/better-auth/package.json` と `apps/web/node_modules/resend/package.json` が存在し、`pnpm --filter web typecheck` がエラーなく完了する
-  - _Requirements: 12.1_
-  - _Boundary: WebApp (apps/web/package.json)_
+> 1.x はパッケージ依存追加と DB スキーマ定義。1.1 と 1.2 は別パッケージへの追加で並列実行可能。1.3-1.5 はスキーマファイル作成、相互参照あり（1.4 が 1.3 の user テーブルに FK）。
 
-- [ ] 2. packages/db に Better Auth 4 テーブル + user_profile + rate_limit の Drizzle スキーマを追加
-- [ ] 2.1 (P) `packages/db/src/schema/auth.ts` に Better Auth 4 テーブルを定義
-  - `user` (`id` text PK、`email` text UK、`emailVerified` bool、`name` text nullable、`image` text nullable、`createdAt`、`updatedAt`)
-  - `session` (`id` text PK、`userId` text FK→user.id ON DELETE CASCADE、`token` text UK、`expiresAt` timestamp、`ipAddress` text nullable、`userAgent` text nullable、`createdAt`、`updatedAt`)
-  - `account` (`id` text PK、`userId` text FK→user.id ON DELETE CASCADE、`accountId` text、`providerId` text、`accessToken` text nullable、`refreshToken` text nullable、`accessTokenExpiresAt` timestamp nullable、`refreshTokenExpiresAt` timestamp nullable、`scope` text nullable、`idToken` text nullable、`password` text nullable、`createdAt`、`updatedAt`)
-  - `verification` (`id` text PK、`identifier` text、`value` text、`expiresAt` timestamp、`createdAt`、`updatedAt`)
-  - すべて `pgTable` で snake_case 命名 (Drizzle の `casing: 'snake_case'` で自動変換)
-  - 独自カラムは追加しない
-  - 観測完了条件: ファイル import で `pnpm --filter @bulr/db typecheck` がエラーなく完了
+- [ ] 1. パッケージ依存追加と DB スキーマ定義
+
+- [ ] 1.1 (P) `apps/web/package.json` に better-auth と resend を追加
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/package.json` の `dependencies` に以下を追加:
+    - `"better-auth": "^1.6.0"`
+    - `"resend": "^4.0.0"`
+  - 既存の依存（next / react / @bulr/*）と整合する形で merge
+  - ルートで `pnpm install` を実行し、lockfile が更新されることを確認
+  - 観測可能な完了状態: `pnpm install` 完了、`apps/web/node_modules/better-auth/package.json` と `apps/web/node_modules/resend/package.json` が存在
+  - _Requirements: 1.1, 2.1_
+  - _Boundary: AuthServer, ResendClient_
+
+- [ ] 1.2 (P) `packages/db/src/schema/auth.ts` を作成（Better Auth 管理テーブル）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/auth.ts` を新規作成
+  - Better Auth 1.6.x 公式スキーマに従って Drizzle で `user` / `session` / `account` / `verification` の 4 テーブルを定義
+  - 各テーブルの主要カラム:
+    - `user`: `id text PK`, `email text UNIQUE NOT NULL`, `email_verified boolean DEFAULT false`, `name text`, `image text`, `created_at timestamp`, `updated_at timestamp`
+    - `session`: `id text PK`, `user_id text REFERENCES user(id) ON DELETE CASCADE`, `token text UNIQUE`, `expires_at timestamp`, `ip_address text`, `user_agent text`, `created_at`, `updated_at`
+    - `account`: `id text PK`, `user_id text REFERENCES user(id) ON DELETE CASCADE`, `provider_id text`, `account_id text`, `password text NULL`（Magic Link 未使用）, `access_token text NULL`, `refresh_token text NULL`, `id_token text NULL`, `access_token_expires_at timestamp NULL`, `refresh_token_expires_at timestamp NULL`, `scope text NULL`, `created_at`, `updated_at`
+    - `verification`: `id text PK`, `identifier text NOT NULL`, `value text NOT NULL`, `expires_at timestamp NOT NULL`, `created_at`, `updated_at`
+  - 独自カラムは一切追加しない（`structure.md` L181 準拠）
+  - `$inferSelect` / `$inferInsert` で型を export
+  - 観測可能な完了状態: `pnpm --filter @bulr/db typecheck` がエラーなく通り、Better Auth が要求する 4 テーブル定義が揃っている
   - _Requirements: 7.1_
-  - _Boundary: AuthSchema (packages/db/src/schema/auth.ts)_
+  - _Boundary: DbAuthSchema_
 
-- [ ] 2.2 (P) `packages/db/src/schema/user-profile.ts` に user_profile テーブルを定義
-  - `userId` text PK + FK → `user.id` `ON DELETE CASCADE`
-  - `profileInput` jsonb NOT NULL DEFAULT `{}`、TypeScript 型は `Record<string, unknown>`
-  - `createdAt` / `updatedAt` timestamp with timezone NOT NULL DEFAULT now()
-  - `UserProfile` / `NewUserProfile` 型を `$inferSelect` / `$inferInsert` で export
-  - 観測完了条件: ファイル import で typecheck 通過、`pgTable` 名が `'user_profile'` であることが Drizzle 出力で確認できる
-  - _Requirements: 7.2, 7.3, 7.5, 7.7_
-  - _Boundary: UserProfileSchema (packages/db/src/schema/user-profile.ts)_
-  - _Depends: 2.1_
+- [ ] 1.3 (P) `packages/db/src/schema/user-profile.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/user-profile.ts` を新規作成
+  - `user_profile` テーブル定義:
+    - `user_id text PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE`
+    - `display_name text NOT NULL`
+    - `role_in_org text NULL`
+    - `years_of_experience integer NULL`
+    - `created_at timestamp NOT NULL DEFAULT now()`
+    - `updated_at timestamp NOT NULL DEFAULT now()`
+  - `auth.ts` の `user` テーブルを import して FK 参照
+  - `$inferSelect` / `$inferInsert` で `UserProfile` / `NewUserProfile` 型を export
+  - ファイルヘッダコメントに「v1 では受験者プロファイルだったが、v2 では面接官プロファイル（Better Auth user と 1:1）を保持する」を明記
+  - 観測可能な完了状態: `pnpm --filter @bulr/db typecheck` 通過、user-profile.ts が user テーブルへ FK 参照を持つ
+  - _Requirements: 7.2_
+  - _Boundary: DbUserProfileSchema_
+  - _Depends: 1.2_
 
-- [ ] 2.3 (P) `packages/db/src/schema/rate-limit.ts` に rate_limit テーブルを定義
-  - `key` text PK (例: `email:user@example.com` or `ip:192.0.2.1`)
-  - `count` integer NOT NULL DEFAULT 0
-  - `windowStart` timestamp with timezone NOT NULL DEFAULT now()
-  - `expiresAt` timestamp with timezone NOT NULL
-  - `RateLimitRow` 型を `$inferSelect` で export
-  - 観測完了条件: ファイル import で typecheck 通過
-  - _Requirements: 9.4_
-  - _Boundary: RateLimitSchema (packages/db/src/schema/rate-limit.ts)_
+- [ ] 1.4 (P) `packages/db/src/schema/rate-limit.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/rate-limit.ts` を新規作成
+  - `rate_limit` テーブル定義:
+    - `key text PRIMARY KEY`
+    - `count integer NOT NULL DEFAULT 0`
+    - `window_start timestamp NOT NULL DEFAULT now()`
+  - ファイルヘッダコメントに key prefix の用途を列挙:
+    - `'email:<email>'` — Magic Link メールレート制限（authentication spec）
+    - `'ip:<ip>'` — Magic Link IP レート制限（authentication spec）
+    - `'session:<id>'` — 将来予約
+    - `'chat:<userId>'` — assessment-engine spec で再利用予定
+  - `$inferSelect` / `$inferInsert` で型を export
+  - 観測可能な完了状態: `pnpm --filter @bulr/db typecheck` 通過
+  - _Requirements: 7.3_
+  - _Boundary: DbRateLimitSchema_
 
-- [ ] 2.4 `packages/db/src/schema/index.ts` を更新して 3 ファイルを re-export
-  - 既存の `export {};` を `export * from './auth';` `export * from './user-profile';` `export * from './rate-limit';` に置換
-  - 観測完了条件: `import { user, session, userProfile, rateLimit } from '@bulr/db'` が typecheck 通過する
-  - _Requirements: 7.6_
-  - _Boundary: DbPkg (packages/db/src/schema/index.ts)_
-  - _Depends: 2.1, 2.2, 2.3_
+- [ ] 1.5 `packages/db/src/schema/index.ts` のバレルに 3 ファイルを追加
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/index.ts` を更新
+  - 既存のコメントの後に以下を追加:
+    - `export * from './auth';`
+    - `export * from './user-profile';`
+    - `export * from './rate-limit';`
+  - 観測可能な完了状態: 他パッケージから `import { user, userProfile, rateLimit } from '@bulr/db/schema'` で型解決される
+  - _Requirements: 7.4_
+  - _Boundary: DbSchemaIndex_
+  - _Depends: 1.2, 1.3, 1.4_
 
-- [ ] 2.5 Drizzle migration を生成
-  - `pnpm --filter @bulr/db generate` を実行し、`packages/db/drizzle/*_authentication.sql`（drizzle-kit が次に利用可能な連番で出力。`assessment-pattern-seed` と並列 Wave 2 のため、実行順序により `0001_authentication.sql` または `0002_authentication.sql` になる）を生成
-  - 生成された SQL を確認: `user` / `session` / `account` / `verification` / `user_profile` / `rate_limit` の 6 テーブルが CREATE TABLE 文に含まれていること、外部キー制約 (`user_profile.user_id` → `user.id` ON DELETE CASCADE) が含まれていること
-  - 必要に応じてリポジトリにコミット
-  - 観測完了条件: `packages/db/drizzle/*_authentication.sql` に一致するファイルが 1 つ存在し、`grep -c 'CREATE TABLE' packages/db/drizzle/*_authentication.sql` の結果が 6
-  - _Requirements: 7.6, 12.7_
-  - _Boundary: DBMigration (packages/db/drizzle/*_authentication.sql)_
-  - _Depends: 2.4_
+- [ ] 1.6 drizzle-kit で migration を生成し dev branch に push
+  - `.env.local` に Neon dev branch の DATABASE_URL が設定済みであることを確認
+  - `pnpm --filter @bulr/db generate` を実行し `packages/db/drizzle/*_authentication.sql`（drizzle-kit が決定する番号付きファイル名）を生成
+  - 生成された SQL を git にコミット（レビュー）
+  - `pnpm --filter @bulr/db push` で dev branch にスキーマを反映
+  - 検証: `psql $DATABASE_URL -c '\dt'` で `user` / `session` / `account` / `verification` / `user_profile` / `rate_limit` の 6 テーブルが存在することを確認
+  - 観測可能な完了状態: Neon dev branch に 6 テーブルが作成されており、`packages/db/drizzle/*_authentication.sql` が git にコミットされている
+  - _Requirements: 7.7, 7.8_
+  - _Boundary: DrizzleMigration_
+  - _Depends: 1.5_
 
-## Core: メールテンプレートと Resend クライアント
+## Core: Email / Rate Limit / Auth Schemas
 
-- [ ] 3. メール配信レイヤーを実装
-- [ ] 3.1 (P) `apps/web/lib/email/magic-link-template.ts` に日本語+英語並記テンプレートを実装
-  - `buildMagicLinkEmail(input: { url: string }): { subject: string; text: string; html: string }` を export
-  - subject: `'[bulr] サインインリンク / Sign-in link'`
-  - text: 日本語ブロック (CTA URL + 「このリンクは 15 分で失効します」 + 「心当たりがない場合は無視してください」) → 英語ブロック (同等内容) → bulr フッター
-  - html: 同内容を `<p>` と `<a href="${url}">` で構成、装飾なし
-  - 純関数 (副作用なし、env 参照なし)、`'server-only'` 不要
-  - 観測完了条件: `buildMagicLinkEmail({ url: 'https://example.com' })` が呼び出し可能で、戻り値の `subject` / `text` / `html` がすべて非空文字列、text と html の両方に与えられた URL が含まれる
-  - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - _Boundary: EmailTemplate (apps/web/lib/email/magic-link-template.ts)_
+> 2.x は apps/web/lib 配下のユーティリティ層。互いに独立しているため並列実行可能。
 
-- [ ] 3.2 (P) `apps/web/lib/email/resend.ts` に Resend クライアントシングルトンを実装
-  - 冒頭で `'server-only'` を import
-  - 起動時に `process.env.RESEND_API_KEY` を検証、未設定なら `throw new Error('RESEND_API_KEY is required')`
-  - `new Resend(env.RESEND_API_KEY)` のシングルトン化
-  - `resendClient.send({ to, subject, text, html })` 関数を export:
-    - `from: 'bulr <onboarding@resend.dev>'` (Stage 1 Resend テストドメイン)
-    - `process.env.RESEND_REPLY_TO_EMAIL` が設定されていれば `reply_to` に渡す、未設定なら省略
-    - 送信完了後に `console.info({ event: 'magic_link_send', to_hash: <sha256(to).slice(0,8)>, success, timestamp })` でログ出力
-    - Resend がエラーを返したら `throw new Error(...)`
-  - 観測完了条件: `apps/web/lib/email/resend.ts` の import が成立し、`RESEND_API_KEY` 未設定で test runner / dev server 起動時に throw される
-  - _Requirements: 1.2, 8.5, 8.6, 8.7, 12.1, 12.2_
-  - _Boundary: ResendClient (apps/web/lib/email/resend.ts)_
+- [ ] 2. メール送信ユーティリティ・レート制限・Zod スキーマ集約
+
+- [ ] 2.1 (P) `apps/web/lib/email/resend.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/email/resend.ts` を新規作成
+  - `RESEND_API_KEY` が未設定なら module load 時に明示的に throw
+  - `resend = new Resend(process.env.RESEND_API_KEY)` を export
+  - `FROM_ADDRESS = 'bulr <onboarding@resend.dev>'` を export（コメントで「Stage 1: Resend テストドメイン。Stage 2 でカスタムドメイン認証 (bulr.net) に切り替え」を明記）
+  - 観測可能な完了状態: `apps/web/lib/email/resend.ts` が存在し、`pnpm typecheck` 通過
+  - _Requirements: 2.1, 2.2, 2.6_
+  - _Boundary: ResendClient_
   - _Depends: 1.1_
 
-## Core: 認証ヘルパーと Server Action ラッパー
+- [ ] 2.2 (P) `apps/web/lib/email/templates/magic-link.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/email/templates/magic-link.ts` を新規作成
+  - 純関数 `renderMagicLinkEmail({ url }: { url: string }): { subject: string; html: string; text: string }` を export
+  - subject: `'[bulr] サインインリンク / Sign-in link'`
+  - 日本語ブロック → `---` 区切り → 英語ブロックの並記
+  - HTML: 最低限のインラインスタイル、ボタン要素 `<a href="${url}" style="...">サインイン</a>` と `Sign in` の両方
+  - text: 平文 URL を 2 回（日本語ブロック内 + 英語ブロック内）
+  - 両方の言語で「自分でリクエストしていない場合は無視してください / If you didn't request this, please ignore.」を含める
+  - 受信者の個人情報（メアド本文埋め込み等）は一切含めない
+  - 観測可能な完了状態: `renderMagicLinkEmail({ url: 'https://example.com/x' })` を Node REPL で実行すると subject / html / text が文字列として返る
+  - _Requirements: 2.3, 2.4, 2.5, 2.8_
+  - _Boundary: MagicLinkTemplate_
 
-- [ ] 4. 認証ヘルパーと Server Action ラッパーを実装
-- [ ] 4.1 `apps/web/lib/guards.ts` に AuthError と認証ヘルパー群を実装
-  - 冒頭で `'server-only'` を import
-  - `AuthErrorCode` union 型 (`'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND_OR_FORBIDDEN' | 'RATE_LIMITED'`) を export
-  - `AuthError` クラス (extends `Error`、`code` プロパティ、`name = 'AuthError'`) を export
-  - `CurrentUser` 型 (`{ userId: string; email: string }`) を export
-  - `getCurrentUser(): Promise<CurrentUser | null>` を実装。Better Auth `auth.api.getSession({ headers: await headers() })` を呼び、`session.user` から `id` と `email` を抽出。null ならば未認証
-  - `requireUser(): Promise<CurrentUser>` を実装。`getCurrentUser()` が null なら `throw new AuthError('UNAUTHORIZED')`
-  - `requireAdmin(): Promise<CurrentUser>` を実装。`requireUser()` を呼び、`process.env.ADMIN_ALLOWED_EMAILS` を comma-split + trim + lowercase した配列に email (lowercase) が含まれるか確認。空配列または不一致は `console.warn({ event: 'admin_access_denied', email, timestamp })` を出力した後に `throw new AuthError('FORBIDDEN')`
-  - `requireSessionOwnership<T extends { userId: string }>(resource: T | null | undefined, userId: string): asserts resource is T` を実装。`resource` が null/undefined または `resource.userId !== userId` なら `throw new AuthError('NOT_FOUND_OR_FORBIDDEN')`
-  - 観測完了条件: ファイル単体で `pnpm --filter web typecheck` がエラーなく完了し、`AuthError` / `requireUser` / `requireAdmin` / `requireSessionOwnership` / `getCurrentUser` の 5 シンボルが export される
-  - _Requirements: 2.4, 2.5, 3.3, 3.4, 3.5, 3.7, 3.8, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 11.6, 12.5_
-  - _Boundary: Guards (apps/web/lib/guards.ts)_
-  - _Depends: 5.1_
+- [ ] 2.3 (P) `apps/web/lib/rate-limit.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/rate-limit.ts` を新規作成
+  - ファイルヘッダコメントで key prefix の用途を列挙（`email:` / `ip:` / `session:` / `chat:`）し「Vercel Functions メモリ非共有のため in-memory キャッシュ禁止」を明記
+  - `RateLimitError` クラスを export（`extends Error`）
+  - `checkAndIncrement(key: string, opts: { limit: number; windowMs: number }): Promise<void>` を export
+    - 内部処理: `INSERT INTO rate_limit (key, count, window_start) VALUES (..., 1, now()) ON CONFLICT (key) DO UPDATE SET count = CASE WHEN window_start + (windowMs * INTERVAL '1 millisecond') > now() THEN count + 1 ELSE 1 END, window_start = CASE WHEN window_start + (windowMs * INTERVAL '1 millisecond') > now() THEN window_start ELSE now() END RETURNING count`
+    - 取得した count が `opts.limit` 超過なら `throw new RateLimitError(...)`
+  - Drizzle の `db.execute(sql\`...\`)` で raw SQL を実行
+  - 観測可能な完了状態: ユニット動作確認として、同じ key で `checkAndIncrement('test:x', { limit: 2, windowMs: 60000 })` を 3 回連続で呼ぶと 3 回目に RateLimitError が throw される（`pnpm tsx` で確認、後で削除）
+  - _Requirements: 8.1, 8.3, 8.5, 8.6, 8.7_
+  - _Boundary: RateLimitTs_
+  - _Depends: 1.6_
 
-- [ ] 4.2 `apps/web/lib/safe-action.ts` に authedAction / adminAction ラッパーを実装
-  - 冒頭で `'server-only'` を import
-  - JSDoc で「全 mutation は authedAction または adminAction を必ず経由すること。素の `async function` で Server Action を書かない (`security.md` 規約)」を明記
-  - `authedAction<S extends z.ZodTypeAny, R>(schema: S, handler: (input: z.infer<S>, ctx: CurrentUser) => Promise<R>): (input: unknown) => Promise<R>` を実装。手順: `schema.parse(input)` → `requireUser()` → `handler(parsed, ctx)`
-  - `adminAction<S, R>(...)` を同パターンで実装、`requireAdmin()` を使用
-  - `AuthError` を `guards.ts` から re-export
-  - 観測完了条件: ファイル単体で typecheck 通過、`authedAction` と `adminAction` のジェネリック型推論が動作する (例: `authedAction(z.object({ x: z.string() }), async ({ x }, { userId }) => ...)` が `(input: unknown) => Promise<...>` を返す)
-  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 10.4, 10.5, 11.5_
-  - _Boundary: SafeAction (apps/web/lib/safe-action.ts)_
+- [ ] 2.4 (P) `apps/web/lib/auth/schemas.ts` を作成（Zod スキーマ集約）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/schemas.ts` を新規作成
+  - export する schema:
+    - `emailSchema = z.string().email().trim().max(254)`
+    - `interviewerProfileSchema = z.object({ displayName: z.string().trim().min(1).max(100), roleInOrg: z.string().trim().max(100).optional(), yearsOfExperience: z.number().int().min(0).max(60).optional() })`
+  - `InterviewerProfileInput = z.infer<typeof interviewerProfileSchema>` も export
+  - 観測可能な完了状態: 他ファイルから `import { emailSchema, interviewerProfileSchema } from '@/lib/auth/schemas'` で参照可能、`pnpm typecheck` 通過
+  - _Requirements: 9.1, 9.3-9.5, 9.7_
+  - _Boundary: AuthSchemas_
+
+## Auth Server: Better Auth サーバー設定とクライアント
+
+> 3.x は Better Auth の core。3.1 が中核（Magic Link plugin + databaseHooks + sendMagicLink）、3.2 がクライアント、3.3 が Next.js API ルートで 3.1 に依存。
+
+- [ ] 3. Better Auth サーバー / クライアント / API ルート
+
+- [ ] 3.1 `apps/web/lib/auth/server.ts` を作成（Better Auth サーバー設定）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/server.ts` を新規作成
+  - 環境変数チェック: `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` が未設定なら起動時に明示的に throw
+  - `betterAuth({ ... })` を初期化し `auth` singleton を export
+  - `database: drizzleAdapter(db, { provider: 'pg', schema: authSchema })` で Drizzle 統合
+  - `session`: `expiresIn: 60 * 60 * 24 * 7`（7 日）、`updateAge: 60 * 60 * 24`（sliding 1 日）、`cookieCache.enabled: true`
+  - `advanced.cookies.session_token.attributes`: `httpOnly: true`, `secure: process.env.NODE_ENV === 'production'`, `sameSite: 'lax'`
+  - `plugins: [magicLink({ expiresIn: 60 * 15, sendMagicLink: async ({ email, url }, request) => { ... } })]`
+  - `sendMagicLink` 内処理:
+    1. `request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'` で IP 取得
+    2. `await checkAndIncrement('email:' + email, { limit: 3, windowMs: 5 * 60 * 1000 })`
+    3. `await checkAndIncrement('ip:' + ip, { limit: 20, windowMs: 60 * 60 * 1000 })`
+    4. `renderMagicLinkEmail({ url })` で本文生成
+    5. `await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html, text })`
+  - `databaseHooks.user.create.after: async (user) => { await db.insert(userProfile).values({ userId: user.id, displayName: user.email.split('@')[0] }).onConflictDoNothing(); }`
+  - 観測可能な完了状態: `pnpm typecheck` 通過、`pnpm dev` 起動時にエラーなく `apps/web/lib/auth/server.ts` が import される
+  - _Requirements: 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8_
+  - _Boundary: AuthServer_
+  - _Depends: 1.2, 1.3, 1.5, 2.1, 2.2, 2.3_
+
+- [ ] 3.2 (P) `apps/web/lib/auth/client.ts` を作成（Better Auth クライアント）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/client.ts` を新規作成
+  - `createAuthClient({ baseURL: process.env.NEXT_PUBLIC_APP_URL, plugins: [magicLinkClient()] })` を初期化
+  - `signIn`, `signOut`, `useSession` を destructure して export
+  - 観測可能な完了状態: `pnpm typecheck` 通過、Client Component から `import { signIn, signOut, useSession } from '@/lib/auth/client'` で参照可能
+  - _Requirements: 1.2, 1.8, 3.6, 11.2, 11.7_
+  - _Boundary: AuthClient_
+  - _Depends: 1.1_
+
+- [ ] 3.3 `apps/web/app/api/auth/[...all]/route.ts` を作成（Better Auth API ルート）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/api/auth/[...all]/route.ts` を新規作成
+  - `toNextJsHandler(auth)` で GET / POST ハンドラを export:
+    ```typescript
+    import { auth } from '@/lib/auth/server';
+    import { toNextJsHandler } from 'better-auth/next-js';
+    export const { GET, POST } = toNextJsHandler(auth);
+    ```
+  - 観測可能な完了状態: `pnpm dev` 起動中に `curl http://localhost:3000/api/auth/get-session` が Better Auth の標準レスポンス（null セッション）を返す
+  - _Requirements: 1.7, 1.9, 1.10, 3.6_
+  - _Boundary: BetterAuthApiRoute_
+  - _Depends: 3.1_
+
+## Guards / SafeAction: 認証ヘルパー層
+
+> 4.x は guards と safe-action を順次。4.1 が core、4.2 が 4.1 に依存。
+
+- [ ] 4. 認証ヘルパーと Server Action ラッパー
+
+- [ ] 4.1 `apps/web/lib/guards.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/guards.ts` を新規作成
+  - `AuthError` クラス: `class AuthError extends Error { constructor(public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND', message?: string) { super(message ?? code); } }`
+  - `getCurrentUser()`: `auth.api.getSession({ headers: await headers() })` を呼び、`{ id, email } | null` を返す（throw しない）
+  - `requireUser()`: getCurrentUser → null なら `throw new AuthError('UNAUTHORIZED')`
+  - `requireAdmin()`: requireUser → `ADMIN_ALLOWED_EMAILS?.split(',').map(s => s.trim()).filter(Boolean) ?? []` を取得 → 空配列または email が含まれなければ `throw new AuthError('FORBIDDEN')`（fail secure）
+  - `requireSessionOwnership(session, userId)`: session が null/undefined なら NOT_FOUND、`session.interviewerId !== userId` なら FORBIDDEN
+  - 観測可能な完了状態: `pnpm typecheck` 通過、Server Component から `await requireUser()` / `await requireAdmin()` で session 検証可能
+  - _Requirements: 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8_
+  - _Boundary: Guards_
+  - _Depends: 3.1_
+
+- [ ] 4.2 `apps/web/lib/safe-action.ts` を作成（Server Action ラッパー）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/safe-action.ts` を新規作成
+  - ファイルヘッダコメント:
+    > すべての mutation は authedAction / adminAction でラップすること。素の async function で Server Action を書かない。これは security.md の多層認証パターンに従う標準パターン。
+  - 戻り値型: `type Result<R> = { ok: true; data: R } | { ok: false; error: { code: string; message: string } }`
+  - `authedAction<I, R>(schema: ZodSchema<I>, handler: (input: I, ctx: { userId: string; email: string }) => Promise<R>)` を export
+    - 内部: `requireUser()` → `schema.parse(rawInput)` → `handler(parsed, ctx)` を try/catch、AuthError / ZodError を捕捉して Result 形式で返す
+  - `adminAction<I, R>(schema, handler)` を export（内部で `requireAdmin()` を呼ぶ以外は authedAction と同じ）
+  - サードパーティライブラリ（next-safe-action 等）を一切使わない
+  - 観測可能な完了状態: `pnpm typecheck` 通過。テスト用 Server Action `async function testAction = authedAction(z.object({ x: z.string() }), async (input, ctx) => input.x.toUpperCase())` を一時的に作って呼び出すと型エラーなしで動く
+  - _Requirements: 5.6-5.10, 9.6_
+  - _Boundary: SafeAction_
   - _Depends: 4.1_
 
-## Core: Better Auth サーバー設定とレート制限
+## Proxy: UX リダイレクトと Basic 認証
 
-- [ ] 5. Better Auth サーバー設定とレート制限ロジックを実装
-- [ ] 5.1 `apps/web/lib/auth/rate-limit.ts` に DB ベースのレート制限を実装
-  - 冒頭で `'server-only'` を import
-  - `getClientIp(request: Request): string | null` を export。`x-forwarded-for` ヘッダの最初の値を返す、無ければ null
-  - `checkAndIncrement(input: { email: string; ip: string | null }): Promise<void>` を実装:
-    - per-email key (`'email:' + email.toLowerCase()`) に対し、window 5 分・上限 3 で判定
-    - per-IP key (`'ip:' + ip`) に対し、window 60 分・上限 20 で判定 (ip が null なら skip)
-    - DB 操作は `INSERT INTO rate_limit (...) VALUES (...) ON CONFLICT (key) DO UPDATE SET count = CASE WHEN expires_at < now() THEN 1 ELSE count + 1 END, window_start = CASE WHEN expires_at < now() THEN now() ELSE window_start END, expires_at = CASE WHEN expires_at < now() THEN now() + interval '...' ELSE expires_at END RETURNING count, expires_at` のような atomic upsert で実装
-    - 制限超過時は `console.warn({ event: 'rate_limit_triggered', limit_type, identifier_hash: <sha256 first 8>, timestamp })` を出力し `throw new AuthError('RATE_LIMITED', 'Too many requests')`
-    - per-email を先にチェックし、失敗したら per-IP は呼ばない
-  - 観測完了条件: 単体で typecheck 通過し、ローカル DB に対して 3 回連続呼び出し OK、4 回目で throw、5 分後に reset することがマニュアル smoke で確認できる (タスク 11 の Validation で実施)
-  - _Requirements: 9.1, 9.2, 9.3, 9.5, 9.6, 9.7_
-  - _Boundary: RateLimitMod (apps/web/lib/auth/rate-limit.ts)_
-  - _Depends: 2.5_
+> 5.x は proxy.ts 単独。
 
-- [ ] 5.2 `apps/web/lib/auth/server.ts` に Better Auth インスタンスを構築
-  - 冒頭で `'server-only'` を import
-  - 起動時 Fail Fast: `BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`(BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL)` のいずれか未設定で `throw new Error(...)`
-  - `betterAuth({...})` で初期化:
-    - `baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL`
-    - `secret: process.env.BETTER_AUTH_SECRET`
-    - `trustedOrigins: [baseURL]`
-    - `database: drizzleAdapter(db, { provider: 'pg' })` (`@bulr/db` の `db`、`user`、`session`、`account`、`verification` を参照)
-    - `session: { expiresIn: 60*60*24*7, updateAge: 60*60*24, cookieCache: { enabled: true, maxAge: 60*5 } }`
-    - `advanced.cookies.session_token.attributes`: `httpOnly: true`、`secure: NODE_ENV === 'production'`、`sameSite: 'lax'`
-    - `plugins: [magicLink({ expiresIn: 60*15, sendMagicLink })]` を設定:
-      - `sendMagicLink({ email, url }, request)` の中で `getClientIp(request)` → `checkAndIncrement({ email, ip })` → `buildMagicLinkEmail({ url })` → `resendClient.send({...})`
-    - `databaseHooks.user.create.after(user)`: `db.insert(userProfile).values({ userId: user.id, profileInput: {} }).onConflictDoNothing()` を実行
-  - `auth` を named export
-  - `AuthInstance` 型を `typeof auth` で export
-  - 観測完了条件: `import { auth } from '@/lib/auth/server'` が typecheck 通過し、未設定環境変数で起動時に `Error: BETTER_AUTH_SECRET is required` 等が throw される
-  - _Requirements: 1.2, 1.5, 1.6, 1.7, 1.8, 2.1, 2.2, 2.3, 2.4, 7.1, 7.4, 8.1, 10.1, 10.3, 12.2, 12.3, 12.4_
-  - _Boundary: AuthServer (apps/web/lib/auth/server.ts)_
-  - _Depends: 2.4, 3.1, 3.2, 5.1_
+- [ ] 5. proxy.ts (UX リダイレクト + Basic 認証 + CVE-2025-29927 教訓)
 
-- [ ] 5.3 (P) `apps/web/lib/auth/client.ts` に Better Auth React クライアントを実装
-  - 冒頭で `'use client'` を記述
-  - `createAuthClient({ baseURL: process.env.NEXT_PUBLIC_APP_URL, plugins: [magicLinkClient()] })` で `authClient` を構築
-  - `authClient` を named export
-  - 観測完了条件: ファイル単体で typecheck 通過、`authClient.signIn.magicLink` が型補完される
-  - _Requirements: 1.1, 3.6_
-  - _Boundary: AuthClient (apps/web/lib/auth/client.ts)_
-  - _Depends: 1.1_
+- [ ] 5.1 `apps/web/proxy.ts` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/proxy.ts` を新規作成
+  - ファイル冒頭の JSDoc コメントで以下を必ず明記:
+    - 「このファイルは UX リダイレクトと管理画面 Basic 認証チェックのみを担当する」
+    - 「CVE-2025-29927 (2025 年に発覚した Next.js middleware bypass 攻撃) の教訓により、認可は本ファイルに依存してはならない」
+    - 「各 Server Component / Server Action / API Route で requireUser() / requireAdmin() を独立に呼び出すこと」
+    - 「やること: /interviews/* の Cookie 存在チェック → /sign-in リダイレクト、/admin/* の Basic 認証チェック」
+    - 「やらないこと: Better Auth セッション validation、ADMIN_ALLOWED_EMAILS 検査、Server Action / API Route の認可」
+  - `proxy(request: NextRequest)` を export（Next.js 16 の rename に従う、仮に最終仕様で `middleware` のままなら export 名を `middleware` に戻して `middleware.ts` ファイル名にする）
+  - `/admin/*` 処理:
+    - `Authorization` header を取得、`Basic ` プレフィックスをチェック
+    - base64 デコード → `user:password` を split
+    - `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD` と比較（Stage 1 は `===`、Stage 2 で timing-safe）
+    - 失敗時に `new NextResponse('Authentication required', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="bulr admin"' } })` を返す
+  - `/interviews/*` 処理:
+    - Better Auth の session cookie 名（`better-auth.session_token` 等、Better Auth デフォルト）の存在を `request.cookies.get(...)` で確認
+    - 無ければ `NextResponse.redirect(new URL('/sign-in', request.url))`
+  - `export const config = { matcher: ['/interviews/:path*', '/admin/:path*'] }`
+  - 観測可能な完了状態:
+    - `pnpm dev` 起動中にブラウザで `/admin/_health` 訪問 → Basic 認証ダイアログ表示
+    - 未認証で `/interviews/foo` 訪問 → `/sign-in` リダイレクト
+    - `/api/auth/*` や `/sign-in` は matcher 対象外で素通り
+  - _Requirements: 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2_
+  - _Boundary: Proxy_
 
-## Core: Better Auth API ルート
+## UI: サインインページ・管理画面ログイン・smoke test
 
-- [ ] 6. Better Auth handler を Next.js Route Handler として公開
-- [ ] 6.1 `apps/web/app/api/auth/[...all]/route.ts` を作成
-  - `import { toNextJsHandler } from 'better-auth/next-js'`
-  - `import { auth } from '@/lib/auth/server'`
-  - `export const { POST, GET } = toNextJsHandler(auth)`
-  - 観測完了条件: `pnpm dev` 起動後、`curl http://localhost:3000/api/auth/get-session` が 200 + `{ session: null }` 様の JSON を返す
-  - _Requirements: 1.7, 2.3_
-  - _Boundary: AuthRoute (apps/web/app/api/auth/[...all]/route.ts)_
-  - _Depends: 5.2_
+> 6.x は UI ページ群。各 page.tsx は独立して作れるが、すべて 4.1 (guards) と 3.2 (auth client) に依存。6.1-6.3 は互いに独立で並列実行可能。
 
-## Core: proxy.ts (Edge Runtime)
+- [ ] 6. サインイン / 管理画面ログイン / smoke test UI
 
-- [ ] 7. proxy.ts に Basic 認証 + UX redirect を実装
-- [ ] 7.1 `apps/web/proxy.ts` を作成
-  - ファイル頭の JSDoc で「このファイルは UX レイヤーであり認可境界ではない。各 Server Component / Server Action / API Route で `requireUser()` / `requireAdmin()` を呼ぶこと (CVE-2025-29927 教訓)」を明記
-  - `import { NextResponse, type NextRequest } from 'next/server'`
-  - `BASIC_AUTH_REGEX = /^Basic [A-Za-z0-9+/=]+$/` を定義
-  - `middleware(request)` 関数:
-    - `pathname.startsWith('/admin')` の場合:
-      - `ADMIN_BASIC_AUTH_USER` または `ADMIN_BASIC_AUTH_PASSWORD` 未設定で 503 (`'admin auth not configured'`) を返す
-      - `Authorization` ヘッダ未設定または `BASIC_AUTH_REGEX` 不一致で 401 + `WWW-Authenticate: Basic realm="bulr admin"` を返す
-      - `atob(b64)` で decode し `:` で USER と PASSWORD に分離、env と一致しなければ 401 + WWW-Authenticate を返す
-      - 一致なら `NextResponse.next()`
-    - `pathname.startsWith('/assessments/')` かつ `'/assessments/start'` でも `'/assessments/done'` でもない場合:
-      - cookie `'better-auth.session_token'` の有無を確認、無ければ `/assessments/start` へ redirect
-    - その他は `NextResponse.next()`
-  - `config.matcher = ['/((?!_next/static|_next/image|favicon.ico|api/auth).*)']` を export
-  - 観測完了条件: `pnpm dev` 起動後、`curl -i http://localhost:3000/admin` が 401 + `WWW-Authenticate` ヘッダを返す。`curl -i -u user:pass http://localhost:3000/admin` (env 一致時) で proxy を通過して下流の 404 / 200 が返る。`curl -i http://localhost:3000/assessments/abc-123` が 307 + `Location: /assessments/start` を返す
-  - _Requirements: 3.1, 3.2, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 10.2, 11.7, 12.6_
-  - _Boundary: Proxy (apps/web/proxy.ts)_
+- [ ] 6.1 (P) `apps/web/app/(interviewer)/sign-in/page.tsx` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/(interviewer)/sign-in/page.tsx` を新規作成
+  - Server Component で `getCurrentUser()` を呼び、null でなければ `redirect('/interviews')`
+  - Client Component（別ファイル `apps/web/app/(interviewer)/sign-in/sign-in-form.tsx` を作成、`'use client'` 指定）でフォーム描画:
+    - メール input + 「Magic Link を送信」ボタン
+    - `useState` で `status: 'idle' | 'submitting' | 'success' | 'error'` 管理
+    - 送信時に `emailSchema.safeParse(email)` でクライアント検証、不正なら「正しいメールアドレスを入力してください」
+    - `await signIn.magicLink({ email, callbackURL: '/interviews' })` を呼び、レスポンス（または throw）を判定
+    - エラーメッセージに `rate limit` を含む場合、「短時間に複数回のリクエストがあったため、しばらく待ってから再試行してください」を表示
+    - 成功時は「メールを送信しました。受信ボックス（迷惑メールフォルダも）をご確認ください。」を表示
+  - Tailwind CSS で最低限のスタイリング
+  - 観測可能な完了状態: `pnpm dev` 起動中にブラウザで `/sign-in` 訪問 → フォーム表示、不正メールでクライアント検証エラー表示、有効メール送信で「メールを送信しました」表示
+  - _Requirements: 1.8, 8.2, 8.4, 11.1-11.4, 11.7_
+  - _Boundary: SignInPage_
+  - _Depends: 3.2, 2.4, 4.1_
 
-## Core: サインイン UI
+- [ ] 6.2 (P) `apps/web/app/admin/login/page.tsx` を作成
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/admin/login/page.tsx` を新規作成
+  - Server Component で `getCurrentUser()` を呼び、null でなく email が ADMIN_ALLOWED_EMAILS に含まれていれば `/admin/_health` へ redirect
+  - そうでなければ「Basic 認証通過 OK。次に管理者メールアドレスで Magic Link サインインしてください」のメッセージと、`/sign-in?redirect=/admin/_health` へのリンクを表示
+  - Tailwind CSS で簡易スタイリング
+  - 観測可能な完了状態: Basic 認証通過後 `/admin/login` 訪問 → 案内文と `/sign-in` へのリンクが表示される
+  - _Requirements: 4.5, 11.5, 11.6, 11.7_
+  - _Boundary: AdminLoginPage_
+  - _Depends: 4.1_
 
-- [ ] 8. 受験者サインイン UI を実装
-- [ ] 8.1 (P) `apps/web/app/(assessment)/assessments/start/page.tsx` を作成 (Server Component)
-  - 静的レンダリング
-  - h1 で「bulr ベータへようこそ」、続けて日本語短文 (「メールアドレスを入力するとサインインリンクをお送りします」) と英語短文 (「Enter your email to receive a sign-in link」) を表示
-  - 「入力したメールはサインイン目的のみで利用します」 の利用目的明示文を表示
-  - `<SignInForm />` (Client Component) を埋め込む
-  - 観測完了条件: `pnpm dev` で `/assessments/start` にアクセスしてフォームが描画される
-  - _Requirements: 1.1, 1.9_
-  - _Boundary: SignInPage (apps/web/app/(assessment)/assessments/start/page.tsx)_
-  - _Depends: 8.2_
+- [ ] 6.3 (P) `apps/web/app/admin/_health/page.tsx` を作成（smoke test）
+  - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/admin/_health/page.tsx` を新規作成
+  - ファイル冒頭コメントで「本ページは authentication spec の smoke test 用に一時設置。admin-review-panel spec で `/admin/sessions` を実装した時点で削除する」を必ず明記
+  - Server Component として実装:
+    - try ブロックで `const user = await requireAdmin();` → 成功時に `<main><h1>OK: admin authenticated</h1><pre>{user.email}</pre></main>` 表示
+    - catch (e) で:
+      - `e instanceof AuthError && e.code === 'UNAUTHORIZED'` → `redirect('/sign-in')`
+      - `e instanceof AuthError && e.code === 'FORBIDDEN'` → `<main><h1>FORBIDDEN</h1><p>あなたのメールアドレスは管理者として登録されていません。</p></main>` を return
+      - その他は throw
+  - 観測可能な完了状態: Basic 認証 + サインイン + 許可メールの 3 条件で「OK: admin authenticated」表示、未サインインなら /sign-in、非許可メールなら FORBIDDEN 表示
+  - _Requirements: 4.8, 10.1-10.8_
+  - _Boundary: AdminHealthPage_
+  - _Depends: 4.1_
 
-- [ ] 8.2 (P) `apps/web/app/(assessment)/assessments/start/sign-in-form.tsx` を作成 (Client Component)
-  - `'use client'` を冒頭に記述
-  - `import { authClient } from '@/lib/auth/client'`
-  - `import { z } from 'zod'`
-  - `emailSchema = z.string().trim().toLowerCase().email().max(254)` をローカル定義
-  - state: `email`、`status: 'idle' | 'sending' | 'sent' | 'error'`、`errorMessage`
-  - 送信ハンドラ:
-    - `emailSchema.safeParse(email)` で形式検証、失敗時に「メールアドレスの形式が正しくありません」 を表示し中止
-    - `await authClient.signIn.magicLink({ email: parsed.data, callbackURL: '/assessments/done' })`
-    - 成功時に「メールを送信しました。受信ボックスをご確認ください」 を同一ページに表示 (情報漏洩防止: ユーザー存在の有無は出さない)
-    - エラー時に「しばらく時間をおいて再度お試しください」 (rate limit / その他を区別しない generic message)
-  - 観測完了条件: ローカル開発で実際にメール入力 → 送信完了メッセージが表示される
-  - _Requirements: 1.1, 1.3, 1.4, 10.1_
-  - _Boundary: SignInForm (apps/web/app/(assessment)/assessments/start/sign-in-form.tsx)_
-  - _Depends: 5.3_
+## Integration: 動作確認とスモークテスト
 
-- [ ] 9. 管理者サインイン UI を実装
-- [ ] 9.1 (P) `apps/web/app/admin/login/page.tsx` を作成 (Server Component)
-  - 静的レンダリング (Basic 認証は proxy.ts で既に通過している前提)
-  - h1 で「bulr 管理者ログイン」、説明文「管理者メールアドレスにサインインリンクを送信します」
-  - `<AdminSignInForm />` を埋め込む
-  - 観測完了条件: Basic 認証通過後 `/admin/login` にアクセスしてフォームが描画される
-  - _Requirements: 3.6_
-  - _Boundary: AdminLoginPage (apps/web/app/admin/login/page.tsx)_
-  - _Depends: 9.2_
+> 7.x は手動の E2E 動作確認。順次実施し、本スペック完了の最終ゲートとする。
 
-- [ ] 9.2 (P) `apps/web/app/admin/login/admin-sign-in-form.tsx` を作成 (Client Component)
-  - 構造は SignInForm と同じだが文言を管理者向けに調整
-  - `callbackURL: '/admin/sessions'` (admin-review-panel が後で実装するパス、本スペック完了時点では 404 になる可能性あり、smoke test では `/admin` の任意のパスで Magic Link 検証フローのみ確認)
-  - 観測完了条件: ローカル開発で Basic 認証通過後にメール入力 → 送信完了メッセージが表示される
-  - _Requirements: 3.6_
-  - _Boundary: AdminSignInForm (apps/web/app/admin/login/admin-sign-in-form.tsx)_
-  - _Depends: 5.3_
+- [ ] 7. 統合動作確認
 
-## Integration: 多層認証の動作確認用一時ページ
+- [ ] 7.1 ローカルで Magic Link サインインの End-to-End 検証
+  - `.env.local` に Resend テストドメイン用の RESEND_API_KEY、Neon dev branch の DATABASE_URL、BETTER_AUTH_SECRET（`openssl rand -base64 32`）、BETTER_AUTH_URL=`http://localhost:3000`、NEXT_PUBLIC_APP_URL=`http://localhost:3000` を設定
+  - `pnpm dev` 起動
+  - ブラウザで `/sign-in` 訪問 → 自分のメールアドレスを入力して送信
+  - メール受信を確認（送信元: `bulr <onboarding@resend.dev>`、件名: `[bulr] サインインリンク / Sign-in link`、日本語+英語並記）
+  - メール内のサインインボタンをクリック → ブラウザが `/api/auth/magic-link/verify?token=...` を経由して `/interviews` にリダイレクト
+  - DB を SQL で確認: `SELECT * FROM "user"; SELECT * FROM session; SELECT * FROM user_profile;` で 3 レコードが作成され、user_profile.display_name にメールローカル部が入っている
+  - 観測可能な完了状態: 上記すべてが成功し、`/interviews` にアクセスできる状態（`/interviews` ページの本体は未実装で 404 でも OK、proxy.ts による redirect が起きないことを確認）
+  - _Requirements: 1.3, 1.7-1.9, 2.3-2.7, 7.5, 7.9_
+  - _Depends: 3.3, 5.1, 6.1, 1.6_
 
-- [ ] 10. 後続 spec が無くても認証境界を smoke test できる一時的な保護ページを設置
-- [ ] 10.1 `apps/web/app/admin/_health/page.tsx` を作成 (Server Component、本スペックの smoke test 専用)
-  - 冒頭で `await requireAdmin()` を呼ぶ
-  - 通過後に `<p>admin auth ok: {email}</p>` のような最小描画
-  - JSDoc で「本ページは authentication spec の smoke test 用。admin-review-panel spec 実装時に削除する」 を明記
-  - 観測完了条件: Basic 認証 + Magic Link で `ADMIN_ALLOWED_EMAILS` に含まれるメールでサインインしたユーザーがアクセスすると 200 + email 表示、含まれないユーザーは 403 (AuthError 経由)、未認証は `/admin/login` に redirect (proxy.ts は通過している)
-  - _Requirements: 11.1, 11.6_
-  - _Boundary: Smoke test page (apps/web/app/admin/_health/page.tsx)_
-  - _Depends: 4.1, 7.1_
-
-## Validation: 動作確認 (Manual Smoke Tests)
-
-- [ ] 11. ローカル開発で end-to-end の動作確認を実施
-- [ ] 11.1 ローカル DB に migration を反映
-  - Owner 自身の `apps/web/.env.local` に `multi-env-infrastructure` で取得した Neon dev branch `DATABASE_URL` 等の必要変数 (`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL=http://localhost:3000`、`ADMIN_ALLOWED_EMAILS`、`ADMIN_BASIC_AUTH_USER`、`ADMIN_BASIC_AUTH_PASSWORD`) が記入済みであることを確認
-  - `pnpm --filter @bulr/db push` を実行し、Neon dev branch に 6 テーブル (`user` / `session` / `account` / `verification` / `user_profile` / `rate_limit`) が作成されることを確認
-  - 観測完了条件: Neon ダッシュボードまたは `psql` で `\dt` を実行して 6 テーブルが存在する
-  - _Requirements: 7.6, 12.7, 12.8_
-  - _Boundary: (validation)_
-  - _Depends: 2.5_
-
-- [ ] 11.2 受験者 Magic Link フローを smoke test
-  - `pnpm dev` で起動、`http://localhost:3000/assessments/start` を開く
-  - 自分のメールアドレスを入力して送信、Resend 経由で実際にメール受信することを確認
-  - メール件名が `[bulr] サインインリンク / Sign-in link` で、本文に日本語と英語が両方含まれること
-  - リンクをクリックして session cookie が発行されること、`/assessments/done` (または callbackURL) に redirect されること
-  - DB の `user` と `user_profile` に行が作成されていること、`session` に有効な行が入っていること
-  - 観測完了条件: メール受信 + リンククリック後に Network タブで `Set-Cookie: better-auth.session_token=...; HttpOnly; Secure; SameSite=Lax` を確認
-  - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 1.8, 2.1, 2.2, 7.4, 8.1, 8.2, 8.3, 8.4_
-  - _Boundary: (validation)_
-  - _Depends: 6.1, 8.1, 11.1_
-
-- [ ] 11.3 レート制限を smoke test
-  - 同一メールに対して 5 分以内に 4 回 Magic Link を送信
-  - 4 回目で generic error message が返ることを確認
-  - DB の `rate_limit` テーブルに `key='email:<lower email>'` の行があり、`count >= 3` であること
-  - Vercel ログ (またはローカル console) に `rate_limit_triggered` の warn が出ること
-  - 観測完了条件: 4 回目のレスポンスがエラー、3 回目までは成功
-  - _Requirements: 9.1, 9.3, 9.7_
-  - _Boundary: (validation)_
-  - _Depends: 11.2_
-
-- [ ] 11.4 管理者 Basic 認証 + ADMIN_ALLOWED_EMAILS フローを smoke test
-  - `http://localhost:3000/admin/_health` を開き、Basic 認証ダイアログが出ることを確認
-  - 不正な USER/PASSWORD で 401 が再表示されることを確認
-  - 正しい USER/PASSWORD で通過後、未認証なら `/admin/login` に redirect されることを確認
-  - `/admin/login` で Magic Link を送信、受信メールでサインイン、再度 `/admin/_health` にアクセスして 200 + email が表示されることを確認
-  - `ADMIN_ALLOWED_EMAILS` に含まれないメールでサインインした場合、`/admin/_health` で 403 (AuthError) が出ること、Vercel ログに `admin_access_denied` warn が出ること
-  - 観測完了条件: 上記 5 ケースすべてが期待通り動作
-  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 6.1, 6.2, 11.1_
-  - _Boundary: (validation)_
-  - _Depends: 7.1, 9.1, 10.1, 11.1_
-
-- [ ] 11.5 proxy.ts の matcher exclusion を smoke test
-  - `curl -i http://localhost:3000/_next/static/<任意のファイル>` が proxy.ts を通らず 200/404 を返すこと
-  - `curl -i http://localhost:3000/api/auth/get-session` が Basic 認証なしで 200 を返すこと (API ルートが proxy 401 で阻害されないこと)
-  - `curl -i http://localhost:3000/assessments/start` が proxy.ts を通過しても redirect しないこと (matcher 内だが redirect 条件に該当しない)
-  - 観測完了条件: 3 ケースすべてが期待通り動作
-  - _Requirements: 6.6_
-  - _Boundary: (validation)_
+- [ ] 7.2 Magic Link 期限切れ・使い切りの検証
+  - `/sign-in` でリンクを取得した後、16 分待ってからクリック → Better Auth のエラーページが表示される
+  - 別のメール送信でリンクを取得 → クリックして成功 → 同じリンクを再度クリック → エラー表示
+  - 観測可能な完了状態: 期限切れと再使用の両方でエラーが表示される
+  - _Requirements: 1.10_
   - _Depends: 7.1_
 
-- [ ] 11.6 Vercel Preview デプロイで end-to-end を再確認
-  - feature ブランチを push して PR を作成、Vercel Preview URL が PR コメントに投稿されることを確認
-  - Preview URL で 11.2 / 11.4 と同等のフローが動作することを確認 (Neon dev branch 共有、Resend テストドメイン、ADMIN_* 環境変数)
-  - 観測完了条件: Preview URL で受験者と管理者の認証両方が成立
-  - _Requirements: 12.8_
-  - _Boundary: (validation)_
-  - _Depends: 11.2, 11.4_
+- [ ] 7.3 Magic Link レート制限の検証
+  - 同じメールアドレスに対し 5 分以内に 4 回連続で `/sign-in` から送信を試みる → 4 回目に「短時間に複数回...」が表示され、Resend には呼ばれない（Resend ダッシュボードで送信数を確認、または DB の rate_limit テーブルで count = 4 を確認）
+  - `psql $DATABASE_URL -c "SELECT * FROM rate_limit WHERE key LIKE 'email:%';"` で該当キーの count と window_start を確認
+  - 観測可能な完了状態: 4 回目の送信が拒否され、UI に該当エラーが表示、Resend には 3 通のみが配信される
+  - _Requirements: 8.1, 8.2, 8.8_
+  - _Depends: 7.1_
 
-## Cleanup & Documentation
+- [ ] 7.4 proxy.ts による UX リダイレクトと Basic 認証の検証
+  - サインアウト状態（Cookie クリア）で `/interviews/foo` を訪問 → `/sign-in` にリダイレクトされる
+  - `/admin/_health` を訪問 → Basic 認証ダイアログが表示される、不正な credentials で 401（WWW-Authenticate ヘッダーあり）、正しい credentials で pass through
+  - 観測可能な完了状態: 2 つのリダイレクト / 401 挙動がブラウザで再現できる
+  - _Requirements: 3.7, 4.1, 4.2, 6.1-6.7_
+  - _Depends: 5.1, 6.3_
 
-- [ ] 12. 完了処理
-- [ ] 12.1 (P) `apps/web/.env.local.example` および リポジトリルート `.env.example` を確認
-  - 本スペックで追加導入される `RESEND_REPLY_TO_EMAIL` (オプショナル) を `.env.example` に追加するか判断
-  - 追加する場合は `multi-env-infrastructure` の規約 (両ファイル同期) に従い、コメントで「Optional. If unset, magic link emails will not include a Reply-To header.」 を記述
-  - 追加しない場合はその判断を design.md または research.md に追記
-  - 観測完了条件: 判断が明示され、両 example ファイルの状態が一致
-  - _Requirements: 8.6, 12.1_
-  - _Boundary: (env vars convention; cross-cuts EnvExampleRoot/Web from upstream spec)_
+- [ ] 7.5 `/admin/_health` の 3 ケース検証
+  - 環境変数 `ADMIN_ALLOWED_EMAILS=tanno@example.com,owner@example.com`（自分のメールを含める）を設定
+  - (a) Basic 認証通過 + 未サインイン状態 → `/admin/_health` 訪問で `/sign-in` リダイレクト
+  - (b) Basic 認証通過 + ADMIN_ALLOWED_EMAILS に含まれないメールでサインイン → `/admin/_health` 訪問で「FORBIDDEN」表示
+  - (c) Basic 認証通過 + ADMIN_ALLOWED_EMAILS に含まれるメールでサインイン → `/admin/_health` 訪問で「OK: admin authenticated」+ 該当 email 表示
+  - 観測可能な完了状態: 3 ケースすべてが期待通りに動作する
+  - _Requirements: 4.3, 4.4, 4.7, 4.8, 10.1-10.8_
+  - _Depends: 6.3, 5.1, 7.1_
 
-- [ ] 12.2 (P) PR レビューチェックリストを `security.md` の既存規約に倣って認識
-  - 後続 spec の PR で必須となる確認事項を本スペック完了時の PR description またはコミットメッセージで言及:
-    - `requireUser()` / `requireAdmin()` を Server Component / Server Action / API Route で呼んでいるか
-    - `authedAction` / `adminAction` を mutation で使っているか
-    - `requireSessionOwnership` で所有権チェックをしているか
-    - Zod で全入力を検証しているか
-    - DB クエリに userId / sessionId スコープが含まれているか
-  - 本タスクは新規ファイルを作らない。PR description / commit message に上記を含める運用上の確認のみ
-  - 観測完了条件: PR description に上記 5 項目が含まれる
-  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
-  - _Boundary: (PR review hygiene)_
+- [ ] 7.6 多層防御（CVE-2025-29927 シミュレーション）の検証
+  - `apps/web/proxy.ts` を一時的に修正して `config.matcher = []`（または `matcher` を空配列）にし、proxy.ts を実質無効化
+  - `pnpm dev` を再起動
+  - 未サインイン状態で `/admin/_health` を訪問 → proxy.ts の Basic 認証は飛ばされるが、Server Component の `requireAdmin()` が `AuthError('UNAUTHORIZED')` を throw → `/sign-in` リダイレクトが起きる
+  - 検証後、`apps/web/proxy.ts` を元の matcher に戻す
+  - 観測可能な完了状態: proxy.ts を無効化しても Server Component の独立 requireAdmin で防御が効くことを確認
+  - _Requirements: 3.8, 4.4, 6.8_
+  - _Depends: 7.5_
 
-- [ ] 12.3 (P) Better Auth admin_health 一時ページの削除予定を README または admin-review-panel spec brief にメモ
-  - `apps/web/app/admin/_health/page.tsx` は本スペック smoke test 専用。後続の `admin-review-panel` spec が `/admin/sessions` を実装した時点で削除する
-  - 削除予定を `apps/web/app/admin/_health/page.tsx` の JSDoc にも明記済みであることを再確認 (タスク 10.1 で記述済み)
-  - admin-review-panel の brief.md (まだ存在しないなら本タスクでは作らず、後続 spec 実行時に対応) または本スペックの design.md「Migration Strategy」で言及
-  - 観測完了条件: 削除タイミングと責務が文書化されている
-  - _Requirements: 11.1_
-  - _Boundary: (documentation)_
+- [ ] 7.7 `pnpm typecheck` / `pnpm lint` / `pnpm build` の最終確認
+  - リポジトリルートで `pnpm typecheck` 実行 → 全パッケージでエラーなく完了
+  - リポジトリルートで `pnpm lint` 実行 → 全パッケージでエラーなく完了
+  - リポジトリルートで `pnpm build` 実行 → apps/web の Next.js build がエラーなく完了
+  - 観測可能な完了状態: 3 コマンドすべてが exit code 0 で終了
+  - _Requirements: (cross-cutting quality gate)_
+  - _Depends: 1.x-6.x すべて_

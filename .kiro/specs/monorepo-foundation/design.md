@@ -1,103 +1,113 @@
-# Design Document: monorepo-foundation
+# Design Document — monorepo-foundation
 
 ## Overview
 
-**Purpose**: bulr Stage 1 MVP プロトタイプの全実装が乗る最小モノレポ基盤を 0 から構築する。Turborepo + pnpm workspaces + Next.js 16 + Drizzle ORM + 4 つの workspace パッケージ（`@bulr/{db, types, lib, ai}`）を一括で初期化し、`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` がエラーなく通る状態をゴールとする。
+**Purpose**: 本機能は、bulr Stage 1 MVP プロトタイプ（AI 面接アシスタント型）の **モノレポ基盤** を確立する。Turborepo + pnpm workspaces + Next.js 16 + 4 つの workspace パッケージ（`@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai`）によるスケルトンを構築し、`pnpm install` → `pnpm dev` で apps/web (port 3000) が起動し、`pnpm typecheck` / `pnpm lint` がエラーなく通る状態をゴールとする。
 
-**Users**: 後続 5 spec（`multi-env-infrastructure` / `authentication` / `assessment-pattern-seed` / `assessment-engine` / `admin-review-panel`）の実装者がこの基盤の上に機能を積み上げる。本スペックの直接利用者は spec 実装者のみであり、エンドユーザー向け機能は一切提供しない。
+**Users**: 後続 5 spec（`multi-env-infrastructure`、`authentication`、`assessment-pattern-seed`、`assessment-engine`、`admin-review-panel`）の実装担当者が利用する。各 spec はこの基盤の上にインフラ統合・認証・DB スキーマ・LLM 関数 + 状態 A/B UI・管理画面を順次積み上げる。
 
-**Impact**: greenfield リポジトリ（Initial commit + `docs/` + `.kiro/` のみ）に、ルート設定一式 + `apps/web` + 4 packages を新規追加する。既存ファイル（`docs/` 配下、`.kiro/` 配下）は変更しない。
+**Impact**: greenfield プロジェクトに対して、ルート設定（`package.json` / `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` / Lint/Format 設定）と `apps/web` + `packages/{db, types, lib, ai}` のディレクトリ構造を新規作成する。本スペックは **機能を実装しない**。空ページ表示と型チェック/lint pass のみがゴール。
 
 ### Goals
 
-- ルート設定（`package.json` / `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` / `.gitignore` / `eslint.config.mjs` / `prettier.config.mjs` / `.npmrc`）を整備する
-- `apps/web` に Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui ベースを初期化し、空のランディングページを表示する
-- `packages/{db, types, lib, ai}` の 4 パッケージスケルトンを workspace として参照可能にする
-- Drizzle ORM の初期設定（空スキーマ + `drizzle.config.ts` + Drizzle client）を `packages/db` に提供する
-- `pnpm install` → `pnpm dev` で apps/web (port 3000) が起動し、`pnpm typecheck` / `pnpm lint` がエラーなく通る
+- ルート設定 8 ファイル（`package.json` / `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` / `.gitignore` / `eslint.config.mjs` / `prettier.config.mjs` / `.npmrc`）を整備
+- `apps/web` を Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui ベースで初期化し、port 3000 で空ランディングページを起動
+- `packages/{db, types, lib, ai}` の 4 パッケージスケルトンを作成し、相互参照（`@bulr/*` エイリアス）を確立
+- `packages/types/package.json` の exports map に `./profile` / `./evaluation` のサブパス export を予約
+- `packages/ai/package.json` に Vercel AI SDK 6 / Anthropic SDK / OpenAI SDK / Zod の依存を追加
+- `packages/db` に Drizzle ORM の最小初期化（client + 空 schema + drizzle.config.ts）
+- `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` のルートコマンドが動作
 
 ### Non-Goals
 
-- 認証実装（Better Auth、Magic Link、proxy.ts、guards）→ `authentication` spec
-- DB アプリケーションテーブル定義 → `assessment-pattern-seed` および `assessment-engine` spec
-- LLM ツール、システムプロンプト、評価ロジック → `assessment-engine` spec
-- UI コンポーネントの本実装、shadcn/ui 個別コンポーネント追加 → 後続 spec で必要に応じて
-- Vercel プロジェクト作成、Neon 接続、Resend 統合、`.env.example` → `multi-env-infrastructure` spec
-- CI/CD ワークフロー → `multi-env-infrastructure` spec
-- テストフレームワーク（Vitest / Playwright）のセットアップ → 必要になった spec で導入
-- `packages/{auth, ui, i18n}` の切り出し → Stage 2
+- 認証実装（Better Auth、Magic Link、proxy.ts）→ `authentication` spec
+- DB テーブル実体定義 → 後続 spec
+- LLM 関数実装、システムプロンプト、Whisper クライアント実装 → `assessment-engine` spec
+- 環境変数定義、`.env.example`、Vercel デプロイ、Vercel Cron → `multi-env-infrastructure` spec
+- UI コンポーネント実装、面接 UI、管理画面 → 後続 spec
+- CI/CD パイプライン、テストフレームワークセットアップ → 必要になった spec
+- Drizzle migration の dev/prod への push → 後続 spec
 
 ## Boundary Commitments
 
 ### This Spec Owns
 
-- ルート設定ファイル一式（`package.json`、`pnpm-workspace.yaml`、`turbo.json`、`tsconfig.base.json`、`.gitignore`、`.npmrc`、`eslint.config.mjs`、`prettier.config.mjs`、`README.md`）
-- `apps/web` のスケルトン（`app/layout.tsx`、`app/page.tsx`、`next.config.ts`、`postcss.config.mjs`、`tsconfig.json`、`eslint.config.mjs`、`components.json`、Tailwind 設定、グローバル CSS）
-- `packages/{db, types, lib, ai}` の 4 パッケージそれぞれの `package.json`、`tsconfig.json`、`src/index.ts` スケルトン
-- `packages/db/drizzle.config.ts` と `packages/db/src/schema/index.ts`（空スキーマバレル）と `packages/db/src/client.ts`（Drizzle client）
-- workspace パッケージ参照エイリアス（`@bulr/db` / `@bulr/types` / `@bulr/lib` / `@bulr/ai`）の解決経路
-- 開発コマンドのトポロジ（`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` / `pnpm --filter @bulr/db generate` / `pnpm --filter @bulr/db push`）
+- ルート設定 8 ファイルの作成と内容
+- `apps/web` の Next.js 16 初期化（`app/layout.tsx`、`app/page.tsx`、`next.config.ts`、`tailwind.config.ts`、`postcss.config.mjs`、`globals.css`、`tsconfig.json`、`package.json`、`components.json` for shadcn/ui ベース）
+- `packages/{db, types, lib, ai}` の 4 パッケージの `package.json` / `tsconfig.json` / `src/index.ts` 等のスケルトン
+- `packages/db/drizzle.config.ts` と `src/client.ts`、`src/schema/index.ts`（空バレル）、`src/queries/index.ts`（空バレル）
+- `packages/types/package.json` の exports map（`.` / `./profile` / `./evaluation`）と `src/{index,profile,evaluation}.ts` 空ファイル
+- `packages/ai` の `src/{functions,prompts,whisper}/` ディレクトリ予約（`.gitkeep` または空 `index.ts`）と AI SDK 依存追加
+- パッケージ間依存方向の `package.json` レベルでの強制
+- ESLint Flat Config と Prettier 設定（`singleQuote: true`）
+- Turborepo パイプライン定義（`build` / `dev` / `typecheck` / `lint`）
 
 ### Out of Boundary
 
-- DB アプリケーションテーブル定義（`user_profile` / `assessment_session` / `assessment_answer` / `assessment_pattern` / `chat_message`）— `assessment-pattern-seed` および `assessment-engine` spec が `packages/db/src/schema/` に追加する
-- LLM ツール実装、システムプロンプト、状態機械、評価ロジック — `assessment-engine` spec が `packages/ai/src/` に追加する
-- 認証ヘルパー、Magic Link 実装、Basic 認証、proxy.ts — `authentication` spec が `apps/web/lib/` および `apps/web/proxy.ts` に追加する
-- ユーザー向け UI コンポーネント、チャット画面、管理画面 — `assessment-engine` および `admin-review-panel` spec が `apps/web/app/` 配下に追加する
-- 環境変数定義、`.env.example`、Vercel 環境変数設定 — `multi-env-infrastructure` spec が整備する
-- CI/CD パイプライン、Vercel プロジェクト設定、Neon ブランチ作成、Resend 設定 — `multi-env-infrastructure` spec が担う
-- Drizzle migration の実行（`drizzle-kit push` を実 DB に対して実行）— `multi-env-infrastructure` spec が dev/prod 環境を整えた後に実行する
+- `.env*` ファイル、環境変数値、Vercel プロジェクト設定 → `multi-env-infrastructure` spec
+- `vercel.json`（Cron 定義含む）→ `multi-env-infrastructure` spec
+- DB schema 実体（candidate / interview_session 等のテーブル定義）→ 後続 spec が `packages/db/src/schema/*.ts` を追加
+- LLM 関数本体（`analyzeTurn` 等 5 関数）と Whisper ラッパー（`transcribeAudio`）の実装 → `assessment-engine` spec が `packages/ai/src/functions/*.ts` と `src/whisper/transcribe.ts` を追加
+- `packages/types/src/profile.ts` / `evaluation.ts` の型実体 → `assessment-engine` spec
+- 認証ヘルパー（`requireUser` / `requireAdmin` / `requireSessionOwnership`）と Server Action ラッパー → `authentication` spec が `apps/web/lib/` に追加
+- shadcn/ui コンポーネント本体（Button / Dialog 等）の追加 → `assessment-engine` spec で必要なものから順次追加（本スペックでは `components.json` の登録設定のみ）
+- テストランナー（Vitest / Playwright）の導入 → 必要になった spec で導入
+- `pnpm audit` 等のセキュリティスキャン CI 設定 → `multi-env-infrastructure` spec
 
 ### Allowed Dependencies
 
-- 外部 npm パッケージ: `next@^16`、`react@^19`、`react-dom@^19`、`typescript@^5.4`、`turbo@^2.9`、`eslint@^9`、`typescript-eslint@^8`、`prettier@^3.8`、`tailwindcss@^4`、`@tailwindcss/postcss@^4`、`drizzle-orm@^0.45`、`drizzle-kit@^0.31`、`pg@^8`、`@types/pg@^8`、`ai@^6`、`@ai-sdk/anthropic@^3`、`@ai-sdk/react@^3`、`zod@^4`、`tsx@^4`、`@types/node@^22`、`@types/react@^19`、`@types/react-dom@^19`、`eslint-config-next@^16`、`babel-plugin-react-compiler@^1`
-- 内部 workspace 依存方向（厳守）:
-  - `apps/web → @bulr/{db, types, lib, ai}`
-  - `@bulr/ai → @bulr/{db, types, lib}`
-  - `@bulr/db → @bulr/types`
-  - `@bulr/lib → @bulr/types`
-  - `@bulr/types → なし`
-- ホスト環境: Node.js 22 LTS 以上、pnpm 10 以上、macOS / Linux
+- pnpm 10+、Turborepo 2.x、TypeScript 5.x、Next.js 16、React 19、Tailwind CSS 4、Drizzle ORM 0.45.x、drizzle-kit 0.31.x、Vercel AI SDK 6.x、Anthropic AI SDK 3.x、OpenAI SDK（公式）、Zod 4.x
+- ESLint 9.x（Flat Config）、typescript-eslint 8.x、Prettier 3.x
+- Postgres 用 Node ドライバ（`pg` 8.x）。Neon の serverless ドライバへの差し替えは `multi-env-infrastructure` spec で判断
+- 制約: `packages/types` には runtime 依存（Zod 含む）を一切追加しない。Zod は `packages/lib` および `packages/ai`、`apps/web/lib` でのみ使用
 
 ### Revalidation Triggers
 
-以下が発生した場合、後続 spec は本スペックとの統合を再検証する必要がある:
-
-- workspace エイリアス命名の変更（`@bulr/*` → 別 prefix）
-- 依存方向の変更（例: `@bulr/types` が他 package を import するようになる）
-- ルートスクリプトの命名・契約変更（`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` の挙動変更）
-- Next.js / React / TypeScript / Drizzle / Tailwind のメジャーバージョン変更
-- `apps/web` の Root Directory 変更や複数アプリ化（apps/admin 分離は Stage 2）
-- `packages/db/drizzle.config.ts` のスキーマパス変更（`./src/schema/index.ts` から移動）
-- `tsconfig.base.json` の strict 設定の緩和
+- パッケージ名（`@bulr/*`）または workspace エイリアス命名規則の変更 → 全 spec が import 文を書き換え
+- 依存方向ルール（`apps/web → packages/{db, types, lib, ai}` 等）の変更 → 後続 spec の package.json 更新が必要
+- `packages/types` の exports map（`.` / `./profile` / `./evaluation`）にサブパスを追加・削除 → `assessment-engine` spec の import 文に影響
+- TypeScript の `module` / `moduleResolution` 設定変更 → 全パッケージの import 解決方式に影響
+- Next.js のメジャーバージョン変更（16 → 17 等）→ `apps/web` 全体の検証が必要
+- `packages/ai` の AI SDK のメジャーバージョン変更（Vercel AI SDK 6 → 7、Anthropic SDK の API 変更等）→ `assessment-engine` spec のコード書き換えが必要
+- Drizzle ORM のメジャーバージョン変更 → `assessment-pattern-seed` および `assessment-engine` spec のスキーマ書き換えが必要
 
 ## Architecture
+
+### Existing Architecture Analysis
+
+該当なし（greenfield）。bootstrap commit + `docs/` + `.kiro/`（steering 7 ファイル + 6 spec brief）+ `.claude/` のみが既存。
+
+参照プロジェクト `dishxdish-app-mvp` が部分的に同一スタック（Turborepo + pnpm + Next.js 16 + Drizzle + Vercel AI SDK 6 + Anthropic SDK）で稼働中。本スペックは dishxdish の構成を Stage 1 用に簡略化して移植する：
+
+- `dishxdish/packages/{auth, ui, i18n}` は **Stage 1 では作らない**（apps/web に直書き、Stage 2 で切り出し）
+- `dishxdish/packages/types` の exports map 構造を踏襲
+- `dishxdish/packages/ai` の依存構成を bulr 用に変更（`@ai-sdk/google` を外し、`openai` を追加）
+- Prettier の `singleQuote` は dishxdish が `false` だが、本プロジェクトでは v1 確認済み方針で `true` を採用（差分注意）
 
 ### Architecture Pattern & Boundary Map
 
 ```mermaid
 graph TB
-    subgraph Root["Repository Root"]
-        Pkg[package.json]
-        Workspace[pnpm-workspace.yaml]
+    subgraph Root[Repository Root]
+        RootPkg[package.json]
+        WS[pnpm-workspace.yaml]
         Turbo[turbo.json]
         TsBase[tsconfig.base.json]
-        EslintRoot[eslint.config.mjs]
-        PrettierRoot[prettier.config.mjs]
+        Eslint[eslint.config.mjs]
+        Prettier[prettier.config.mjs]
         Npmrc[.npmrc]
         Gitignore[.gitignore]
-        Readme[README.md]
     end
 
-    subgraph Apps["apps/"]
-        Web[apps/web<br/>Next.js 16 + React 19 + Tailwind 4]
+    subgraph Apps[apps/]
+        Web[apps/web<br/>Next.js 16 App Router]
     end
 
-    subgraph Packages["packages/"]
+    subgraph Packages[packages/]
+        Db[packages/db<br/>Drizzle ORM + client]
         Types[packages/types<br/>Pure TS types]
-        Lib[packages/lib<br/>Shared utils]
-        Db[packages/db<br/>Drizzle client + empty schema]
-        Ai[packages/ai<br/>AI SDK deps + empty exports]
+        Lib[packages/lib<br/>Shared utilities]
+        Ai[packages/ai<br/>LLM functions slot]
     end
 
     Web --> Db
@@ -109,37 +119,28 @@ graph TB
     Ai --> Lib
     Db --> Types
     Lib --> Types
-
-    Turbo -. orchestrates .-> Web
-    Turbo -. orchestrates .-> Types
-    Turbo -. orchestrates .-> Lib
-    Turbo -. orchestrates .-> Db
-    Turbo -. orchestrates .-> Ai
 ```
 
 **Architecture Integration**:
-
-- **Selected pattern**: モノレポ + 単一アプリ + 共通パッケージ群（Turborepo + pnpm workspaces）。`structure.md` で定義された Stage 1 構造をそのまま実体化する
-- **Domain/feature boundaries**: `apps/web` がエンドユーザー向け UI / API、`packages/db` が DB スキーマと client の真実の源、`packages/types` が純粋な型定義（他 package に依存しない頂点）、`packages/lib` が汎用ユーティリティ、`packages/ai` が AI 関連ロジックの置き場
-- **Existing patterns preserved**: なし（greenfield）
-- **New components rationale**: 4 packages はいずれも後続 spec が「ここに追加する」前提のスケルトン。本スペックは「箱」だけ用意し、中身は後続 spec が積む
-- **Steering compliance**: `tech.md` の技術選定（Next.js 16、React 19、Drizzle 0.45、Vercel AI SDK 6、TypeScript strict）、`structure.md` の依存方向と命名規則、`security.md` の `no-explicit-any` ルール、をすべて遵守
+- **Selected pattern**: モノレポ + 単一アプリ（apps/web）+ 4 パッケージ。Turborepo パイプラインで並列ビルド・型チェック・lint
+- **Domain/feature boundaries**: `packages/types` は型のみ、`packages/lib` は runtime ユーティリティ、`packages/db` は DB スキーマ + クライアント、`packages/ai` は LLM 関数（本スペックではディレクトリと依存予約のみ）。`apps/web` は UI + API Routes + Server Components
+- **Existing patterns preserved**: 該当なし（greenfield）
+- **New components rationale**: 後続 5 spec の依存順序（roadmap.md 参照）を満たすため、最小 4 パッケージで開始。`packages/auth` / `ui` / `i18n` は Stage 2 で切り出し
+- **Steering compliance**: `structure.md` L13-99 のディレクトリ構造、L240-251 の依存ルール、`tech.md` L41-53 の技術選定、`security.md` L189-209 のシークレット管理ルールに準拠
 
 ### Technology Stack
 
 | Layer | Choice / Version | Role in Feature | Notes |
 |-------|------------------|-----------------|-------|
-| Frontend | Next.js 16 (App Router、Turbopack stable、React Compiler) + React 19 | apps/web のフレームワーク | `tech.md` 準拠、空のランディングページのみ |
-| Styling | Tailwind CSS 4 + `@tailwindcss/postcss` 4 + shadcn/ui ベース | apps/web のスタイル | 個別 shadcn コンポーネント追加は本スペックでは行わない |
-| Backend / Services | Next.js 16 API Routes（本スペックでは未使用、後続 spec で利用） | 将来の API エンドポイント置き場 | 本スペックでは API は実装しない |
-| Data / Storage | Drizzle ORM 0.45.x stable + `drizzle-kit` 0.31.x + `pg` 8.x | packages/db の ORM 基盤、空スキーマ | アプリケーションテーブル定義は後続 spec |
-| Type Safety | TypeScript 5.4+（strict、noUncheckedIndexedAccess、isolatedModules） | 全 workspace の型基盤 | `any` は ESLint warn |
-| Validation | Zod 4.x（packages/ai の依存に追加するのみ、スケルトン段階では未使用） | 後続 spec の入力検証 | 本スペックでは import チェックのみ |
-| AI SDK | Vercel AI SDK 6.x + `@ai-sdk/anthropic` 3.x + `@ai-sdk/react` 3.x | packages/ai の依存追加のみ | 実装は `assessment-engine` spec |
-| Tooling | ESLint 9 + typescript-eslint 8 + Prettier 3.8 + Turbo 2.9 + pnpm 10 | コード品質と build orchestration | dishxdish の設定を踏襲 |
-| Infrastructure / Runtime | Node.js 22 LTS 以上 + pnpm 10 以上 | ローカル開発前提 | Vercel 設定は別 spec |
-
-> 詳細な比較・代替案検討は `research.md` に格納。本セクションは決定された選定と役割のみを提示する。
+| Frontend | Next.js 16 (App Router、Turbopack stable、React Compiler) / React 19 | apps/web の起動・空ページ表示 | `app/page.tsx` のみ含む |
+| Styling | Tailwind CSS 4 + shadcn/ui ベース | グローバル CSS と shadcn の `components.json` 登録 | 個別コンポーネントは後続 spec で追加 |
+| Backend / Services | （該当なし） | 本スペックでは API Route を実装しない | `assessment-engine` spec で `/api/interview/*` 追加 |
+| Data / Storage | Drizzle ORM 0.45.x stable + drizzle-kit + `pg` 8.x | `packages/db` の client 初期化と空 schema | 接続先 DATABASE_URL は `multi-env-infrastructure` spec |
+| AI / LLM | Vercel AI SDK 6.x + `@ai-sdk/anthropic` + `openai` + Zod 4.x | `packages/ai` の依存追加のみ | 関数実装は `assessment-engine` spec |
+| Type System | TypeScript 5.x（strict mode、`noUncheckedIndexedAccess: true`） | 全パッケージの型チェック | `tsconfig.base.json` で集中管理 |
+| Lint / Format | ESLint 9.x（Flat Config） / typescript-eslint 8.x / Prettier 3.x | コード品質 | Prettier `singleQuote: true` |
+| Build / Task | Turborepo 2.x + pnpm 10+ workspaces | 並列ビルド・型チェック・lint | `turbo.json` で task 定義 |
+| Runtime | Node.js 22 LTS or 24 LTS | `engines` で要求 | `tech.md` 準拠 |
 
 ## File Structure Plan
 
@@ -147,639 +148,586 @@ graph TB
 
 ```
 bulr-app-mvp/
-├── package.json                       # ルート package.json（pnpm scripts、devDeps）
-├── pnpm-workspace.yaml                # workspace 登録（apps/* + packages/*）
-├── turbo.json                         # Turbo タスク定義（build/dev/typecheck/lint）
-├── tsconfig.base.json                 # 全 package が extends する TS 共通設定
-├── .npmrc                             # pnpm 挙動制御
-├── .gitignore                         # 共通 ignore
-├── eslint.config.mjs                  # ESLint flat config（typescript-eslint）
-├── prettier.config.mjs                # Prettier 設定
-├── README.md                          # 開発者向けセットアップ案内
+├── package.json                       # ルート: workspaces / scripts (dev/build/typecheck/lint) / engines / devDependencies
+├── pnpm-workspace.yaml                # ["apps/*", "packages/*"]
+├── turbo.json                         # build / dev / typecheck / lint タスク定義
+├── tsconfig.base.json                 # strict mode / noUncheckedIndexedAccess / ESNext / bundler
+├── eslint.config.mjs                  # Flat Config: typescript-eslint recommended + ignores
+├── prettier.config.mjs                # singleQuote: true / printWidth 100 / tabWidth 2
+├── .npmrc                             # strict-peer-dependencies / link-workspace-packages 等
+├── .gitignore                         # node_modules / .next / .turbo / dist / .vercel / coverage / .env*.local
 │
 ├── apps/
-│   └── web/                           # Next.js 16 アプリ
-│       ├── package.json               # apps/web 個別の依存と scripts
-│       ├── tsconfig.json              # tsconfig.base.json を extends + Next.js 用設定
-│       ├── next.config.ts             # Next.js 設定（React Compiler、transpilePackages）
-│       ├── next-env.d.ts              # Next.js 型補完（自動生成、git 管理外）
-│       ├── postcss.config.mjs         # Tailwind CSS 4 PostCSS 設定
-│       ├── eslint.config.mjs          # ルート config を継承
-│       ├── components.json            # shadcn/ui ベース設定（後続 spec が add で利用）
-│       └── src/
-│           ├── app/
-│           │   ├── layout.tsx         # Root layout（HTML/body/フォント）
-│           │   ├── page.tsx           # ランディング（bulr ベータの説明）
-│           │   └── globals.css        # Tailwind directive + shadcn ベーストークン
-│           └── lib/
-│               └── utils.ts           # `cn()` ユーティリティ（shadcn 規約、空でも置く）
+│   └── web/
+│       ├── package.json               # name: @bulr/web、deps: next/react/react-dom/tailwindcss + @bulr/{db,types,lib,ai}
+│       ├── tsconfig.json              # extends tsconfig.base.json + Next.js plugin + paths
+│       ├── next.config.ts             # 最小設定（後続 spec で CSP / cron 等追加）
+│       ├── postcss.config.mjs         # @tailwindcss/postcss
+│       ├── tailwind.config.ts         # content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"]
+│       ├── components.json            # shadcn/ui の設定（aliases、style、tailwind 設定指定）
+│       ├── app/
+│       │   ├── layout.tsx             # ルートレイアウト（html/body + globals.css import）
+│       │   ├── page.tsx               # 空のランディング（"bulr — AI 面接アシスタント (準備中)"）
+│       │   └── globals.css            # @import "tailwindcss";
+│       ├── components/                # 空ディレクトリ（.gitkeep）
+│       └── lib/                       # 空ディレクトリ（.gitkeep）
 │
 └── packages/
-    ├── types/                         # 純粋型（依存先なし）
-    │   ├── package.json
-    │   ├── tsconfig.json
+    ├── db/
+    │   ├── package.json               # name: @bulr/db、deps: drizzle-orm + pg、devDeps: drizzle-kit + tsx + @types/pg、peerDeps: @bulr/types、exports に ./schema/* / ./queries/* / ./seeds/* ワイルドカード予約
+    │   ├── tsconfig.json              # extends tsconfig.base.json
+    │   ├── drizzle.config.ts          # schema / out / dialect: 'postgresql' / dbCredentials は後続 spec で追加
     │   └── src/
-    │       └── index.ts               # スケルトン: `export {};`
+    │       ├── index.ts               # export * from './client'; export * as schema from './schema';
+    │       ├── client.ts              # drizzle(pg client) ファクトリ（DATABASE_URL は process.env、後続 spec で実 URL）
+    │       ├── schema/
+    │       │   └── index.ts           # 空バレル（コメント: テーブルは後続 spec で追加）
+    │       ├── queries/
+    │       │   ├── .gitkeep           # ディレクトリ予約（後続 spec が interview/, admin/ サブディレクトリを追加）
+    │       │   └── index.ts           # 空バレル（コメント: クエリは後続 spec で追加）
+    │       └── seeds/
+    │           └── .gitkeep           # ディレクトリ予約（assessment-pattern-seed spec が assessment-patterns.ts / types.ts を追加）
     │
-    ├── lib/                           # 共通ユーティリティ（types のみに依存）
-    │   ├── package.json
-    │   ├── tsconfig.json
+    ├── types/
+    │   ├── package.json               # name: @bulr/types、exports: { ".", "./profile", "./evaluation" }、deps: 空、devDeps: typescript のみ
+    │   ├── tsconfig.json              # extends tsconfig.base.json
     │   └── src/
-    │       └── index.ts               # スケルトン: `export {};`
+    │       ├── index.ts               # 空バレル（コメント: 共通型を再エクスポート予定）
+    │       ├── profile.ts             # 空ファイル（assessment-engine spec で InterviewerProfile / CandidateInfo 等を追加）
+    │       └── evaluation.ts          # 空ファイル（assessment-engine spec で LlmEvaluation / ManualEvaluation / HeatmapData 等を追加）
     │
-    ├── db/                            # Drizzle client + 空スキーマバレル
-    │   ├── package.json
-    │   ├── tsconfig.json
-    │   ├── drizzle.config.ts          # PostgreSQL + ./src/schema/index.ts + snake_case
+    ├── lib/
+    │   ├── package.json               # name: @bulr/lib、deps: @bulr/types + zod（runtime OK レイヤ）
+    │   ├── tsconfig.json              # extends tsconfig.base.json
     │   └── src/
-    │       ├── index.ts               # `export { db, type DB } from './client'; export * from './schema';`
-    │       ├── client.ts              # `pg.Pool` + `drizzle()` + DATABASE_URL ガード
-    │       └── schema/
-    │           └── index.ts           # 空バレル（後続 spec がテーブルを追加）
+    │       └── index.ts               # 空バレル（コメント: 共通ユーティリティを追加予定）
     │
-    └── ai/                            # AI SDK 依存追加のみ
-        ├── package.json
-        ├── tsconfig.json
+    └── ai/
+        ├── package.json               # name: @bulr/ai、deps: ai (Vercel AI SDK 6) + @ai-sdk/anthropic + openai + zod + @bulr/{db,types,lib}
+        ├── tsconfig.json              # extends tsconfig.base.json
         └── src/
-            └── index.ts               # スケルトン: `export {};`
+            ├── index.ts               # 空バレル（コメント: LLM 関数を再エクスポート予定）
+            ├── client.ts              # 空ファイル or コメントのみ（後続 spec で Anthropic Claude モデル定義）
+            ├── functions/
+            │   └── .gitkeep           # ディレクトリ予約（assessment-engine spec が 5 関数を追加）
+            ├── prompts/
+            │   └── .gitkeep           # ディレクトリ予約（assessment-engine spec が system-prompt.ts を追加）
+            └── whisper/
+                └── .gitkeep           # ディレクトリ予約（assessment-engine spec が transcribe.ts を追加）
 ```
 
 ### Modified Files
 
-- `.gitignore` — 既存（initial commit）が無い場合は新規作成。dishxdish ベースに `.next/`、`dist`、`.turbo`、`.vercel`、`*.tsbuildinfo`、`.env*.local`、`.serena/cache/`、`.claude/settings.local.json` を ignore。
+- 該当なし（全ファイル新規作成）
 
-> File Structure Plan の各ファイルは「責務 1 つ」の原則を守る。後続 spec が追加するファイルはすべて `packages/db/src/schema/`、`packages/ai/src/`、`apps/web/src/app/(assessment)/`、`apps/web/src/app/admin/`、`apps/web/src/app/api/`、`apps/web/src/lib/` のいずれかに収まる前提。
-
-## System Flows
-
-### 開発者の初期セットアップフロー
-
-```mermaid
-sequenceDiagram
-    actor Dev as Developer
-    participant Repo as Repository Root
-    participant Pnpm as pnpm
-    participant Turbo as Turbo
-    participant Web as apps/web (Next.js)
-
-    Dev->>Repo: git clone
-    Dev->>Pnpm: pnpm install
-    Pnpm->>Repo: workspace の依存解決
-    Pnpm-->>Dev: node_modules 構築完了
-    Dev->>Pnpm: pnpm dev
-    Pnpm->>Turbo: turbo run dev
-    Turbo->>Web: next dev (port 3000)
-    Web-->>Dev: http://localhost:3000 でランディング表示
-```
-
-### 型チェック / ビルド時の依存解決フロー
-
-```mermaid
-graph LR
-    Cmd[pnpm typecheck] --> Turbo[turbo run typecheck]
-    Turbo --> Types[packages/types tsc]
-    Types --> Lib[packages/lib tsc]
-    Types --> Db[packages/db tsc]
-    Lib --> Ai[packages/ai tsc]
-    Db --> Ai
-    Lib --> Web[apps/web tsc]
-    Db --> Web
-    Ai --> Web
-    Types --> Web
-```
-
-> Turbo は各 package の `typecheck` スクリプトを依存トポロジ（`^typecheck`）に従って並列実行する。`types` が頂点、`web` が末端。
+> 各ファイルは単一責務。ルート設定 8 ファイル、`apps/web` 12 ファイル、`packages/db` 7 ファイル、`packages/types` 5 ファイル、`packages/lib` 3 ファイル、`packages/ai` 7 ファイル（`.gitkeep` 含む）。`packages/ai` の 5 関数実装と Whisper ラッパーは **本スペックでは作成しない**（ディレクトリと依存のみ予約）。
 
 ## Requirements Traceability
 
 | Requirement | Summary | Components | Interfaces | Flows |
 |-------------|---------|------------|------------|-------|
-| 1.1 | ルート package.json | RootPackageJson | `pnpm dev/build/typecheck/lint` scripts | 開発者初期セットアップ |
-| 1.2 | pnpm-workspace.yaml | WorkspaceConfig | workspace globs | — |
-| 1.3 | turbo.json | TurboConfig | build/dev/typecheck/lint タスク | 型チェック / ビルド時依存解決 |
-| 1.4 | tsconfig.base.json | TsConfigBase | strict mode 設定 | — |
-| 1.5 | pnpm install で依存解決 | RootPackageJson + WorkspaceConfig | — | 開発者初期セットアップ |
-| 1.6 | .npmrc | NpmrcConfig | pnpm 挙動制御 | — |
-| 2.1 | ルート eslint.config.mjs | EslintRootConfig | typescript-eslint rules | — |
-| 2.2 | ルート prettier.config.mjs | PrettierRootConfig | フォーマットルール | — |
-| 2.3 | pnpm lint コマンド | TurboConfig + EslintRootConfig | turbo run lint | — |
-| 2.4 | ESLint / git ignore | EslintRootConfig + GitignoreConfig | ignore patterns | — |
-| 2.5 | no-explicit-any warning | EslintRootConfig | rule 設定 | — |
-| 3.1 | apps/web Next.js 16 初期化 | WebApp | next.config.ts、package.json | 開発者初期セットアップ |
-| 3.2 | layout.tsx と page.tsx | WebApp（layout/page） | React コンポーネント | — |
-| 3.3 | pnpm dev で port 3000 起動 | TurboConfig + WebApp | turbo run dev | 開発者初期セットアップ |
-| 3.4 | Tailwind CSS 4 設定 | WebApp（postcss.config + globals.css） | PostCSS plugin | — |
-| 3.5 | shadcn/ui ベース設定 | WebApp（components.json + src/lib/utils.ts） | shadcn config | — |
-| 3.6 | apps/web tsconfig.json + paths alias | WebApp（tsconfig.json） | `@/*` alias | — |
-| 3.7 | pnpm build エラーなし | TurboConfig + WebApp | turbo run build | 型チェック / ビルド時依存解決 |
-| 4.1 | 4 packages のスケルトン | TypesPkg + LibPkg + DbPkg + AiPkg | package.json + tsconfig.json + src/index.ts | — |
-| 4.2 | @bulr/* 命名 + private | TypesPkg + LibPkg + DbPkg + AiPkg | package.json name フィールド | — |
-| 4.3 | 依存方向の強制 | TypesPkg + LibPkg + DbPkg + AiPkg + WebApp | package.json dependencies | — |
-| 4.4 | 逆方向依存の防御 | TypesPkg + LibPkg + DbPkg + AiPkg | dependencies に追加しない方針 | — |
-| 4.5 | workspace:* プロトコル | RootPackageJson + WebApp + AiPkg + DbPkg + LibPkg | package.json dependencies | — |
-| 4.6 | apps/web から @bulr/db import 解決 | WorkspaceConfig + DbPkg + WebApp | workspace alias | — |
-| 4.7 | pnpm typecheck エラーなし | TurboConfig + 全 package | turbo run typecheck | 型チェック / ビルド時依存解決 |
-| 5.1 | drizzle.config.ts | DbPkg（drizzle.config.ts） | drizzle-kit defineConfig | — |
-| 5.2 | 空スキーマバレル | DbPkg（src/schema/index.ts） | barrel export | — |
-| 5.3 | Drizzle client export + DB 型 | DbPkg（src/client.ts + src/index.ts） | `db` インスタンス + `DB` 型 | — |
-| 5.4 | drizzle-orm 0.45.x 依存 | DbPkg（package.json） | dependencies | — |
-| 5.5 | DATABASE_URL 未設定で明示エラー | DbPkg（src/client.ts） | 起動時 throw | — |
-| 5.6 | drizzle-kit generate 起動可能 | DbPkg（package.json scripts + drizzle.config.ts） | `pnpm --filter @bulr/db generate` | — |
-| 5.7 | アプリテーブル未定義 | DbPkg（src/schema/index.ts） | 空バレル維持 | — |
-| 6.1 | packages/ai の AI SDK 依存 | AiPkg（package.json） | dependencies | — |
-| 6.2 | packages/ai の最小 export | AiPkg（src/index.ts） | barrel export | — |
-| 6.3 | packages/{lib, types} の最小 export | LibPkg + TypesPkg（src/index.ts） | barrel export | — |
-| 6.4 | LLM ツール未実装 | AiPkg（src/index.ts） | 空バレル維持 | — |
-| 6.5 | packages の typecheck 通過 | 全 package（tsconfig.json） | turbo run typecheck | 型チェック / ビルド時依存解決 |
-| 7.1 | pnpm dev | TurboConfig + RootPackageJson | turbo run dev | 開発者初期セットアップ |
-| 7.2 | pnpm build | TurboConfig + RootPackageJson | turbo run build | 型チェック / ビルド時依存解決 |
-| 7.3 | pnpm typecheck | TurboConfig + RootPackageJson | turbo run typecheck | 型チェック / ビルド時依存解決 |
-| 7.4 | pnpm lint | TurboConfig + RootPackageJson | turbo run lint | — |
-| 7.5 | drizzle 操作コマンド | DbPkg（package.json scripts） | `pnpm --filter @bulr/db generate/push` | — |
-| 7.6 | Turbo cache outputs 設定 | TurboConfig | outputs 配列 | — |
-| 8.1 | kebab-case ファイル名 | 全コンポーネント | ファイル命名規則 | — |
-| 8.2 | apps/web の拡張可能ディレクトリ構成 | WebApp | src/app/ 構造 | — |
-| 8.3 | packages/db/src/schema/ ディレクトリ | DbPkg | schema/ ディレクトリ | — |
-| 8.4 | auth/ui/i18n を作らない | （Out of Boundary） | — | — |
-| 8.5 | 既存 docs/ scripts/ .github/ を阻害しない | RootPackageJson + GitignoreConfig | — | — |
-| 9.1 | README.md | ReadmeDoc | Markdown | — |
-| 9.2 | steering 内容を README に重複させない | ReadmeDoc | ポインタのみ | — |
-| 9.3 | 既存 docs/ と .kiro/ を変更しない | （境界遵守） | — | — |
+| 1.1 | ルート設定 8 ファイル存在 | RootConfig | filesystem | — |
+| 1.2 | workspaces 宣言 | RootConfig | pnpm-workspace.yaml | — |
+| 1.3 | engines: Node 22+ / pnpm 10+ | RootConfig | package.json | — |
+| 1.4 | TS strict + noUncheckedIndexedAccess | TsConfigBase | tsconfig.base.json | — |
+| 1.5 | Prettier singleQuote: true 等 | PrettierConfig | prettier.config.mjs | — |
+| 1.6 | pnpm install が成功 | RootConfig + 全パッケージ | pnpm | install フロー |
+| 1.7 | .gitignore 内容 | RootConfig | .gitignore | — |
+| 1.8 | .npmrc 内容 | RootConfig | .npmrc | — |
+| 2.1 | apps/web 構成ファイル一式 | WebApp | filesystem | — |
+| 2.2 | App Router 採用 | WebApp | app/layout.tsx + app/page.tsx | — |
+| 2.3 | Next.js 16 + React 19 | WebApp | package.json | — |
+| 2.4 | Tailwind CSS 4 有効化 | WebApp | globals.css + postcss.config + tailwind.config | — |
+| 2.5 | TS strict 継承 | WebApp | tsconfig.json | — |
+| 2.6 | pnpm dev で port 3000 起動 | WebApp + TurboPipeline | package.json scripts | dev フロー |
+| 2.7 | pnpm build 成功 | WebApp + TurboPipeline | turbo.json | build フロー |
+| 2.8 | @bulr/* dependencies 宣言 | WebApp | package.json | — |
+| 2.9 | components/ + lib/ ディレクトリ予約 | WebApp | filesystem | — |
+| 3.1 | packages/db ファイル一式 | DbPackage | filesystem | — |
+| 3.2 | drizzle-orm + drizzle-kit + pg 依存 | DbPackage | package.json | — |
+| 3.3 | drizzle.config.ts 設定 | DbPackage | drizzle.config.ts | — |
+| 3.4 | 空 schema バレル | DbPackage | src/schema/index.ts | — |
+| 3.5 | db client + schema 再エクスポート | DbPackage | src/index.ts | import フロー |
+| 3.6 | @bulr/types peer 宣言 | DbPackage | package.json | — |
+| 3.7 | typecheck 成功 | DbPackage + TurboPipeline | tsc | typecheck フロー |
+| 3.8 | drizzle-kit scripts | DbPackage | package.json scripts | — |
+| 4.1 | packages/types ファイル一式 | TypesPackage | filesystem | — |
+| 4.2 | exports map: ./profile / ./evaluation | TypesPackage | package.json | サブパス解決フロー |
+| 4.3 | runtime 依存ゼロ | TypesPackage | package.json | — |
+| 4.4 | profile.ts / evaluation.ts 空 | TypesPackage | filesystem | — |
+| 4.5 | tsconfig 継承 | TypesPackage | tsconfig.json | — |
+| 4.6 | typecheck 成功 | TypesPackage | tsc | typecheck フロー |
+| 4.7 | サブパス import が解決 | TypesPackage | exports map | サブパス解決フロー |
+| 5.1 | packages/lib ファイル一式 | LibPackage | filesystem | — |
+| 5.2 | @bulr/types 参照 + Zod 許容 | LibPackage | package.json | — |
+| 5.3 | packages/ai ファイル一式 | AiPackage | filesystem | — |
+| 5.4 | ai + @ai-sdk/anthropic + openai + zod 依存 | AiPackage | package.json | — |
+| 5.5 | functions / prompts / whisper ディレクトリ予約 | AiPackage | filesystem | — |
+| 5.6 | src/index.ts 空バレル | AiPackage | src/index.ts | — |
+| 5.7 | LLM 関数本体は含まない | AiPackage | （out of scope 確認） | — |
+| 5.8 | typecheck 成功 | LibPackage + AiPackage | tsc | typecheck フロー |
+| 6.1 | @bulr/* エイリアス | 全パッケージ | package.json names | — |
+| 6.2 | 依存方向遵守 | 全パッケージ | package.json dependencies | — |
+| 6.3 | 違反検出（物理的予防） | 全パッケージ | package.json | — |
+| 6.4 | types は外部依存ゼロ | TypesPackage | package.json | — |
+| 6.5 | apps/web から @bulr/db 解決 | WebApp + DbPackage | TS module resolution | import フロー |
+| 6.6 | @bulr/ai 空 export 解決 | WebApp + AiPackage | TS module resolution | — |
+| 7.1 | dev/build/typecheck/lint scripts | RootConfig + TurboPipeline | package.json | — |
+| 7.2 | turbo.json タスク定義 | TurboPipeline | turbo.json | — |
+| 7.3 | dev タスク cache: false / persistent: true | TurboPipeline | turbo.json | dev フロー |
+| 7.4 | typecheck 全パッケージ並列実行成功 | TurboPipeline + 全パッケージ | turbo run typecheck | typecheck フロー |
+| 7.5 | lint 全パッケージ並列実行成功 | TurboPipeline + 全パッケージ | turbo run lint | lint フロー |
+| 7.6 | 各 package の typecheck script | 全パッケージ | package.json scripts | — |
+| 7.7 | 各 package の lint script | 全パッケージ | package.json scripts | — |
+| 8.1 | Flat Config + Prettier config 存在 | EslintConfig + PrettierConfig | filesystem | — |
+| 8.2 | typescript-eslint recommended + no-explicit-any: warn+ | EslintConfig | eslint.config.mjs | — |
+| 8.3 | ignores 一覧 | EslintConfig | eslint.config.mjs | — |
+| 8.4 | Prettier 設定値 | PrettierConfig | prettier.config.mjs | — |
+| 8.5 | 整形動作 | PrettierConfig | prettier CLI | format フロー |
+| 8.6 | ルート設定継承 | 全パッケージ | （flat config 自動適用） | — |
 
 ## Components and Interfaces
 
-### Component Summary
-
 | Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
 |-----------|--------------|--------|--------------|--------------------------|-----------|
-| RootPackageJson | Root config | pnpm/Node 制約とトップレベル scripts | 1.1, 1.5, 7.1, 7.2, 7.3, 7.4 | pnpm@10 (P0)、Turbo (P0) | Service |
-| WorkspaceConfig | Root config | workspace パッケージ glob 登録 | 1.2, 1.5, 4.5, 4.6 | pnpm@10 (P0) | Service |
-| TurboConfig | Build orchestration | build/dev/typecheck/lint タスク定義 | 1.3, 2.3, 3.3, 3.7, 4.7, 6.5, 7.1, 7.2, 7.3, 7.4, 7.6 | Turbo@2.9 (P0)、各 package の scripts (P0) | Service |
-| TsConfigBase | Type system | strict mode + module 解決の共通設定 | 1.4 | TypeScript@5.4 (P0) | Service |
-| NpmrcConfig | Root config | pnpm 挙動制御 | 1.6 | pnpm@10 (P0) | Service |
-| EslintRootConfig | Code quality | typescript-eslint flat config | 2.1, 2.3, 2.4, 2.5 | eslint@9 (P0)、typescript-eslint@8 (P0) | Service |
-| PrettierRootConfig | Code quality | フォーマットルール | 2.2 | prettier@3.8 (P0) | Service |
-| GitignoreConfig | Repo hygiene | ビルド成果物・シークレット除外 | 2.4, 8.5 | git (P0) | — |
-| ReadmeDoc | Documentation | 開発者オンボーディング | 9.1, 9.2, 9.3 | — | — |
-| WebApp | Application | Next.js 16 アプリスケルトン | 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.6, 8.2 | Next.js@16 (P0)、React@19 (P0)、Tailwind@4 (P0)、@bulr/db (P1)、@bulr/ai (P1) | Service |
-| TypesPkg | Domain types | 純粋型の頂点 | 4.1, 4.2, 4.3, 4.4, 4.7, 6.3, 6.5 | TypeScript@5.4 (P0) | Service |
-| LibPkg | Shared utils | 共通ユーティリティ置き場 | 4.1, 4.2, 4.3, 4.4, 4.7, 6.3, 6.5 | @bulr/types (P0) | Service |
-| DbPkg | Data access | Drizzle client + 空スキーマ | 4.1, 4.2, 4.3, 4.4, 4.6, 4.7, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 7.5, 8.3 | drizzle-orm@0.45 (P0)、drizzle-kit@0.31 (P0)、pg@8 (P0)、@bulr/types (P1) | Service |
-| AiPkg | AI integration | Vercel AI SDK 依存とスケルトン | 4.1, 4.2, 4.3, 4.4, 4.7, 6.1, 6.2, 6.4, 6.5 | ai@6 (P0)、@ai-sdk/anthropic@3 (P0)、zod@4 (P0)、@bulr/db (P1)、@bulr/types (P1)、@bulr/lib (P1) | Service |
+| RootConfig | Root | ルート設定 8 ファイル一式（package.json / pnpm-workspace.yaml / turbo.json / tsconfig.base.json / eslint.config.mjs / prettier.config.mjs / .npmrc / .gitignore） | 1.1, 1.2, 1.3, 1.6, 1.7, 1.8, 7.1 | pnpm 10+ (P0)、Node 22+ (P0)、Turborepo 2.x (P0) | State |
+| TsConfigBase | Root | TypeScript 共通設定 | 1.4, 4.5 | TypeScript 5.x (P0) | State |
+| EslintConfig | Root | ESLint Flat Config | 8.1, 8.2, 8.3, 8.6 | typescript-eslint 8.x (P0) | State |
+| PrettierConfig | Root | Prettier 統一フォーマット | 1.5, 8.1, 8.4, 8.5 | Prettier 3.x (P0) | State |
+| TurboPipeline | Root | Turborepo パイプライン定義 | 7.1, 7.2, 7.3, 7.4, 7.5 | Turborepo 2.x (P0) | Batch |
+| WebApp | apps/web | Next.js 16 空アプリスケルトン | 2.1-2.9, 6.5, 7.4, 7.5, 7.6, 7.7 | Next.js 16 (P0)、React 19 (P0)、Tailwind CSS 4 (P0)、@bulr/db/types/lib/ai (P0) | State |
+| DbPackage | packages/db | Drizzle 初期化 + 空 schema | 3.1-3.8, 6.1, 6.2, 7.4-7.7 | drizzle-orm (P0)、drizzle-kit (P0)、pg (P0)、@bulr/types (P1) | Service, State |
+| TypesPackage | packages/types | 型のみ + サブパス export 予約 | 4.1-4.7, 6.1, 6.2, 6.4, 7.4 | TypeScript 5.x (P0) | State |
+| LibPackage | packages/lib | 共通ユーティリティ slot | 5.1, 5.2, 6.1, 6.2, 7.4-7.7 | @bulr/types (P0)、Zod (P1) | Service |
+| AiPackage | packages/ai | LLM 関数 / Whisper の依存・ディレクトリ予約 | 5.3-5.8, 6.1, 6.2, 6.6, 7.4-7.7 | ai (Vercel AI SDK 6) (P0)、@ai-sdk/anthropic (P0)、openai (P0)、Zod (P0)、@bulr/db/types/lib (P1) | Service |
 
-### Root Configuration Components
+> 全コンポーネントが「設定ファイル + ディレクトリ作成」中心のため、Service interface や API contract は不要。State 契約として「`pnpm install` 後に install ツリーが解決可能」「`pnpm typecheck` が成功」「`pnpm dev` で port 3000 起動」が観測可能なゴール。
 
-#### RootPackageJson
+### Root / Configuration Layer
+
+#### RootConfig
 
 | Field | Detail |
 |-------|--------|
-| Intent | リポジトリルートの pnpm/Node 制約と Turbo 経由のトップレベル scripts を提供 |
-| Requirements | 1.1, 1.5, 7.1, 7.2, 7.3, 7.4 |
+| Intent | モノレポ ルート設定 8 ファイルを揃え、`pnpm install` を成功させる |
+| Requirements | 1.1, 1.2, 1.3, 1.6, 1.7, 1.8, 7.1 |
+| Owner / Reviewers | プロジェクトオーナー |
 
 **Responsibilities & Constraints**
-- `private: true`、`packageManager: "pnpm@10.x"`、`engines.node >= 22`、`engines.pnpm >= 10` を宣言
-- `scripts` に `dev` / `build` / `typecheck` / `lint` を `turbo run <task>` の形で提供
-- `devDependencies` に `turbo`、`typescript`、`eslint`、`typescript-eslint`、`prettier`、`@typescript-eslint/eslint-plugin`、`@typescript-eslint/parser` を持つ
-- アプリ依存（`next`、`react`、`drizzle-orm` 等）はルートに置かず、各 workspace に置く
+- ルート直下 8 ファイル（`package.json`、`pnpm-workspace.yaml`、`turbo.json`、`tsconfig.base.json`、`.gitignore`、`eslint.config.mjs`、`prettier.config.mjs`、`.npmrc`）を所有
+- workspace メンバ宣言（`apps/*`、`packages/*`）の単一の真実
+- ルートレベル devDependencies（`turbo`、`typescript`、`eslint`、`prettier`、`typescript-eslint`）の管理
+- 各 workspace パッケージは固有の dependencies のみを宣言、共通 devDependencies はルートで集約
+- 不変条件: `engines.node >= 22`、`engines.pnpm >= 10`
 
 **Dependencies**
-- Outbound: TurboConfig — `turbo run` 経由のタスク委譲（P0）
-- External: pnpm 10 — workspace 解決と install（P0）
+- Inbound: 全 workspace パッケージ — 親 `package.json` から workspaces 解決（P0）
+- Outbound: なし
+- External: pnpm CLI 10+ — workspace 解決（P0）、Turborepo 2.x — タスクパイプライン（P0）
 
-**Contracts**: Service [x] / API [ ] / Event [ ] / Batch [ ] / State [ ]
+**Contracts**: State
 
-##### Service Interface（pnpm scripts）
-```typescript
-type RootScripts = {
-  dev: 'turbo run dev';
-  build: 'turbo run build';
-  typecheck: 'turbo run typecheck';
-  lint: 'turbo run lint';
-};
-```
-- Preconditions: `pnpm install` 済み
-- Postconditions: 各コマンドが Turbo タスクを起動する
-- Invariants: ルートにアプリ依存を持ち込まない
+##### State Management
+- State model: ファイル一式の存在 + 内容
+- Persistence & consistency: git にコミット
+- Concurrency strategy: 該当なし
 
 **Implementation Notes**
-- Integration: dishxdish の `package.json` を参考に、Stage 1 では Vitest / Playwright 関連 scripts は含めない（テストフレームワーク導入は別 spec）
-- Validation: `pnpm install --frozen-lockfile` がローカルで成功する
-- Risks: pnpm バージョン差異 → `packageManager` フィールドで pin することで Corepack が自動解決
-
-#### WorkspaceConfig
-
-| Field | Detail |
-|-------|--------|
-| Intent | pnpm に workspace ディレクトリを認識させる |
-| Requirements | 1.2, 1.5, 4.5, 4.6 |
-
-**Responsibilities & Constraints**
-- `apps/*` と `packages/*` の glob を登録（dishxdish の `tests/*` は本スペックでは除外）
-- workspace 内パッケージ参照は `workspace:*` プロトコルで解決される
-
-**Dependencies**
-- External: pnpm 10 — workspace 機能（P0）
-
-**Contracts**: Service [x]
-
-##### Service Interface
-```yaml
-packages:
-  - "apps/*"
-  - "packages/*"
-```
-
-**Implementation Notes**
-- Integration: 本スペックでは `tests/*` を含めない。後続 spec が tests workspace を追加する際に拡張する
-- Risks: `tests/*` を後から追加すると pnpm-lock の再生成が必要 → 本スペックの段階で含めるか別 spec で含めるかは `multi-env-infrastructure` の判断に委ねる（ここでは含めない）
-
-#### TurboConfig
-
-| Field | Detail |
-|-------|--------|
-| Intent | apps と packages の build/dev/typecheck/lint を依存トポロジで実行する |
-| Requirements | 1.3, 2.3, 3.3, 3.7, 4.7, 6.5, 7.1, 7.2, 7.3, 7.4, 7.6 |
-
-**Responsibilities & Constraints**
-- `build` task: `dependsOn: ["^build"]`、`outputs: [".next/**", "!.next/cache/**", "dist/**"]`
-- `dev` task: `cache: false`、`persistent: true`
-- `typecheck` task: `dependsOn: ["^typecheck"]`
-- `lint` task: `dependsOn: ["^lint"]`
-- `globalEnv` は本スペックでは空（環境変数導入は `multi-env-infrastructure`）
-
-**Dependencies**
-- Outbound: 各 package の `package.json` scripts（P0）
-- External: Turbo 2.9（P0）
-
-**Contracts**: Service [x]
-
-##### Service Interface
-```jsonc
-{
-  "$schema": "https://turbo.build/schema.json",
-  "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**", "dist/**"] },
-    "dev": { "cache": false, "persistent": true },
-    "typecheck": { "dependsOn": ["^typecheck"] },
-    "lint": { "dependsOn": ["^lint"] }
-  }
-}
-```
-
-**Implementation Notes**
-- Integration: 各 package の `package.json` には対応する scripts (`typecheck`、`lint`、`build`、`dev`) が必要。スケルトンでも `typecheck` と `lint` は最低限定義する
-- Validation: `pnpm typecheck` 実行時、Turbo が `types` → `lib`/`db` → `ai` → `web` のトポロジで並列実行する
-- Risks: package 側に script が無いと Turbo が warning を出す → 全 package に最低限の `typecheck` script を置く
+- Integration: dishxdish の `package.json` / `turbo.json` / `pnpm-workspace.yaml` 構造を踏襲し、e2e/integration 関連スクリプトおよび docker compose スクリプトは Stage 1 不要のため削除
+- Validation: `pnpm install` がエラーなく完了、`pnpm typecheck` / `pnpm lint` が空アプリ + 空パッケージで通る
+- Risks: pnpm のバージョンが 10 未満だと workspace 解決が失敗する → `engines` で要求し、`packageManager` フィールドで pin
 
 #### TsConfigBase
 
 | Field | Detail |
 |-------|--------|
-| Intent | 全 package が extends する TypeScript 共通設定 |
-| Requirements | 1.4 |
+| Intent | TypeScript の strict mode + bundler module resolution を全パッケージで共有 |
+| Requirements | 1.4, 4.5 |
 
 **Responsibilities & Constraints**
-- `strict: true`、`noUncheckedIndexedAccess: true`、`module: "ESNext"`、`moduleResolution: "bundler"`、`target: "ES2022"`、`isolatedModules: true`、`skipLibCheck: true`、`esModuleInterop: true`、`allowSyntheticDefaultImports: true`、`resolveJsonModule: true`、`noEmit: true`、`incremental: true`
+- `compilerOptions` の単一の真実（`strict: true`、`noUncheckedIndexedAccess: true`、`module: "ESNext"`、`moduleResolution: "bundler"`、`target: "ES2022"`、`skipLibCheck: true`、`esModuleInterop: true`、`allowSyntheticDefaultImports: true`、`resolveJsonModule: true`、`isolatedModules: true`、`noEmit: true`、`incremental: true`）
 - `exclude: ["node_modules"]`
 
-**Contracts**: Service [x]
+**Dependencies**
+- Inbound: 全 `tsconfig.json`（`extends: "../../tsconfig.base.json"`）（P0）
+- External: TypeScript 5.x（P0）
+
+**Contracts**: State
 
 **Implementation Notes**
-- Integration: dishxdish の `tsconfig.base.json` をそのまま採用
-- Validation: 各 package の `tsconfig.json` が `extends: "../../tsconfig.base.json"` で読み込み可能
-- Risks: `noUncheckedIndexedAccess` は厳しい設定だが、後続 spec の DB クエリ結果が `T | undefined` になり安全側に倒れる
+- Integration: dishxdish の `tsconfig.base.json` をそのまま流用
+- Validation: 各 workspace で `tsc --noEmit` が成功
+- Risks: `module: "ESNext"` + `moduleResolution: "bundler"` は Next.js 16 と Drizzle のどちらにも対応するが、Node スクリプト直接実行時は別設定が必要 → Drizzle scripts は `tsx` 経由で実行
 
-#### NpmrcConfig
-
-| Field | Detail |
-|-------|--------|
-| Intent | pnpm の install 挙動を bulr の monorepo に合わせる |
-| Requirements | 1.6 |
-
-**Responsibilities & Constraints**
-- `auto-install-peers=true`（peer 依存の自動インストール）
-- `strict-peer-dependencies=false`（peer 不一致を warning に降格）
-- `shamefully-hoist=false`（hoist の暗黙的副作用を抑制）
-
-**Contracts**: Service [x]
-
-#### EslintRootConfig
+#### EslintConfig
 
 | Field | Detail |
 |-------|--------|
-| Intent | typescript-eslint flat config + bulr 固有ルール |
-| Requirements | 2.1, 2.3, 2.4, 2.5 |
+| Intent | ESLint 9.x Flat Config で全パッケージ統一の lint ルールを提供 |
+| Requirements | 8.1, 8.2, 8.3, 8.6 |
 
 **Responsibilities & Constraints**
-- `tseslint.configs.recommended` を継承
-- `@typescript-eslint/no-unused-vars`: `error`（`_` prefix で除外可能）
-- `@typescript-eslint/no-explicit-any`: `warn`（`security.md` の `no any` 方針を warning で運用）
-- `ignores`: `**/node_modules/**`、`**/.next/**`、`**/dist/**`、`**/.turbo/**`、`**/coverage/**`、`**/.vercel/**`
+- Flat Config 形式（`eslint.config.mjs`）
+- `typescript-eslint` recommended ルール
+- 追加ルール: `@typescript-eslint/no-unused-vars` を `error`（`argsIgnorePattern: '^_'`、`varsIgnorePattern: '^_'`）、`@typescript-eslint/no-explicit-any` を `warn` 以上
+- ignores: `**/node_modules/**`、`**/.next/**`、`**/dist/**`、`**/.turbo/**`、`**/coverage/**`、`**/.vercel/**`
 
-**Contracts**: Service [x]
+**Dependencies**
+- External: ESLint 9.x（P0）、typescript-eslint 8.x（P0）
+
+**Contracts**: State
 
 **Implementation Notes**
-- Integration: dishxdish の `eslint.config.mjs` をそのまま採用。`apps/web/eslint.config.mjs` がこれを spread import する
-- Validation: `pnpm lint` で 0 件エラーを目指す（warning は許容、ただし Stage 1 は `any` 0 件を目標）
-- Risks: `eslint-config-next` を `apps/web` 側で別途追加する必要 → `apps/web/package.json` で対応
+- Integration: dishxdish の `eslint.config.mjs` をそのまま流用
+- Validation: `pnpm lint` が apps/web + packages/{db,types,lib,ai} すべてで成功
+- Risks: Next.js 公式 ESLint 設定（`eslint-config-next`）の Flat Config 対応が不完全な場合がある → 本スペックでは導入せず、`apps/web` も typescript-eslint recommended のみで運用。Next.js 固有の追加ルールは後続 spec で必要時に検討
 
-#### PrettierRootConfig
+#### PrettierConfig
 
 | Field | Detail |
 |-------|--------|
-| Intent | コードフォーマットルールの統一 |
-| Requirements | 2.2 |
+| Intent | コードフォーマット統一 |
+| Requirements | 1.5, 8.4, 8.5 |
 
 **Responsibilities & Constraints**
-- `semi: true`、`singleQuote: true`、`trailingComma: 'all'`、`printWidth: 100`、`tabWidth: 2`、`useTabs: false`、`bracketSpacing: true`、`bracketSameLine: false`、`arrowParens: 'always'`、`endOfLine: 'lf'`
-- bulr では `singleQuote: true`（dishxdish は `false` だが、bulr は steering の TypeScript コード例が `'@bulr/db'` のようにシングルクォートを使う）
+- `singleQuote: true`（dishxdish と異なる、v1 確認済み方針）
+- `semi: true`、`trailingComma: "all"`、`printWidth: 100`、`tabWidth: 2`、`useTabs: false`、`bracketSpacing: true`、`bracketSameLine: false`、`arrowParens: "always"`、`endOfLine: "lf"`
 
-**Contracts**: Service [x]
+**Dependencies**
+- External: Prettier 3.x（P0）
+
+**Contracts**: State
 
 **Implementation Notes**
-- Integration: ESLint との衝突は当面なし（formatting 系ルールは prettier 側）
-- Risks: dishxdish と挙動が異なるため、コピペ時にフォーマットが揺れる → README に明記
+- Integration: dishxdish の `prettier.config.mjs` 構造を流用、`singleQuote` のみ反転
+- Validation: 既存ファイルを `prettier --write` で整形しても安定（差分が出ない）
+- Risks: `singleQuote: true` と React JSX の属性値（常に `"..."`）の混在 → JSX は Prettier が自動的に double quote を維持する
 
-#### GitignoreConfig
-
-| Field | Detail |
-|-------|--------|
-| Intent | ビルド成果物・シークレット・ツールキャッシュを git 管理から除外 |
-| Requirements | 2.4, 8.5 |
-
-**Responsibilities & Constraints**
-- `node_modules`、`.next/`、`out/`、`build`、`dist`、`.turbo`、`.vercel`、`*.tsbuildinfo`、`next-env.d.ts`、`.env.local`、`.env*.local`、`.DS_Store`、`coverage`、`.serena/cache/`、`.serena/project.local.yml`、`.claude/settings.local.json` を ignore
-
-**Contracts**: —
-
-#### ReadmeDoc
+#### TurboPipeline
 
 | Field | Detail |
 |-------|--------|
-| Intent | 開発者向けセットアップ手順とコマンド一覧 |
-| Requirements | 9.1, 9.2, 9.3 |
+| Intent | `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` を全 workspace に並列展開 |
+| Requirements | 7.1, 7.2, 7.3, 7.4, 7.5 |
 
 **Responsibilities & Constraints**
-- プロジェクト概要（bulr Stage 1 MVP プロトタイプ）
-- 前提（Node.js 22 LTS+、pnpm 10+）
-- 初期セットアップ（`pnpm install`）
-- 主要コマンド（`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint`）
-- steering ドキュメント (`.kiro/steering/`) と spec ディレクトリ (`.kiro/specs/`) の所在のみ示し、内容は重複させない
+- `turbo.json` で `build` / `dev` / `typecheck` / `lint` を定義
+- `build`: `dependsOn: ["^build"]`、`outputs: [".next/**", "!.next/cache/**", "dist/**"]`
+- `dev`: `cache: false`、`persistent: true`
+- `typecheck`: `dependsOn: ["^typecheck"]`
+- `lint`: `dependsOn: ["^lint"]`
+- ルート `package.json.scripts`: `dev: "turbo run dev"`、`build: "turbo run build"`、`typecheck: "turbo run typecheck"`、`lint: "turbo run lint"`
 
-**Contracts**: —
+**Dependencies**
+- Inbound: 全 workspace パッケージの `scripts.{dev,build,typecheck,lint}`（P0）
+- External: Turborepo 2.x（P0）
 
-### Application Components
+**Contracts**: Batch
+
+##### Batch / Job Contract
+- Trigger: `pnpm <task>` from root
+- Input / validation: workspace 各パッケージの `scripts` 定義
+- Output / destination: ターミナル出力 + `.turbo/` キャッシュ + 各パッケージの artifact（`apps/web/.next` 等）
+- Idempotency & recovery: Turborepo キャッシュにより同一 input なら同一 output。失敗時は該当タスクのみ再実行
+
+**Implementation Notes**
+- Integration: dishxdish の `turbo.json` を流用、`globalEnv` の `VERCEL_ENV` 等は `multi-env-infrastructure` spec で追加検討
+- Validation: 空 apps/web + 空 packages で `pnpm typecheck` / `pnpm lint` / `pnpm build` がすべて成功
+- Risks: `apps/web` の `dev` task が persistent のため Ctrl-C で停止が必要 → 標準的な Next.js dev server の挙動
+
+### apps/web
 
 #### WebApp
 
 | Field | Detail |
 |-------|--------|
-| Intent | Next.js 16 + React 19 + Tailwind 4 + shadcn/ui ベースの最小アプリスケルトン |
-| Requirements | 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.6, 8.2 |
+| Intent | Next.js 16 + React 19 + Tailwind CSS 4 の空ランディングを起動可能な状態にする |
+| Requirements | 2.1-2.9, 6.5, 7.4, 7.5, 7.6, 7.7 |
 
 **Responsibilities & Constraints**
-- `next@^16`、`react@^19`、`react-dom@^19`、`tailwindcss@^4`、`@tailwindcss/postcss@^4`、`babel-plugin-react-compiler@^1`、`eslint-config-next@^16` を依存に持つ
-- workspace 依存として `@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai` を `workspace:*` で参照
-- `next.config.ts` で `reactCompiler: true` と `transpilePackages: ['@bulr/db', '@bulr/types', '@bulr/lib', '@bulr/ai']` を設定
-- `app/layout.tsx` は `<html>`/`<body>` のみの最小構成、`app/page.tsx` は bulr ベータの説明テキストのみ
-- `app/globals.css` で Tailwind directives と shadcn 用の CSS variables を提供
-- `components.json` を shadcn/ui の規約通り配置（後続 spec が `add` で利用）
-- `src/lib/utils.ts` に `cn()` 関数（shadcn 規約）を最小実装
-- ポートは 3000（dishxdish の 3010 ではなく、`tech.md` 準拠で 3000）
-- API Routes は本スペックでは未実装（後続 spec で `app/api/` を追加）
+- App Router 構成（`app/layout.tsx` + `app/page.tsx` + `app/globals.css`）
+- Tailwind CSS 4 を `@import "tailwindcss";` で `globals.css` に読み込み
+- shadcn/ui の `components.json` 登録（実コンポーネントは後続 spec で追加）
+- `package.json` に `@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai` を `workspace:*` で宣言
+- `scripts`: `dev: "next dev --turbopack -p 3000"`、`build: "next build"`、`start: "next start"`、`typecheck: "tsc --noEmit"`、`lint: "eslint ."`
+- `port 3000` 固定（`tech.md` および本スペック方針）
+- React Compiler 有効化（`next.config.ts`）
 
 **Dependencies**
-- Inbound: 開発者ブラウザ（外部）
-- Outbound: @bulr/db (P1)、@bulr/types (P1)、@bulr/lib (P1)、@bulr/ai (P1)
-- External: Next.js 16 (P0)、React 19 (P0)、Tailwind CSS 4 (P0)
+- Inbound: なし（最終 leaf）
+- Outbound: `@bulr/db` / `@bulr/types` / `@bulr/lib` / `@bulr/ai`（P0、すべて空バレルだが import 解決を確立）
+- External: Next.js 16（P0）、React 19（P0）、Tailwind CSS 4（P0）、`@tailwindcss/postcss`（P0）、TypeScript 5.x（P0）
 
-**Contracts**: Service [x] / API [ ] / Event [ ] / Batch [ ] / State [ ]
+**Contracts**: State
 
-##### Service Interface（apps/web scripts）
-```typescript
-type WebScripts = {
-  dev: 'next dev --port 3000';
-  build: 'next build';
-  start: 'next start --port 3000';
-  typecheck: 'tsc --noEmit';
-  lint: 'next lint';  // または eslint .
-};
-```
+##### State Management
+- State model: 起動時に空ランディング（`<main>bulr — AI 面接アシスタント (準備中)</main>` 等）を表示
+- Persistence & consistency: 該当なし
+- Concurrency strategy: Next.js dev server の標準動作
 
 **Implementation Notes**
-- Integration: dishxdish の `apps/web` 構成を踏襲しつつ、`next-intl` / `@dishxdish/auth` / `@dishxdish/ui` / `@dishxdish/i18n` の依存と `proxy.ts` を含めない（Stage 1 で不要、後続 spec で追加）
-- Validation: `pnpm dev` で http://localhost:3000 にアクセスしてランディングが表示される
-- Risks:
-  - Next.js 16 + React 19 + React Compiler の組み合わせは比較的新しいため、`babel-plugin-react-compiler` のバージョン不整合に注意 → dishxdish と同じ `^1.0.0` を採用
-  - Tailwind CSS 4 は v3 と設定方法が異なる（`@tailwindcss/postcss` を使う）→ dishxdish 構成を踏襲
+- Integration: shadcn/ui の `components.json` を作成（`style: "default"`、`tailwind.config: "tailwind.config.ts"`、`aliases.components: "@/components"`、`aliases.utils: "@/lib/utils"`）。`utils.ts`（`cn` 関数）は後続 spec で必要時に追加
+- Validation: `pnpm dev` で `http://localhost:3000` が HTTP 200 を返し、`pnpm build` がエラーなく完了
+- Risks: Next.js 16 の React Compiler 設定はオプトイン → `next.config.ts` で `reactCompiler: true` を有効化。Tailwind CSS 4 + Next.js 16 の組み合わせは新しいので、`@tailwindcss/postcss` プラグイン経由での導入を採用
 
-### Workspace Package Components
+### packages/db
 
-#### TypesPkg
+#### DbPackage
 
 | Field | Detail |
 |-------|--------|
-| Intent | bulr 共通型定義の頂点（依存先なし） |
-| Requirements | 4.1, 4.2, 4.3, 4.4, 4.7, 6.3, 6.5 |
+| Intent | Drizzle ORM の client 初期化と空 schema バレル、drizzle-kit scripts |
+| Requirements | 3.1-3.8, 6.1, 6.2, 7.4-7.7 |
 
 **Responsibilities & Constraints**
-- `@bulr/types`、`private: true`、`exports.': './src/index.ts'`
-- 他の workspace package を一切 import しない
-- 本スペックでは `src/index.ts` は `export {};` のみ（後続 spec が型を追加）
+- `package.json` の `name: "@bulr/db"`、`exports` map（後続 spec のサブパス import を解決するためワイルドカードを予約）:
+  ```json
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./schema/*": "./src/schema/*.ts",
+    "./queries": "./src/queries/index.ts",
+    "./queries/*": "./src/queries/*/index.ts",
+    "./seeds": "./src/seeds/index.ts",
+    "./seeds/*": "./src/seeds/*.ts"
+  }
+  ```
+  - 後続 spec が `@bulr/db/schema/auth`, `@bulr/db/schema/user-profile`, `@bulr/db/schema/rate-limit`, `@bulr/db/schema/assessment-pattern`, `@bulr/db/seeds/assessment-patterns`, `@bulr/db/seeds/types`, `@bulr/db/queries/interview`, `@bulr/db/queries/admin` を import するため、Node 18+ exports semantics で解決可能とする
+  - 本スペック時点では `src/seeds/`、`src/queries/` ディレクトリは `.gitkeep` でスロット予約のみ（バレルファイルは後続 spec で追加）。ワイルドカード対象の実体ファイルが存在しなくても `pnpm install` 自体は失敗しない（Node の exports は import 時に解決される）
+- `dependencies`: `drizzle-orm` ^0.45.0、`pg` ^8、`nanoid` ^5（id 生成用ユーティリティ用、後続 spec で利用）
+- `devDependencies`: `drizzle-kit` ^0.31.0、`tsx` ^4、`@types/pg` ^8
+- `peerDependencies`: `@bulr/types` `workspace:*`（types と相互参照、循環なし）
+- `scripts`: `typecheck: "tsc --noEmit"`、`lint: "eslint ."`、`generate: "drizzle-kit generate"`、`push: "drizzle-kit push"`、`migrate: "drizzle-kit migrate"`
+- `drizzle.config.ts` で `schema: "./src/schema/*.ts"`、`out: "./drizzle"`、`dialect: "postgresql"` を指定（`dbCredentials.url: process.env.DATABASE_URL!` は `multi-env-infrastructure` spec で追加。本スペックでは `process.env.DATABASE_URL` を参照する形だけ用意、未定義時の挙動は `drizzle-kit generate` 時の標準エラー）
+- `src/client.ts` で `pg.Pool` を初期化し、`drizzle(pool, { schema })` を返す（DATABASE_URL 未定義時は throw）
+- `src/index.ts` で `db` クライアントと `schema` バレルを再エクスポート
 
 **Dependencies**
-- Outbound: なし（頂点）
-- External: TypeScript@5.4 (P0)
+- Inbound: `apps/web`（P0）、`packages/ai`（P1、本スペックでは未利用）
+- Outbound: `@bulr/types`（P1、peer）
+- External: drizzle-orm（P0）、pg（P0）、drizzle-kit（P0、開発時のみ）
 
-**Contracts**: Service [x]
+**Contracts**: Service, State
 
 ##### Service Interface
 ```typescript
-// packages/types/src/index.ts
-export {};
+// src/index.ts
+export { db } from './client';
+export * as schema from './schema';
 ```
 
-**Implementation Notes**
-- Integration: 後続 spec（特に `assessment-engine`）が共通型をここに置く
-- Validation: `pnpm --filter @bulr/types typecheck` がエラーなく完了
-- Risks: 型のみのパッケージなので runtime コードを混入させない（ESLint で検知が難しいため、PR レビューで担保）
-
-#### LibPkg
-
-| Field | Detail |
-|-------|--------|
-| Intent | bulr 共通ユーティリティ（types のみに依存） |
-| Requirements | 4.1, 4.2, 4.3, 4.4, 4.7, 6.3, 6.5 |
-
-**Responsibilities & Constraints**
-- `@bulr/lib`、`private: true`
-- 依存可能なのは `@bulr/types` のみ
-- 本スペックでは `src/index.ts` は `export {};` のみ
-
-**Dependencies**
-- Outbound: @bulr/types (P0)（ただしスケルトン段階では import 無し）
-- External: TypeScript@5.4 (P0)
-
-**Contracts**: Service [x]
-
-#### DbPkg
-
-| Field | Detail |
-|-------|--------|
-| Intent | Drizzle ORM client と空スキーマバレル、drizzle-kit 設定 |
-| Requirements | 4.1, 4.2, 4.3, 4.4, 4.6, 4.7, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 7.5, 8.3 |
-
-**Responsibilities & Constraints**
-- `@bulr/db`、`private: true`
-- 依存: `drizzle-orm@^0.45`、`drizzle-kit@^0.31`、`pg@^8`、`@types/pg@^8`、`tsx@^4`、`@bulr/types` (workspace:*)
-- `src/client.ts`: `pg.Pool` で `DATABASE_URL` を読み、`drizzle()` でクライアントを生成。未設定なら起動時 throw
-- `src/schema/index.ts`: 空バレル（`export {};`）。後続 spec がここにテーブル定義をエクスポート
-- `src/index.ts`: `export { db, type DB } from './client'; export * from './schema';`
-- `drizzle.config.ts`: `dialect: 'postgresql'`、`schema: './src/schema/index.ts'`、`out: './drizzle'`、`casing: 'snake_case'`、`dbCredentials.url` は `DATABASE_URL` から
-- scripts: `typecheck`、`generate`（`drizzle-kit generate`）、`push`（`drizzle-kit push`）、`migrate`（`drizzle-kit migrate`）
-
-**Dependencies**
-- Outbound: @bulr/types (P1)（スケルトン段階では import 無し）
-- External: drizzle-orm@0.45 (P0)、drizzle-kit@0.31 (P0)、pg@8 (P0)
-
-**Contracts**: Service [x]
-
-##### Service Interface
 ```typescript
-// packages/db/src/client.ts
+// src/client.ts (概要のみ)
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required');
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not defined');
 }
-
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema, casing: 'snake_case' });
-export type DB = typeof db;
+const pool = new Pool({ connectionString });
+export const db = drizzle(pool, { schema });
 ```
+- Preconditions: `process.env.DATABASE_URL` が設定されている（本スペックでは未設定 OK、利用時にエラー）
+- Postconditions: `db` インスタンスが import 可能
+- Invariants: client は singleton
 
-##### Batch / Job Contract（drizzle-kit）
-- Trigger: `pnpm --filter @bulr/db generate`（マイグレーションファイル生成）、`push`（dev DB に反映）、`migrate`（履歴管理付き反映）
-- Input / validation: `./src/schema/index.ts` の export
-- Output / destination: `./drizzle/` ディレクトリにマイグレーション SQL
-- Idempotency & recovery: drizzle-kit が差分検出して冪等に動作
+##### State Management
+- State model: 空 schema バレル（後続 spec が `candidate.ts`、`interview-session.ts` 等を追加）
+- Persistence & consistency: Postgres へのコネクションは利用時に確立
+- Concurrency strategy: `pg.Pool` のデフォルト
 
 **Implementation Notes**
-- Integration: dishxdish の `packages/db` 構成を踏襲（`drizzle.config.ts` の `.env.local` 自動読込ロジックも含む）。ただし `seed` script は本スペックでは含めない（`assessment-pattern-seed` spec が追加）
-- Validation:
-  - `pnpm --filter @bulr/db typecheck` がエラーなく完了
-  - 空スキーマでも `pnpm --filter @bulr/db generate` がエラーなく実行できる（成果物は最小）
-  - `import { db } from '@bulr/db'` を実行する側で `DATABASE_URL` 未設定なら `Error: DATABASE_URL is required` がスローされる
-- Risks:
-  - Stage 1 では Neon serverless driver ではなく `pg` (`node-postgres`) を採用（`multi-env-infrastructure` spec で Neon 接続時に再評価する余地）。dishxdish と同じ選択
-  - `drizzle.config.ts` で `.env.local` をルートから自動読込するロジックは dishxdish 由来。後続 spec（`multi-env-infrastructure`）が `.env.local` を整える前提
+- Integration: dishxdish の `packages/db` を流用、Better Auth テーブル関連は `authentication` spec で追加するためここでは含めない
+- Validation: `pnpm typecheck` 成功、`pnpm drizzle-kit generate` が空 schema で実行可能（migration ファイルは生成されないが、エラーも出ない）
+- Risks: Neon の serverless ドライバ（`@neondatabase/serverless`）への切替が必要になる可能性 → `multi-env-infrastructure` spec で判断
 
-#### AiPkg
+### packages/types
+
+#### TypesPackage
 
 | Field | Detail |
 |-------|--------|
-| Intent | Vercel AI SDK 6 と Anthropic SDK の依存を登録、後続 spec の Tool 実装受け皿 |
-| Requirements | 4.1, 4.2, 4.3, 4.4, 4.7, 6.1, 6.2, 6.4, 6.5 |
+| Intent | 純粋な TypeScript 型定義 + サブパス export 予約 |
+| Requirements | 4.1-4.7, 6.1, 6.2, 6.4, 7.4 |
 
 **Responsibilities & Constraints**
-- `@bulr/ai`、`private: true`
-- 依存: `ai@^6`、`@ai-sdk/anthropic@^3`、`@ai-sdk/react@^3`、`zod@^4`、`drizzle-orm@^0.45`、`@bulr/db` (workspace:*)、`@bulr/types` (workspace:*)、`@bulr/lib` (workspace:*)
-- 本スペックでは `src/index.ts` は `export {};` のみ
-- LLM tools、システムプロンプト、評価ロジック、stream context は本スペックでは実装しない（`assessment-engine` spec が追加）
+- `package.json` の `name: "@bulr/types"`
+- `exports`: `{ ".": "./src/index.ts", "./profile": "./src/profile.ts", "./evaluation": "./src/evaluation.ts" }`
+- **runtime 依存ゼロ**（`dependencies` フィールドを持たないか空オブジェクト）
+- `devDependencies`: `typescript` のみ
+- `scripts`: `typecheck: "tsc --noEmit"`、`lint: "eslint ."`
+- `src/index.ts`、`src/profile.ts`、`src/evaluation.ts` は本スペックでは空ファイル（`export {};` または空コメント）
 
 **Dependencies**
-- Outbound: @bulr/db (P1)、@bulr/types (P1)、@bulr/lib (P1)（スケルトン段階では import 無し）
-- External: ai@6 (P0)、@ai-sdk/anthropic@3 (P0)、zod@4 (P0)
+- Inbound: `packages/db`（peer、P1）、`packages/lib`（P0）、`packages/ai`（P0）、`apps/web`（P0）
+- Outbound: なし
+- External: TypeScript 5.x（P0、devDeps）
 
-**Contracts**: Service [x]
+**Contracts**: State
+
+##### State Management
+- State model: 型定義の集合（本スペックでは空、後続 spec で `InterviewerProfile`、`CandidateInfo`、`LlmEvaluation`、`ManualEvaluation`、`HeatmapData` 等を追加）
+- Persistence & consistency: TypeScript コンパイル時のみ
+- Concurrency strategy: 該当なし
 
 **Implementation Notes**
-- Integration: dishxdish の `packages/ai` の依存リストを踏襲しつつ、`@ai-sdk/google` と `@dishxdish/auth` workspace 依存は除外（bulr Stage 1 では Anthropic 単一、auth は apps/web 直書き）
-- Validation: `pnpm --filter @bulr/ai typecheck` がエラーなく完了
-- Risks: 依存だけ先に入れて未使用のままだと ESLint の no-unused-vars が誤検知する可能性 → スケルトンの `export {};` のみなので問題なし
+- Integration: dishxdish の `packages/types` 構造を流用、サブパス export を bulr 用に拡張
+- Validation: `pnpm typecheck` が成功し、他パッケージから `import type { Foo } from '@bulr/types/profile'` の文が（実体型がなくても）解決される
+- Risks: サブパス export を `package.json` に宣言しても `tsconfig.json` の `paths` 解決が一致しない場合がある → `tsconfig.base.json` の `moduleResolution: "bundler"` がこの宣言を直接尊重するため追加 paths は不要
+
+### packages/lib
+
+#### LibPackage
+
+| Field | Detail |
+|-------|--------|
+| Intent | 共通ユーティリティ slot（runtime 依存 OK） |
+| Requirements | 5.1, 5.2, 6.1, 6.2, 7.4-7.7 |
+
+**Responsibilities & Constraints**
+- `package.json` の `name: "@bulr/lib"`、`exports: { ".": "./src/index.ts" }`
+- `dependencies`: `@bulr/types` `workspace:*`、`zod` ^4.0.0
+- `scripts`: `typecheck: "tsc --noEmit"`、`lint: "eslint ."`
+- `src/index.ts` は空バレル（コメントのみ）
+
+**Dependencies**
+- Inbound: `apps/web`（P0）、`packages/ai`（P1）
+- Outbound: `@bulr/types`（P0）
+- External: Zod 4.x（P1、後続 spec で利用予定）
+
+**Contracts**: Service
+
+**Implementation Notes**
+- Integration: dishxdish の `packages/lib` 構造に倣う（Stage 1 では空）
+- Validation: `pnpm typecheck` 成功
+- Risks: なし（最小スケルトン）
+
+### packages/ai
+
+#### AiPackage
+
+| Field | Detail |
+|-------|--------|
+| Intent | LLM 関数 / Whisper クライアント の依存と空ディレクトリ予約 |
+| Requirements | 5.3-5.8, 6.1, 6.2, 6.6, 7.4-7.7 |
+
+**Responsibilities & Constraints**
+- `package.json` の `name: "@bulr/ai"`、`exports: { ".": "./src/index.ts" }`
+- `dependencies`: `ai` ^6.0.0（Vercel AI SDK 6）、`@ai-sdk/anthropic` ^3.0.0、`openai` ^4.0.0（OpenAI 公式 SDK）、`zod` ^4.0.0、`@bulr/db` `workspace:*`、`@bulr/types` `workspace:*`、`@bulr/lib` `workspace:*`
+- `scripts`: `typecheck: "tsc --noEmit"`、`lint: "eslint ."`
+- `src/index.ts` は空バレル
+- `src/client.ts` は空ファイル（後続 spec で Anthropic Claude Sonnet 4.6 モデル定義）
+- `src/functions/`、`src/prompts/`、`src/whisper/` ディレクトリを `.gitkeep` で予約
+
+**Dependencies**
+- Inbound: `apps/web`（P0）
+- Outbound: `@bulr/db`（P1）、`@bulr/types`（P0）、`@bulr/lib`（P1）
+- External: Vercel AI SDK 6（P0）、Anthropic SDK 3（P0）、OpenAI SDK 4（P0）、Zod 4（P0）
+
+**Contracts**: Service
+
+##### Service Interface
+本スペックでは export なし（空バレル）。後続 `assessment-engine` spec で以下を追加予定：
+```typescript
+// 後続 spec で追加（本スペックでは契約予約のみ）
+export { analyzeTurn } from './functions/analyze-turn';
+export { splitInterviewerCandidate } from './functions/split-interviewer-candidate';
+export { proposeNextQuestions } from './functions/propose-next-questions';
+export { aggregatePatternCoverage } from './functions/aggregate-pattern-coverage';
+export { generateSessionReport } from './functions/generate-session-report';
+export { transcribeAudio } from './whisper/transcribe';
+```
+
+**Implementation Notes**
+- Integration: dishxdish の `packages/ai` 構造を流用し、`@ai-sdk/google` を削除して `openai`（Whisper API 用）を追加。`@ai-sdk/react` も Stage 1 で `useChat` を使わないため除外（`tech.md` L53 準拠）
+- Validation: `pnpm typecheck` 成功、`pnpm install` で全 SDK が解決
+- Risks:
+  - Vercel AI SDK 6 の API は v5 から大きく変わったが、本スペックでは関数実装しないため影響なし
+  - OpenAI SDK のメジャーバージョン（v4 系）は Whisper API 対応版を選択 → `assessment-engine` spec で実装時に確認
+  - `peerDependencies` ではなく `dependencies` で宣言する理由: monorepo 内の単一 import ツリーで動作するため peer 不要
 
 ## Data Models
 
-本スペックでは「Drizzle 設定」のみ提供し、アプリケーションテーブル定義は行わない。データモデルの実体定義は後続 spec が担う。
+本スペックではデータモデルを定義しない。
 
-### Logical Data Model（Drizzle 設定段階）
-
-- **Schema location**: `packages/db/src/schema/index.ts`（空バレル）
-- **Naming convention**: テーブル名・カラム名は snake_case（`drizzle.config.ts` の `casing: 'snake_case'`）
-- **Migration output**: `packages/db/drizzle/` ディレクトリ
-- **Connection**: `DATABASE_URL`（未設定なら起動時 throw）
-
-### Out of scope（後続 spec で定義）
-
-- `user`、`session`、`account`、`verification`（Better Auth 管理）→ `authentication` spec
-- `user_profile`（受験プロファイル）→ `authentication` spec
-- `assessment_pattern`（57 パターンマスタ）→ `assessment-pattern-seed` spec
-- `assessment_session`、`assessment_answer`、`chat_message` → `assessment-engine` spec
+- `packages/db/src/schema/` は空バレルとして存在
+- 実テーブル定義は `assessment-pattern-seed`（`assessment_pattern`）、`authentication`（`user_profile` + Better Auth 管理テーブル）、`assessment-engine`（`candidate`、`interview_session`、`question_proposal`、`interview_turn`、`pattern_coverage`、`session_report`）、`multi-env-infrastructure`（`rate_limit`）の各 spec で追加
 
 ## Error Handling
 
 ### Error Strategy
 
-本スペックは設定とスケルトンが中心のため、ランタイムエラーは限定的:
+本スペックは設定ファイルとスケルトン作成のみのため、独自のエラーハンドリングは持たない。代わりに以下のツールが標準的なエラーを出す：
 
-- **`DATABASE_URL` 未設定エラー**: `packages/db/src/client.ts` が import されたタイミングで `throw new Error('DATABASE_URL is required')`。早期失敗で原因特定を容易にする（Fail Fast）
-- **TypeScript 型エラー**: `pnpm typecheck` で検出。CI 化は `multi-env-infrastructure` spec
-- **ESLint ルール違反**: `pnpm lint` で検出
-- **依存解決エラー**: pnpm が unmet peer dependency を検出。`.npmrc` の `auto-install-peers=true` で軽減
+- **`pnpm install` 失敗**: 依存解決エラー → ユーザーが lockfile を確認、`pnpm install --force` で再試行
+- **`pnpm typecheck` 失敗**: TypeScript エラー → 該当ファイル位置と型エラーメッセージを表示
+- **`pnpm lint` 失敗**: ESLint エラー → 該当ルール違反位置を表示
+- **`pnpm dev` 失敗**: Next.js が port 3000 競合や設定エラーをログ出力
+- **`drizzle-kit generate` 失敗（DATABASE_URL 未定義）**: drizzle-kit が標準エラー出力（本スペックではこのコマンドの実行成功は要求しない）
 
 ### Error Categories and Responses
 
-- **設定不備（5xx 相当）**: `DATABASE_URL` 未設定 → 起動時 throw、stack trace で `packages/db/src/client.ts` を指す
-- **型不一致（ビルド時）**: TS エラーで build/typecheck が落ちる
-- **ファイル欠落（ビルド時）**: 例えば `next.config.ts` が無いと `next dev` が失敗 → `pnpm dev` が即時 exit
+該当なし（本スペックには runtime コードがほぼ存在しない）。
 
 ### Monitoring
 
-本スペックではモニタリングは導入しない（`multi-env-infrastructure` 以降で Vercel ログ + 手動確認）。
+本スペックではログ・監視を追加しない。`multi-env-infrastructure` spec で Vercel ダッシュボードの活用を整備、Stage 2 で Sentry / PostHog / Helicone を導入。
 
 ## Testing Strategy
 
-本スペックは設定とスケルトンが中心のため、テストフレームワーク（Vitest / Playwright）の導入は行わない。テストフレームワーク導入は必要になった spec で行う方針（`tasks.md` で明示）。
+本スペックではテストフレームワーク（Vitest / Playwright 等）を導入しない。代わりに以下の **動作確認手順** を完了条件とする：
 
-### Default sections
+### Manual Smoke Test Items
 
-- **Unit Tests**: 本スペックでは導入しない
-- **Integration Tests**: 本スペックでは導入しない
-- **E2E/UI Tests**: 本スペックでは導入しない
-- **Manual Smoke Tests**（本スペックの完了確認）:
-  1. リポジトリルートで `pnpm install` が正常終了する（exit code 0）
-  2. リポジトリルートで `pnpm typecheck` が全 workspace でエラーなく完了する
-  3. リポジトリルートで `pnpm lint` が全 workspace でエラーなく完了する
-  4. リポジトリルートで `pnpm build` が全 workspace でエラーなく完了する
-  5. リポジトリルートで `pnpm dev` を実行し、ブラウザで http://localhost:3000 にアクセスすると bulr ベータ説明のランディングページが表示される
-  6. `pnpm --filter @bulr/db generate` がエラーなく完了する（空スキーマのため成果物は最小）
-  7. `apps/web/src/app/page.tsx` で `import { db } from '@bulr/db'` の type resolution が成立する（実 import は本スペックでは行わない）
+1. **`pnpm install` 成功**
+   - クリーンチェックアウトから `pnpm install` を実行
+   - lockfile が生成され、エラーなく完了することを確認
+   - 検証要件: 1.6
 
-> 上記の Manual Smoke Tests を `tasks.md` の「Validation」フェーズで実施可能なタスクとして配置する。
+2. **`pnpm typecheck` 成功**
+   - 全 5 workspace（apps/web + packages/{db,types,lib,ai}）で `tsc --noEmit` がエラーなく完了
+   - 検証要件: 3.7、4.6、5.8、7.4
+
+3. **`pnpm lint` 成功**
+   - 全 5 workspace で ESLint がエラーなく完了
+   - 検証要件: 7.5
+
+4. **`pnpm dev` で port 3000 起動**
+   - `pnpm dev` 後、`curl http://localhost:3000/` が HTTP 200 を返す
+   - ブラウザで開いて空ランディングが表示されることを目視確認
+   - 検証要件: 2.6
+
+5. **`pnpm build` 成功**
+   - `apps/web/.next/` 配下に build 成果物が生成されることを確認
+   - 検証要件: 2.7
+
+6. **サブパス export 解決**
+   - `apps/web/app/page.tsx` に一時的に `import type {} from '@bulr/types/profile';` を追加
+   - `pnpm typecheck` がエラーなく通ることを確認、確認後コードを戻す
+   - 検証要件: 4.7
+
+7. **Prettier 整形安定**
+   - 既存 `.ts` / `.tsx` ファイルに対して `npx prettier --check .` がエラーなく完了
+   - 検証要件: 8.5
+
+> 上記 7 項目は手動スモークテスト。CI 化は `multi-env-infrastructure` spec の責務。
 
 ## Security Considerations
 
-`security.md` の Stage 1 必須項目のうち、本スペックで担う部分は限定的:
+本スペックでは認証・データアクセスを実装しないため、`security.md` の脅威カテゴリ（LLM コスト枯渇、認証バイパス、SQL インジェクション、音声漏洩等）には直接該当しない。ただし以下の **基盤レベルの安全設計** は本スペックで担保する：
 
-- **シークレット管理**: `.gitignore` に `.env.local`、`.env*.local` を含めることで、後続 spec が環境変数を導入する際にコミット事故を防ぐ
-- **`no any` ルール**: ESLint で warn 設定。`security.md` の「TypeScript strict mode、no any」を ESLint レベルで担保
-- **strict mode**: `tsconfig.base.json` で `strict: true` + `noUncheckedIndexedAccess: true` を強制
-- **依存性脆弱性チェック**: 本スペックでは未導入。`multi-env-infrastructure` spec が CI に `pnpm audit --audit-level=moderate` を組み込む
+- **シークレット混入防止**: `.gitignore` に `.env*.local` を必ず含め、ルート設定ファイルにハードコードされたシークレットを置かない
+- **依存性脆弱性ベースライン**: `pnpm install` 後に `pnpm audit --audit-level=moderate` を CI で実行する設計を後続 spec に渡す（本スペックでは設定のみ）
+- **TypeScript strict mode**: `noUncheckedIndexedAccess: true` を含む strict mode で、後続 spec の型安全性ベースラインを確立
+- **`packages/types` の runtime 依存ゼロ**: 型のみのパッケージにすることで、誤って Zod スキーマや実装ロジックを混入させるリスクを構造的に排除
 
-本スペックでは認証 / 入力検証 / SQL injection 対策 / LLM 防御は範囲外（後続 spec で対応）。
+`security.md` の他の項目（多層認証、Zod 入力検証、LLM スコープ束縛、CSP ヘッダー、Vercel Cron 認証等）はすべて後続 spec の責務。本スペックではそれらが実装可能な土台を提供する。
 
-## Performance & Scalability
+## Open Questions / Risks
 
-本スペックは性能要求対象外（設定とスケルトンのみ）。Turbo の `outputs` cache 設定により、ローカル開発の再ビルド時間を抑える程度。
-
-## Migration Strategy
-
-greenfield のため migration なし。既存 `docs/` および `.kiro/` ディレクトリは一切変更しない。
-
-## Supporting References
-
-- 参照プロジェクト: `/Users/takaaki.tanno/Documents/workspace/github/dishxdish-app-mvp/`（同一スタック稼働中の構成例）
-- steering: `.kiro/steering/tech.md`、`.kiro/steering/structure.md`、`.kiro/steering/security.md`
-- brief: `.kiro/specs/monorepo-foundation/brief.md`
+- **`@neondatabase/serverless` への切替判断**: `multi-env-infrastructure` spec で Neon 採用時に `pg` から差し替える必要が出るかもしれない。本スペックでは `pg` で開始
+- **shadcn/ui の `components.json` 設定**: 本スペックでは登録のみで個別コンポーネント追加なし。`assessment-engine` spec で必要なコンポーネント（Button、Card、Dialog 等）を `pnpm dlx shadcn@latest add` で順次追加予定
+- **OpenAI SDK のバージョン**: 公式 OpenAI SDK は v4 系から v5 系への移行が進んでいる。本スペックでは v4 系最新（Whisper API 対応確認済み）を採用、`assessment-engine` spec で実装時に再確認
+- **`packages/ai` の AI SDK バージョン pin**: `^6.0.0` で広めに取るが、Vercel AI SDK 6 系内のマイナー破壊変更リスクあり。`assessment-engine` spec での実装開始時に lockfile を確認

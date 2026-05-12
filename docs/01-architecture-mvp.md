@@ -3,12 +3,18 @@
 > **このドキュメントの位置づけ**
 > 3ヶ月のプロトタイプ検証フェーズ（Stage 1）における実装範囲を定義する。
 > 長期構成（Stage 2以降）は別ドキュメント `01-architecture-full.md` を参照。
-> Stage 1 のゴールは「対話型問診で実務判断力が見抜けるか」の検証であり、
+> Stage 1 のゴールは「**面接アシスタント型で実務判断力が見抜けるか**」の検証であり、
 > 本番品質のインフラを揃えることではない。
+>
+> **関連ドキュメント**
+> - 戦略・コンセプト全体：`bulr-handoff.md`
+> - プロダクト体験詳細：`bulr-product-direction.md`
+> - 状況パターン定義：`02-questionnaire-patterns.md`
+> - 4 段階深掘り設計：`03-probe-logic.md`
 
 ## Stage 1 の検証ゴール
 
-**「バックエンドエンジニア向けの対話型問診を作り、ベトナム人50人 + 日本人20人に受けてもらい、問診結果と実際の実力（既知の評価）を比較して、相関があることを確認する」**
+**「バックエンドエンジニア向けの面接アシスタントを作り、創業者および協力面接官5-10人が、ベトナム人20-30人 + 日本人10-20人の面接で実際に使い、問診パターンに基づく面接結果と、面接官の独自判断との一致度を確認する」**
 
 このゴールに不要なものは、Stage 1 では作らない。
 
@@ -16,37 +22,48 @@
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  受験者の Browser                                    │
+│  面接官の Browser                                    │
 │  - Next.js Frontend (React)                          │
-│  - Vercel AI SDK (useChat hook)                      │
+│  - MediaRecorder API（音声録音）                     │
+│  - 状態A（録音中）/ 状態B（3候補選択）               │
 └──────────────────┬──────────────────────────────────┘
-                   │ HTTPS / SSE Streaming
+                   │ HTTPS
                    ▼
 ┌─────────────────────────────────────────────────────┐
 │  apps/web (Vercel) - bulr.net (or 仮ドメイン)        │
 │  - Next.js App Router                                │
-│  - API Routes (/api/chat, /api/auth, /api/admin)     │
-│  - 受験者向け UI (/assessments)                      │
-│  - 創業者向け管理画面 (/admin) ※Basic 認証のみ       │
-└────┬───────────────────┬────────────────────────────┘
-     │                   │
-     ▼                   ▼
-┌─────────────┐   ┌─────────────────────────────────┐
-│ Anthropic   │   │ Neon Postgres                   │
-│ Claude API  │   │  (via Vercel Storage)           │
-│ (Sonnet 4.6)│   │                                 │
-└─────────────┘   └─────────────────────────────────┘
+│  - API Routes:                                       │
+│    /api/interview/turns/next   面接ターン処理        │
+│    /api/interview/finalize     セッション終了        │
+│    /api/auth/*                 Better Auth           │
+│  - 面接官向け UI (/interviews)                       │
+│  - 創業者向け管理画面 (/admin) ※Basic 認証 + 二重チェック │
+└────┬───────────────┬───────────────┬────────────────┘
+     │               │               │
+     ▼               ▼               ▼
+┌──────────┐  ┌──────────┐  ┌──────────────────────┐
+│ Anthropic│  │ OpenAI   │  │ Neon Postgres        │
+│ Claude   │  │ Whisper  │  │  (via Vercel Storage)│
+│ Sonnet   │  │ API      │  └──────────────────────┘
+│ 4.6      │  └──────────┘
+└──────────┘
+                              ┌──────────────────────┐
+                              │ Vercel Blob          │
+                              │ 音声30日保存         │
+                              │ + Vercel Cron 削除   │
+                              └──────────────────────┘
 
 外部サービス (Stage 1 では最小):
-  - Resend: マジックリンク配信のみ
+  - Resend: マジックリンク配信のみ（面接官向け）
 ```
 
 **Stage 1 で導入しないもの**
-- Cloudflare R2（画像ストレージ不要）
+- Cloudflare R2（Vercel Blob で十分）
 - PostHog（受験者数が少なすぎて分析不要）
 - Sentry（手動でログ確認で十分）
 - Helicone（LLMコストはダッシュボードで直接見る）
 - BetterStack（プロトタイプに死活監視不要）
+- リアルタイム文字起こし、話者分離 API、先読み質問生成
 
 これらは Stage 2 で追加する。
 
@@ -60,10 +77,14 @@
 | UI | React 19 | UIライブラリ |
 | Styling | Tailwind CSS 4 | ユーティリティCSS |
 | UI Components | shadcn/ui ベース | 必要最小限のコンポーネント |
-| AI Streaming | Vercel AI SDK 6 | useChat hook、streamText |
-| LLM Client | Anthropic SDK | Claude API |
+| AI 構造化出力 | Vercel AI SDK 6 (`generateObject`) | Zod スキーマ準拠の LLM 出力 |
+| LLM Client | Anthropic SDK | Claude Sonnet 4.6 |
+| 音声文字起こし | OpenAI SDK | Whisper API ラッパー |
+| 録音 | ブラウザ標準 MediaRecorder API | 音声キャプチャ |
 | Type Safety | TypeScript | 全層で使用 |
-| Validation | Zod | スキーマ検証、Tool Use |
+| Validation | Zod | スキーマ検証、LLM 出力検証 |
+
+**Stage 1 で使わないもの**：`useChat` / `streamText`（v1 はチャット UI 前提だったが v2 は使わない）、Tool Use ループ（サーバー側オーケストレーションで決定論的に呼ぶ）
 
 ### データベース
 
@@ -75,19 +96,29 @@
 
 **Stage 1 で導入しないもの**：pgvector（セマンティック検索は Stage 2 で必要になったら追加）
 
+### ストレージ
+
+| 層 | 技術 | 役割 |
+|---|---|---|
+| 音声 | Vercel Blob | 面接音声を30日保存 |
+| 削除 | Vercel Cron | 毎日 1 回、`audio_expires_at` 経過音声を削除 |
+
 ### 認証
 
 | 層 | 技術 | 役割 |
 |---|---|---|
 | Auth | Better Auth (1.6.x) | OSS認証ライブラリ |
-| Method | Magic Link のみ | パスワードレス |
+| Method | Magic Link のみ | パスワードレス（面接官向け） |
 | Email | Resend | マジックリンク配信 |
+| 管理画面 | Basic 認証 + ADMIN_ALLOWED_EMAILS | 二重チェック |
 
-**Stage 1 で導入しないもの**：Google OAuth、SSO、ワークスペース別認証。Stage 1 の認証要件は「受験者を識別する」だけなので、マジックリンクで十分。創業者の管理画面は Basic 認証（環境変数で管理者メールを許可リスト化）。
+**Stage 1 で導入しないもの**：Google OAuth、SSO、ワークスペース別認証。Stage 1 の認証要件は「面接官を識別する」だけなので、マジックリンクで十分。創業者の管理画面は Basic 認証 + 許可メールリストの二重チェック。
+
+候補者は bulr に直接ログインしない（v2 哲学）。候補者情報は面接官が新規セッション作成時に入力。
 
 ### 国際化
 
-**Stage 1 では導入しない**。日本語のみで運用。ベトナム人受験者には英語または日本語で受けてもらう（要受験者ペルソナ確認）。i18n は Stage 2 で next-intl を導入。
+**Stage 1 では導入しない**。日本語のみで運用。ベトナム人候補者の面接は、面接官が現地語または英語/日本語で実施し、Whisper の文字起こしも面接時の言語で保存される。LLM プロンプトは日本語ベース。i18n は Stage 2 で next-intl を導入。
 
 ### インフラ
 
@@ -95,6 +126,7 @@
 |---|---|---|
 | Hosting | Vercel (Hobby プラン) | フロント + API ホスティング |
 | Domain | 仮ドメイン or bulr.net | プロトタイプ用 |
+| Cron | Vercel Cron | 音声削除ジョブ |
 
 **Stage 1 では Vercel プロジェクトは1つ**。apps/web 内の `/admin` ルートで管理画面を提供する。Stage 2 で apps/admin を分離する。
 
@@ -109,37 +141,40 @@
 ```
 bulr/
 ├── apps/
-│   └── web/                        # 受験者向け + 管理画面（同一アプリ）
+│   └── web/                        # 面接官向け + 管理画面（同一アプリ）
 │       ├── app/
-│       │   ├── (assessment)/       # 受験者向けルート
-│       │   │   ├── assessments/
-│       │   │   │   ├── start/      # 問診開始
-│       │   │   │   └── [sessionId]/  # 進行中の問診
-│       │   │   └── done/           # 完了画面
+│       │   ├── (interviewer)/      # 面接官向けルート
+│       │   │   ├── interviews/
+│       │   │   │   ├── page.tsx          # セッション一覧
+│       │   │   │   ├── new/              # 新規セッション作成（候補者情報入力）
+│       │   │   │   ├── [sessionId]/      # 面接中（状態A/B）
+│       │   │   │   └── [sessionId]/report/  # 面接後レポート（面接官向け）
+│       │   │   └── sign-in/        # マジックリンクサインイン
 │       │   ├── admin/              # 管理画面（Basic 認証）
-│       │   │   ├── sessions/       # 受験セッション一覧
-│       │   │   ├── sessions/[id]/  # セッション詳細・回答確認
+│       │   │   ├── sessions/       # 全セッション一覧
+│       │   │   ├── sessions/[id]/  # セッション詳細・手動評価
 │       │   │   └── login/          # 管理者ログイン
 │       │   ├── api/
-│       │   │   ├── chat/           # 問診の対話 API
-│       │   │   ├── auth/           # マジックリンク認証
-│       │   │   ├── admin/          # 管理 API
-│       │   │   └── sessions/       # セッション CRUD
+│       │   │   ├── interview/
+│       │   │   │   ├── turns/next/       # 面接ターン処理（録音→Whisper→分析→候補生成）
+│       │   │   │   └── finalize/         # セッション終了処理
+│       │   │   ├── auth/                 # マジックリンク認証
+│       │   │   ├── admin/                # 管理 API
+│       │   │   └── cron/audio-purge/     # 音声削除 Cron
 │       │   ├── layout.tsx
-│       │   └── page.tsx            # シンプルな受験開始ページ
+│       │   └── page.tsx            # ランディング（ベータの説明）
 │       ├── components/
-│       ├── lib/
-│       └── package.json
+│       └── lib/
 │
 ├── packages/
 │   ├── db/                         # Drizzle schema + queries
 │   ├── types/                      # 共通型定義
 │   ├── lib/                        # 共通ユーティリティ
-│   └── ai/                         # 問診プロンプト、ツール、評価ロジック
+│   └── ai/                         # LLM 関数 + Whisper クライアント + プロンプト
 │
 ├── docs/
-│   ├── specs/                      # 仕様ドキュメント
-│   └── interview-patterns/         # 問診パターン集（重要）
+│   ├── consent/                    # 同意文（ja-v1.md 等、バージョン管理）
+│   └── (handoff / product-direction / patterns / probe-logic / architecture)
 │
 ├── scripts/                        # 開発スクリプト、データシード
 │
@@ -167,22 +202,27 @@ bulr/
 ### Stage 1（プロトタイプ）
 
 ```
-受験者向け:
-  /                              ランディング（ベータの説明）
-  /assessments/start             問診開始（メール入力 → マジックリンク）
-  /assessments/[sessionId]       進行中の問診（対話型 UI）
-  /assessments/done              完了画面
+ランディング:
+  /                              ベータの説明
+
+面接官向け:
+  /sign-in                       マジックリンクサインイン
+  /interviews                    自分のセッション一覧
+  /interviews/new                新規セッション作成（候補者情報入力）
+  /interviews/[sessionId]        面接中（状態A 録音中 / 状態B 候補選択）
+  /interviews/[sessionId]/report 面接後レポート（ヒートマップ + サマリー）
 
 管理画面（Basic 認証 + 許可メールチェック）:
-  /admin/sessions                受験セッション一覧
-  /admin/sessions/[id]           セッション詳細（回答全文 + 評価）
+  /admin/sessions                全受験セッション一覧
+  /admin/sessions/[id]           セッション詳細（手動評価入力 + CSV/JSON エクスポート）
   /admin/login                   管理者ログイン
 
 API:
-  /api/chat                      問診の対話 API（SSE ストリーミング）
+  /api/interview/turns/next      面接ターン処理（multipart/form-data audio + 状態更新）
+  /api/interview/finalize        セッション終了 + ヒートマップ/サマリー生成
   /api/auth/*                    Better Auth エンドポイント
   /api/admin/*                   管理 API
-  /api/sessions/*                セッション CRUD
+  /api/cron/audio-purge          Vercel Cron からの音声削除（30 日経過分）
 ```
 
 ### 開発・プレビュー
@@ -195,171 +235,270 @@ API:
   Vercel Preview URL（PR ごとに自動生成）
 ```
 
-## AI 問診アーキテクチャ
+## 面接アシスタント アーキテクチャ
 
 ### 設計原則
 
-1. **対話型で深掘りする**
-   - 4段階の深掘り構造（経験有無 → 真贋確認 → 判断力 → メタ認知）
-   - LLM が文脈に応じて質問を生成
+1. **面接官が主役、AI は黒子**
+   - 面接官の発言を最小限に抑える支援ツール
+   - 「自分で次を聞く」が常に選択肢として存在
+   - LLM の提案は3候補に絞り、面接官に選ばせる
 
 2. **構造化された問診パターンに基づく**
-   - 創業者が設計した40-60の状況パターン
-   - LLM はパターンを順次提示し、回答を引き出す
+   - 創業者が設計した57の状況パターン（`docs/02-questionnaire-patterns.md`）
+   - 各パターンに4段階の深掘り質問テンプレート（`docs/03-probe-logic.md`）
+   - LLM はパターンに沿って質問候補を生成
 
 3. **回答は構造化保存**
-   - 各パターンへの回答は別レコードとして保存
-   - 後から手動評価とLLM評価の両方を実施
+   - 各ターンを `interview_turn` に保存（音声 + 文字起こし + ターン分析）
+   - パターン完了時に `pattern_coverage` で集約（5次元最終スコア）
+   - フリー質問（規定外）は `pattern_id=null` で保存、評価集約に含めず session_report に反映
 
-4. **ストリーミングで応答**
-   - SSE で文字単位ストリーム
-   - Vercel AI SDK でラップ
+4. **サーバーオーケストレーション**
+   - LLM の Tool Use ループは使わない
+   - サーバー側で決定論的に LLM を順次呼ぶ（generateObject 中心）
 
 ### 使用しないもの
 
-- ❌ LangChain / LangGraph: Vercel AI SDK で十分
-- ❌ MCP サーバー: 自社プロダクトには不要
-- ❌ 独自ベクトルDB: Stage 1 では不要
-- ❌ Redis キャッシュ: Stage 1 では不要
+- ❌ Vercel AI SDK の `useChat` / `streamText`（v1 用、v2 では不要）
+- ❌ LangChain / LangGraph
+- ❌ MCP サーバー
+- ❌ 独自ベクトルDB（Stage 1 では不要）
+- ❌ Redis キャッシュ（Stage 1 では不要）
 
-### LLMツール (Tools)
+### 関数構成
+
+**サーバー内部関数（決定論的、LLM 呼び出しなし）**
+- `transcribeAudio(blob)` — OpenAI Whisper API ラッパー
+- `uploadToBlob(blob, key)` — Vercel Blob アップロード
+- `purgeExpiredAudio()` — Vercel Cron から呼ばれる削除ジョブ
+
+**LLM 関数（generateObject + Zod スキーマ）**
 
 ```typescript
-const tools = {
-  selectNextPattern,       // 次に質問する状況パターンを選択
-  recordAnswer,            // 回答を構造化して保存
-  evaluateAnswer,          // 回答の深さを評価（4段階のどこまで答えたか）
-  generateFollowUp,        // 深掘り質問を生成
-  finalizeSession,         // 問診完了処理
+// packages/ai/src/functions/
+const llm = {
+  analyzeTurn,                  // このターンで観察できた 5 次元シグナル + 到達段階推定
+  splitInterviewerCandidate,    // 「自分で次を聞く」用、文脈から質問+回答を分離
+  proposeNextQuestions,         // 3 候補生成（深掘り / メタ認知 / 次パターン）
+  aggregatePatternCoverage,     // パターン完了時、複数ターンを統合して5次元最終スコア + level_reached + stuck_type
+  generateSessionReport,        // 面接終了時、ヒートマップ JSON + サマリーテキスト生成
 };
 ```
 
-各ツールは Drizzle ORM で DB アクセスする。
+各関数は Zod スキーマで構造化出力を保証。LLM 出力は DB 書き込み前に再検証。
 
 ### システムプロンプト構造
 
 ```
-1. ロール定義（エンジニアの実務判断力を評価する面接官）
-2. 問診の進め方（4段階の深掘り構造）
-3. 評価軸の説明（広さ × 深さ × 意思決定の射程）
-4. ツール使用ルール（必ずツール経由でDBに書く）
-5. 受験者への態度（プレッシャーを与えず、経験を引き出す）
-6. 出力スタイル（一度に一つの質問、自然な対話）
-7. 受験者固有のコンテキスト（経験年数、選択した職種など）
+1. 役割定義（経験豊富な面接官の判断を支援する黒子）
+2. 4 段階深掘り構造（経験有無 → 真贋 → 判断力 → メタ認知）
+3. 評価軸の説明（広さ × 深さ × 意思決定の射程、5 次元スコア）
+4. 詰まり判定ルール（4 種：not_experienced / shallow / single_option / rigid）
+5. AI 横断軸の差し込み（各パターン第 4 段最後）
+6. 自然対話の振る舞い指針（オープンクエスチョン優先、続きを促す）
+7. プロンプトインジェクション対策（システム指示の上書き禁止）
+8. 出力言語（日本語）
+9. プロファイル動的注入（候補者の応募職種・経歴）
 ```
 
-### 問診のフロー
+### 面接の状態遷移
 
 ```
-1. 受験開始
-   - 経験年数、扱った言語、関わったシステム種別などをフォームで入力
-   - assessment_session を作成
-
-2. パターン選択
-   - LLM が selectNextPattern ツールで次に聞くパターンを決定
-   - 受験者の経験プロファイルに合わせて優先順位付け
-
-3. 4段階の深掘り
-   - 第1段：経験有無の確認
-   - 第2段：症状や状況の具体化
-   - 第3段：判断と選択肢
-   - 第4段：メタ認知（別の選択肢、規模が違ったら）
-
-4. 回答の評価
-   - 各段階の回答を recordAnswer で保存
-   - 各パターン終了時に evaluateAnswer で到達段階を記録
-
-5. 次のパターンへ
-   - 30〜40分または40-60パターンの一定割合をカバーで終了
-   - finalizeSession で完了処理
+[ セッション作成 ]
+   - 面接官が候補者情報入力
+   - planned_pattern_codes を生成（候補者経歴に基づく優先順位）
+   - status='in_progress'、started_at 記録
+       ↓
+[ 状態A（録音中）]
+   - 質問テキスト表示（LLM 候補①/②/③ または manual の場合は空）
+   - MediaRecorder で録音開始
+   - 進捗インジケータ表示（パターン数 / 経過時間）
+   - 操作: [次の質問へ] のみ
+       ↓
+[ POST /api/interview/turns/next ]
+   1. multipart/form-data で audio blob 受信
+   2. uploadToBlob → audio_key 取得
+   3. transcribeAudio(blob) → transcript
+   4. (manual の場合) splitInterviewerCandidate(transcript) → { interviewer_text, candidate_text }
+   5. analyzeTurn(transcript, current_pattern, history) → llm_analysis
+   6. interview_turn を DB insert
+   7. パターン完了判定 → 完了なら aggregatePatternCoverage → pattern_coverage upsert
+   8. proposeNextQuestions(session_state) → question_proposal を DB insert
+   9. レスポンス: { turn, coverage?, proposal }
+       ↓
+[ 状態B（3 候補表示）]
+   - 直前ターンの文字起こし表示（折り畳み）
+   - 評価サマリー表示（このターンで観察できたこと）
+   - 3 候補表示（候補1: 深掘り / 候補2: メタ認知 / 候補3: 次パターン）
+   - 操作: [①] [②] [③] [自分で次を聞く]
+       ↓
+[ ① / ② / ③ 選択 ]
+   - question_text を状態A に表示
+   - 録音開始
+   - 状態A へ戻る
+       OR
+[ 自分で次を聞く ]
+   - 即録音開始（質問は表示なし）
+   - 面接官が自分で質問
+   - 状態A へ戻る
+       ↓
+[ ループ終了条件 ]
+   - planned_pattern_codes を一通りカバー、または
+   - 経過時間が 40 分到達、または
+   - 面接官が「面接終了」ボタン押下
+       ↓
+[ POST /api/interview/finalize ]
+   - 残り pattern_coverage を集計
+   - generateSessionReport → session_report 作成
+   - status='completed'、completed_at 記録
+       ↓
+[ 面接後レポート画面（面接官向け）]
+   - ヒートマップ表示
+   - サマリーテキスト表示（5 次元別所感 + カテゴリ別カバレッジ + フリー質問総評）
+   - 「セッション一覧へ戻る」「再閲覧可能」
 ```
 
 ### 会話メモリ管理
 
 ```
-短期記憶（会話履歴）:
-  - useChat hook の messages 配列
-  - 直近20-30ターンを API に送る（深掘りの文脈を保つため）
+短期記憶（直近ターンの文脈）:
+  - DB から直近 5-10 ターンの transcript + llm_analysis を読み込み、
+    proposeNextQuestions / analyzeTurn のプロンプトに注入
 
-長期記憶（構造化された回答）:
-  - assessment_answer テーブルに各パターンの回答を保存
-  - パターンごとに 4段階の到達度を記録
-  - 後で創業者が手動評価する際の素材になる
+長期記憶（パターン別の到達状況）:
+  - pattern_coverage テーブルから現セッションの coverage を読み込み
+  - 「このパターンはまだ深掘りしてない、こっちは完了」という状況を LLM に伝える
 ```
 
 ## データモデル（Stage 1 最小構成）
 
-```
-user
-  - id, email, name, created_at
+### Better Auth 管理テーブル
+- `user` (面接官)
+- `session`, `account`, `verification`
 
-assessment_session
-  - id, user_id, status (in_progress / completed / abandoned)
-  - role (backend のみ Stage 1)
-  - profile_input (JSONB: 経験年数、扱った言語など)
+### bulr 固有テーブル
+
+```
+candidate                      # 候補者マスタ（Stage 3 人材紹介の伸長余地）
+  - id, name, applied_role, background_summary, email?,
+  - created_at, updated_at
+
+interview_session              # 1 面接 = 1 candidate × 1 interviewer
+  - id, interviewer_id (=user.id), candidate_id (FK→candidate),
+  - status enum [draft/in_progress/completed/abandoned],
+  - role text (Stage 1: 'backend'),
+  - planned_pattern_codes text[],
+  - consent_obtained_at, consent_version (default 'ja-v1'),
   - started_at, completed_at
 
-assessment_pattern
-  - id, code, category, title, description
-  - level_1_question, level_2_prompt, level_3_prompt, level_4_prompt
-  - 創業者が手動でシードする40-60件
+assessment_pattern             # パターンマスタ（02-questionnaire-patterns.md と 03-probe-logic.md をシード）
+  - id, code (e.g., 'D-01'), category enum,
+  - title, description,
+  - level_1_intro, level_2_focus, level_3_focus, level_4_focus,
+  - signals text[], ai_perspective,
+  - is_active boolean
 
-assessment_answer
-  - id, session_id, pattern_id
-  - level_reached (1-4)
-  - level_1_answer, level_2_answer, level_3_answer, level_4_answer
-  - llm_evaluation (JSONB: LLM による評価)
-  - manual_evaluation (JSONB: 創業者の手動評価、後から付与)
-  - created_at
+question_proposal              # 各ターン前の3候補ログ
+  - id, session_id (FK), prepared_for_turn_no,
+  - candidate_1_text, candidate_1_intent (deep_dive/meta/next_pattern),
+  - candidate_2_text, candidate_2_intent,
+  - candidate_3_text, candidate_3_intent,
+  - selected_index (1/2/3/null=manual),
+  - generated_at
 
-chat_message
-  - id, session_id, role (user / assistant), content
-  - tool_calls (JSONB)
-  - created_at
+interview_turn                 # 1 ターン = 1 質問 + 1 回答（または manual）
+  - id, session_id (FK), sequence_no,
+  - pattern_id (FK→assessment_pattern, nullable=フリー質問),
+  - proposal_id (FK→question_proposal, nullable=manual),
+  - question_source enum [llm_candidate_1/2/3, manual],
+  - question_text,
+  - audio_key (Vercel Blob key, nullable),
+  - audio_expires_at timestamp,        # 30日後
+  - transcript JSONB { interviewer, candidate },
+  - llm_analysis JSONB,                # 5次元シグナル + 到達段階推定 + nearest_patterns
+  - pattern_match_confidence enum [exact/inferred_high/inferred_low/off_pattern],
+  - off_pattern_summary text?,         # フリー質問の要約（pattern_id=null の場合）
+  - duration_ms, created_at
+
+pattern_coverage               # 1 session × 1 pattern の集約
+  - id, session_id, pattern_id (UNIQUE together),
+  - level_reached (0-4), stuck_type enum (nullable),
+  - llm_evaluation JSONB,              # 5次元最終スコア
+  - manual_evaluation JSONB,           # admin-review-panel が書き込み
+  - turn_ids text[],
+  - finalized_at
+
+session_report                 # 面接終了時に生成
+  - id, session_id (UNIQUE),
+  - heatmap_data JSONB,                # カテゴリ別平均スコア + 射程分布 + AI リテラシー分布
+  - summary_text,                      # 5次元別所感 + カテゴリ別カバレッジ + フリー質問総評
+  - generated_at
 ```
 
-**Stage 1 で作らないテーブル**
-- workspace（マルチテナント不要）
-- workspace_user（マルチテナント不要）
-- job（求人管理は Stage 2 以降）
-- application（応募管理は Stage 2 以降）
-- skill_heatmap（ヒートマップ可視化は Stage 2 以降）
+### Stage 1 で作らないテーブル
+- `workspace`, `workspace_user`（マルチテナント不要）
+- `application`, `offer`, `match`, `referral_fee`（人材紹介は Stage 3）
+- `skill_heatmap`（パターン集約とは別の集計テーブル、Stage 2）
+
+## 同意・プライバシー方針
+
+### Stage 1 の同意フロー
+- 面接官が事前メールで候補者に説明、口頭/メール返信で OK 取得
+- セッション作成時に `consent_obtained_at` を自動付与（暗黙的に「面接官が事前取得済み」とみなす）
+- 同意文は `docs/consent/ja-v1.md` に格納、`consent_version` でバージョン管理
+- UI 上のチェックボックスは Stage 1 では設けない（Stage 2 で再考）
+
+### 音声データの取り扱い
+- Vercel Blob に保存、`audio_expires_at = created_at + 30 days`
+- Vercel Cron が毎日 1 回、`audio_expires_at <= now()` の音声を物理削除
+- 削除時に `interview_turn.audio_key` を null クリア
+
+### 候補者からの削除請求
+- bulr のデータオーナーは企業側（面接官）
+- 候補者からの削除請求は企業側機能で対応（Stage 3 以降）
+- Stage 1 では bulr 側に削除フローを設けない
 
 ## セキュリティ方針（最小限）
 
 ### 認証
-
 - HttpOnly + Secure + SameSite=Lax cookies
 - Magic Link は使い切り、有効期限15分
-- 管理画面は Basic 認証 + 許可メールリスト（環境変数）
+- 管理画面は Basic 認証 + 許可メールリスト二重チェック（環境変数 `ADMIN_ALLOWED_EMAILS`）
 
 ### データ
-
 - 全 DB アクセスはサーバーサイドのみ
-- 受験者データは user_id でスコープ
-- 個人情報は最小化（メール、名前のみ）
+- 面接官データは `interviewer_id` でスコープ
+- 候補者データは `interview_session.interviewer_id` 経由でスコープ
+- 個人情報は最小化（candidate.name, email のみ、メールは optional）
 
 ### LLM
-
 - システムプロンプトの保護（ユーザー入力でオーバーライド不可）
-- レート制限（受験者: 1日1セッション、API: 1分20リクエスト）
-- ツール呼び出し回数上限（maxSteps: 10）
+- 1 ターン当たりの transcript 文字数上限（5000 文字）
+- LLM 出力は DB 書き込み前に Zod 検証
+- レート制限（面接官あたり 1 日 5 セッション、API 1 分 30 リクエスト）
+
+### 音声
+- Vercel Blob のアクセスはサーバーサイドのみ（署名付き URL は使わない）
+- 音声 URL を transcript レスポンスに含めない（クライアント漏洩防止）
 
 ### 通信
-
 - HTTPS 強制（Vercel デフォルト）
 
 ## コスト試算（Stage 1）
 
 ```
-Vercel Hobby:               $0
-Neon Free:                  $0
-Resend Free:                $0 (100通/日まで、十分)
-Anthropic Claude API:       約 $50-150
-  - 70セッション × 30-40分 × Claude Sonnet 4.6
-Domain (bulr.net):          約 $1.5/月
+Vercel Hobby:                  $0
+Neon Free:                     $0
+Resend Free:                   $0 (100通/日まで、十分)
+Vercel Blob:                   $0 (1GB/月まで無料、Stage 1 規模なら無料枠内)
+Anthropic Claude API:          約 $50-150
+  - 70セッション × 30-40分 × 平均 12 ターン × Claude Sonnet 4.6
+OpenAI Whisper API:            約 $20-50
+  - 70セッション × 平均 30 分音声 × $0.006/min
+Domain (bulr.net):             約 $1.5/月
 ─────────────────────────────────────
-合計:                       約 $50-150/月
+合計:                          約 $70-200/月
 ```
 
 70セッション全期間で見ても、最大数百ドルで収まる。
@@ -376,6 +515,13 @@ NEXT_PUBLIC_APP_URL=              # アプリのベースURL
 
 # LLM
 ANTHROPIC_API_KEY=                # Claude API
+OPENAI_API_KEY=                   # Whisper API
+
+# ストレージ
+BLOB_READ_WRITE_TOKEN=            # Vercel Blob
+
+# Cron
+CRON_SECRET=                      # Vercel Cron 認証用
 
 # 管理画面
 ADMIN_ALLOWED_EMAILS=             # 管理者メール許可リスト (CSV)
@@ -387,7 +533,8 @@ ADMIN_BASIC_AUTH_PASSWORD=        # Basic 認証パスワード
 - PostHog 関連
 - Sentry 関連
 - Helicone 関連
-- Cloudflare R2 関連
+- Cloudflare R2 関連（Vercel Blob から移行する場合）
+- Deepgram 関連（話者分離 API）
 
 ## デプロイフロー（Stage 1）
 
@@ -401,6 +548,9 @@ ADMIN_BASIC_AUTH_PASSWORD=        # Basic 認証パスワード
 
 3. main にマージ
    → 本番デプロイ自動実行
+
+4. 音声削除 Cron
+   vercel.json で定義: 毎日 03:00 JST に /api/cron/audio-purge 実行
 ```
 
 CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
@@ -408,20 +558,20 @@ CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
 ## 開発体験
 
 ### 推奨開発環境
-
 - Node.js 22 LTS
 - pnpm 10+
 - VS Code (with extensions: ESLint, Prettier, Tailwind, Drizzle)
 - Claude Code
+- Whisper API のローカルテストには `OPENAI_API_KEY` 必須
 
 ### コーディング規約
-
 - TypeScript strict mode
 - ESLint + Prettier
 - Conventional Commits (feat:, fix:, etc.)
 - ファイル名は kebab-case
 - コンポーネントは PascalCase
 - 関数・変数は camelCase
+- DB テーブル/カラムは snake_case
 
 ## Stage 2 への移行計画（参考）
 
@@ -429,37 +579,48 @@ CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
 
 ### Stage 2 で追加するもの
 
-1. **apps/admin の分離**
+1. **リアルタイム文字起こし**
+   - チャンク単位ストリーミング
+   - 録音中に状態B の準備が並行進行（待ち時間削減）
+
+2. **話者分離 API（Deepgram など）**
+   - プロンプトベースの分離から、専用 API での確実な分離へ
+
+3. **先読みでの質問生成**
+   - 状態A 中に次の状態B 候補を先読み
+
+4. **apps/admin の分離**
    - 管理画面を別 Next.js アプリに切り出し
    - admin.bulr.net サブドメインに切り替え
    - packages/auth に Better Auth 設定を切り出し
 
-2. **packages/ui の切り出し**
+5. **packages/ui の切り出し**
    - 共通 UI コンポーネントを apps/web から抽出
 
-3. **監視・分析の本格導入**
+6. **監視・分析の本格導入**
    - Sentry でエラー追跡
    - PostHog でユーザー行動分析
    - Helicone で LLM コスト監視
 
-4. **Cloudflare R2**
-   - 受験者のアップロード（CV、ポートフォリオなど）
-
-5. **i18n 導入**
+7. **i18n 導入**
    - next-intl で日本語・英語対応
 
-6. **マルチテナント機能**
+8. **マルチテナント機能**
    - ワークスペース、求人管理、応募管理
    - bz.bulr.net サブドメイン
 
-7. **追加職種**
+9. **追加職種**
    - フロントエンド、SRE/インフラ、PdM
+
+10. **候補者向け UI（Stage 3）**
+    - 候補者直接対話型を追加機能として（v2 で保留した方式）
+    - bulr の中核は引き続き面接アシスタント型
 
 ## 重要な原則
 
 ### Stage 1 でやらないことを明確に
 
-- ❌ ヒートマップ可視化 UI
+- ❌ ヒートマップの本格的な可視化（Stage 1 は CSS 横棒で簡易版）
 - ❌ 企業向けダッシュボード
 - ❌ パーティ編成シミュレーション
 - ❌ 課金システム
@@ -468,13 +629,21 @@ CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
 - ❌ ブランディング・本格デザイン
 - ❌ 企業ワークスペース機能
 - ❌ 求人・応募管理
+- ❌ 候補者向け UI
+- ❌ リアルタイム文字起こし
+- ❌ 話者分離 API
+- ❌ 先読み質問生成
 
 ### Stage 1 で集中すること
 
-- ✅ 対話型問診の対話品質
-- ✅ 問診パターン40-60件の設計（Week 1-2）
-- ✅ 4段階深掘りの LLM プロンプト
-- ✅ 受験者が30-40分問診を完走できる UX
-- ✅ 創業者が回答を確認・評価できる管理画面
-- ✅ ベトナム人50人 + 日本人20人のデータ収集
-- ✅ 問診結果と既知の実力評価の相関分析
+- ✅ 状態A/B の 2 状態 UI（面接官の認知負荷最小化）
+- ✅ 録音 → Whisper → LLM 分析 → 3 候補生成のサーバーオーケストレーション
+- ✅ 5 LLM 関数の構造化出力（generateObject + Zod）
+- ✅ 問診パターン57件の活用（既存 seed をそのまま使う）
+- ✅ 4段階深掘り + 詰まり判定 + AI 横断軸
+- ✅ フリー質問（規定外）の許容と評価集約からの除外
+- ✅ 面接後レポート（面接官向けヒートマップ + サマリー）
+- ✅ 創業者の手動評価（admin で 5 次元スコア + CSV/JSON エクスポート）
+- ✅ 音声30日自動削除
+- ✅ ベトナム人20-30 + 日本人10-20 の面接データ収集
+- ✅ 面接結果と面接官独自判断の一致度確認

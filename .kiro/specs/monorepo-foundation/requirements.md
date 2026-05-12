@@ -2,146 +2,143 @@
 
 ## Introduction
 
-bulr Stage 1 MVP プロトタイプの全実装は、Turborepo + pnpm workspaces + Next.js 16 + Drizzle ORM + 共通パッケージ群を前提とする (`tech.md`, `structure.md`)。しかし現状リポジトリは Initial commit のみで、`package.json` も `apps/` も `packages/` も存在しない。後続の 5 spec（`multi-env-infrastructure` / `authentication` / `assessment-pattern-seed` / `assessment-engine` / `admin-review-panel`）すべてがこの基盤に依存するため、最初に確立する。
+bulr Stage 1 MVP プロトタイプ（AI 面接アシスタント型）を構築するための、最初のスペック。現在リポジトリは bootstrap commit + `docs/` + `.kiro/` のみで、`package.json` も `apps/` も `packages/` も存在しない。後続の 5 spec（`multi-env-infrastructure`、`authentication`、`assessment-pattern-seed`、`assessment-engine`、`admin-review-panel`）はすべてこの基盤に依存するため、ここで「pnpm install → pnpm dev で apps/web (port 3000) が起動し、pnpm typecheck / pnpm lint がエラーなく通る」最小モノレポを確立する。
 
-本スペックは「ビルド・型チェック・lint が通る + 空のページが表示される」ことをゴールとする最小モノレポの初期化である。機能実装（認証、DB スキーマ、UI、LLM ツール）は一切行わず、後続 spec が安全に乗れる骨組みのみを提供する。リファレンスプロジェクト `dishxdish-app-mvp` の構成を踏襲しつつ、Stage 1 に必要な 4 パッケージ（`db` / `types` / `lib` / `ai`）に削減する。
+本スペックの責務は **モノレポ初期化のスケルトン作成のみ** である。Drizzle スキーマ実体、LLM 関数実装、Whisper / Vercel Blob 実装、認証実装、UI 実装、CI/CD、環境変数定義、Vercel デプロイ設定は **すべて後続 spec の責務** であり、本スペックでは扱わない。`packages/ai` には Vercel AI SDK 6 / Anthropic SDK / OpenAI SDK / Zod の依存を追加するが、関数実装は assessment-engine spec で行う。`packages/types/package.json` には `./profile` および `./evaluation` のサブパス export を予約するが、実体ファイルは assessment-engine spec で追加する。
 
 ## Boundary Context
 
-- **In scope**:
-  - ルート設定ファイル一式（`package.json`、`pnpm-workspace.yaml`、`turbo.json`、`tsconfig.base.json`、`.gitignore`、`eslint.config.mjs`、`prettier.config.mjs`、`.npmrc`）
-  - `apps/web` の Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui ベース初期化（空のランディングページ）
-  - `packages/{db, types, lib, ai}` の 4 パッケージスケルトン
-  - Drizzle ORM の初期設定（`drizzle.config.ts`、空スキーマディレクトリ、Drizzle client export）
-  - workspace 内パッケージ参照エイリアス（`@bulr/db` / `@bulr/types` / `@bulr/lib` / `@bulr/ai`）
-  - 開発コマンド（`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` / `pnpm drizzle-kit generate` / `pnpm drizzle-kit push`）
+- **In scope**: ルート設定ファイル一式（`package.json` / `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` / `.gitignore` / `eslint.config.mjs` / `prettier.config.mjs` / `.npmrc`）、`apps/web` の Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui ベースのスケルトン、`packages/{db, types, lib, ai}` の 4 パッケージのスケルトン（package.json + tsconfig.json + src バレル）、`@bulr/*` workspace エイリアスでのパッケージ間参照、`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` の開発コマンド整備、`drizzle.config.ts` と空 schema ディレクトリ、`packages/types/package.json` の exports map にサブパス export 予約、`packages/ai/package.json` への AI/Whisper SDK 依存追加。
+
 - **Out of scope**:
-  - 認証実装（Better Auth、Magic Link、proxy.ts、guards）→ `authentication` spec
-  - DB テーブル定義（`user_profile` / `assessment_session` / `assessment_answer` / `assessment_pattern` / `chat_message`）→ `assessment-pattern-seed` および `assessment-engine` spec
-  - LLM ツール実装、システムプロンプト、状態機械 → `assessment-engine` spec
-  - UI コンポーネントの本実装、shadcn/ui 個別コンポーネント追加 → 後続 spec で必要に応じて
-  - Vercel デプロイ設定、Vercel プロジェクト作成、Neon 接続、Resend 統合 → `multi-env-infrastructure` spec
-  - 環境変数定義、`.env.example` の整備 → `multi-env-infrastructure` spec
-  - CI/CD ワークフロー → `multi-env-infrastructure` spec
-  - テストフレームワーク（Vitest / Playwright）のセットアップ → 必要になった spec で導入
-  - `packages/{auth, ui, i18n}` の切り出し → Stage 2（apps/admin 分離時）
+  - 認証実装（Better Auth 設定、Magic Link、proxy.ts）→ `authentication` spec
+  - DB テーブル実体定義（candidate / interview_session / question_proposal / interview_turn / pattern_coverage / session_report / assessment_pattern / user_profile / rate_limit）→ 後続 spec
+  - LLM 関数実装、システムプロンプト、Whisper クライアント実装 → `assessment-engine` spec
+  - Vercel プロジェクト作成、Neon 接続、Resend / Vercel Blob 統合 → `multi-env-infrastructure` spec
+  - 環境変数定義、`.env.example` → `multi-env-infrastructure` spec
+  - 管理画面 UI、面接官 UI（状態 A/B、新規セッション作成、面接後レポート）→ 後続 spec
+  - Vercel Cron 設定、CI/CD（GitHub Actions）→ `multi-env-infrastructure` spec
+  - テストフレームワーク（Vitest / Playwright 等）のセットアップ → 必要になった spec で導入
+  - Drizzle migration の dev/prod への push → 後続 spec で必要なタイミングで
+
 - **Adjacent expectations**:
-  - 後続 spec は本スペックで定義した workspace エイリアス（`@bulr/*`）と依存方向（`apps/web → packages/{db, types, lib, ai}` / `packages/ai → packages/{db, types, lib}` / `packages/db → packages/types` / `packages/lib → packages/types`）を遵守する
-  - 後続 spec は本スペックで提供される `pnpm typecheck` / `pnpm lint` がエラーなく通る状態を維持する
-  - 環境変数は本スペックでは定義しないが、`drizzle.config.ts` などが将来読み取る `DATABASE_URL` の存在を `multi-env-infrastructure` spec が満たす
+  - 後続 5 spec は本スペックが整えた `apps/web` および `packages/{db, types, lib, ai}` の上に追加実装する。本スペックはディレクトリ構造・ビルド契約・パッケージ依存方向（`apps/web → packages/{db, types, lib, ai}` / `packages/ai → packages/{db, types, lib}` / `packages/db → packages/types` / `packages/lib → packages/types` / `packages/types → なし`）を確立する。
+  - `packages/types` は Zod 等の runtime 依存を持たない（純粋な TypeScript 型のみ）。Zod 利用は `apps/web/lib/` または `packages/lib` に限定。
+  - `assessment-engine` spec は `packages/ai/src/functions/`、`packages/ai/src/prompts/`、`packages/ai/src/whisper/` ディレクトリへ実装を追加する想定。本スペックではこれらディレクトリの予約のみ行う。
 
 ## Requirements
 
-### Requirement 1: ルートワークスペース設定
+### Requirement 1: モノレポ ルート設定の確立
 
-**Objective:** リポジトリ管理者として、Turborepo + pnpm workspaces による一貫したモノレポ構成を導入したい。それにより、後続 spec が apps と packages を共通のビルド/型チェック/lint パイプラインで扱えるようにする。
-
-#### Acceptance Criteria
-
-1. The Monorepo Foundation shall provide a root `package.json` that declares `private: true`、`packageManager: "pnpm@10+"`、Node.js 22 LTS 以上の `engines` 制約、および `dev` / `build` / `typecheck` / `lint` スクリプトを含む。
-2. The Monorepo Foundation shall provide a `pnpm-workspace.yaml` that registers `apps/*` と `packages/*` を workspace として認識する。
-3. The Monorepo Foundation shall provide a `turbo.json` that defines `build` / `dev` / `typecheck` / `lint` タスクを `^build` / `^typecheck` / `^lint` の依存関係付きで宣言し、`dev` を `cache: false, persistent: true` として扱う。
-4. The Monorepo Foundation shall provide a `tsconfig.base.json` that enables `strict: true`、`noUncheckedIndexedAccess: true`、`module: "ESNext"`、`moduleResolution: "bundler"`、`target: "ES2022"`、および `isolatedModules: true` を強制する。
-5. When 開発者が repository ルートで `pnpm install` を実行する場合、the Monorepo Foundation shall すべての workspace パッケージ依存を解決し、`node_modules` を構築する。
-6. The Monorepo Foundation shall provide a `.npmrc` that sets `auto-install-peers=true` and `strict-peer-dependencies=false` to align with pnpm 10 monorepo conventions。
-
-### Requirement 2: コード品質ツール統一設定
-
-**Objective:** 開発者として、ESLint と Prettier の統一設定をリポジトリ全体に適用したい。それにより、複数 spec で並行実装される際にもコードスタイルと型安全性が一貫する。
+**Objective:** As a プロトタイプ開発を担当する開発者, I want pnpm workspaces + Turborepo によるモノレポのルート設定が一式揃った状態, so that 後続 spec の実装者が apps/packages を追加する際にビルド・型チェック・lint の枠組みを再構築せずに済む。
 
 #### Acceptance Criteria
 
-1. The Monorepo Foundation shall provide a root `eslint.config.mjs` that enables `typescript-eslint` recommended rules、`no-unused-vars` (with `_` prefix exclusion)、および `no-explicit-any` を warn 以上で扱う。
-2. The Monorepo Foundation shall provide a root `prettier.config.mjs` that fixes `semi: true`、`singleQuote: true`、`trailingComma: "all"`、`printWidth: 100`、`tabWidth: 2`、`endOfLine: "lf"` を強制する。
-3. When 開発者が `pnpm lint` を実行する場合、the Monorepo Foundation shall apps と packages の全 TypeScript ファイルを ESLint で検証し、ルール違反がなければ exit code 0 を返す。
-4. The Monorepo Foundation shall ignore `node_modules`、`.next`、`dist`、`.turbo`、`coverage`、`.vercel` を ESLint と git 管理対象から除外する。
-5. When 開発者が新規 TypeScript ファイルを追加し `any` 型を使用した場合、the Monorepo Foundation shall ESLint warning を出力する。
+1. The モノレポ ルート shall ルート直下に `package.json`、`pnpm-workspace.yaml`、`turbo.json`、`tsconfig.base.json`、`.gitignore`、`eslint.config.mjs`、`prettier.config.mjs`、`.npmrc` を含む。
+2. The `package.json` shall `apps/*` および `packages/*` を pnpm workspaces のメンバーとして宣言する。
+3. The `package.json` shall Node.js 22 LTS 以上、pnpm 10 以上を `engines` で要求する。
+4. The `tsconfig.base.json` shall TypeScript strict mode、`noUncheckedIndexedAccess: true`、`module: ESNext`、`moduleResolution: bundler`、`target: ES2022` を設定する。
+5. The Prettier 設定 shall `singleQuote: true`、`semi: true`、`trailingComma: "all"`、`printWidth: 100`、`tabWidth: 2` を採用する。
+6. When 開発者がルートで `pnpm install` を実行した場合、the モノレポ shall 全 workspace パッケージの依存解決を完了し、エラーを返さない。
+7. The `.gitignore` shall `node_modules`、`.next`、`.turbo`、`dist`、`.vercel`、`coverage`、`.env*.local` を除外対象に含める。
+8. The `.npmrc` shall pnpm の strict-peer-dependencies およびワークスペース解決方針を明示し、本プロジェクトのインストール時の警告を抑制する設定を含む。
 
-### Requirement 3: apps/web (Next.js 16) スケルトン
+### Requirement 2: apps/web スケルトンの構築
 
-**Objective:** 受験者向けアプリの開発者として、Next.js 16 App Router + React 19 + Tailwind CSS 4 + shadcn/ui ベースの最小アプリを起動できる状態が欲しい。それにより、後続 spec で認証フロー・チャット UI・管理画面を順次積み上げられる。
-
-#### Acceptance Criteria
-
-1. The Monorepo Foundation shall initialize `apps/web` with Next.js 16 (App Router、Turbopack stable、React Compiler 有効) and React 19。
-2. The Monorepo Foundation shall provide an `app/layout.tsx` and `app/page.tsx` that render an empty landing page describing the bulr ベータプロトタイプ。
-3. When 開発者が `pnpm dev` を repository ルートで実行する場合、the Monorepo Foundation shall apps/web を `http://localhost:3000` で起動し、ランディングページを表示する。
-4. The Monorepo Foundation shall configure Tailwind CSS 4 in `apps/web` so that utility classes are recognized at build time without runtime errors。
-5. The Monorepo Foundation shall configure shadcn/ui ベース設定（`components.json` 等）so that future spec が `npx shadcn@latest add` 等のコマンドで個別コンポーネントを追加できる準備を整える（個別コンポーネントの追加は本スペックでは行わない）。
-6. The Monorepo Foundation shall provide `apps/web/tsconfig.json` that extends `tsconfig.base.json` and configures `paths` alias `@/*` を `./src/*` または `./*` 配下に解決する。
-7. When apps/web のビルドを `pnpm build` で実行する場合、the Monorepo Foundation shall TypeScript エラーを発生させずに本番ビルド成果物を出力する。
-
-### Requirement 4: 共通パッケージ (packages/db, types, lib, ai) のスケルトン
-
-**Objective:** モノレポ開発者として、bulr 固有の 4 つの共通パッケージ（DB / 型 / ユーティリティ / AI）が空スケルトンとして存在し、相互に正しい方向で参照できる状態が欲しい。それにより、`assessment-pattern-seed` / `assessment-engine` 等の後続 spec が安全に DB スキーマや LLM ツールを追加できる。
+**Objective:** As a 後続 spec の実装者, I want apps/web に Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui ベースの空アプリが起動可能な状態で存在すること, so that 認証・面接 UI・管理画面・API Routes を追加する際にフレームワーク初期化作業を行わずに済む。
 
 #### Acceptance Criteria
 
-1. The Monorepo Foundation shall provide `packages/db`、`packages/types`、`packages/lib`、`packages/ai` の 4 ディレクトリ、それぞれが `package.json`、`tsconfig.json`、`src/index.ts` を含む。
-2. The Monorepo Foundation shall name the 4 packages as `@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai` and shall mark them `private: true` for workspace 内専用。
-3. The Monorepo Foundation shall enforce the dependency direction: `apps/web` may depend on all 4 packages、`packages/ai` may depend on `packages/{db, types, lib}`、`packages/db` may depend only on `packages/types`、`packages/lib` may depend only on `packages/types`、and `packages/types` shall depend on no other workspace package。
-4. If a package が逆方向の依存（例: `packages/types` が `packages/db` を import）を試みる場合、the Monorepo Foundation shall TypeScript の型解決または ESLint で問題が顕在化する設定を維持する（package.json の dependencies に追加しないことで防御）。
-5. The Monorepo Foundation shall ensure that workspace パッケージ参照は `workspace:*` プロトコルで解決される。
-6. When 開発者が `apps/web` から `import { db } from '@bulr/db'` を試みる場合、the Monorepo Foundation shall workspace alias で `packages/db/src/index.ts` を解決する。
-7. When 開発者が repository ルートで `pnpm typecheck` を実行する場合、the Monorepo Foundation shall apps と全 packages の型チェックをエラーなく完了する。
+1. The apps/web ディレクトリ shall `package.json`、`tsconfig.json`、`next.config.ts`、`postcss.config.mjs`、`tailwind.config.ts` を含む。
+2. The apps/web shall `app/page.tsx`（空のランディングページ）と `app/layout.tsx`（ルートレイアウト）を含む App Router 構成を採用する。
+3. The apps/web shall Next.js 16（App Router、Turbopack stable、React Compiler 有効）と React 19 を使用する。
+4. The apps/web shall Tailwind CSS 4 を有効化し、`app/globals.css` で `@import "tailwindcss";` を読み込む。
+5. The apps/web shall TypeScript strict mode を `tsconfig.base.json` から継承する。
+6. When 開発者がルートで `pnpm dev` を実行した場合、the apps/web shall ポート 3000 で起動し、ランディングページが HTTP 200 で応答する。
+7. When 開発者がルートで `pnpm build` を実行した場合、the apps/web shall ビルドエラーなく `.next` 配下に成果物を生成する。
+8. The apps/web shall `@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai` を `dependencies` に `workspace:*` として宣言する。
+9. The apps/web shall `components/` および `lib/` ディレクトリを予約する（空でも可、本スペックでは中身は実装しない）。
 
-### Requirement 5: Drizzle ORM 初期化（空スキーマ）
+### Requirement 3: packages/db スケルトンと Drizzle 初期化
 
-**Objective:** バックエンド開発者として、`packages/db` に Drizzle ORM の最小構成（client export + 空スキーマディレクトリ + drizzle.config.ts）が用意されている状態が欲しい。それにより、後続 spec が DB テーブル定義とマイグレーションを安全に追加できる。
-
-#### Acceptance Criteria
-
-1. The Monorepo Foundation shall provide `packages/db/drizzle.config.ts` that uses `dialect: "postgresql"`、`schema: "./src/schema/index.ts"`、`out: "./drizzle"`、`casing: "snake_case"`。
-2. The Monorepo Foundation shall provide `packages/db/src/schema/index.ts` as an empty (no tables) file so that `assessment-pattern-seed` / `assessment-engine` spec が後からテーブルを追加できる。
-3. The Monorepo Foundation shall provide `packages/db/src/index.ts` that exports a Drizzle client instance（後続 spec で `DATABASE_URL` が設定されれば動作する）と `DB` 型エイリアス。
-4. The Monorepo Foundation shall declare `drizzle-orm` 0.45.x stable と `drizzle-kit` を `packages/db` の依存に含める。
-5. When `DATABASE_URL` 環境変数が未設定の状態で `packages/db/src/index.ts` を import する場合、the Monorepo Foundation shall 明示的なエラーメッセージ（`DATABASE_URL is required` 相当）で失敗し、暗黙の挙動を起こさない。
-6. When 開発者が `pnpm --filter @bulr/db generate` を実行する場合、the Monorepo Foundation shall drizzle-kit を介してマイグレーションファイル生成を起動できる（空スキーマのため成果物は最小だが、コマンド自体はエラーなく完了する）。
-7. The Monorepo Foundation shall NOT define application-level tables (`user_profile` / `assessment_session` / `assessment_answer` / `assessment_pattern` / `chat_message`) in this spec; これらは後続 spec で追加される。
-
-### Requirement 6: AI / 共通ユーティリティパッケージの依存追加
-
-**Objective:** AI 機能開発者として、`packages/ai` に Vercel AI SDK 6 と Anthropic SDK の依存が登録され、`packages/lib` と `packages/types` がスケルトンとして存在する状態が欲しい。それにより、`assessment-engine` spec が Tool 定義を追加するだけで AI 問診ロジックを実装できる。
+**Objective:** As a 後続 spec（assessment-pattern-seed / authentication / assessment-engine）の実装者, I want packages/db に Drizzle ORM のクライアント初期化と空 schema のスケルトンが存在すること, so that テーブル定義を追加するだけで他パッケージから `@bulr/db` 経由で参照できる。
 
 #### Acceptance Criteria
 
-1. The Monorepo Foundation shall declare `ai` (Vercel AI SDK 6.x)、`@ai-sdk/anthropic`、`@ai-sdk/react`、`zod` を `packages/ai` の依存に含める。
-2. The Monorepo Foundation shall provide `packages/ai/src/index.ts` as a minimal export skeleton (例: `export {};` または最小型のみ) that compiles without error。
-3. The Monorepo Foundation shall provide `packages/types/src/index.ts` and `packages/lib/src/index.ts` as minimal export skeletons that compile without error。
-4. The Monorepo Foundation shall NOT implement LLM tools、システムプロンプト、評価ロジック in this spec; これらは `assessment-engine` spec で追加される。
-5. When 開発者が repository ルートで `pnpm typecheck` を実行する場合、the Monorepo Foundation shall `packages/ai`、`packages/lib`、`packages/types` の型チェックをエラーなく完了する。
+1. The packages/db shall `package.json`、`tsconfig.json`、`drizzle.config.ts`、`src/index.ts`、`src/client.ts`、`src/schema/index.ts`、`src/queries/index.ts` を含む。
+2. The packages/db shall `drizzle-orm` と `drizzle-kit` を依存に持ち、Postgres 用ドライバ（`pg` または `@neondatabase/serverless` のどちらか）を選択して宣言する。
+3. The `drizzle.config.ts` shall schema のソースディレクトリと migration 出力先を指定する（migration 実体投入は後続 spec）。
+4. The `src/schema/index.ts` shall 空のバレルエクスポート（コメントのみ可）として後続 spec のスキーマ追加を待つ。
+5. The `src/index.ts` shall `db` クライアントと schema バレルを再エクスポートし、他パッケージから `import { db } from '@bulr/db'` で参照可能にする。
+6. The packages/db shall `package.json` の `peerDependencies` または `dependencies` に `@bulr/types` を `workspace:*` として宣言する。
+7. When 開発者がルートで `pnpm typecheck` を実行した場合、the packages/db shall 型エラーなく完了する。
+8. When 開発者がルートで `pnpm drizzle-kit generate` を `packages/db` で実行できるよう、the packages/db shall `package.json` の `scripts` に `generate` / `push` / `migrate` を含める。
 
-### Requirement 7: 開発コマンドとビルドパイプライン
+### Requirement 4: packages/types スケルトンとサブパス export 予約
 
-**Objective:** 開発者として、リポジトリルートから単一のコマンドで開発サーバー起動・ビルド・型チェック・lint を実行できる状態が欲しい。それにより、開発体験が一貫し、後続 spec の CI 設定（`multi-env-infrastructure`）が安定して呼び出せる。
-
-#### Acceptance Criteria
-
-1. When 開発者が repository ルートで `pnpm dev` を実行する場合、the Monorepo Foundation shall Turbo 経由で apps/web を起動し、`http://localhost:3000` でアクセス可能にする。
-2. When 開発者が repository ルートで `pnpm build` を実行する場合、the Monorepo Foundation shall apps/web と全 packages のビルドを依存順（`^build`）に実行し、エラーなく完了する。
-3. When 開発者が repository ルートで `pnpm typecheck` を実行する場合、the Monorepo Foundation shall apps/web と全 packages の `tsc --noEmit` を依存順に実行し、エラーなく完了する。
-4. When 開発者が repository ルートで `pnpm lint` を実行する場合、the Monorepo Foundation shall apps/web と全 packages の ESLint を実行し、エラーなく完了する。
-5. The Monorepo Foundation shall expose `pnpm --filter @bulr/db generate` および `pnpm --filter @bulr/db push` を Drizzle migration 操作として提供する（Stage 1 では空スキーマだが、コマンド自体は機能する）。
-6. The Monorepo Foundation shall configure Turbo cache outputs (`.next/**`、`!.next/cache/**`、`dist/**`) so that 再ビルドが効率化される。
-
-### Requirement 8: ファイル命名規則とディレクトリ構造の遵守
-
-**Objective:** 後続 spec の実装者として、`structure.md` で定義された命名規則とディレクトリ規約が初期段階から守られている状態が欲しい。それにより、後から規約を後付けする手戻りを避けられる。
+**Objective:** As a assessment-engine spec の実装者, I want packages/types に `@bulr/types/profile` および `@bulr/types/evaluation` のサブパス export が予約された状態で存在すること, so that 実体ファイルを追加するだけで apps/web から `import type { LlmEvaluation } from '@bulr/types/evaluation'` のような import が動作する。
 
 #### Acceptance Criteria
 
-1. The Monorepo Foundation shall use kebab-case for all file names within apps/web and packages (例: `eslint.config.mjs`、`drizzle.config.ts`、`page.tsx`)。
-2. The Monorepo Foundation shall structure `apps/web` so that future spec が `app/(assessment)/`、`app/admin/`、`app/api/` ルートグループを追加できる前提のディレクトリ構成を提供する（本スペックでは `app/page.tsx` と `app/layout.tsx` のみ存在）。
-3. The Monorepo Foundation shall structure `packages/db/src/schema/` ディレクトリを存在させ、後続 spec がテーブル定義ファイルを kebab-case で追加できる準備を整える。
-4. The Monorepo Foundation shall NOT create `packages/auth`、`packages/ui`、`packages/i18n` in this spec（Stage 2 で切り出し予定）。
-5. The Monorepo Foundation shall include `docs/`、`scripts/`、`.github/workflows/` の存在を阻害しない（既存の `docs/` を維持し、`scripts/` ディレクトリは本スペックでは作成しない）。
+1. The packages/types shall `package.json`、`tsconfig.json`、`src/index.ts` を含む。
+2. The packages/types `package.json` の `exports` map shall `"."`、`"./profile"`、`"./evaluation"` の 3 つのサブパス export を宣言する。
+3. The packages/types shall `dependencies` および `devDependencies` に Zod を含まず、runtime 依存ゼロを維持する（純粋な TypeScript 型のみ）。
+4. The `src/profile.ts` および `src/evaluation.ts` shall 空ファイルまたはコメントのみのスケルトンとして存在し、本スペックでは型実体を含まない（後続 spec で追加）。
+5. The packages/types shall `tsconfig.json` で `tsconfig.base.json` を extends し、追加の compilerOptions は最小限とする。
+6. When 開発者がルートで `pnpm typecheck` を実行した場合、the packages/types shall 型エラーなく完了する。
+7. When 他のパッケージが `import type { Foo } from '@bulr/types/profile'` を記述した場合、the workspace 解決 shall サブパス export を解決し、TypeScript の型解決が成功する（実体型は空でも import 文自体は解決可能）。
 
-### Requirement 9: ドキュメンテーションの最小整備
+### Requirement 5: packages/lib および packages/ai スケルトン
 
-**Objective:** リポジトリ参照者として、ルートに最小限の README が存在し、開発コマンドの起動方法とディレクトリ構成の概要が把握できる状態が欲しい。それにより、後続 spec の実装者がオンボーディングコストを下げられる。
+**Objective:** As a 後続 spec の実装者, I want packages/lib（共通ユーティリティ）と packages/ai（LLM 関数 + Whisper クライアント + プロンプト）がスケルトンとして存在し、AI 関連 SDK の依存が宣言済みであること, so that LLM 関数や共通ユーティリティを追加する際にパッケージ初期化と依存追加作業を行わずに済む。
 
 #### Acceptance Criteria
 
-1. The Monorepo Foundation shall provide a root `README.md` that describes プロジェクト概要（bulr Stage 1 MVP）、前提（Node.js 22 LTS+、pnpm 10+）、初期セットアップ手順（`pnpm install`）、および主要コマンド一覧（`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint`）。
-2. The Monorepo Foundation shall NOT duplicate steering ドキュメント（`product.md` / `tech.md` / `structure.md` / `security.md` / `roadmap.md`）の内容を README に転記する; README は steering ドキュメントへのポインタのみ示す。
-3. The Monorepo Foundation shall preserve existing `docs/` ディレクトリと `.kiro/` ディレクトリを変更せず、新規ファイル追加のみで本スペックの作業を完了する。
+1. The packages/lib shall `package.json`、`tsconfig.json`、`src/index.ts` を含む。
+2. The packages/lib shall `dependencies` に `@bulr/types` を `workspace:*` として宣言し、Zod を `dependencies` として含めることが許される（runtime 依存を許容するレイヤ）。
+3. The packages/ai shall `package.json`、`tsconfig.json`、`src/index.ts`、`src/functions/` ディレクトリ、`src/prompts/` ディレクトリ、`src/whisper/` ディレクトリ、`src/client.ts` を含む。
+4. The packages/ai `package.json` の `dependencies` shall `ai`（Vercel AI SDK 6 系）、`@ai-sdk/anthropic`、`openai`、`zod` を含み、`@bulr/db` / `@bulr/types` / `@bulr/lib` を `workspace:*` で参照する。
+5. The packages/ai の `src/functions/`、`src/prompts/`、`src/whisper/` ディレクトリ shall 各々 `.gitkeep` または空のバレル `index.ts` で存在し、ディレクトリそのものが git に登録される。
+6. The packages/ai の `src/index.ts` shall 後続 spec が `analyzeTurn` / `transcribeAudio` 等を追加した際に再エクスポートできるよう、空バレル（コメントのみ）として存在する。
+7. The packages/ai shall LLM 関数の実装、システムプロンプト、Whisper ラッパーを **本スペックでは含まない**（依存追加とディレクトリ予約のみ）。
+8. When 開発者がルートで `pnpm typecheck` を実行した場合、the packages/lib および packages/ai shall 型エラーなく完了する。
+
+### Requirement 6: パッケージ間依存方向と workspace エイリアス
+
+**Objective:** As a プロジェクト全体の保守者, I want パッケージ間の依存方向が `structure.md` に記載された規則どおり強制され、循環参照や意図しない逆方向参照が起きないこと, so that Stage 2 への構造変化（packages/auth / ui / i18n の切り出し）時にも依存関係が壊れない。
+
+#### Acceptance Criteria
+
+1. The モノレポ shall パッケージ間参照を `@bulr/db` / `@bulr/types` / `@bulr/lib` / `@bulr/ai` の 4 エイリアスで行う。
+2. The 各パッケージ `package.json` shall 依存方向を `apps/web → packages/{db, types, lib, ai}` / `packages/ai → packages/{db, types, lib}` / `packages/db → packages/types` / `packages/lib → packages/types` / `packages/types → なし` の規則に従って宣言する。
+3. If あるパッケージが上記規則に違反する依存（例: `packages/types` が `packages/db` を参照）を含む場合、the レビュー過程 shall 違反として検出される（本スペックでは構造的に違反が起きないよう `package.json` の `dependencies` で物理的に防ぐ）。
+4. The packages/types shall 他のいかなる workspace パッケージも依存に含めない。
+5. When 開発者が apps/web 内で `import { db } from '@bulr/db'` を記述した場合、the TypeScript shall 型解決を成功させる。
+6. When 開発者が apps/web 内で `import { someLlmFn } from '@bulr/ai'`（後続 spec で追加予定の関数）を本スペック時点で書いた場合、the スケルトン shall 該当 export がないため型エラーを返すが、import path 自体（`@bulr/ai`）は解決される。
+
+### Requirement 7: 開発コマンドと turbo パイプライン
+
+**Objective:** As a 開発者および後続 spec の CI セットアップ担当, I want ルートから `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` を実行すれば全パッケージに対して並列実行できること, so that 個別パッケージへ `cd` する手間を省き、CI 設定も単純化できる。
+
+#### Acceptance Criteria
+
+1. The ルート `package.json` shall `dev`、`build`、`typecheck`、`lint` の 4 つのスクリプトを `turbo run <task>` 形式で定義する。
+2. The `turbo.json` shall `build`、`dev`、`typecheck`、`lint` の 4 タスクを定義し、`build` と `typecheck` は `dependsOn: ["^build"]` または `dependsOn: ["^typecheck"]` で依存パッケージを先に処理する。
+3. The `turbo.json` shall `dev` タスクを `cache: false`、`persistent: true` で定義する。
+4. When 開発者がルートで `pnpm typecheck` を実行した場合、the Turborepo shall apps/web および packages/{db, types, lib, ai} すべてで `tsc --noEmit` を実行し、エラーなく完了する。
+5. When 開発者がルートで `pnpm lint` を実行した場合、the ESLint shall apps/web および packages/{db, types, lib, ai} すべてに対して実行され、エラーなく完了する。
+6. The 各 workspace パッケージ `package.json` shall `scripts.typecheck` を `tsc --noEmit` で定義する。
+7. The 各 workspace パッケージ `package.json` shall `scripts.lint` を ESLint 実行コマンドで定義する（ルート ESLint 設定を継承）。
+
+### Requirement 8: ESLint および Prettier 統一設定
+
+**Objective:** As a 開発者, I want ルートに統一された ESLint および Prettier 設定が存在し、全 workspace パッケージで同じコードスタイルが強制されること, so that PR レビューでスタイル議論を避け、本質的なロジック議論に集中できる。
+
+#### Acceptance Criteria
+
+1. The モノレポ shall ルート直下に `eslint.config.mjs`（Flat Config 形式）と `prettier.config.mjs` を含む。
+2. The ESLint 設定 shall TypeScript ESLint の推奨ルールを採用し、`@typescript-eslint/no-explicit-any` を `warn` 以上に設定する。
+3. The ESLint 設定 shall `node_modules`、`.next`、`.turbo`、`dist`、`.vercel`、`coverage` を `ignores` に含める。
+4. The Prettier 設定 shall `singleQuote: true`、`semi: true`、`trailingComma: "all"`、`printWidth: 100`、`tabWidth: 2`、`endOfLine: "lf"` を設定する。
+5. When 開発者がコードを保存・整形した場合、the Prettier shall 上記設定どおりに整形する。
+6. The 各 workspace パッケージ shall ルートの `eslint.config.mjs` を継承し、必要な場合のみ追加の上書き設定を行う（本スペックでは追加上書きを設けない）。
