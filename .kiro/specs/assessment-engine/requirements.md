@@ -257,7 +257,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 #### Acceptance Criteria
 
 1. The packages/ai shall `packages/ai/src/functions/analyze-turn.ts` に `analyzeTurn(input, ctx)` を実装し、Vercel AI SDK 6 の `generateObject` + Zod スキーマで構造化出力を強制する。
-2. The `analyzeTurn` 出力 Zod スキーマ shall `signals` (`authenticity/judgment/meta_cognition/ai_literacy` 各 `'observed' | 'partial' | 'absent'`)、`scope_signal` (`1|2|3|4|5 | null`)、`level_reached_estimate` (`0|1|2|3|4`)、`pattern_match_confidence` (4 値 enum)、`nearest_patterns?` (string[]、off_pattern 時)、`off_pattern_summary?` (string)、`notes` (string) を定義する。
+2. The `analyzeTurn` 出力 Zod スキーマ shall `signals` (`authenticity/judgment/meta_cognition/ai_literacy` 各 `'observed' | 'partial' | 'absent'`)、`scope_signal` (`1|2|3|4|5 | null`)、`level_reached_estimate` (`0|1|2|3|4`)、`pattern_match_confidence` (4 値 enum)、`matched_pattern_id` (`string | null`、`pattern_match_confidence` が `'exact'` / `'inferred_high'` / `'inferred_low'` の場合に LLM が判定したパターン ID、`'off_pattern'` 時は null。Requirement 24 のパターン遷移検出に使用)、`stuck_signal` (`StuckType | null`、Prepare-1b 発火条件)、`nearest_patterns?` (string[]、off_pattern 時の類似候補)、`off_pattern_summary?` (string)、`notes` (string) を定義する。
 3. The packages/ai shall `packages/ai/src/functions/split-interviewer-candidate.ts` に `splitInterviewerCandidate(transcript, ctx)` を実装し、出力 Zod スキーマで `{ interviewer_text: string, candidate_text: string }` を定義する。
 4. The packages/ai shall `packages/ai/src/functions/propose-next-questions.ts` に `proposeNextQuestions(sessionState, plannedPatterns, ctx)` を実装し、出力 Zod スキーマで 3 候補（各 `text: string`、`intent: 'deep_dive' | 'meta_cognition' | 'next_pattern'`、`pattern_id?: string`）を返す。
 5. The `proposeNextQuestions` shall 3 候補のうち **必ず 1 つは `intent='next_pattern'`** を含むよう、システムプロンプトで指示する。
@@ -491,3 +491,17 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 5. The API ルート shall 既存 proposal が無い場合、`createLlmContext({ sessionId, userId })` 経由で `proposeNextQuestions(sessionState, plannedPatterns, completed)` を呼び出し、try/catch + 1 回リトライを行う（Requirement 7.14 と同等の堅牢性）。
 6. The API ルート shall LLM 呼び出し成功時に `question_proposal` レコードを INSERT し、`{ proposal: QuestionProposal }` を返す。LLM 呼び出しがリトライ後も失敗した場合は `status: 503` + `{ error: 'proposal_generation_failed', retryable: true }` を返し、レート制限カウンタは増加させない（リトライ可能性を保証）。
 7. The API ルート shall プロンプトインジェクション防御・LLM 出力 Zod 検証・採用推奨禁止など、Requirement 7 / 8 / 9 の全制約を継承する。
+
+### Requirement 24: パターン遷移時の `aggregatePatternCoverage` トリガ
+
+**Objective:** As a 1 ターン処理 API + 面接後の集約データを参照する spec（admin-review-panel）, I want 面接官が `intent='next_pattern'` を選択した時や manual ターンで LLM が別パターンと判定した時に、まだ未集約の **前パターン** が `pattern_coverage` に書き込まれるトリガを持ちたい, so that 第 2〜3 段で打ち切られたパターンが孤立せず、Stage 1 検証 KPI（LLM 評価と面接官評価の一致度）が中間時点でも測定可能になり、`/api/interview/finalize` で全パターンを一括集約する待ち時間が削減される。
+
+本要件は Requirement 7.15 の Prepare フェーズ内に **Prepare-1a（遷移時集約）** という新サブステップを定義し、既存の **Prepare-1b（同パターン完了時集約、`level_reached_estimate=4` または `stuck_signal`）** と並列に動作する。Prepare-1a は前パターンを対象とし、Prepare-1b は現パターンを対象とするため、同一ターンで両方発火することがあっても異なる pattern_coverage 行を書き込む。
+
+#### Acceptance Criteria
+
+1. The API ルート (`TurnsNextRoute`) shall `analyzeTurn` 完了後に **現ターンの effective `patternId`** を確定する。`questionSource === 'manual'` の場合は `analysis.pattern_match_confidence` が `'exact'` / `'inferred_high'` なら `analysis.matched_pattern_id` を採用し、`'inferred_low'` / `'off_pattern'` の場合は `null`。`questionSource !== 'manual'` の場合は `input.patternId` を採用する（`analysis.pattern_match_confidence === 'off_pattern'` なら null に上書き）。
+2. The API ルート shall Prepare-1a として、`loadRecentTurns(sessionId, 1)` で前ターン (sequenceNo = 現ターン-1) を取得し、`previousTurn.patternId` と現ターンの effective `patternId` を比較する。`previousTurn.patternId` が non-null かつ現ターンの effective `patternId` と異なる場合に「**パターン遷移が発生**」と判定する（previousTurn 自体が無い場合・previousTurn.patternId が null（フリー質問）の場合は遷移なし扱い）。
+3. When パターン遷移が発生したとき、the API ルート shall `aggregatePatternCoverage(previousPatternTurns, previousPatternDef, ctx)` を `withRetry` で呼び出し、結果を `pattern_coverage` に **UPSERT**（UNIQUE(session_id, pattern_id) で上書き）する。これにより A→B→A の往復シナリオで A の coverage が最新ターンを含む形に更新される。
+4. The Prepare-1a の集約失敗時 shall `console.error('[turns/next] Prepare-1a transition aggregateCov failed for previousPatternId={X}', e)` を出力して処理を続行する（`coverage = null` で返す、Prepare-1b と同じ失敗ハンドリング）。`/api/interview/finalize` 側で残り coverage を補完する。
+5. The Prepare-1a と Prepare-1b shall 互いに独立に動作する。同一ターンで両方発火することがあり得る（例：前ターン pattern A → 現ターン pattern B、かつ B の最初のターンで稀に `level_reached_estimate=4` 到達）が、Prepare-1a は A の coverage、Prepare-1b は B の coverage を書き込むため衝突しない。

@@ -548,15 +548,33 @@ sequenceDiagram
 
     rect rgb(245, 230, 230)
     Note over A,DB: Prepare フェーズ (ベストエフォート、失敗してもターン確定済み)
-    alt パターン完了判定 (level_reached_estimate=4 or stuck)
-        A->>LLM: try withRetry( aggregatePatternCoverage )
+    A->>A: effective patternId 確定 (manual: analysis.matched_pattern_id, 他: input.patternId)
+
+    Note over A,DB: Prepare-1a パターン遷移時集約 (Requirement 24)
+    A->>DB: SELECT 前ターン loadRecentTurns(sessionId, 1)
+    alt previousTurn.patternId != effective patternId かつ non-null
+        A->>DB: SELECT 前パターンの全ターン
+        A->>LLM: try withRetry( aggregatePatternCoverage on previousPattern )
         alt 成功
             LLM-->>A: LlmEvaluation
-            A->>DB: UPSERT pattern_coverage
+            A->>DB: UPSERT pattern_coverage (前パターン)
+        else 失敗
+            A->>A: console.error、transitionCoverage = null で続行
+        end
+    end
+
+    Note over A,DB: Prepare-1b 同パターン完了時集約 (Requirement 13)
+    alt level_reached_estimate=4 or stuck_signal
+        A->>LLM: try withRetry( aggregatePatternCoverage on currentPattern )
+        alt 成功
+            LLM-->>A: LlmEvaluation
+            A->>DB: UPSERT pattern_coverage (現パターン)
         else 失敗
             A->>A: console.error、coverage = null で続行
         end
     end
+
+    Note over A,DB: Prepare-2 次の質問候補生成
     A->>LLM: try withRetry( proposeNextQuestions )
     alt 成功
         LLM-->>A: 3 候補 (必ず 1 つは next_pattern)
@@ -566,7 +584,7 @@ sequenceDiagram
     end
     end
 
-    A-->>B: 200 { turn, coverage: nullable, proposal: nullable }
+    A-->>B: 200 { turn, coverage, transitionCoverage, proposal } (全て nullable)
     Note over B: proposal=null なら状態 B UI が ProposalRegenerateRoute を呼ぶ
 ```
 
@@ -657,6 +675,7 @@ sequenceDiagram
 | 6.1-6.8 | 状態 B 候補選択 UI | InterviewSessionPage, ProposalChoiceState, SelectProposalChoiceAction | use client component | state machine 2B |
 | 7.1-7.16 | 1 ターン処理 API（Core/Prepare 分離 + 冪等性） | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit | POST /api/interview/turns/next | 1 turn sequence |
 | 23.1-23.7 | 提案再生成 API | ProposalRegenerateRoute, CreateLlmContext, ProposeNextQuestions, ValidateLLMOutput, RateLimit | POST /api/interview/proposal/regenerate | proposal regenerate sequence |
+| 24.1-24.5 | パターン遷移時の集約トリガ（Prepare-1a） | TurnsNextRoute, AnalyzeTurn, AggregatePatternCoverage, LoadRecentTurns, SchemaPatternCoverage | TurnsNextRoute Prepare phase | 1 turn sequence (Prepare-1a branch) |
 | 8.1-8.12 | 5 LLM 関数 | AnalyzeTurn, SplitInterviewerCandidate, ProposeNextQuestions, AggregatePatternCoverage, GenerateSessionReport, CreateLlmContext, ValidateLLMOutput, ClientPackagesAi | packages/ai functions | LLM orchestration |
 | 9.1-9.6 | システムプロンプト | BuildSystemPrompt | packages/ai prompts | LLM orchestration |
 | 10.1-10.11 | Whisper + 音声処理 | Transcribe, AudioRecorder, BlobClient, NextConfigCSP | packages/ai whisper + apps/web lib/audio | 1 turn sequence |
@@ -693,7 +712,7 @@ sequenceDiagram
 | BuildSystemPrompt | packages/ai/prompts | 13 セクション システムプロンプト純関数 | 9.1-9.6, 13.6, 18.1, 18.5 | TypesProfile (P0), TypesEvaluation (P0) | Service (pure function) |
 | CreateLlmContext | packages/ai/lib | sessionId / userId 束縛クロージャ | 7.7, 8.8 | TypesEvaluation (P0) | Service |
 | ValidateLLMOutput | packages/ai/lib | safeParse + フォールバック | 8.12, 14.1-14.8 | Zod 4.x (P0) | Service |
-| AnalyzeTurn | packages/ai/functions | このターン 5 次元シグナル + 到達段階 + match confidence | 8.1, 8.2, 12.2, 13.1, 13.6, 18.2 | BuildSystemPrompt (P0), CreateLlmContext (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0), assessment_pattern (P0) | Service |
+| AnalyzeTurn | packages/ai/functions | このターン 5 次元シグナル + 到達段階 + match confidence + matched_pattern_id + stuck_signal | 8.1, 8.2, 12.2, 13.1, 13.6, 18.2, 24.1 | BuildSystemPrompt (P0), CreateLlmContext (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0), assessment_pattern (P0) | Service |
 | SplitInterviewerCandidate | packages/ai/functions | manual ターン用、質問+回答分離 | 8.3 | BuildSystemPrompt (P0), Claude Sonnet 4.6 (P0) | Service |
 | ProposeNextQuestions | packages/ai/functions | 3 候補 (必ず 1 つは next_pattern) | 8.4, 8.5, 12.7, 13.4 | BuildSystemPrompt (P0), LoadCompletedPatternCodes (P0), LoadRecentTurns (P0), Claude Sonnet 4.6 (P0) | Service |
 | AggregatePatternCoverage | packages/ai/functions | 複数ターン統合 5 次元最終スコア | 8.6, 13.2, 13.3, 13.5 | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0) | Service |
@@ -713,7 +732,7 @@ sequenceDiagram
 | ProposalChoiceState | apps/web/(interviewer)/interviews/_components | 'use client' 状態 B UI | 6.1-6.8 | SelectProposalChoiceAction (P0) | State (UI) |
 | InterviewsReportPage | apps/web/(interviewer)/interviews/[sessionId]/report | 面接後レポート Server Component | 11.9-11.14, 20.5 | requireUser + requireSessionOwnership (P0), SchemaSessionReport (P0), SchemaPatternCoverage (P0), Heatmap (P0), react-markdown (P0) | State (UI) |
 | Heatmap | apps/web/(interviewer)/interviews/_components | CSS 横棒ヒートマップ Server Component | 11.11, 12.6 | TypesEvaluation (P0), Tailwind (P0) | State (UI) |
-| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId による冪等性 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
+| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId 冪等性、Prepare-1a パターン遷移集約 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1, 24.1-24.5 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), LoadRecentTurns (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
 | ProposalRegenerateRoute | apps/web/app/api/interview/proposal/regenerate | Prepare-2 失敗時の提案再生成 API runtime nodejs、proposal の冪等性チェックあり | 23.1-23.7, 20.1 | requireUser + requireSessionOwnership (P0), CreateLlmContext (P0), ProposeNextQuestions (P0), ValidateLLMOutput (P0), RateLimit (P0), SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal (P0), LoadSessionWithTurns (P0), LoadCompletedPatternCodes (P0) | Service (API) |
 | FinalizeRoute | apps/web/app/api/interview/finalize | セッション終了 API runtime nodejs | 11.1-11.8, 20.2 | requireUser + requireSessionOwnership (P0), AggregatePatternCoverage (P0), GenerateSessionReport (P0), SchemaPatternCoverage + SchemaSessionReport + SchemaInterviewSession (P0) | Service (API) |
 | AudioPurgeRoute | apps/web/app/api/cron/audio-purge | Vercel Cron 音声削除 runtime nodejs | 16.1-16.8, 20.3 | CRON_SECRET (P0), BlobClient (P0), SchemaInterviewTurn (P0) | Service (Cron) |
@@ -1206,9 +1225,80 @@ export async function POST(request: Request) {
     // ===== Prepare フェーズ（Requirement 7.15、失敗してもターンは確定済み）=====
     // ============================================================
     let coverage: PatternCoverage | null = null;
+    let transitionCoverage: PatternCoverage | null = null;
     let proposal: QuestionProposal | null = null;
 
-    // ===== Step 10: パターン完了判定 + 集約（Prepare-1）=====
+    // ===== effective patternId 確定（Requirement 24.1）=====
+    // manual ターンは analysis.matched_pattern_id を採用、それ以外は input.patternId
+    // off_pattern 時は null
+    const effectivePatternId = (() => {
+      if (analysis.pattern_match_confidence === 'off_pattern') return null;
+      if (input.questionSource === 'manual') {
+        return ['exact', 'inferred_high'].includes(analysis.pattern_match_confidence)
+          ? analysis.matched_pattern_id
+          : null;
+      }
+      return input.patternId ?? null;
+    })();
+
+    // ===== Step 10a: パターン遷移検出 + 前パターン集約（Prepare-1a、Requirement 24）=====
+    // 前ターン (sequenceNo - 1) の patternId と現ターンの effectivePatternId を比較
+    // 現ターンは Step 9 で INSERT 済みのため、sequenceNo < 現ターン.sequenceNo で 1 件取得
+    try {
+      const previousTurn = await db.query.interviewTurn.findFirst({
+        where: and(
+          eq(interviewTurn.sessionId, input.sessionId),
+          lt(interviewTurn.sequenceNo, turn.sequenceNo),
+        ),
+        orderBy: desc(interviewTurn.sequenceNo),
+      });
+      const transitionDetected =
+        previousTurn &&
+        previousTurn.patternId !== null &&  // フリー質問からの遷移は集約不要
+        previousTurn.patternId !== effectivePatternId;  // 同パターン継続は対象外
+
+      if (transitionDetected) {
+        const previousPattern = await db.query.assessmentPattern.findFirst({
+          where: eq(assessmentPattern.id, previousTurn.patternId),
+        });
+        const previousPatternTurns = await db.query.interviewTurn.findMany({
+          where: and(
+            eq(interviewTurn.sessionId, input.sessionId),
+            eq(interviewTurn.patternId, previousTurn.patternId),
+          ),
+          orderBy: asc(interviewTurn.sequenceNo),
+        });
+        const llmEvaluation = await withRetry(
+          () => llm.aggregatePatternCoverage({ turns: previousPatternTurns, pattern: previousPattern }),
+          'aggregateCov.transition',
+        );
+        // UPSERT で A→B→A の再訪時も最新ターンを反映
+        [transitionCoverage] = await db.insert(patternCoverage).values({
+          id: nanoid(),
+          sessionId: input.sessionId,
+          patternId: previousTurn.patternId,
+          levelReached: llmEvaluation.level_reached,
+          stuckType: llmEvaluation.stuck_type,
+          llmEvaluation,
+          manualEvaluation: null,
+          turnIds: previousPatternTurns.map(t => t.id),
+        }).onConflictDoUpdate({
+          target: [patternCoverage.sessionId, patternCoverage.patternId],
+          set: {
+            levelReached: llmEvaluation.level_reached,
+            stuckType: llmEvaluation.stuck_type,
+            llmEvaluation,
+            turnIds: previousPatternTurns.map(t => t.id),
+            finalizedAt: new Date(),
+          },
+        }).returning();
+      }
+    } catch (e) {
+      console.error(`[turns/next] Prepare-1a transition aggregateCov failed`, e);
+      // transitionCoverage は null のまま継続（finalize でカバー）
+    }
+
+    // ===== Step 10b: 同パターン完了判定 + 集約（Prepare-1b、Requirement 13）=====
     try {
       if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal)) {
         const turns = await db.query.interviewTurn.findMany({
@@ -1216,12 +1306,12 @@ export async function POST(request: Request) {
         });
         const llmEvaluation = await withRetry(
           () => llm.aggregatePatternCoverage({ turns, pattern: currentPattern }),
-          'aggregateCov',
+          'aggregateCov.completion',
         );
         [coverage] = await db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning();
       }
     } catch (e) {
-      console.error(`[turns/next] Prepare-1 aggregateCov failed for turn=${turn.id}`, e);
+      console.error(`[turns/next] Prepare-1b completion aggregateCov failed for turn=${turn.id}`, e);
       // coverage は null のまま継続（finalize でカバー）
     }
 
@@ -1249,7 +1339,7 @@ export async function POST(request: Request) {
       // proposal は null。クライアントは ProposalRegenerateRoute を呼ぶ（Requirement 23）
     }
 
-    return Response.json({ turn, coverage, proposal });
+    return Response.json({ turn, coverage, transitionCoverage, proposal });
   } catch (e) {
     // Core フェーズ失敗：5xx、rate_limit 未増加、interview_turn 未 INSERT
     // クライアントは同じ turnId で再送可能（Step 3 の冪等性チェックは existingTurn なしのため再実行）
@@ -1264,7 +1354,8 @@ export async function POST(request: Request) {
 - **冪等性**: 同じ `turnId` での再送は Step 3 で既存ターンを返す。クライアントが Core 失敗後にリトライしても、Whisper/LLM の再課金は **Step 3 をすり抜けた最初の 1 回のみ**
 - **Blob 上書き安全性**: `interview-turn/{sessionId}/{turnId}.{ext}` の key は turnId に依存するため、Step 5 のリトライ／クライアント再送ともに同じ key で上書きされ orphan Blob は生まれない
 - **レート制限の正確性**: Core 成功時のみカウンタが増えるため、Whisper/LLM 失敗で面接官のクォータが減らない
-- **Prepare 部分失敗の UX**: `coverage=null` は次回 turn または `/api/interview/finalize` でカバー、`proposal=null` は状態 B UI が `/api/interview/proposal/regenerate` を呼んで再生成（Requirement 23）
+- **Prepare 部分失敗の UX**: `coverage=null` / `transitionCoverage=null` は次回 turn または `/api/interview/finalize` でカバー、`proposal=null` は状態 B UI が `/api/interview/proposal/regenerate` を呼んで再生成（Requirement 23）
+- **パターン遷移時の集約**: Prepare-1a は前パターンを、Prepare-1b は現パターンを集約する独立サブステップ。同一ターンで両方発火することがあるが対象 `patternId` が異なるため衝突しない。A→B→A の往復シナリオでは UPSERT により A の coverage が最新ターンを含む形に更新される（Requirement 24）
 
 #### ProposalRegenerateRoute（Prepare フェーズ失敗時の提案再生成 API）
 

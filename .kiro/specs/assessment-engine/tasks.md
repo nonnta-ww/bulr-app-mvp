@@ -255,15 +255,26 @@
 ### G3.4 `analyzeTurn` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/analyze-turn.ts` を新規作成
-- `analyzeTurnOutputSchema` を Zod で定義: `signals` (4 軸 enum)、`scope_signal` (1-5 リテラル or null)、`level_reached_estimate` (0-4 リテラル)、`pattern_match_confidence` enum、`nearest_patterns?: string[]`、`off_pattern_summary?: string` (max 2000)、`notes: string` (max 2000)
+- `analyzeTurnOutputSchema` を Zod で定義（Requirement 8.2、24.1 準拠）:
+  - `signals`: 4 軸 enum (`authenticity / judgment / meta_cognition / ai_literacy` 各 `'observed' | 'partial' | 'absent'`)
+  - `scope_signal`: `z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.null()])`
+  - `level_reached_estimate`: `z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)])`
+  - `pattern_match_confidence`: `z.enum(['exact', 'inferred_high', 'inferred_low', 'off_pattern'])`
+  - `matched_pattern_id`: `z.string().nullable()`（Requirement 24.1 用、manual ターンで `pattern_match_confidence` が `'exact' | 'inferred_high' | 'inferred_low'` の場合に LLM が判定したパターン ID、`'off_pattern'` 時は null）
+  - `stuck_signal`: `z.enum(['not_experienced', 'shallow', 'single_option', 'rigid']).nullable()`（Prepare-1b 発火条件、詰まり検出時のみ non-null）
+  - `nearest_patterns?`: `z.array(z.string()).optional()`（`'off_pattern'` 時の類似候補）
+  - `off_pattern_summary?`: `z.string().max(2000).optional()`
+  - `notes`: `z.string().max(2000)`
 - `analyzeTurn(input: { transcript: string; currentPattern?: AssessmentPattern; history: TurnHistory[]; ctx: LlmContext }): Promise<LlmAnalysis>` を実装
 - 内部で `generateObject({ model: claudeSonnet46, system: buildSystemPrompt(...), schema: analyzeTurnOutputSchema, prompt, maxRetries: 2 })` を呼ぶ
+- システムプロンプトに「manual ターン（input.currentPattern=null）の場合、transcript の文脈から最も近い 57 パターンを選定し `matched_pattern_id` に設定。確信度を `pattern_match_confidence` で表現する」旨を追記
 - 出力を `validateAndFallback(object, analyzeTurnOutputSchema, SAFE_LLM_ANALYSIS_FALLBACK, 'analyzeTurn')` で検証
+- フォールバック値 `SAFE_LLM_ANALYSIS_FALLBACK`: `signals` 全 `'absent'`、`scope_signal=null`、`level_reached_estimate=0`、`pattern_match_confidence='off_pattern'`、`matched_pattern_id=null`、`stuck_signal='not_experienced'`、`notes='LLM 出力検証失敗、フォールバック適用'`
 - transcript / history のサイズ上限（1 ターン 10000 文字、履歴 50000 文字）を呼び出し前に enforce
-- 完了時の観察可能状態: `pnpm typecheck` 成功、API ルートから `llm.analyzeTurn({...})` で呼び出せる
+- 完了時の観察可能状態: `pnpm typecheck` 成功、API ルートから `llm.analyzeTurn({...})` で呼び出せる、manual サンプル入力で `matched_pattern_id` が 57 パターン ID のいずれかになることを確認
 - _Boundary: AnalyzeTurn_
 - _Depends: G2.1, G3.1, G3.2, G3.3_
-- _Requirements: 8.1, 8.2, 8.10, 8.11, 8.12, 12.2, 13.1, 13.6, 18.2, 18.3_
+- _Requirements: 8.1, 8.2, 8.10, 8.11, 8.12, 12.2, 13.1, 13.6, 18.2, 18.3, 24.1_
 
 ### G3.5 `splitInterviewerCandidate` 関数 + Zod スキーマを実装 (P)
 
@@ -450,11 +461,28 @@
 
   **Prepare フェーズ（個別 try/catch、失敗してもターン確定済み、レスポンスは 200）**
 
-  20. Prepare-1（パターン完了判定 + 集約）: try ブロック内で `if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal))` → `await withRetry(() => llm.aggregatePatternCoverage({turns, pattern}), 'aggregateCov')` → `db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning()` → catch で `console.error` + `coverage = null` 続行（finalize でカバー）
-  21. Prepare-2（次の質問候補生成）: try ブロック内で `await withRetry(() => llm.proposeNextQuestions({...}), 'proposeNextQ')` → `db.insert(questionProposal).values({...}).returning()` → catch で `console.error` + `proposal = null` 続行（クライアントは `/api/interview/proposal/regenerate` を呼ぶ）
+  20. **effective patternId 確定**（Requirement 24.1）:
+      ```typescript
+      const effectivePatternId = (() => {
+        if (analysis.pattern_match_confidence === 'off_pattern') return null;
+        if (input.questionSource === 'manual') {
+          return ['exact', 'inferred_high'].includes(analysis.pattern_match_confidence)
+            ? analysis.matched_pattern_id
+            : null;
+        }
+        return input.patternId ?? null;
+      })();
+      ```
+  21. **Prepare-1a**（パターン遷移時集約、Requirement 24）: try ブロック内で:
+      - 前ターン取得（現ターンは Step 19 で INSERT 済みなので、sequenceNo < turn.sequenceNo で取得）: `const previousTurn = await db.query.interviewTurn.findFirst({ where: and(eq(interviewTurn.sessionId, input.sessionId), lt(interviewTurn.sequenceNo, turn.sequenceNo)), orderBy: desc(interviewTurn.sequenceNo) });`
+      - `const transitionDetected = previousTurn && previousTurn.patternId !== null && previousTurn.patternId !== effectivePatternId`
+      - `if (transitionDetected) { const previousPattern = await db.query.assessmentPattern.findFirst({...}); const previousPatternTurns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, previousTurn.patternId)), orderBy: asc(sequenceNo)}); const llmEvaluation = await withRetry(() => llm.aggregatePatternCoverage({turns: previousPatternTurns, pattern: previousPattern}), 'aggregateCov.transition'); [transitionCoverage] = await db.insert(patternCoverage).values({id: nanoid(), sessionId, patternId: previousTurn.patternId, levelReached: llmEvaluation.level_reached, stuckType: llmEvaluation.stuck_type, llmEvaluation, manualEvaluation: null, turnIds: previousPatternTurns.map(t => t.id)}).onConflictDoUpdate({target: [patternCoverage.sessionId, patternCoverage.patternId], set: {levelReached, stuckType, llmEvaluation, turnIds, finalizedAt: new Date()}}).returning(); }`
+      - catch で `console.error('[turns/next] Prepare-1a transition aggregateCov failed', e)` + `transitionCoverage = null` 続行
+  22. **Prepare-1b**（同パターン完了時集約、Requirement 13）: try ブロック内で `if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal))` → `const turns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, currentPattern.id))})` → `await withRetry(() => llm.aggregatePatternCoverage({turns, pattern: currentPattern}), 'aggregateCov.completion')` → `db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning()` → catch で `console.error` + `coverage = null` 続行（finalize でカバー）
+  23. **Prepare-2**（次の質問候補生成）: try ブロック内で `await withRetry(() => llm.proposeNextQuestions({...}), 'proposeNextQ')` → `db.insert(questionProposal).values({...}).returning()` → catch で `console.error` + `proposal = null` 続行（クライアントは `/api/interview/proposal/regenerate` を呼ぶ）
 
   **Step 12: レスポンス**
-  22. `Response.json({ turn, coverage: nullable, proposal: nullable })` を 200 で返す
+  24. `Response.json({ turn, coverage, transitionCoverage, proposal })` を 200 で返す（全フィールド nullable）
 
 - 補助ヘルパー: `withRetry<T>(fn, label)` を route.ts 内ローカル関数として定義（1 回リトライ、2 回目失敗で throw、ログに `[turns/next] ${label} failed, retrying once` を出力）
 - エラー応答:
@@ -471,7 +499,7 @@
   - Whisper API キーを一時的に無効化して 503 + `core_phase_failed` を確認（リカバリ確認）
 - _Boundary: TurnsNextRoute_
 - _Depends: G1.9, G2.2, G2.3, G3.4, G3.5, G3.6, G3.7, G3.9, G4.1, G4.2, G4.3_
-- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1_
+- _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1, 24.1, 24.2, 24.3, 24.4, 24.5_
 
 ### G4.8.1 `/api/interview/proposal/regenerate` ルートを実装
 
@@ -816,3 +844,34 @@
 - 完了時の観察可能状態: 上記すべてのシナリオが成功、冪等性により無駄な課金が発生しないことを確認
 - _Depends: G9.2, G4.8, G4.8.1, G6.2, G6.3_
 - _Requirements: 7.12, 7.13, 7.14, 7.15, 7.16, 6.9, 23.1-23.7_
+
+### G9.8 パターン遷移時集約（Prepare-1a）の動作確認
+
+- **基本シナリオ（Requirement 24.2, 24.3）**:
+  - 自己面接で開始 → パターン A（例: D-01）で 2 ターン進める（level_reached_estimate が 2-3 程度で止まる）
+  - 状態 B で `intent='next_pattern'` 候補を選択 → パターン B（例: D-02）に遷移、1 ターン目を完了
+  - サーバーログで `[turns/next] Prepare-1a transition aggregateCov ... success` を確認
+  - `pnpm db:studio` で `pattern_coverage` テーブルを開き、`pattern_id=D-01` の行が作成されていることを確認（`level_reached < 4`、`stuck_type` が non-null または null）
+  - `turn_ids` 配列が A の全ターン ID（2 件）を含むことを確認
+- **A→B→A 往復シナリオ（Requirement 24.3 の UPSERT 動作）**:
+  - 上記の続きで、B から再度 `next_pattern` で A に戻る
+  - A で追加 1 ターンを完了
+  - 次の遷移時（A → C など）、`pattern_coverage` の A 行の `turn_ids` が **A の全 3 ターン**（戻る前 2 件 + 戻った後 1 件）を含むよう UPSERT されていることを確認
+  - `llm_evaluation.notes` が更新されている（追加ターンの情報が反映）
+- **manual ターンでの遷移検出（Requirement 24.1）**:
+  - パターン D-01 から状態 B で [自分で次を聞く] を選択
+  - 候補者経歴に基づいて D-04 に関する質問を投げる（例: 「API 設計の経験は？」）
+  - サーバーログで `analysis.matched_pattern_id='D-04'` と `analysis.pattern_match_confidence='inferred_high'` を確認
+  - `[turns/next] Prepare-1a transition aggregateCov ... success` で D-01 が集約されたことを確認
+- **フリー質問遷移は集約しない（Requirement 24.2）**:
+  - パターン D-01 → manual ターンで完全に off_pattern な質問（候補者の趣味など）を投げる → `analysis.pattern_match_confidence='off_pattern'`
+  - サーバーログで Prepare-1a が `transitionDetected=true` で D-01 を集約することを確認（previousTurn.patternId=D-01 ≠ effectivePatternId=null は遷移成立）
+  - 次のターンで off_pattern → D-02 の遷移時、Prepare-1a は **発火しない**（previousTurn.patternId=null のため）
+- **Prepare-1a 失敗時の続行（Requirement 24.4）**:
+  - 一時的に `ANTHROPIC_API_KEY` を Prepare-1a 集約の最中だけ無効化（または `aggregatePatternCoverage` 内に意図的な throw を追加）
+  - ターン処理が 200 で返ること、`transitionCoverage: null` を確認、`interview_turn` は正常 INSERT
+  - サーバーログで `[turns/next] Prepare-1a transition aggregateCov failed` を確認
+  - `/api/interview/finalize` 実行時に未集約パターンが集約されることを確認
+- 完了時の観察可能状態: 上記すべてのシナリオで `pattern_coverage` が想定通り作成・更新される、孤立ターンが発生しないことを `interview_turn` と `pattern_coverage` の JOIN クエリで確認（`pattern_id` non-null のターンはすべて対応する `pattern_coverage` 行を持つ、または `/api/finalize` 未実行）
+- _Depends: G9.2, G4.8, G3.4 (analyzeTurn の matched_pattern_id 出力)_
+- _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
