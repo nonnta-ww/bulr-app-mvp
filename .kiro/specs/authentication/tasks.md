@@ -359,7 +359,7 @@
   - _Requirements: 3.8, 4.4, 6.8_
   - _Depends: 7.5_
 
-- [ ] 7.7 `pnpm typecheck` / `pnpm lint` / `pnpm build` の最終確認
+- [x] 7.7 `pnpm typecheck` / `pnpm lint` / `pnpm build` の最終確認
   - リポジトリルートで `pnpm typecheck` 実行 → 全パッケージでエラーなく完了
   - リポジトリルートで `pnpm lint` 実行 → 全パッケージでエラーなく完了
   - リポジトリルートで `pnpm build` 実行 → apps/web の Next.js build がエラーなく完了
@@ -370,3 +370,4 @@
 ## Implementation Notes
 
 - `packages/db/.env` symlink (→ `../../.env.local`) is required so `drizzle-kit push/generate` can read DATABASE_URL without explicit env var injection. drizzle-kit auto-loads `.env` but not `.env.local`. Documented in README.md and docs/setup/local.md.
+- `apps/web/middleware.ts` → `apps/web/proxy.ts` に rename（Next.js 16 の `proxy` convention 対応。`middleware.ts` は deprecated warning が出る）。
