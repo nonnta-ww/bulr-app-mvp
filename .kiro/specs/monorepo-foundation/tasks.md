@@ -97,7 +97,7 @@
   - _Depends: 2.1, 2.2, 2.3_
 
 - [ ] 3. apps/web スケルトンの構築
-- [ ] 3.1 `apps/web/package.json` を作成
+- [x] 3.1 `apps/web/package.json` を作成
   - `name: "@bulr/web"`、`private: true`、`version: "0.0.1"` を設定
   - `scripts`: `dev: "next dev --turbopack -p 3000"`、`build: "next build"`、`start: "next start -p 3000"`、`typecheck: "tsc --noEmit"`、`lint: "eslint ."`
   - `dependencies`: `next` ^16.0.0、`react` ^19.0.0、`react-dom` ^19.0.0、`@bulr/db` `workspace:*`、`@bulr/types` `workspace:*`、`@bulr/lib` `workspace:*`、`@bulr/ai` `workspace:*`、`tailwindcss` ^4.0.0、`@tailwindcss/postcss` ^4.0.0

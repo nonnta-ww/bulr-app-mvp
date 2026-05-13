@@ -1,0 +1,29 @@
+{
+  "name": "@bulr/web",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "next dev --turbopack -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@bulr/db": "workspace:*",
+    "@bulr/types": "workspace:*",
+    "@bulr/lib": "workspace:*",
+    "@bulr/ai": "workspace:*",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/node": "^22",
+    "typescript": "^5.4"
+  }
+}
