@@ -143,7 +143,7 @@
   - 観測可能な完了状態: `pnpm lint` の終了コードが 0 で、全 5 workspace が SUCCESS と表示される
   - _Requirements: 7.5, 7.7, 8.1, 8.2, 8.3, 8.6_
   - _Depends: 4.1_
-- [ ] 4.4 `pnpm dev` で apps/web (port 3000) 起動確認
+- [x] 4.4 `pnpm dev` で apps/web (port 3000) 起動確認
   - ルートで `pnpm dev` を実行し、Next.js dev server が port 3000 で起動することを確認
   - 別ターミナルから `curl -sS -o /dev/null -w "%{http_code}" http://localhost:3000/` を実行し、HTTP 200 を確認
   - ブラウザで `http://localhost:3000/` を開き、ランディングページのテキスト（"bulr" / "AI 面接アシスタント"）が表示されることを目視確認
