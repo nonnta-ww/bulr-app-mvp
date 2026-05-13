@@ -100,7 +100,7 @@
 
 - [ ] 2. メール送信ユーティリティ・レート制限・Zod スキーマ集約
 
-- [ ] 2.1 (P) `apps/web/lib/email/resend.ts` を作成
+- [x] 2.1 (P) `apps/web/lib/email/resend.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/email/resend.ts` を新規作成
   - `RESEND_API_KEY` が未設定なら module load 時に明示的に throw
   - `resend = new Resend(process.env.RESEND_API_KEY)` を export
@@ -110,7 +110,7 @@
   - _Boundary: ResendClient_
   - _Depends: 1.1_
 
-- [ ] 2.2 (P) `apps/web/lib/email/templates/magic-link.ts` を作成
+- [x] 2.2 (P) `apps/web/lib/email/templates/magic-link.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/email/templates/magic-link.ts` を新規作成
   - 純関数 `renderMagicLinkEmail({ url }: { url: string }): { subject: string; html: string; text: string }` を export
   - subject: `'[bulr] サインインリンク / Sign-in link'`
@@ -123,7 +123,7 @@
   - _Requirements: 2.3, 2.4, 2.5, 2.8_
   - _Boundary: MagicLinkTemplate_
 
-- [ ] 2.3 (P) `apps/web/lib/rate-limit.ts` を作成
+- [x] 2.3 (P) `apps/web/lib/rate-limit.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/rate-limit.ts` を新規作成
   - ファイルヘッダコメントで key prefix の用途を列挙（`email:` / `ip:` / `session:` / `chat:`）し「Vercel Functions メモリ非共有のため in-memory キャッシュ禁止」を明記
   - `RateLimitError` クラスを export（`extends Error`）
@@ -136,7 +136,7 @@
   - _Boundary: RateLimitTs_
   - _Depends: 1.6_
 
-- [ ] 2.4 (P) `apps/web/lib/auth/schemas.ts` を作成（Zod スキーマ集約）
+- [x] 2.4 (P) `apps/web/lib/auth/schemas.ts` を作成（Zod スキーマ集約）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/schemas.ts` を新規作成
   - export する schema:
     - `emailSchema = z.string().email().trim().max(254)`
@@ -152,7 +152,7 @@
 
 - [ ] 3. Better Auth サーバー / クライアント / API ルート
 
-- [ ] 3.1 `apps/web/lib/auth/server.ts` を作成（Better Auth サーバー設定）
+- [x] 3.1 `apps/web/lib/auth/server.ts` を作成（Better Auth サーバー設定）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/server.ts` を新規作成
   - 環境変数チェック: `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` が未設定なら起動時に明示的に throw
   - `betterAuth({ ... })` を初期化し `auth` singleton を export
@@ -172,7 +172,7 @@
   - _Boundary: AuthServer_
   - _Depends: 1.2, 1.3, 1.5, 2.1, 2.2, 2.3_
 
-- [ ] 3.2 (P) `apps/web/lib/auth/client.ts` を作成（Better Auth クライアント）
+- [x] 3.2 (P) `apps/web/lib/auth/client.ts` を作成（Better Auth クライアント）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/client.ts` を新規作成
   - `createAuthClient({ baseURL: process.env.NEXT_PUBLIC_APP_URL, plugins: [magicLinkClient()] })` を初期化
   - `signIn`, `signOut`, `useSession` を destructure して export
@@ -181,7 +181,7 @@
   - _Boundary: AuthClient_
   - _Depends: 1.1_
 
-- [ ] 3.3 `apps/web/app/api/auth/[...all]/route.ts` を作成（Better Auth API ルート）
+- [x] 3.3 `apps/web/app/api/auth/[...all]/route.ts` を作成（Better Auth API ルート）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/api/auth/[...all]/route.ts` を新規作成
   - `toNextJsHandler(auth)` で GET / POST ハンドラを export:
     ```typescript
@@ -200,7 +200,7 @@
 
 - [ ] 4. 認証ヘルパーと Server Action ラッパー
 
-- [ ] 4.1 `apps/web/lib/guards.ts` を作成
+- [x] 4.1 `apps/web/lib/guards.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/guards.ts` を新規作成
   - `AuthError` クラス: `class AuthError extends Error { constructor(public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND', message?: string) { super(message ?? code); } }`
   - `getCurrentUser()`: `auth.api.getSession({ headers: await headers() })` を呼び、`{ id, email } | null` を返す（throw しない）
@@ -212,7 +212,7 @@
   - _Boundary: Guards_
   - _Depends: 3.1_
 
-- [ ] 4.2 `apps/web/lib/safe-action.ts` を作成（Server Action ラッパー）
+- [x] 4.2 `apps/web/lib/safe-action.ts` を作成（Server Action ラッパー）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/safe-action.ts` を新規作成
   - ファイルヘッダコメント:
     > すべての mutation は authedAction / adminAction でラップすること。素の async function で Server Action を書かない。これは security.md の多層認証パターンに従う標準パターン。
@@ -232,7 +232,7 @@
 
 - [ ] 5. proxy.ts (UX リダイレクト + Basic 認証 + CVE-2025-29927 教訓)
 
-- [ ] 5.1 `apps/web/proxy.ts` を作成
+- [x] 5.1 `apps/web/proxy.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/proxy.ts` を新規作成
   - ファイル冒頭の JSDoc コメントで以下を必ず明記:
     - 「このファイルは UX リダイレクトと管理画面 Basic 認証チェックのみを担当する」
@@ -263,7 +263,7 @@
 
 - [ ] 6. サインイン / 管理画面ログイン / smoke test UI
 
-- [ ] 6.1 (P) `apps/web/app/(interviewer)/sign-in/page.tsx` を作成
+- [x] 6.1 (P) `apps/web/app/(interviewer)/sign-in/page.tsx` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/(interviewer)/sign-in/page.tsx` を新規作成
   - Server Component で `getCurrentUser()` を呼び、null でなければ `redirect('/interviews')`
   - Client Component（別ファイル `apps/web/app/(interviewer)/sign-in/sign-in-form.tsx` を作成、`'use client'` 指定）でフォーム描画:
@@ -279,7 +279,7 @@
   - _Boundary: SignInPage_
   - _Depends: 3.2, 2.4, 4.1_
 
-- [ ] 6.2 (P) `apps/web/app/admin/login/page.tsx` を作成
+- [x] 6.2 (P) `apps/web/app/admin/login/page.tsx` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/admin/login/page.tsx` を新規作成
   - Server Component で `getCurrentUser()` を呼び、null でなく email が ADMIN_ALLOWED_EMAILS に含まれていれば `/admin/_health` へ redirect
   - そうでなければ「Basic 認証通過 OK。次に管理者メールアドレスで Magic Link サインインしてください」のメッセージと、`/sign-in?redirect=/admin/_health` へのリンクを表示
@@ -289,7 +289,7 @@
   - _Boundary: AdminLoginPage_
   - _Depends: 4.1_
 
-- [ ] 6.3 (P) `apps/web/app/admin/_health/page.tsx` を作成（smoke test）
+- [x] 6.3 (P) `apps/web/app/admin/_health/page.tsx` を作成（smoke test）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/admin/_health/page.tsx` を新規作成
   - ファイル冒頭コメントで「本ページは authentication spec の smoke test 用に一時設置。admin-review-panel spec で `/admin/sessions` を実装した時点で削除する」を必ず明記
   - Server Component として実装:
