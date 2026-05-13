@@ -47,16 +47,20 @@ DATABASE_URL=postgresql://bulr:dev_password@localhost:5433/bulr_dev
 
 `BLOB_READ_WRITE_TOKEN` は Vercel Blob ストア作成後に自動付与されるため、ローカル開発では空のままで OK（Blob を使う機能をテストする場合のみ設定）。
 
-### 4. `apps/web/.env.local` をシンボリックリンクに設定
+### 4. `.env.local` をシンボリックリンクに設定
 
-Next.js は各アプリディレクトリの `.env.local` のみを読み込みます。root の `.env.local` 1 ファイルで管理するため、シンボリックリンクを作成します。
+Next.js と drizzle-kit はそれぞれ異なるディレクトリから環境変数を読み込みます。root の `.env.local` 1 ファイルで管理するため、以下の 2 つのシンボリックリンクを作成します。
 
 ```bash
+# Next.js 用（apps/web が .env.local を読み込む）
 ln -sf ../../.env.local apps/web/.env.local
+
+# drizzle-kit 用（packages/db が .env を読み込む）
+ln -sf ../../.env.local packages/db/.env
 ```
 
-> リンク先は `.gitignore` の `.env*.local` パターンで除外されるため、リポジトリにはコミットされません。  
-> clone 直後に 1 回だけ実行すれば、以降は root の `.env.local` を編集するだけで反映されます。
+> `.env*.local` と `.env` はどちらも `.gitignore` で除外されるため、リポジトリにはコミットされません。  
+> clone 直後に 1 回だけ実行すれば、以降は root の `.env.local` を編集するだけで両方に反映されます。
 
 ### 5. Docker コンテナを起動
 

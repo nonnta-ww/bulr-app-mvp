@@ -13,6 +13,7 @@ pnpm install
 cp .env.example .env.local
 # .env.local の各変数に値を埋める（docs/setup/local.md 参照）
 ln -sf ../../.env.local apps/web/.env.local
+ln -sf ../../.env.local packages/db/.env
 pnpm db:up
 pnpm --filter @bulr/db push
 pnpm dev
