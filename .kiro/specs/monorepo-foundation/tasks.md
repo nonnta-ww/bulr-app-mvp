@@ -156,7 +156,7 @@
   - 観測可能な完了状態: `pnpm build` の終了コードが 0 で、`apps/web/.next/build-manifest.json` が存在する
   - _Requirements: 2.7_
   - _Depends: 4.2_
-- [ ] 4.6 サブパス export 解決の動作確認
+- [x] 4.6 サブパス export 解決の動作確認
   - `apps/web/app/page.tsx` に一時的に `import type {} from '@bulr/types/profile';` および `import type {} from '@bulr/types/evaluation';` の 2 行を追加
   - `pnpm typecheck` がエラーなく通ることを確認
   - 確認後、追加した 2 行を削除
