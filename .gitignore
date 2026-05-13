@@ -23,6 +23,7 @@ dist
 coverage
 
 # Environment files
+.env
 .env*.local
 
 # TypeScript build info
