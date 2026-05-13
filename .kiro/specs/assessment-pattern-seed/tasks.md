@@ -127,7 +127,7 @@
 - _Depends: 3.1_
 - _Requirements: 4.1, 4.5, 4.9, 4.10, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-### 4.5 組織・プロセスカテゴリ O-01〜O-08 を `organization.ts` に転記 (P)
+### 4.5 ✅ 組織・プロセスカテゴリ O-01〜O-08 を `organization.ts` に転記 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/patterns/organization.ts` を新規作成
 - `organizationPatterns: readonly AssessmentPatternSeed[]` を export、8 件
