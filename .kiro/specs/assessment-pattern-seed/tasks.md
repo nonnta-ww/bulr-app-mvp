@@ -8,7 +8,7 @@
 
 ## 1. スキーマ定義
 
-### 1.1 `assessmentPattern` Drizzle pgTable + `pattern_category` pgEnum を実装
+### 1.1 ✅ `assessmentPattern` Drizzle pgTable + `pattern_category` pgEnum を実装
 
 - `bulr-app-mvp/packages/db/src/schema/assessment-pattern.ts` を新規作成
 - `pgEnum('pattern_category', ['design', 'trouble', 'performance', 'security', 'organization', 'ai'])` を `patternCategory` という名前で export
@@ -23,7 +23,7 @@
 - _Boundary: SchemaModule_
 - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 1.7_
 
-### 1.2 schema バレル更新
+### 1.2 ✅ schema バレル更新
 
 - `bulr-app-mvp/packages/db/src/schema/index.ts` の既存空バレルに `export * from './assessment-pattern';` を追加
 - 既存コメント（`monorepo-foundation` で書かれた「テーブルは後続 spec で追加」）は適宜整理
