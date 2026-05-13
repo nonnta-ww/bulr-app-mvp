@@ -168,7 +168,7 @@
 
 ## 6. シードスクリプト実装
 
-### 6.1 `scripts/seed-assessment-patterns.ts` を実装
+### 6.1 ✅ `scripts/seed-assessment-patterns.ts` を実装
 
 - `bulr-app-mvp/scripts/seed-assessment-patterns.ts` を新規作成
 - `import { db } from '@bulr/db'`、`import { assessmentPattern } from '@bulr/db/...'`（または相対 path）、`import { assessmentPatterns, EXPECTED_COUNTS, countByCategory } from '@bulr/db/...'`
