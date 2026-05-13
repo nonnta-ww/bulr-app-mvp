@@ -137,7 +137,7 @@
   - 観測可能な完了状態: `pnpm typecheck` の終了コードが 0 で、全 5 workspace が SUCCESS と表示される
   - _Requirements: 3.7, 4.6, 5.8, 7.4, 7.6_
   - _Depends: 4.1_
-- [ ] 4.3 `pnpm lint` 全 workspace 並列実行
+- [x] 4.3 `pnpm lint` 全 workspace 並列実行
   - ルートで `pnpm lint` を実行し、5 workspace すべてで ESLint がエラーなく完了することを確認
   - Flat Config がルートから自動適用されること、ignores が機能すること（`.next` / `.turbo` 等が無視される）を確認
   - 観測可能な完了状態: `pnpm lint` の終了コードが 0 で、全 5 workspace が SUCCESS と表示される
