@@ -75,7 +75,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
   - _Boundary: DbPackage_
   - _Depends: 2.1_
-- [ ] 2.3 (P) `packages/lib` スケルトンを作成
+- [x] 2.3 (P) `packages/lib` スケルトンを作成
   - `packages/lib/package.json` に `name: "@bulr/lib"`、`private: true`、`version: "0.0.1"`、`exports: { ".": "./src/index.ts" }`、`main: "./src/index.ts"`、`scripts: { typecheck: "tsc --noEmit", lint: "eslint ." }` を定義
   - `dependencies`: `@bulr/types` `workspace:*`、`zod` ^4.0.0。`devDependencies`: `typescript` ^5.4
   - `packages/lib/tsconfig.json` で `extends: "../../tsconfig.base.json"`、`include: ["src/**/*"]`
@@ -84,7 +84,7 @@
   - _Requirements: 5.1, 5.2_
   - _Boundary: LibPackage_
   - _Depends: 2.1_
-- [ ] 2.4 (P) `packages/ai` スケルトンと AI/Whisper SDK 依存追加
+- [x] 2.4 (P) `packages/ai` スケルトンと AI/Whisper SDK 依存追加
   - `packages/ai/package.json` に `name: "@bulr/ai"`、`private: true`、`version: "0.0.1"`、`exports: { ".": "./src/index.ts" }`、`main: "./src/index.ts"`、`scripts: { typecheck: "tsc --noEmit", lint: "eslint ." }` を定義
   - `dependencies`: `ai` ^6.0.0（Vercel AI SDK 6）、`@ai-sdk/anthropic` ^3.0.0、`openai` ^4.0.0、`zod` ^4.0.0、`@bulr/db` `workspace:*`、`@bulr/types` `workspace:*`、`@bulr/lib` `workspace:*`。`devDependencies`: `typescript` ^5.4、`@types/node` ^22
   - `packages/ai/tsconfig.json` で `extends: "../../tsconfig.base.json"`、`include: ["src/**/*"]`

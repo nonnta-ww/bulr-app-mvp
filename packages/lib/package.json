@@ -1,0 +1,20 @@
+{
+  "name": "@bulr/lib",
+  "private": true,
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@bulr/types": "workspace:*",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4"
+  }
+}
