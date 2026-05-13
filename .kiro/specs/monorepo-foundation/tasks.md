@@ -30,21 +30,21 @@
   - `tasks.lint`: `dependsOn: ["^lint"]`
   - 観測可能な完了状態: `turbo.json` 内に 4 タスク（build / dev / typecheck / lint）が定義されている
   - _Requirements: 7.1, 7.2, 7.3_
-- [ ] 1.5 `.gitignore` を作成
+- [x] 1.5 `.gitignore` を作成
   - `node_modules`、`.next`、`.turbo`、`dist`、`.vercel`、`coverage`、`.env*.local`、`*.tsbuildinfo`、`.DS_Store` を除外対象に含める
   - 観測可能な完了状態: 上記すべてのパターンが `.gitignore` に列挙されている
   - _Requirements: 1.7_
-- [ ] 1.6 `.npmrc` を作成
+- [x] 1.6 `.npmrc` を作成
   - `link-workspace-packages=true`、`prefer-workspace-packages=true`、`auto-install-peers=true`、`strict-peer-dependencies=false`、`shamefully-hoist=false` を設定（本プロジェクトのインストール時に余計な警告を抑制）
   - 観測可能な完了状態: `.npmrc` ファイルが存在し、`pnpm install` 時に strict-peer-dependencies の警告が抑えられる設定になっている
   - _Requirements: 1.8_
-- [ ] 1.7 `eslint.config.mjs` を作成（Flat Config）
+- [x] 1.7 `eslint.config.mjs` を作成（Flat Config）
   - `typescript-eslint` の `recommended` を spread
   - `ignores`: `**/node_modules/**`、`**/.next/**`、`**/dist/**`、`**/.turbo/**`、`**/coverage/**`、`**/.vercel/**`
   - ルール追加: `@typescript-eslint/no-unused-vars: ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }]`、`@typescript-eslint/no-explicit-any: "warn"`
   - 観測可能な完了状態: `npx eslint --print-config app/page.tsx` 相当でルール一覧が表示される（apps/web 作成後に検証）
   - _Requirements: 8.1, 8.2, 8.3_
-- [ ] 1.8 `prettier.config.mjs` を作成
+- [x] 1.8 `prettier.config.mjs` を作成
   - `singleQuote: true`、`semi: true`、`trailingComma: "all"`、`printWidth: 100`、`tabWidth: 2`、`useTabs: false`、`bracketSpacing: true`、`bracketSameLine: false`、`arrowParens: "always"`、`endOfLine: "lf"` を設定
   - 観測可能な完了状態: `npx prettier --check prettier.config.mjs` がエラーなく完了
   - _Requirements: 1.5, 8.4_
