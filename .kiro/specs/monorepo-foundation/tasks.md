@@ -125,7 +125,7 @@
 ## Integration: 統合検証
 
 - [ ] 4. ルートレベルでの統合検証
-- [ ] 4.1 `pnpm install` 統合実行と lockfile 生成
+- [x] 4.1 `pnpm install` 統合実行と lockfile 生成
   - クリーン状態（`node_modules` / `pnpm-lock.yaml` 削除後）からルートで `pnpm install` を実行
   - すべての workspace 依存（`@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai`）が解決され、`pnpm-lock.yaml` が生成されることを確認
   - 観測可能な完了状態: `pnpm install` がエラーなく完了し、`pnpm-lock.yaml` が repo ルートに存在する
