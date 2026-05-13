@@ -10,10 +10,15 @@ AI 面接アシスタント型 MVP プロトタイプ（Stage 1）
 
 ```bash
 pnpm install
-cp apps/web/.env.local.example apps/web/.env.local
-# .env.local の各変数に値を埋める（docs/setup/README.md 参照）
+cp .env.example .env.local
+# .env.local の各変数に値を埋める（docs/setup/local.md 参照）
+ln -sf ../../.env.local apps/web/.env.local
+pnpm db:up
+pnpm --filter @bulr/db push
 pnpm dev
 ```
+
+詳細は [`docs/setup/local.md`](./docs/setup/local.md) を参照してください。
 
 ## Tech Stack
 
