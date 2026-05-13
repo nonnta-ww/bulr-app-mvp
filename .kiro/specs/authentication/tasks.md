@@ -15,7 +15,7 @@
 
 - [ ] 1. パッケージ依存追加と DB スキーマ定義
 
-- [ ] 1.1 (P) `apps/web/package.json` に better-auth と resend を追加
+- [x] 1.1 (P) `apps/web/package.json` に better-auth と resend を追加
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/package.json` の `dependencies` に以下を追加:
     - `"better-auth": "^1.6.0"`
     - `"resend": "^4.0.0"`
@@ -25,7 +25,7 @@
   - _Requirements: 1.1, 2.1_
   - _Boundary: AuthServer, ResendClient_
 
-- [ ] 1.2 (P) `packages/db/src/schema/auth.ts` を作成（Better Auth 管理テーブル）
+- [x] 1.2 (P) `packages/db/src/schema/auth.ts` を作成（Better Auth 管理テーブル）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/auth.ts` を新規作成
   - Better Auth 1.6.x 公式スキーマに従って Drizzle で `user` / `session` / `account` / `verification` の 4 テーブルを定義
   - 各テーブルの主要カラム:
@@ -39,7 +39,7 @@
   - _Requirements: 7.1_
   - _Boundary: DbAuthSchema_
 
-- [ ] 1.3 (P) `packages/db/src/schema/user-profile.ts` を作成
+- [x] 1.3 (P) `packages/db/src/schema/user-profile.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/user-profile.ts` を新規作成
   - `user_profile` テーブル定義:
     - `user_id text PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE`
@@ -56,7 +56,7 @@
   - _Boundary: DbUserProfileSchema_
   - _Depends: 1.2_
 
-- [ ] 1.4 (P) `packages/db/src/schema/rate-limit.ts` を作成
+- [x] 1.4 (P) `packages/db/src/schema/rate-limit.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/rate-limit.ts` を新規作成
   - `rate_limit` テーブル定義:
     - `key text PRIMARY KEY`
@@ -72,7 +72,7 @@
   - _Requirements: 7.3_
   - _Boundary: DbRateLimitSchema_
 
-- [ ] 1.5 `packages/db/src/schema/index.ts` のバレルに 3 ファイルを追加
+- [x] 1.5 `packages/db/src/schema/index.ts` のバレルに 3 ファイルを追加
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/src/schema/index.ts` を更新
   - 既存のコメントの後に以下を追加:
     - `export * from './auth';`
@@ -83,7 +83,7 @@
   - _Boundary: DbSchemaIndex_
   - _Depends: 1.2, 1.3, 1.4_
 
-- [ ] 1.6 drizzle-kit で migration を生成し dev branch に push
+- [x] 1.6 drizzle-kit で migration を生成し dev branch に push
   - `.env.local` に Neon dev branch の DATABASE_URL が設定済みであることを確認
   - `pnpm --filter @bulr/db generate` を実行し `packages/db/drizzle/*_authentication.sql`（drizzle-kit が決定する番号付きファイル名）を生成
   - 生成された SQL を git にコミット（レビュー）
@@ -366,3 +366,7 @@
   - 観測可能な完了状態: 3 コマンドすべてが exit code 0 で終了
   - _Requirements: (cross-cutting quality gate)_
   - _Depends: 1.x-6.x すべて_
+
+## Implementation Notes
+
+- `packages/db/.env` symlink (→ `../../.env.local`) is required so `drizzle-kit push/generate` can read DATABASE_URL without explicit env var injection. drizzle-kit auto-loads `.env` but not `.env.local`. Documented in README.md and docs/setup/local.md.
