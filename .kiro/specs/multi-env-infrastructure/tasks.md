@@ -65,12 +65,15 @@
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/drizzle.config.ts` を確認・更新
   - `monorepo-foundation` で `dbCredentials.url: process.env.DATABASE_URL ?? ''` の形になっている場合、`process.env.DATABASE_URL!`（non-null assertion）または `process.env.DATABASE_URL` 未定義時に明示的に throw する形に変更
   - 推奨実装例:
+
     ```typescript
     import { defineConfig } from 'drizzle-kit';
 
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
-      throw new Error('DATABASE_URL is not defined. Set it in .env.local or Vercel environment variables.');
+      throw new Error(
+        'DATABASE_URL is not defined. Set it in .env.local or Vercel environment variables.',
+      );
     }
 
     export default defineConfig({
@@ -80,6 +83,7 @@
       dbCredentials: { url: databaseUrl },
     });
     ```
+
   - `monorepo-foundation` の `packages/db/src/client.ts` で既に `DATABASE_URL` 未定義時 throw が実装済みであることを確認、本タスクでは `client.ts` は触らない
   - 観測可能な完了状態: DATABASE_URL を環境変数に設定した状態で `pnpm --filter @bulr/db generate` が空 schema でも実行成功し、未設定で実行すると drizzle-kit が即座にエラーを返す
   - _Requirements: 3.4, 3.5, 3.9, 1.7_
@@ -116,7 +120,7 @@
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/env-vars.md` を新規作成
   - 12 環境変数の総合リファレンステーブル（変数名 / 用途 / 参照元 spec / 公開可否 / Vercel 登録先 / 値の取得元 の列を含む）
   - DATABASE_URL の Production = production branch / Preview = dev branch の使い分けを強調セクションで明示（誤って production URL を Preview に登録すると本番 DB を破壊するリスクを警告）
-  - すべての NEXT_PUBLIC_ 以外の変数がサーバー専用である旨を明示（`security.md` L203-209 準拠）
+  - すべての NEXT*PUBLIC* 以外の変数がサーバー専用である旨を明示（`security.md` L203-209 準拠）
   - 「環境変数を追加する場合は、ルート `.env.example` と `apps/web/.env.local.example` の両方を更新すること」のチェックリストを末尾に追加
   - 観測可能な完了状態: `docs/setup/env-vars.md` が存在し、12 変数すべてのリファレンステーブルと DATABASE_URL の使い分け警告が含まれている
   - _Requirements: 1.4, 1.8, 4.5, 4.7, 5.6, 5.7, 9.1, 9.3, 9.4, 9.6, 10.3, 10.5_
@@ -227,7 +231,7 @@
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/drizzle-kit.md` を新規作成
   - drizzle-kit 運用手順:
     - **dev branch への反映**: ローカル `.env.local` に dev branch DATABASE_URL を設定 → `pnpm --filter @bulr/db push` → スキーマが dev branch に直接反映される（マイグレーション履歴は残らない、開発中の試行錯誤用）
-    - **production branch への反映**: dev branch でスキーマ確定 → ローカル `.env.local` に dev branch DATABASE_URL を設定 → `pnpm --filter @bulr/db generate` → `packages/db/drizzle/<番号>_<suffix>.sql` 形式の SQL ファイルが生成される（drizzle-kit が決定するファイル名、本ドキュメントではファイル名をハードコードしない方針を明示）→ 生成 SQL を git にコミットして PR レビュー → マージ後、`.env.local` の DATABASE_URL を一時的に production branch URL に切り替えて `pnpm --filter @bulr/db migrate` を実行（または CI / Vercel Build hook で実行する選択肢を Stage 2 で検討）
+    - **production branch への反映**: dev branch でスキーマ確定 → ローカル `.env.local` に dev branch DATABASE*URL を設定 → `pnpm --filter @bulr/db generate` → `packages/db/drizzle/<番号>*<suffix>.sql` 形式の SQL ファイルが生成される（drizzle-kit が決定するファイル名、本ドキュメントではファイル名をハードコードしない方針を明示）→ 生成 SQL を git にコミットして PR レビュー → マージ後、`.env.local`の DATABASE_URL を一時的に production branch URL に切り替えて`pnpm --filter @bulr/db migrate` を実行（または CI / Vercel Build hook で実行する選択肢を Stage 2 で検討）
     - 「本番 DB（production branch）に対して `push` を直接実行することは禁止。必ず `generate` → レビュー → `migrate` の順で進める」を警告セクションで強調
     - 「初回スキーマ確定は `assessment-pattern-seed` および `assessment-engine` spec で実施。本スペックでは drizzle.config.ts の DATABASE_URL 読み取りが動作することのみを検証」を明示
   - 完了確認方法: ローカルで DATABASE_URL を設定して `pnpm --filter @bulr/db generate` が空 schema でも実行成功（migration ファイルは生成されないが、エラーなし）、未設定で実行すると drizzle-kit が即座にエラーを返すこと
@@ -265,6 +269,7 @@
 - [ ] 3.1 `.github/workflows/ci.yml` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.github/workflows/ci.yml` を新規作成
   - 内容:
+
     ```yaml
     name: CI
 
@@ -304,6 +309,7 @@
           - name: Audit dependencies
             run: pnpm audit --audit-level=moderate
     ```
+
   - シークレット（DATABASE_URL 等）を一切参照しない（typecheck / lint / audit のみは外部接続不要）
   - 観測可能な完了状態: `.github/workflows/ci.yml` がリポジトリに存在し、PR を立てると GitHub Actions タブで CI ワークフローが起動・実行される
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 10.4_

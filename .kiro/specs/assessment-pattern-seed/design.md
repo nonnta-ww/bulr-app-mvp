@@ -196,15 +196,15 @@ graph TB
 
 ### Technology Stack
 
-| Layer | Choice / Version | Role in Feature | Notes |
-|-------|------------------|-----------------|-------|
-| ORM | Drizzle ORM 0.45.x stable | `pgTable` / `pgEnum` 定義、`onConflictDoUpdate` | `monorepo-foundation` で導入済み |
-| Migration | drizzle-kit 0.31.x | `generate` / `push` / `migrate` | `packages/db/scripts` で利用 |
-| DB | Neon Postgres（dev / prod ブランチ）| `assessment_pattern` 永続化 | `multi-env-infrastructure` spec で `DATABASE_URL` 提供 |
-| Driver | `pg` 8.x（Pool）| シードスクリプトの DB 接続 | 将来 `@neondatabase/serverless` 切替は別 spec |
-| ID 生成 | `nanoid` ^5 | `id` カラムの 21 文字 ID 生成 | `monorepo-foundation` で `packages/db` deps に追加済み |
-| TS Runtime | `tsx` ^4 | `scripts/seed-assessment-patterns.ts` 実行 | `packages/db` devDeps、ルート pnpm scripts から呼ぶ |
-| 型 | TypeScript 5.x strict / `noUncheckedIndexedAccess` | `AssessmentPatternSeed` / `PatternCategory` | `tsconfig.base.json` 継承 |
+| Layer      | Choice / Version                                   | Role in Feature                                 | Notes                                                  |
+| ---------- | -------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------ |
+| ORM        | Drizzle ORM 0.45.x stable                          | `pgTable` / `pgEnum` 定義、`onConflictDoUpdate` | `monorepo-foundation` で導入済み                       |
+| Migration  | drizzle-kit 0.31.x                                 | `generate` / `push` / `migrate`                 | `packages/db/scripts` で利用                           |
+| DB         | Neon Postgres（dev / prod ブランチ）               | `assessment_pattern` 永続化                     | `multi-env-infrastructure` spec で `DATABASE_URL` 提供 |
+| Driver     | `pg` 8.x（Pool）                                   | シードスクリプトの DB 接続                      | 将来 `@neondatabase/serverless` 切替は別 spec          |
+| ID 生成    | `nanoid` ^5                                        | `id` カラムの 21 文字 ID 生成                   | `monorepo-foundation` で `packages/db` deps に追加済み |
+| TS Runtime | `tsx` ^4                                           | `scripts/seed-assessment-patterns.ts` 実行      | `packages/db` devDeps、ルート pnpm scripts から呼ぶ    |
+| 型         | TypeScript 5.x strict / `noUncheckedIndexedAccess` | `AssessmentPatternSeed` / `PatternCategory`     | `tsconfig.base.json` 継承                              |
 
 ## File Structure Plan
 
@@ -243,23 +243,23 @@ bulr-app-mvp/
 
 ### File Responsibilities
 
-| File | Responsibility | Created/Modified |
-|------|----------------|------------------|
-| `packages/db/src/schema/assessment-pattern.ts` | `pgEnum('pattern_category', [...])` と `pgTable('assessment_pattern', { ... })` を export。カラム順は brief 準拠 | Created |
-| `packages/db/src/schema/index.ts` | `export * from './assessment-pattern';` を追加（既存空バレル更新） | Modified |
-| `packages/db/drizzle/*_assessment_patterns.sql` | drizzle-kit が生成する CREATE TABLE / CREATE TYPE 文 | Created (auto) |
-| `packages/db/drizzle/meta/*` | drizzle-kit のジャーナル + スナップショット | Created (auto) |
-| `packages/db/src/seeds/types.ts` | `AssessmentPatternSeed` 型（`PatternCategory` は `schema/assessment-pattern.ts` で pgEnum 派生として定義し import） | Created |
-| `packages/db/src/seeds/patterns/design.ts` | `designPatterns: readonly AssessmentPatternSeed[] = [{...D-01}, ..., {...D-15}]` を named export | Created |
-| `packages/db/src/seeds/patterns/trouble.ts` | T-01〜T-12 の 12 件 | Created |
-| `packages/db/src/seeds/patterns/performance.ts` | P-01〜P-08 の 8 件 | Created |
-| `packages/db/src/seeds/patterns/security.ts` | S-01〜S-08 の 8 件 | Created |
-| `packages/db/src/seeds/patterns/organization.ts` | O-01〜O-08 の 8 件 | Created |
-| `packages/db/src/seeds/patterns/ai.ts` | A-01〜A-06 の 6 件 | Created |
-| `packages/db/src/seeds/assessment-patterns.ts` | 6 ファイルを `import` し、`allAssessmentPatterns: readonly AssessmentPatternSeed[]` を export。`countByCategory(patterns)` 純関数 export | Created |
-| `scripts/seed-assessment-patterns.ts` | `db.transaction` で `onConflictDoUpdate({ target: code, set: ... })`（is_active 除外）を 57 件分実行、件数ログ | Created |
-| `package.json` (root) | `"seed:patterns": "tsx scripts/seed-assessment-patterns.ts"` を `scripts` に追加 | Modified |
-| `docs/setup/seed.md` | dev / production 投入手順、`DATABASE_URL` 切替方法、検証クエリ | Created |
+| File                                             | Responsibility                                                                                                                           | Created/Modified |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `packages/db/src/schema/assessment-pattern.ts`   | `pgEnum('pattern_category', [...])` と `pgTable('assessment_pattern', { ... })` を export。カラム順は brief 準拠                         | Created          |
+| `packages/db/src/schema/index.ts`                | `export * from './assessment-pattern';` を追加（既存空バレル更新）                                                                       | Modified         |
+| `packages/db/drizzle/*_assessment_patterns.sql`  | drizzle-kit が生成する CREATE TABLE / CREATE TYPE 文                                                                                     | Created (auto)   |
+| `packages/db/drizzle/meta/*`                     | drizzle-kit のジャーナル + スナップショット                                                                                              | Created (auto)   |
+| `packages/db/src/seeds/types.ts`                 | `AssessmentPatternSeed` 型（`PatternCategory` は `schema/assessment-pattern.ts` で pgEnum 派生として定義し import）                      | Created          |
+| `packages/db/src/seeds/patterns/design.ts`       | `designPatterns: readonly AssessmentPatternSeed[] = [{...D-01}, ..., {...D-15}]` を named export                                         | Created          |
+| `packages/db/src/seeds/patterns/trouble.ts`      | T-01〜T-12 の 12 件                                                                                                                      | Created          |
+| `packages/db/src/seeds/patterns/performance.ts`  | P-01〜P-08 の 8 件                                                                                                                       | Created          |
+| `packages/db/src/seeds/patterns/security.ts`     | S-01〜S-08 の 8 件                                                                                                                       | Created          |
+| `packages/db/src/seeds/patterns/organization.ts` | O-01〜O-08 の 8 件                                                                                                                       | Created          |
+| `packages/db/src/seeds/patterns/ai.ts`           | A-01〜A-06 の 6 件                                                                                                                       | Created          |
+| `packages/db/src/seeds/assessment-patterns.ts`   | 6 ファイルを `import` し、`allAssessmentPatterns: readonly AssessmentPatternSeed[]` を export。`countByCategory(patterns)` 純関数 export | Created          |
+| `scripts/seed-assessment-patterns.ts`            | `db.transaction` で `onConflictDoUpdate({ target: code, set: ... })`（is_active 除外）を 57 件分実行、件数ログ                           | Created          |
+| `package.json` (root)                            | `"seed:patterns": "tsx scripts/seed-assessment-patterns.ts"` を `scripts` に追加                                                         | Modified         |
+| `docs/setup/seed.md`                             | dev / production 投入手順、`DATABASE_URL` 切替方法、検証クエリ                                                                           | Created          |
 
 > 各ファイルは単一責務。スキーマ 1 ファイル、型 1 ファイル、シードデータ 7 ファイル（カテゴリ 6 + 集約 1）、スクリプト 1 ファイル、ドキュメント 1 ファイル、修正 2 ファイル（schema/index.ts、root package.json）。シードファイルは 1 ファイルあたり 30〜600 行（D-01 などフルパターンは 30-50 行 × 件数）。
 
@@ -270,64 +270,64 @@ bulr-app-mvp/
 
 ## Requirements Traceability
 
-| Requirement | Summary | Components | Interfaces | Flows |
-|-------------|---------|------------|------------|-------|
-| 1.1 | `assessmentPattern` Drizzle pgTable export | SchemaModule | `packages/db/src/schema/assessment-pattern.ts` | import フロー |
-| 1.2 | 全カラム snake_case 定義 | SchemaModule | pgTable 定義 | DDL フロー |
-| 1.3 | category enum フル文字列 | SchemaModule | pgEnum('pattern_category', ...) | DDL フロー |
-| 1.4 | code regex `^[DTPSOA]-\d{2}$` | TypesModule + SeedFiles | TypeScript 型 + 実値 | typecheck フロー |
-| 1.5 | scope min/max は 1-5 | TypesModule + SchemaModule | リテラル型 + integer 列 | typecheck + DDL フロー |
-| 1.6 | code UNIQUE | SchemaModule | uniqueIndex / .unique() | DDL フロー |
-| 1.7 | is_active default true | SchemaModule | boolean default | DDL フロー |
-| 2.1 | drizzle-kit generate でマイグレーション生成 | MigrationFile | `*_assessment_patterns.sql` glob | generate フロー |
-| 2.2 | dev push 成功 | MigrationFile + DbPackage scripts | drizzle-kit push | push フロー |
-| 2.3 | prod migrate 成功 | MigrationFile + DbPackage scripts | drizzle-kit migrate | migrate フロー |
-| 2.4 | スキーマ差分なしなら追加生成しない | drizzle-kit 標準 | drizzle-kit | generate フロー |
-| 2.5 | ドキュメントは番号ハードコードしない | SetupDoc | `docs/setup/seed.md` | doc フロー |
-| 3.1 | PatternCategory ユニオン定義（pgEnum 派生） | SchemaModule | `packages/db/src/schema/assessment-pattern.ts` | pgEnum 派生フロー |
-| 3.2 | AssessmentPatternSeed 型定義 | TypesModule | TypeScript interface/type | import フロー |
-| 3.3 | code 型レベル制約 | TypesModule | template literal type 推奨 | typecheck フロー |
-| 3.4 | signals 配列型 | TypesModule | `readonly string[]` | typecheck フロー |
-| 3.5 | scope min/max リテラル型 | TypesModule | `1 \| 2 \| 3 \| 4 \| 5` | typecheck フロー |
-| 4.1 | 6 ファイル全存在 | SeedFiles | filesystem | seed 投入フロー |
-| 4.2-4.7 | 各ファイル件数 (15/12/8/8/8/6) | SeedFiles | named export 配列 | seed 投入フロー |
-| 4.8 | 集約 index 57 件 | SeedAggregator | `assessment-patterns.ts` | seed 投入フロー |
-| 4.9 | category とファイル名一致 | SeedFiles | TypeScript 型強制 | typecheck フロー |
-| 4.10 | code 重複なし + プレフィックス一致 | SeedFiles + SeedAggregator | runtime 件数チェック | seed 投入フロー |
-| 5.1-5.5 | Markdown 内容との一致 | SeedFiles + 手動レビュー | PR diff レビュー | 転記 + レビューフロー |
-| 5.6 | ドキュメント正の運用 | SetupDoc | `docs/setup/seed.md` 注記 | doc フロー |
-| 6.1 | tsx で DATABASE_URL 参照 | SeedScript | `scripts/seed-assessment-patterns.ts` | seed 投入フロー |
-| 6.2 | db.transaction + onConflictDoUpdate | SeedScript | Drizzle API | seed 投入フロー |
-| 6.3 | SET 句に is_active を含まない | SeedScript | onConflictDoUpdate set 構築 | seed 投入フロー |
-| 6.4 | SET 句に updated_at | SeedScript | onConflictDoUpdate set 構築 | seed 投入フロー |
-| 6.5 | 2 回連続実行で件数不変 | SeedScript | idempotent upsert | seed 投入フロー |
-| 6.6 | カテゴリ別 + 総数を console.log | SeedScript | `console.log` | seed 投入フロー |
-| 6.7 | 期待件数不一致時に warn | SeedScript | `console.warn`/`console.error` | seed 投入フロー |
-| 6.8 | 本番投入は明示的コマンド | SeedScript + SetupDoc | 環境変数切替手順 | doc フロー |
-| 7.1 | seed:patterns コマンド | RootPackageJson | `scripts.seed:patterns` | seed 投入フロー |
-| 7.2 | 既存 scripts に影響なし | RootPackageJson | `package.json` 追記のみ | typecheck フロー |
-| 7.3 | tsx 存在 | DbPackage devDeps | 既存 | seed 投入フロー |
-| 8.1 | seed.md 存在 | SetupDoc | `docs/setup/seed.md` | doc フロー |
-| 8.2 | DATABASE_URL 切替記載 | SetupDoc | `docs/setup/seed.md` | doc フロー |
-| 8.3 | マイグレーション名 glob 表現 | SetupDoc | `docs/setup/seed.md` | doc フロー |
-| 8.4 | 検証クエリ記載 | SetupDoc | `docs/setup/seed.md` | doc フロー |
-| 9.1 | total = 57 ログ | SeedScript | `console.log` | seed 投入フロー |
-| 9.2 | カテゴリ別件数ログ | SeedScript | `console.log` | seed 投入フロー |
-| 9.3 | 総数不一致時 warn | SeedScript | `console.error` | seed 投入フロー |
-| 9.4 | 期待値と実測値の両方 | SeedScript | `console.error` | seed 投入フロー |
+| Requirement | Summary                                     | Components                        | Interfaces                                     | Flows                  |
+| ----------- | ------------------------------------------- | --------------------------------- | ---------------------------------------------- | ---------------------- |
+| 1.1         | `assessmentPattern` Drizzle pgTable export  | SchemaModule                      | `packages/db/src/schema/assessment-pattern.ts` | import フロー          |
+| 1.2         | 全カラム snake_case 定義                    | SchemaModule                      | pgTable 定義                                   | DDL フロー             |
+| 1.3         | category enum フル文字列                    | SchemaModule                      | pgEnum('pattern_category', ...)                | DDL フロー             |
+| 1.4         | code regex `^[DTPSOA]-\d{2}$`               | TypesModule + SeedFiles           | TypeScript 型 + 実値                           | typecheck フロー       |
+| 1.5         | scope min/max は 1-5                        | TypesModule + SchemaModule        | リテラル型 + integer 列                        | typecheck + DDL フロー |
+| 1.6         | code UNIQUE                                 | SchemaModule                      | uniqueIndex / .unique()                        | DDL フロー             |
+| 1.7         | is_active default true                      | SchemaModule                      | boolean default                                | DDL フロー             |
+| 2.1         | drizzle-kit generate でマイグレーション生成 | MigrationFile                     | `*_assessment_patterns.sql` glob               | generate フロー        |
+| 2.2         | dev push 成功                               | MigrationFile + DbPackage scripts | drizzle-kit push                               | push フロー            |
+| 2.3         | prod migrate 成功                           | MigrationFile + DbPackage scripts | drizzle-kit migrate                            | migrate フロー         |
+| 2.4         | スキーマ差分なしなら追加生成しない          | drizzle-kit 標準                  | drizzle-kit                                    | generate フロー        |
+| 2.5         | ドキュメントは番号ハードコードしない        | SetupDoc                          | `docs/setup/seed.md`                           | doc フロー             |
+| 3.1         | PatternCategory ユニオン定義（pgEnum 派生） | SchemaModule                      | `packages/db/src/schema/assessment-pattern.ts` | pgEnum 派生フロー      |
+| 3.2         | AssessmentPatternSeed 型定義                | TypesModule                       | TypeScript interface/type                      | import フロー          |
+| 3.3         | code 型レベル制約                           | TypesModule                       | template literal type 推奨                     | typecheck フロー       |
+| 3.4         | signals 配列型                              | TypesModule                       | `readonly string[]`                            | typecheck フロー       |
+| 3.5         | scope min/max リテラル型                    | TypesModule                       | `1 \| 2 \| 3 \| 4 \| 5`                        | typecheck フロー       |
+| 4.1         | 6 ファイル全存在                            | SeedFiles                         | filesystem                                     | seed 投入フロー        |
+| 4.2-4.7     | 各ファイル件数 (15/12/8/8/8/6)              | SeedFiles                         | named export 配列                              | seed 投入フロー        |
+| 4.8         | 集約 index 57 件                            | SeedAggregator                    | `assessment-patterns.ts`                       | seed 投入フロー        |
+| 4.9         | category とファイル名一致                   | SeedFiles                         | TypeScript 型強制                              | typecheck フロー       |
+| 4.10        | code 重複なし + プレフィックス一致          | SeedFiles + SeedAggregator        | runtime 件数チェック                           | seed 投入フロー        |
+| 5.1-5.5     | Markdown 内容との一致                       | SeedFiles + 手動レビュー          | PR diff レビュー                               | 転記 + レビューフロー  |
+| 5.6         | ドキュメント正の運用                        | SetupDoc                          | `docs/setup/seed.md` 注記                      | doc フロー             |
+| 6.1         | tsx で DATABASE_URL 参照                    | SeedScript                        | `scripts/seed-assessment-patterns.ts`          | seed 投入フロー        |
+| 6.2         | db.transaction + onConflictDoUpdate         | SeedScript                        | Drizzle API                                    | seed 投入フロー        |
+| 6.3         | SET 句に is_active を含まない               | SeedScript                        | onConflictDoUpdate set 構築                    | seed 投入フロー        |
+| 6.4         | SET 句に updated_at                         | SeedScript                        | onConflictDoUpdate set 構築                    | seed 投入フロー        |
+| 6.5         | 2 回連続実行で件数不変                      | SeedScript                        | idempotent upsert                              | seed 投入フロー        |
+| 6.6         | カテゴリ別 + 総数を console.log             | SeedScript                        | `console.log`                                  | seed 投入フロー        |
+| 6.7         | 期待件数不一致時に warn                     | SeedScript                        | `console.warn`/`console.error`                 | seed 投入フロー        |
+| 6.8         | 本番投入は明示的コマンド                    | SeedScript + SetupDoc             | 環境変数切替手順                               | doc フロー             |
+| 7.1         | seed:patterns コマンド                      | RootPackageJson                   | `scripts.seed:patterns`                        | seed 投入フロー        |
+| 7.2         | 既存 scripts に影響なし                     | RootPackageJson                   | `package.json` 追記のみ                        | typecheck フロー       |
+| 7.3         | tsx 存在                                    | DbPackage devDeps                 | 既存                                           | seed 投入フロー        |
+| 8.1         | seed.md 存在                                | SetupDoc                          | `docs/setup/seed.md`                           | doc フロー             |
+| 8.2         | DATABASE_URL 切替記載                       | SetupDoc                          | `docs/setup/seed.md`                           | doc フロー             |
+| 8.3         | マイグレーション名 glob 表現                | SetupDoc                          | `docs/setup/seed.md`                           | doc フロー             |
+| 8.4         | 検証クエリ記載                              | SetupDoc                          | `docs/setup/seed.md`                           | doc フロー             |
+| 9.1         | total = 57 ログ                             | SeedScript                        | `console.log`                                  | seed 投入フロー        |
+| 9.2         | カテゴリ別件数ログ                          | SeedScript                        | `console.log`                                  | seed 投入フロー        |
+| 9.3         | 総数不一致時 warn                           | SeedScript                        | `console.error`                                | seed 投入フロー        |
+| 9.4         | 期待値と実測値の両方                        | SeedScript                        | `console.error`                                | seed 投入フロー        |
 
 ## Components and Interfaces
 
-| Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
-|-----------|--------------|--------|--------------|--------------------------|-----------|
-| SchemaModule | packages/db (schema) | `assessment_pattern` テーブル + `pattern_category` enum を Drizzle で定義 | 1.1, 1.2, 1.3, 1.5, 1.6, 1.7 | drizzle-orm 0.45 (P0), nanoid 5 (P0) | State |
-| MigrationFile | packages/db (drizzle) | drizzle-kit が生成する DDL（CREATE TYPE + CREATE TABLE + UNIQUE INDEX） | 2.1, 2.2, 2.3, 2.4 | drizzle-kit 0.31 (P0), Postgres 接続 (P0) | State |
-| TypesModule | packages/db (seeds) | `AssessmentPatternSeed` / `PatternCategory` 型を提供 | 1.4, 3.1, 3.2, 3.3, 3.4, 3.5 | TypeScript 5.x (P0) | State |
-| SeedFiles | packages/db (seeds/patterns) | 6 ファイル × 57 件のシードデータ本体 | 4.1-4.10, 5.1-5.5 | TypesModule (P0) | State |
-| SeedAggregator | packages/db (seeds) | 6 ファイルを集約 + `countByCategory` 純関数 | 4.8, 4.10, 9.2 | SeedFiles (P0) | Service |
-| SeedScript | scripts | `db.transaction` + `onConflictDoUpdate`、件数ログ | 6.1-6.8, 9.1-9.4 | SchemaModule (P0), SeedAggregator (P0), `db` client (P0), tsx (P0) | Batch |
-| RootPackageJson | root | `pnpm seed:patterns` コマンド登録 | 7.1, 7.2, 7.3 | tsx (P0) | State |
-| SetupDoc | docs | `docs/setup/seed.md`：投入手順 + 検証クエリ + glob 表現 | 2.5, 5.6, 6.8, 8.1-8.4 | （該当なし） | State |
+| Component       | Domain/Layer                 | Intent                                                                    | Req Coverage                 | Key Dependencies (P0/P1)                                           | Contracts |
+| --------------- | ---------------------------- | ------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------ | --------- |
+| SchemaModule    | packages/db (schema)         | `assessment_pattern` テーブル + `pattern_category` enum を Drizzle で定義 | 1.1, 1.2, 1.3, 1.5, 1.6, 1.7 | drizzle-orm 0.45 (P0), nanoid 5 (P0)                               | State     |
+| MigrationFile   | packages/db (drizzle)        | drizzle-kit が生成する DDL（CREATE TYPE + CREATE TABLE + UNIQUE INDEX）   | 2.1, 2.2, 2.3, 2.4           | drizzle-kit 0.31 (P0), Postgres 接続 (P0)                          | State     |
+| TypesModule     | packages/db (seeds)          | `AssessmentPatternSeed` / `PatternCategory` 型を提供                      | 1.4, 3.1, 3.2, 3.3, 3.4, 3.5 | TypeScript 5.x (P0)                                                | State     |
+| SeedFiles       | packages/db (seeds/patterns) | 6 ファイル × 57 件のシードデータ本体                                      | 4.1-4.10, 5.1-5.5            | TypesModule (P0)                                                   | State     |
+| SeedAggregator  | packages/db (seeds)          | 6 ファイルを集約 + `countByCategory` 純関数                               | 4.8, 4.10, 9.2               | SeedFiles (P0)                                                     | Service   |
+| SeedScript      | scripts                      | `db.transaction` + `onConflictDoUpdate`、件数ログ                         | 6.1-6.8, 9.1-9.4             | SchemaModule (P0), SeedAggregator (P0), `db` client (P0), tsx (P0) | Batch     |
+| RootPackageJson | root                         | `pnpm seed:patterns` コマンド登録                                         | 7.1, 7.2, 7.3                | tsx (P0)                                                           | State     |
+| SetupDoc        | docs                         | `docs/setup/seed.md`：投入手順 + 検証クエリ + glob 表現                   | 2.5, 5.6, 6.8, 8.1-8.4       | （該当なし）                                                       | State     |
 
 > 全コンポーネントが「スキーマ + データ + スクリプト」中心のため、外部 API contract や複雑な Service interface は不要。SeedScript のみが Batch 契約を持つ（実行 → DB upsert + ログ出力）。
 
@@ -335,11 +335,11 @@ bulr-app-mvp/
 
 #### SchemaModule
 
-| Field | Detail |
-|-------|--------|
-| Intent | `assessment_pattern` テーブルと `pattern_category` enum を Drizzle で定義 |
-| Requirements | 1.1, 1.2, 1.3, 1.5, 1.6, 1.7 |
-| Owner / Reviewers | 創業者 + DB スキーマレビュア |
+| Field             | Detail                                                                    |
+| ----------------- | ------------------------------------------------------------------------- |
+| Intent            | `assessment_pattern` テーブルと `pattern_category` enum を Drizzle で定義 |
+| Requirements      | 1.1, 1.2, 1.3, 1.5, 1.6, 1.7                                              |
+| Owner / Reviewers | 創業者 + DB スキーマレビュア                                              |
 
 **Responsibilities & Constraints**
 
@@ -392,10 +392,10 @@ bulr-app-mvp/
 
 #### MigrationFile
 
-| Field | Detail |
-|-------|--------|
-| Intent | drizzle-kit generate が出力する DDL ファイル |
-| Requirements | 2.1, 2.2, 2.3, 2.4 |
+| Field        | Detail                                       |
+| ------------ | -------------------------------------------- |
+| Intent       | drizzle-kit generate が出力する DDL ファイル |
+| Requirements | 2.1, 2.2, 2.3, 2.4                           |
 
 **Responsibilities & Constraints**
 
@@ -423,10 +423,10 @@ bulr-app-mvp/
 
 #### TypesModule
 
-| Field | Detail |
-|-------|--------|
-| Intent | シードデータ用の TypeScript 型を提供 |
-| Requirements | 1.4, 3.1, 3.2, 3.3, 3.4, 3.5 |
+| Field        | Detail                               |
+| ------------ | ------------------------------------ |
+| Intent       | シードデータ用の TypeScript 型を提供 |
+| Requirements | 1.4, 3.1, 3.2, 3.3, 3.4, 3.5         |
 
 **Responsibilities & Constraints**
 
@@ -448,7 +448,7 @@ bulr-app-mvp/
     level_4_focus: string;
     signals: readonly string[];
     ai_perspective: string;
-    is_active?: boolean;  // デフォルト true、INSERT のみ反映
+    is_active?: boolean; // デフォルト true、INSERT のみ反映
   };
   ```
 - snake_case フィールド名を採用（DB カラム名と 1:1、シード投入時にマップ不要）
@@ -469,10 +469,10 @@ bulr-app-mvp/
 
 #### SeedFiles
 
-| Field | Detail |
-|-------|--------|
-| Intent | カテゴリ別 6 ファイルに 57 件のシードオブジェクトを配置 |
-| Requirements | 4.1-4.10, 5.1-5.5 |
+| Field        | Detail                                                  |
+| ------------ | ------------------------------------------------------- |
+| Intent       | カテゴリ別 6 ファイルに 57 件のシードオブジェクトを配置 |
+| Requirements | 4.1-4.10, 5.1-5.5                                       |
 
 **Responsibilities & Constraints**
 
@@ -503,10 +503,10 @@ bulr-app-mvp/
 
 #### SeedAggregator
 
-| Field | Detail |
-|-------|--------|
-| Intent | 6 ファイルを集約し、件数チェック純関数を提供 |
-| Requirements | 4.8, 4.10, 9.2 |
+| Field        | Detail                                       |
+| ------------ | -------------------------------------------- |
+| Intent       | 6 ファイルを集約し、件数チェック純関数を提供 |
+| Requirements | 4.8, 4.10, 9.2                               |
 
 **Responsibilities & Constraints**
 
@@ -533,7 +533,7 @@ import { securityPatterns } from './patterns/security';
 import { organizationPatterns } from './patterns/organization';
 import { aiPatterns } from './patterns/ai';
 import type { AssessmentPatternSeed } from './types';
-import type { PatternCategory } from '../schema/assessment-pattern';  // pgEnum 派生型
+import type { PatternCategory } from '../schema/assessment-pattern'; // pgEnum 派生型
 
 export const assessmentPatterns: readonly AssessmentPatternSeed[] = [
   ...designPatterns,
@@ -554,10 +554,15 @@ export const EXPECTED_COUNTS: Readonly<Record<PatternCategory, number>> = {
 } as const;
 
 export function countByCategory(
-  patterns: readonly AssessmentPatternSeed[]
+  patterns: readonly AssessmentPatternSeed[],
 ): Record<PatternCategory, number> {
   const counts: Record<PatternCategory, number> = {
-    design: 0, trouble: 0, performance: 0, security: 0, organization: 0, ai: 0,
+    design: 0,
+    trouble: 0,
+    performance: 0,
+    security: 0,
+    organization: 0,
+    ai: 0,
   };
   for (const p of patterns) counts[p.category]++;
   return counts;
@@ -578,10 +583,10 @@ export function countByCategory(
 
 #### SeedScript
 
-| Field | Detail |
-|-------|--------|
-| Intent | `db.transaction` で 57 件を idempotent upsert + 件数ログ |
-| Requirements | 6.1-6.8, 9.1-9.4 |
+| Field        | Detail                                                   |
+| ------------ | -------------------------------------------------------- |
+| Intent       | `db.transaction` で 57 件を idempotent upsert + 件数ログ |
+| Requirements | 6.1-6.8, 9.1-9.4                                         |
 
 **Responsibilities & Constraints**
 
@@ -634,10 +639,10 @@ export function countByCategory(
 
 #### RootPackageJson
 
-| Field | Detail |
-|-------|--------|
-| Intent | `pnpm seed:patterns` コマンドを提供 |
-| Requirements | 7.1, 7.2, 7.3 |
+| Field        | Detail                              |
+| ------------ | ----------------------------------- |
+| Intent       | `pnpm seed:patterns` コマンドを提供 |
+| Requirements | 7.1, 7.2, 7.3                       |
 
 **Responsibilities & Constraints**
 
@@ -660,10 +665,10 @@ export function countByCategory(
 
 #### SetupDoc
 
-| Field | Detail |
-|-------|--------|
-| Intent | 投入手順 + 検証クエリのドキュメント |
-| Requirements | 2.5, 5.6, 6.8, 8.1-8.4 |
+| Field        | Detail                              |
+| ------------ | ----------------------------------- |
+| Intent       | 投入手順 + 検証クエリのドキュメント |
+| Requirements | 2.5, 5.6, 6.8, 8.1-8.4              |
 
 **Responsibilities & Constraints**
 
@@ -735,7 +740,9 @@ export const patternCategory = pgEnum('pattern_category', [
 ]);
 
 export const assessmentPattern = pgTable('assessment_pattern', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
   code: text('code').notNull().unique(),
   category: patternCategory('category').notNull(),
   title: text('title').notNull(),
@@ -789,6 +796,7 @@ graph TB
 ```
 
 ステップ：
+
 1. SchemaModule を実装、`schema/index.ts` を更新
 2. `pnpm --filter @bulr/db generate` でマイグレーション生成（連番は drizzle-kit 決定、glob で参照）
 3. 生成 SQL をレビュー（テーブル名・カラム名・enum 値の型チェック）
@@ -803,15 +811,15 @@ graph TB
 
 本 spec は設定 + データ層のため、独自のエラーハンドリングは限定的。SeedScript と drizzle-kit に標準的なエラー対応を委譲：
 
-| 失敗モード | 検知 | 対応 |
-|-----------|------|------|
-| `DATABASE_URL` 未定義 | SeedScript 起動時 | throw `Error('DATABASE_URL is not defined')` |
-| Postgres 接続失敗 | `pg.Pool` のエラー | throw を伝播、開発者がログを見て対応 |
-| `code` UNIQUE 違反（マイグレーション未適用） | DB エラー | throw、`pnpm --filter @bulr/db push` 実行を促す |
-| `enum` 不正値 | TypeScript 型でブロック → 万一すり抜けたら DB エラー | throw、シードファイルの category を修正 |
-| 件数不一致（57 件にならない） | `countByCategory` 比較 | `console.error` で `expected = {...}, actual = {...}` を出力（プロセスは正常終了、開発者が気付く） |
-| トランザクション内でいずれかの行が失敗 | `db.transaction` のロールバック | エラーを throw、全件ロールバック |
-| マイグレーション差分なし時の generate | drizzle-kit の標準動作 | 新規ファイルが生成されないだけ、エラーなし |
+| 失敗モード                                   | 検知                                                 | 対応                                                                                               |
+| -------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL` 未定義                        | SeedScript 起動時                                    | throw `Error('DATABASE_URL is not defined')`                                                       |
+| Postgres 接続失敗                            | `pg.Pool` のエラー                                   | throw を伝播、開発者がログを見て対応                                                               |
+| `code` UNIQUE 違反（マイグレーション未適用） | DB エラー                                            | throw、`pnpm --filter @bulr/db push` 実行を促す                                                    |
+| `enum` 不正値                                | TypeScript 型でブロック → 万一すり抜けたら DB エラー | throw、シードファイルの category を修正                                                            |
+| 件数不一致（57 件にならない）                | `countByCategory` 比較                               | `console.error` で `expected = {...}, actual = {...}` を出力（プロセスは正常終了、開発者が気付く） |
+| トランザクション内でいずれかの行が失敗       | `db.transaction` のロールバック                      | エラーを throw、全件ロールバック                                                                   |
+| マイグレーション差分なし時の generate        | drizzle-kit の標準動作                               | 新規ファイルが生成されないだけ、エラーなし                                                         |
 
 ### Monitoring
 
@@ -886,7 +894,7 @@ graph TB
 
 - **マイグレーション連番の管理**: drizzle-kit が `0000_xxx.sql`、`0001_xxx.sql` の連番で生成するが、複数 spec が並行で migration を生成する場合に番号衝突が起こる可能性 → 本 spec が最初の migration（番号 0000 想定）、後続 spec が 0001、0002... の順で連番付与される。並行開発時は merge 時に renumber する運用ルールを `docs/setup/seed.md` に追記
 - **`tsx` の解決パス**: ルート `package.json` の `scripts.seed:patterns` から `tsx scripts/...` を直接呼ぶ場合、ルートに `tsx` が存在しないと失敗する可能性 → 実装時に `pnpm exec tsx` または `pnpm --filter @bulr/db exec tsx` 形式に変更する判断、または `tsx` をルート devDeps にも追加する
-- **`AssessmentPatternCode` 型の厳密度**: template literal type で全 57 コードを完全列挙すると型サイズ肥大化 → `\`${'D'|'T'|'P'|'S'|'O'|'A'}-${string}\`` 程度の緩い制約 + runtime regex 検証（SeedScript で `code.match(/^[DTPSOA]-\d{2}$/)` を全件チェック）で妥協
+- **`AssessmentPatternCode` 型の厳密度**: template literal type で全 57 コードを完全列挙すると型サイズ肥大化 → `\`${'D'|'T'|'P'|'S'|'O'|'A'}-${string}\``程度の緩い制約 + runtime regex 検証（SeedScript で`code.match(/^[DTPSOA]-\d{2}$/)` を全件チェック）で妥協
 - **Markdown と TypeScript の自動同期**: 将来的に Markdown → TypeScript の自動変換ツールがほしくなる可能性 → Stage 2 で検討、Stage 1 では手動転記 + PR レビューで運用
 - **`signals` 配列の最小長**: 真贋シグナルが 1 件以上必要かどうか → `docs/03-probe-logic.md` で全パターンに最低 3-5 件のシグナルが定義されているため、空配列にはならない想定。runtime での最小長チェックは out of scope（必要時に SeedScript に追加）
 - **v2 用途変更（LLM が面接官に提案する素材）の影響**: 本 spec のスキーマ・シード内容には影響しない（用途変更は `assessment-engine` spec の LLM プロンプト設計の話）。本 design は変更不要

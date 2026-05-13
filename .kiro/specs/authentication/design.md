@@ -209,6 +209,7 @@ graph TB
 ```
 
 **Architecture Integration**:
+
 - **Selected pattern**: 4 層多層認証（proxy.ts → Server Component → Server Action → API Route）。proxy.ts は UX 専任、各 server-side レイヤーで `requireUser` / `requireAdmin` を独立呼び出し。CVE-2025-29927 教訓（middleware の bypass 攻撃）を proxy.ts JSDoc に明記し、認可を proxy.ts に依存しない構造を強制
 - **Domain/feature boundaries**: Better Auth は `apps/web/lib/auth/` に閉じ、外部から直接 `auth.api` を呼ばず必ず `lib/guards.ts` 経由で `requireUser` / `requireAdmin` を使う。Server Action は必ず `safe-action.ts` の `authedAction` / `adminAction` でラップ。素の `async function` で Server Action を書かない方針をファイルヘッダコメントで強制
 - **Existing patterns preserved**: `monorepo-foundation` の Drizzle スキーマ配置（`packages/db/src/schema/`）、`multi-env-infrastructure` の環境変数規約（12 変数）を維持。`packages/auth` は作らず apps/web/lib/auth/ に直書き
@@ -217,16 +218,16 @@ graph TB
 
 ### Technology Stack
 
-| Layer | Choice / Version | Role in Feature | Notes |
-|-------|------------------|-----------------|-------|
-| Auth Core | Better Auth 1.6.x | Magic Link 認証、セッション管理、databaseHooks | Magic Link プラグイン同梱、`apps/web/package.json` に追加 |
-| Email | Resend 公式 SDK ^4.0.0 | Magic Link 配信 | `RESEND_API_KEY` 必須、Stage 1 は `onboarding@resend.dev` 送信 |
-| Validation | Zod 4.x（既設） | メール / Basic 認証情報 / 面接官プロファイル入力検証 | `apps/web/lib/auth/schemas.ts` に集約 |
-| DB | Drizzle ORM 0.45.x（既設） | Better Auth テーブル + user_profile + rate_limit | `pg` ドライバ、Neon Postgres |
-| Migration | drizzle-kit 0.31.x（既設） | スキーマ反映 | dev: push、production: generate + migrate、ファイル名は drizzle-kit 決定 |
-| Frontend | Next.js 16 + React 19 + Tailwind CSS 4（既設） | サインイン UI、admin login UI、smoke test ページ | App Router、Server Components 中心 |
-| Proxy | Next.js 16 proxy.ts（旧 middleware.ts） | UX リダイレクト + Basic 認証チェック | `apps/web/proxy.ts`、JSDoc に CVE-2025-29927 教訓明記 |
-| Rate Limit Storage | Neon Postgres（既設）| Magic Link メール / IP レート制限 | DB ベース必須（Vercel Functions メモリ非共有） |
+| Layer              | Choice / Version                               | Role in Feature                                      | Notes                                                                    |
+| ------------------ | ---------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| Auth Core          | Better Auth 1.6.x                              | Magic Link 認証、セッション管理、databaseHooks       | Magic Link プラグイン同梱、`apps/web/package.json` に追加                |
+| Email              | Resend 公式 SDK ^4.0.0                         | Magic Link 配信                                      | `RESEND_API_KEY` 必須、Stage 1 は `onboarding@resend.dev` 送信           |
+| Validation         | Zod 4.x（既設）                                | メール / Basic 認証情報 / 面接官プロファイル入力検証 | `apps/web/lib/auth/schemas.ts` に集約                                    |
+| DB                 | Drizzle ORM 0.45.x（既設）                     | Better Auth テーブル + user_profile + rate_limit     | `pg` ドライバ、Neon Postgres                                             |
+| Migration          | drizzle-kit 0.31.x（既設）                     | スキーマ反映                                         | dev: push、production: generate + migrate、ファイル名は drizzle-kit 決定 |
+| Frontend           | Next.js 16 + React 19 + Tailwind CSS 4（既設） | サインイン UI、admin login UI、smoke test ページ     | App Router、Server Components 中心                                       |
+| Proxy              | Next.js 16 proxy.ts（旧 middleware.ts）        | UX リダイレクト + Basic 認証チェック                 | `apps/web/proxy.ts`、JSDoc に CVE-2025-29927 教訓明記                    |
+| Rate Limit Storage | Neon Postgres（既設）                          | Magic Link メール / IP レート制限                    | DB ベース必須（Vercel Functions メモリ非共有）                           |
 
 ## File Structure Plan
 
@@ -381,135 +382,136 @@ sequenceDiagram
 
 ## Requirements Traceability
 
-| Requirement | Summary | Components | Interfaces | Flows |
-|-------------|---------|------------|------------|-------|
-| 1.1 | Better Auth サーバー設定存在 | AuthServer | apps/web/lib/auth/server.ts | Magic Link |
-| 1.2 | Better Auth クライアント設定存在 | AuthClient | apps/web/lib/auth/client.ts | Magic Link |
-| 1.3 | Magic Link 15 分有効期限 + 使い切り | AuthServer | server.ts plugin config | Magic Link |
-| 1.4 | HttpOnly + Secure + SameSite=Lax | AuthServer | server.ts session config | — |
-| 1.5 | BETTER_AUTH_SECRET 必須 | AuthServer | env var | — |
-| 1.6 | BETTER_AUTH_URL 読み取り | AuthServer | env var | Magic Link |
-| 1.7 | API ルート公開 | BetterAuthApiRoute | apps/web/app/api/auth/[...all]/route.ts | Magic Link |
-| 1.8 | サインイン → Magic Link 送信 | SignInPage + AuthClient + AuthServer + ResendClient | client.ts | Magic Link |
-| 1.9 | リンククリック → セッション開始 + redirect | AuthServer + BetterAuthApiRoute | server.ts | Magic Link |
-| 1.10 | 期限切れ/使用済みエラー | AuthServer | server.ts | Magic Link |
-| 2.1 | Resend クライアント初期化 | ResendClient | apps/web/lib/email/resend.ts | Magic Link |
-| 2.2 | RESEND_API_KEY 未設定で throw | ResendClient | resend.ts | — |
-| 2.3 | 日本語+英語並記テンプレート | MagicLinkTemplate | apps/web/lib/email/templates/magic-link.ts | Magic Link |
-| 2.4 | 件名・本文に面接官向けメッセージ + 15 分失効 | MagicLinkTemplate | magic-link.ts | — |
-| 2.5 | サインインリンク URL 明示 | MagicLinkTemplate | magic-link.ts | Magic Link |
-| 2.6 | 送信元 onboarding@resend.dev (Stage 1) | ResendClient + MagicLinkTemplate | resend.ts | Magic Link |
-| 2.7 | sendMagicLink → Resend 配信 | AuthServer + ResendClient | server.ts | Magic Link |
-| 2.8 | 個人情報を含まない | MagicLinkTemplate | magic-link.ts | — |
-| 3.1 | HttpOnly Cookie | AuthServer | server.ts session config | — |
-| 3.2 | Secure 属性 (本番) | AuthServer | server.ts | — |
-| 3.3 | SameSite=Lax | AuthServer | server.ts | — |
-| 3.4 | デフォルト 7 日間 | AuthServer | server.ts session.expiresIn | — |
-| 3.5 | sliding expiration | AuthServer | server.ts session.updateAge | — |
-| 3.6 | サインアウトで cookie 無効化 | AuthClient + BetterAuthApiRoute | client.ts | — |
-| 3.7 | 期限切れ → /sign-in リダイレクト (UX) | Proxy | proxy.ts | — |
-| 3.8 | 各レイヤーで requireUser 独立 | Guards | guards.ts | — |
-| 4.1 | proxy.ts /admin/* Basic 認証 | Proxy | proxy.ts | Admin |
-| 4.2 | 401 + WWW-Authenticate | Proxy | proxy.ts | Admin |
-| 4.3 | requireAdmin() 二重チェック | Guards | guards.ts | Admin |
-| 4.4 | /admin/* で requireAdmin 必須 | Guards + 全 admin Server Component | guards.ts | Admin |
-| 4.5 | /admin/login UI | AdminLoginPage | apps/web/app/admin/login/page.tsx | Admin |
-| 4.6 | proxy.ts は session 検証しない | Proxy | proxy.ts | — |
-| 4.7 | ADMIN_ALLOWED_EMAILS 未設定で fail secure | Guards | guards.ts | — |
-| 4.8 | /admin/_health smoke test | AdminHealthPage | apps/web/app/admin/_health/page.tsx | Admin |
-| 5.1 | AuthError class | Guards | guards.ts | — |
-| 5.2 | getCurrentUser | Guards | guards.ts | — |
-| 5.3 | requireUser | Guards | guards.ts | — |
-| 5.4 | requireAdmin | Guards | guards.ts | Admin |
-| 5.5 | requireSessionOwnership | Guards | guards.ts | — |
-| 5.6 | authedAction | SafeAction | safe-action.ts | — |
-| 5.7 | authedAction 内部で requireUser + Zod parse + handler | SafeAction | safe-action.ts | — |
-| 5.8 | adminAction | SafeAction | safe-action.ts | — |
-| 5.9 | サードパーティ非依存 | SafeAction | safe-action.ts | — |
-| 5.10 | ファイルヘッダで方針明示 | SafeAction | safe-action.ts | — |
-| 6.1 | proxy.ts ファイル存在 | Proxy | apps/web/proxy.ts | — |
-| 6.2 | JSDoc に CVE-2025-29927 教訓 | Proxy | proxy.ts | — |
-| 6.3 | /interviews/* 未認証で /sign-in | Proxy | proxy.ts | — |
-| 6.4 | /admin/* Basic 認証チェック | Proxy | proxy.ts | Admin |
-| 6.5 | /admin/* Basic NG → 401 | Proxy | proxy.ts | Admin |
-| 6.6 | /admin/_health 含めて Basic 必須 | Proxy | proxy.ts | Admin |
-| 6.7 | matcher 設定 | Proxy | proxy.ts config.matcher | — |
-| 6.8 | bypass 攻撃でも Layer 2 で防御 | Guards + 全 Server Component | guards.ts | — |
-| 6.9 | proxy.ts は cookie 存在のみ確認 | Proxy | proxy.ts | — |
-| 7.1 | Better Auth 管理テーブル | DbAuthSchema | packages/db/src/schema/auth.ts | — |
-| 7.2 | user_profile テーブル | DbUserProfileSchema | packages/db/src/schema/user-profile.ts | — |
-| 7.3 | rate_limit テーブル | DbRateLimitSchema | packages/db/src/schema/rate-limit.ts | — |
-| 7.4 | バレルエクスポート | DbSchemaIndex | packages/db/src/schema/index.ts | — |
-| 7.5 | databaseHooks.user.create.after で user_profile 作成 | AuthServer | server.ts | Magic Link |
-| 7.6 | hook 失敗時の挙動 | AuthServer | server.ts | — |
-| 7.7 | drizzle-kit migration 生成 | DrizzleMigration | packages/db/drizzle/*_authentication.sql | — |
-| 7.8 | push で 6 テーブル作成 | DrizzleMigration | drizzle-kit | — |
-| 7.9 | 新規 user で user_profile 自動作成 | AuthServer | server.ts hook | Magic Link |
-| 8.1 | email:<email> 5min 3 回チェック | RateLimitTs + AuthServer | rate-limit.ts | Magic Link |
-| 8.2 | 制限超過時 UI メッセージ | SignInPage + RateLimitTs | sign-in/page.tsx | Magic Link |
-| 8.3 | ip:<ip> 1hour 20 回チェック | RateLimitTs + AuthServer | rate-limit.ts | Magic Link |
-| 8.4 | IP 制限超過時 汎用エラー | SignInPage + RateLimitTs | sign-in/page.tsx | Magic Link |
-| 8.5 | INSERT ... ON CONFLICT | RateLimitTs | rate-limit.ts | — |
-| 8.6 | DB ベース必須 (Vercel mem 非共有) | RateLimitTs | rate-limit.ts | — |
-| 8.7 | クリーンアップ Cron は Stage 2 | RateLimitTs | コメント | — |
-| 8.8 | 4 回目を Resend に投げない | AuthServer + RateLimitTs | server.ts | Magic Link |
-| 9.1 | メール Zod 検証 | AuthSchemas + SafeAction | schemas.ts | — |
-| 9.2 | Basic 認証 形式検証 | Proxy | proxy.ts | Admin |
-| 9.3 | display_name Zod | AuthSchemas | schemas.ts | — |
-| 9.4 | role_in_org Zod | AuthSchemas | schemas.ts | — |
-| 9.5 | years_of_experience Zod | AuthSchemas | schemas.ts | — |
-| 9.6 | Server Action ラッパーで parse | SafeAction | safe-action.ts | — |
-| 9.7 | スキーマ集約 | AuthSchemas | apps/web/lib/auth/schemas.ts | — |
-| 10.1 | /admin/_health page.tsx | AdminHealthPage | apps/web/app/admin/_health/page.tsx | Admin |
-| 10.2 | 成功時に email 表示 | AdminHealthPage | page.tsx | Admin |
-| 10.3 | UNAUTHORIZED で /sign-in | AdminHealthPage | page.tsx | Admin |
-| 10.4 | FORBIDDEN で 403 表示 | AdminHealthPage | page.tsx | Admin |
-| 10.5 | 削除予定コメント | AdminHealthPage | page.tsx | — |
-| 10.6 | 全条件 OK で表示 | AdminHealthPage + Guards + Proxy | — | Admin |
-| 10.7 | 未サインインで /sign-in | AdminHealthPage + Guards | guards.ts | Admin |
-| 10.8 | 非許可メールで FORBIDDEN | AdminHealthPage + Guards | guards.ts | Admin |
-| 11.1 | /sign-in メール入力 UI | SignInPage | apps/web/app/(interviewer)/sign-in/page.tsx | Magic Link |
-| 11.2 | フォーム送信で signIn.magicLink | SignInPage + AuthClient | sign-in/page.tsx | Magic Link |
-| 11.3 | クライアント側 Zod | SignInPage + AuthSchemas | sign-in/page.tsx | — |
-| 11.4 | レート制限超過 UI | SignInPage | sign-in/page.tsx | Magic Link |
-| 11.5 | /admin/login UI | AdminLoginPage | apps/web/app/admin/login/page.tsx | Admin |
-| 11.6 | Basic 後の Magic Link 案内 | AdminLoginPage | page.tsx | Admin |
-| 11.7 | サインイン済みなら自動 redirect | SignInPage + AdminLoginPage | client.ts session check | — |
+| Requirement | Summary                                               | Components                                          | Interfaces                                  | Flows      |
+| ----------- | ----------------------------------------------------- | --------------------------------------------------- | ------------------------------------------- | ---------- |
+| 1.1         | Better Auth サーバー設定存在                          | AuthServer                                          | apps/web/lib/auth/server.ts                 | Magic Link |
+| 1.2         | Better Auth クライアント設定存在                      | AuthClient                                          | apps/web/lib/auth/client.ts                 | Magic Link |
+| 1.3         | Magic Link 15 分有効期限 + 使い切り                   | AuthServer                                          | server.ts plugin config                     | Magic Link |
+| 1.4         | HttpOnly + Secure + SameSite=Lax                      | AuthServer                                          | server.ts session config                    | —          |
+| 1.5         | BETTER_AUTH_SECRET 必須                               | AuthServer                                          | env var                                     | —          |
+| 1.6         | BETTER_AUTH_URL 読み取り                              | AuthServer                                          | env var                                     | Magic Link |
+| 1.7         | API ルート公開                                        | BetterAuthApiRoute                                  | apps/web/app/api/auth/[...all]/route.ts     | Magic Link |
+| 1.8         | サインイン → Magic Link 送信                          | SignInPage + AuthClient + AuthServer + ResendClient | client.ts                                   | Magic Link |
+| 1.9         | リンククリック → セッション開始 + redirect            | AuthServer + BetterAuthApiRoute                     | server.ts                                   | Magic Link |
+| 1.10        | 期限切れ/使用済みエラー                               | AuthServer                                          | server.ts                                   | Magic Link |
+| 2.1         | Resend クライアント初期化                             | ResendClient                                        | apps/web/lib/email/resend.ts                | Magic Link |
+| 2.2         | RESEND_API_KEY 未設定で throw                         | ResendClient                                        | resend.ts                                   | —          |
+| 2.3         | 日本語+英語並記テンプレート                           | MagicLinkTemplate                                   | apps/web/lib/email/templates/magic-link.ts  | Magic Link |
+| 2.4         | 件名・本文に面接官向けメッセージ + 15 分失効          | MagicLinkTemplate                                   | magic-link.ts                               | —          |
+| 2.5         | サインインリンク URL 明示                             | MagicLinkTemplate                                   | magic-link.ts                               | Magic Link |
+| 2.6         | 送信元 onboarding@resend.dev (Stage 1)                | ResendClient + MagicLinkTemplate                    | resend.ts                                   | Magic Link |
+| 2.7         | sendMagicLink → Resend 配信                           | AuthServer + ResendClient                           | server.ts                                   | Magic Link |
+| 2.8         | 個人情報を含まない                                    | MagicLinkTemplate                                   | magic-link.ts                               | —          |
+| 3.1         | HttpOnly Cookie                                       | AuthServer                                          | server.ts session config                    | —          |
+| 3.2         | Secure 属性 (本番)                                    | AuthServer                                          | server.ts                                   | —          |
+| 3.3         | SameSite=Lax                                          | AuthServer                                          | server.ts                                   | —          |
+| 3.4         | デフォルト 7 日間                                     | AuthServer                                          | server.ts session.expiresIn                 | —          |
+| 3.5         | sliding expiration                                    | AuthServer                                          | server.ts session.updateAge                 | —          |
+| 3.6         | サインアウトで cookie 無効化                          | AuthClient + BetterAuthApiRoute                     | client.ts                                   | —          |
+| 3.7         | 期限切れ → /sign-in リダイレクト (UX)                 | Proxy                                               | proxy.ts                                    | —          |
+| 3.8         | 各レイヤーで requireUser 独立                         | Guards                                              | guards.ts                                   | —          |
+| 4.1         | proxy.ts /admin/\* Basic 認証                         | Proxy                                               | proxy.ts                                    | Admin      |
+| 4.2         | 401 + WWW-Authenticate                                | Proxy                                               | proxy.ts                                    | Admin      |
+| 4.3         | requireAdmin() 二重チェック                           | Guards                                              | guards.ts                                   | Admin      |
+| 4.4         | /admin/\* で requireAdmin 必須                        | Guards + 全 admin Server Component                  | guards.ts                                   | Admin      |
+| 4.5         | /admin/login UI                                       | AdminLoginPage                                      | apps/web/app/admin/login/page.tsx           | Admin      |
+| 4.6         | proxy.ts は session 検証しない                        | Proxy                                               | proxy.ts                                    | —          |
+| 4.7         | ADMIN_ALLOWED_EMAILS 未設定で fail secure             | Guards                                              | guards.ts                                   | —          |
+| 4.8         | /admin/\_health smoke test                            | AdminHealthPage                                     | apps/web/app/admin/\_health/page.tsx        | Admin      |
+| 5.1         | AuthError class                                       | Guards                                              | guards.ts                                   | —          |
+| 5.2         | getCurrentUser                                        | Guards                                              | guards.ts                                   | —          |
+| 5.3         | requireUser                                           | Guards                                              | guards.ts                                   | —          |
+| 5.4         | requireAdmin                                          | Guards                                              | guards.ts                                   | Admin      |
+| 5.5         | requireSessionOwnership                               | Guards                                              | guards.ts                                   | —          |
+| 5.6         | authedAction                                          | SafeAction                                          | safe-action.ts                              | —          |
+| 5.7         | authedAction 内部で requireUser + Zod parse + handler | SafeAction                                          | safe-action.ts                              | —          |
+| 5.8         | adminAction                                           | SafeAction                                          | safe-action.ts                              | —          |
+| 5.9         | サードパーティ非依存                                  | SafeAction                                          | safe-action.ts                              | —          |
+| 5.10        | ファイルヘッダで方針明示                              | SafeAction                                          | safe-action.ts                              | —          |
+| 6.1         | proxy.ts ファイル存在                                 | Proxy                                               | apps/web/proxy.ts                           | —          |
+| 6.2         | JSDoc に CVE-2025-29927 教訓                          | Proxy                                               | proxy.ts                                    | —          |
+| 6.3         | /interviews/\* 未認証で /sign-in                      | Proxy                                               | proxy.ts                                    | —          |
+| 6.4         | /admin/\* Basic 認証チェック                          | Proxy                                               | proxy.ts                                    | Admin      |
+| 6.5         | /admin/\* Basic NG → 401                              | Proxy                                               | proxy.ts                                    | Admin      |
+| 6.6         | /admin/\_health 含めて Basic 必須                     | Proxy                                               | proxy.ts                                    | Admin      |
+| 6.7         | matcher 設定                                          | Proxy                                               | proxy.ts config.matcher                     | —          |
+| 6.8         | bypass 攻撃でも Layer 2 で防御                        | Guards + 全 Server Component                        | guards.ts                                   | —          |
+| 6.9         | proxy.ts は cookie 存在のみ確認                       | Proxy                                               | proxy.ts                                    | —          |
+| 7.1         | Better Auth 管理テーブル                              | DbAuthSchema                                        | packages/db/src/schema/auth.ts              | —          |
+| 7.2         | user_profile テーブル                                 | DbUserProfileSchema                                 | packages/db/src/schema/user-profile.ts      | —          |
+| 7.3         | rate_limit テーブル                                   | DbRateLimitSchema                                   | packages/db/src/schema/rate-limit.ts        | —          |
+| 7.4         | バレルエクスポート                                    | DbSchemaIndex                                       | packages/db/src/schema/index.ts             | —          |
+| 7.5         | databaseHooks.user.create.after で user_profile 作成  | AuthServer                                          | server.ts                                   | Magic Link |
+| 7.6         | hook 失敗時の挙動                                     | AuthServer                                          | server.ts                                   | —          |
+| 7.7         | drizzle-kit migration 生成                            | DrizzleMigration                                    | packages/db/drizzle/\*\_authentication.sql  | —          |
+| 7.8         | push で 6 テーブル作成                                | DrizzleMigration                                    | drizzle-kit                                 | —          |
+| 7.9         | 新規 user で user_profile 自動作成                    | AuthServer                                          | server.ts hook                              | Magic Link |
+| 8.1         | email:<email> 5min 3 回チェック                       | RateLimitTs + AuthServer                            | rate-limit.ts                               | Magic Link |
+| 8.2         | 制限超過時 UI メッセージ                              | SignInPage + RateLimitTs                            | sign-in/page.tsx                            | Magic Link |
+| 8.3         | ip:<ip> 1hour 20 回チェック                           | RateLimitTs + AuthServer                            | rate-limit.ts                               | Magic Link |
+| 8.4         | IP 制限超過時 汎用エラー                              | SignInPage + RateLimitTs                            | sign-in/page.tsx                            | Magic Link |
+| 8.5         | INSERT ... ON CONFLICT                                | RateLimitTs                                         | rate-limit.ts                               | —          |
+| 8.6         | DB ベース必須 (Vercel mem 非共有)                     | RateLimitTs                                         | rate-limit.ts                               | —          |
+| 8.7         | クリーンアップ Cron は Stage 2                        | RateLimitTs                                         | コメント                                    | —          |
+| 8.8         | 4 回目を Resend に投げない                            | AuthServer + RateLimitTs                            | server.ts                                   | Magic Link |
+| 9.1         | メール Zod 検証                                       | AuthSchemas + SafeAction                            | schemas.ts                                  | —          |
+| 9.2         | Basic 認証 形式検証                                   | Proxy                                               | proxy.ts                                    | Admin      |
+| 9.3         | display_name Zod                                      | AuthSchemas                                         | schemas.ts                                  | —          |
+| 9.4         | role_in_org Zod                                       | AuthSchemas                                         | schemas.ts                                  | —          |
+| 9.5         | years_of_experience Zod                               | AuthSchemas                                         | schemas.ts                                  | —          |
+| 9.6         | Server Action ラッパーで parse                        | SafeAction                                          | safe-action.ts                              | —          |
+| 9.7         | スキーマ集約                                          | AuthSchemas                                         | apps/web/lib/auth/schemas.ts                | —          |
+| 10.1        | /admin/\_health page.tsx                              | AdminHealthPage                                     | apps/web/app/admin/\_health/page.tsx        | Admin      |
+| 10.2        | 成功時に email 表示                                   | AdminHealthPage                                     | page.tsx                                    | Admin      |
+| 10.3        | UNAUTHORIZED で /sign-in                              | AdminHealthPage                                     | page.tsx                                    | Admin      |
+| 10.4        | FORBIDDEN で 403 表示                                 | AdminHealthPage                                     | page.tsx                                    | Admin      |
+| 10.5        | 削除予定コメント                                      | AdminHealthPage                                     | page.tsx                                    | —          |
+| 10.6        | 全条件 OK で表示                                      | AdminHealthPage + Guards + Proxy                    | —                                           | Admin      |
+| 10.7        | 未サインインで /sign-in                               | AdminHealthPage + Guards                            | guards.ts                                   | Admin      |
+| 10.8        | 非許可メールで FORBIDDEN                              | AdminHealthPage + Guards                            | guards.ts                                   | Admin      |
+| 11.1        | /sign-in メール入力 UI                                | SignInPage                                          | apps/web/app/(interviewer)/sign-in/page.tsx | Magic Link |
+| 11.2        | フォーム送信で signIn.magicLink                       | SignInPage + AuthClient                             | sign-in/page.tsx                            | Magic Link |
+| 11.3        | クライアント側 Zod                                    | SignInPage + AuthSchemas                            | sign-in/page.tsx                            | —          |
+| 11.4        | レート制限超過 UI                                     | SignInPage                                          | sign-in/page.tsx                            | Magic Link |
+| 11.5        | /admin/login UI                                       | AdminLoginPage                                      | apps/web/app/admin/login/page.tsx           | Admin      |
+| 11.6        | Basic 後の Magic Link 案内                            | AdminLoginPage                                      | page.tsx                                    | Admin      |
+| 11.7        | サインイン済みなら自動 redirect                       | SignInPage + AdminLoginPage                         | client.ts session check                     | —          |
 
 ## Components and Interfaces
 
-| Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
-|-----------|--------------|--------|--------------|--------------------------|-----------|
-| AuthServer | apps/web/lib/auth | Better Auth サーバー設定 + Magic Link plugin + databaseHooks | 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8 | better-auth ^1.6.0 (P0), DbAuthSchema (P0), ResendClient (P0), MagicLinkTemplate (P0), RateLimitTs (P0), DbUserProfileSchema (P0) | Service, State |
-| AuthClient | apps/web/lib/auth | Better Auth クライアント | 1.2, 1.8, 3.6, 11.2, 11.7 | better-auth client (P0) | Service |
-| AuthSchemas | apps/web/lib/auth | Zod 入力検証集約 | 9.1, 9.3-9.5, 9.7, 11.3 | zod (P0) | State |
-| ResendClient | apps/web/lib/email | Resend SDK 初期化 | 2.1, 2.2, 2.6 | resend ^4.0.0 (P0) | Service |
-| MagicLinkTemplate | apps/web/lib/email | Magic Link メールテンプレート | 2.3, 2.4, 2.5, 2.6, 2.8 | (なし、純関数) | State |
-| Guards | apps/web/lib | 認証ヘルパー全部入り | 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8 | AuthServer (P0) | Service |
-| SafeAction | apps/web/lib | Server Action ラッパー | 5.6-5.10, 9.6 | Guards (P0), zod (P0) | Service |
-| RateLimitTs | apps/web/lib | DB ベースレート制限 | 8.1, 8.3, 8.5, 8.6, 8.7 | DbRateLimitSchema (P0), drizzle-orm (P0) | Service |
-| BetterAuthApiRoute | apps/web/app/api | Better Auth ハンドラ公開 | 1.7, 1.9, 1.10, 3.6 | AuthServer (P0) | API |
-| SignInPage | apps/web/app | 面接官サインイン UI | 1.8, 8.2, 8.4, 11.1-11.4, 11.7 | AuthClient (P0), AuthSchemas (P0) | State |
-| AdminLoginPage | apps/web/app/admin | 管理画面ログイン案内 | 4.5, 11.5, 11.6, 11.7 | (静的ページ) | State |
-| AdminHealthPage | apps/web/app/admin | smoke test ページ | 4.8, 10.1-10.8 | Guards (P0) | State |
-| Proxy | apps/web | UX リダイレクト + Basic 認証 | 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2 | (Next.js proxy.ts API) | Service |
-| DbAuthSchema | packages/db | Better Auth 管理テーブル | 7.1, 7.4, 7.8 | drizzle-orm (P0) | State |
-| DbUserProfileSchema | packages/db | user_profile テーブル | 7.2, 7.4, 7.8, 7.9 | drizzle-orm (P0), DbAuthSchema (FK) (P0) | State |
-| DbRateLimitSchema | packages/db | rate_limit テーブル | 7.3, 7.4, 7.8 | drizzle-orm (P0) | State |
-| DbSchemaIndex | packages/db | バレルエクスポート | 7.4 | DbAuthSchema, DbUserProfileSchema, DbRateLimitSchema (P0) | State |
-| DrizzleMigration | packages/db | migration ファイル | 7.7, 7.8 | drizzle-kit (P0) | Batch |
+| Component           | Domain/Layer       | Intent                                                       | Req Coverage                                              | Key Dependencies (P0/P1)                                                                                                          | Contracts      |
+| ------------------- | ------------------ | ------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| AuthServer          | apps/web/lib/auth  | Better Auth サーバー設定 + Magic Link plugin + databaseHooks | 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8 | better-auth ^1.6.0 (P0), DbAuthSchema (P0), ResendClient (P0), MagicLinkTemplate (P0), RateLimitTs (P0), DbUserProfileSchema (P0) | Service, State |
+| AuthClient          | apps/web/lib/auth  | Better Auth クライアント                                     | 1.2, 1.8, 3.6, 11.2, 11.7                                 | better-auth client (P0)                                                                                                           | Service        |
+| AuthSchemas         | apps/web/lib/auth  | Zod 入力検証集約                                             | 9.1, 9.3-9.5, 9.7, 11.3                                   | zod (P0)                                                                                                                          | State          |
+| ResendClient        | apps/web/lib/email | Resend SDK 初期化                                            | 2.1, 2.2, 2.6                                             | resend ^4.0.0 (P0)                                                                                                                | Service        |
+| MagicLinkTemplate   | apps/web/lib/email | Magic Link メールテンプレート                                | 2.3, 2.4, 2.5, 2.6, 2.8                                   | (なし、純関数)                                                                                                                    | State          |
+| Guards              | apps/web/lib       | 認証ヘルパー全部入り                                         | 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8                   | AuthServer (P0)                                                                                                                   | Service        |
+| SafeAction          | apps/web/lib       | Server Action ラッパー                                       | 5.6-5.10, 9.6                                             | Guards (P0), zod (P0)                                                                                                             | Service        |
+| RateLimitTs         | apps/web/lib       | DB ベースレート制限                                          | 8.1, 8.3, 8.5, 8.6, 8.7                                   | DbRateLimitSchema (P0), drizzle-orm (P0)                                                                                          | Service        |
+| BetterAuthApiRoute  | apps/web/app/api   | Better Auth ハンドラ公開                                     | 1.7, 1.9, 1.10, 3.6                                       | AuthServer (P0)                                                                                                                   | API            |
+| SignInPage          | apps/web/app       | 面接官サインイン UI                                          | 1.8, 8.2, 8.4, 11.1-11.4, 11.7                            | AuthClient (P0), AuthSchemas (P0)                                                                                                 | State          |
+| AdminLoginPage      | apps/web/app/admin | 管理画面ログイン案内                                         | 4.5, 11.5, 11.6, 11.7                                     | (静的ページ)                                                                                                                      | State          |
+| AdminHealthPage     | apps/web/app/admin | smoke test ページ                                            | 4.8, 10.1-10.8                                            | Guards (P0)                                                                                                                       | State          |
+| Proxy               | apps/web           | UX リダイレクト + Basic 認証                                 | 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2                          | (Next.js proxy.ts API)                                                                                                            | Service        |
+| DbAuthSchema        | packages/db        | Better Auth 管理テーブル                                     | 7.1, 7.4, 7.8                                             | drizzle-orm (P0)                                                                                                                  | State          |
+| DbUserProfileSchema | packages/db        | user_profile テーブル                                        | 7.2, 7.4, 7.8, 7.9                                        | drizzle-orm (P0), DbAuthSchema (FK) (P0)                                                                                          | State          |
+| DbRateLimitSchema   | packages/db        | rate_limit テーブル                                          | 7.3, 7.4, 7.8                                             | drizzle-orm (P0)                                                                                                                  | State          |
+| DbSchemaIndex       | packages/db        | バレルエクスポート                                           | 7.4                                                       | DbAuthSchema, DbUserProfileSchema, DbRateLimitSchema (P0)                                                                         | State          |
+| DrizzleMigration    | packages/db        | migration ファイル                                           | 7.7, 7.8                                                  | drizzle-kit (P0)                                                                                                                  | Batch          |
 
 ### apps/web/lib/auth Layer
 
 #### AuthServer
 
-| Field | Detail |
-|-------|--------|
-| Intent | Better Auth 1.6.x サーバー設定を初期化し、Magic Link プラグイン + databaseHooks + sendMagicLink (Resend) + レート制限を組み合わせる |
-| Requirements | 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8 |
-| Owner / Reviewers | プロジェクトオーナー |
+| Field             | Detail                                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Intent            | Better Auth 1.6.x サーバー設定を初期化し、Magic Link プラグイン + databaseHooks + sendMagicLink (Resend) + レート制限を組み合わせる |
+| Requirements      | 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8                                                                           |
+| Owner / Reviewers | プロジェクトオーナー                                                                                                                |
 
 **Responsibilities & Constraints**
+
 - `betterAuth({ ... })` の initialization 一回のみ、`auth` オブジェクトを singleton として export
 - `database` adapter に Drizzle + `db` クライアント（`packages/db`）を渡す
 - `secret: process.env.BETTER_AUTH_SECRET`（未設定時は init 時に throw、`security.md` シークレット管理準拠）
@@ -523,6 +525,7 @@ sequenceDiagram
 - 不変条件: Better Auth 管理テーブルに独自カラムを追加しない、bulr 固有データは `user_profile` 経由
 
 **Dependencies**
+
 - Inbound: `BetterAuthApiRoute` （API handler）（P0）、`Guards` （session 取得）（P0）
 - Outbound: `DbAuthSchema` / `DbUserProfileSchema` / `DbRateLimitSchema`（P0）、`ResendClient`（P0）、`MagicLinkTemplate`（P0）、`RateLimitTs`（P0）
 - External: `better-auth` ^1.6.0（P0）、Better Auth Magic Link plugin（P0）
@@ -557,7 +560,13 @@ export const auth = betterAuth({
   },
   advanced: {
     cookies: {
-      session_token: { attributes: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' } },
+      session_token: {
+        attributes: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        },
+      },
     },
   },
   plugins: [
@@ -576,26 +585,32 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          await db.insert(userProfile).values({
-            userId: user.id,
-            displayName: user.email.split('@')[0],
-          }).onConflictDoNothing();
+          await db
+            .insert(userProfile)
+            .values({
+              userId: user.id,
+              displayName: user.email.split('@')[0],
+            })
+            .onConflictDoNothing();
         },
       },
     },
   },
 });
 ```
+
 - Preconditions: `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `DATABASE_URL` が全て設定済み、DB に Better Auth テーブル + user_profile + rate_limit 反映済み
 - Postconditions: `auth` singleton が export され、`/api/auth/[...all]` から利用可能、`auth.api.getSession({ headers })` で session 取得可能
 - Invariants: Better Auth 管理テーブルに独自カラムなし、user 作成時に必ず user_profile が作成される（`onConflictDoNothing` で再実行安全）
 
 ##### State Management
+
 - State model: Better Auth が user / session / account / verification を管理、bulr 側は user_profile / rate_limit を所有
 - Persistence & consistency: Postgres（Neon）。databaseHooks の after は Better Auth のトランザクション境界に従う（Better Auth 1.6.x の仕様確認、失敗時の挙動は research）
 - Concurrency strategy: Better Auth 内部のロック / トランザクション。レート制限は `INSERT ... ON CONFLICT` で原子的更新
 
 **Implementation Notes**
+
 - Integration: dishxdish の `apps/web/lib/auth/server.ts` を流用、匿名セッション関連を削除し、databaseHooks に user_profile 作成を追加
 - Validation: `pnpm dev` 起動 → `/sign-in` でメール送信 → Resend で受信 → クリック → `/interviews` リダイレクト + DB に user / session / user_profile が作成される
 - Risks:
@@ -604,12 +619,13 @@ export const auth = betterAuth({
 
 #### AuthClient
 
-| Field | Detail |
-|-------|--------|
-| Intent | クライアント側の Better Auth 呼び出し（signIn / signOut / useSession） |
-| Requirements | 1.2, 1.8, 3.6, 11.2, 11.7 |
+| Field        | Detail                                                                 |
+| ------------ | ---------------------------------------------------------------------- |
+| Intent       | クライアント側の Better Auth 呼び出し（signIn / signOut / useSession） |
+| Requirements | 1.2, 1.8, 3.6, 11.2, 11.7                                              |
 
 **Responsibilities & Constraints**
+
 - `createAuthClient({ baseURL: process.env.NEXT_PUBLIC_APP_URL })`
 - `magicLinkClient()` プラグイン適用
 - `signIn.magicLink({ email, callbackURL: '/interviews' })` を export
@@ -617,6 +633,7 @@ export const auth = betterAuth({
 - `useSession()` を export（Client Component 用）
 
 **Dependencies**
+
 - Inbound: `SignInPage`（P0）、`AdminLoginPage`（P0）
 - Outbound: `BetterAuthApiRoute`（fetch 経由）（P0）
 - External: `better-auth/client`（P0）
@@ -637,18 +654,20 @@ export const { signIn, signOut, useSession } = authClient;
 ```
 
 **Implementation Notes**
+
 - Integration: dishxdish パターン流用
 - Validation: `/sign-in` でフォーム送信 → ブラウザの Network タブで `/api/auth/sign-in/magic-link` への POST が観測される
 - Risks: `better-auth/react` の export が 1.6.x で変わる可能性 → ピン止めバージョンを `^1.6.0` で固定
 
 #### AuthSchemas
 
-| Field | Detail |
-|-------|--------|
-| Intent | Zod スキーマを `apps/web/lib/auth/schemas.ts` に集約 |
-| Requirements | 9.1, 9.3-9.5, 9.7, 11.3 |
+| Field        | Detail                                               |
+| ------------ | ---------------------------------------------------- |
+| Intent       | Zod スキーマを `apps/web/lib/auth/schemas.ts` に集約 |
+| Requirements | 9.1, 9.3-9.5, 9.7, 11.3                              |
 
 **Responsibilities & Constraints**
+
 - export する schema:
   - `emailSchema = z.string().email().trim().max(254)`
   - `interviewerProfileSchema = z.object({ displayName: z.string().trim().min(1).max(100), roleInOrg: z.string().trim().max(100).optional(), yearsOfExperience: z.number().int().min(0).max(60).optional() })`
@@ -660,12 +679,13 @@ export const { signIn, signOut, useSession } = authClient;
 
 #### ResendClient
 
-| Field | Detail |
-|-------|--------|
-| Intent | Resend SDK 初期化と Magic Link 配信 |
-| Requirements | 2.1, 2.2, 2.6 |
+| Field        | Detail                              |
+| ------------ | ----------------------------------- |
+| Intent       | Resend SDK 初期化と Magic Link 配信 |
+| Requirements | 2.1, 2.2, 2.6                       |
 
 **Responsibilities & Constraints**
+
 - `RESEND_API_KEY` を読み取り、未設定なら throw
 - `FROM_ADDRESS = 'bulr <onboarding@resend.dev>'` を export（Stage 1、コメントで「Stage 2 でカスタムドメイン」明記）
 - `resend = new Resend(process.env.RESEND_API_KEY)` を export
@@ -688,12 +708,13 @@ export const FROM_ADDRESS = 'bulr <onboarding@resend.dev>';
 
 #### MagicLinkTemplate
 
-| Field | Detail |
-|-------|--------|
-| Intent | 日本語+英語並記の Magic Link メール本文（HTML + プレーンテキスト + 件名）を生成 |
-| Requirements | 2.3, 2.4, 2.5, 2.6, 2.8 |
+| Field        | Detail                                                                          |
+| ------------ | ------------------------------------------------------------------------------- |
+| Intent       | 日本語+英語並記の Magic Link メール本文（HTML + プレーンテキスト + 件名）を生成 |
+| Requirements | 2.3, 2.4, 2.5, 2.6, 2.8                                                         |
 
 **Responsibilities & Constraints**
+
 - 純関数 `renderMagicLinkEmail({ url }: { url: string }): { subject: string; html: string; text: string }`
 - subject: `[bulr] サインインリンク / Sign-in link`
 - 日本語ブロックの直後に英語ブロック（`---` 区切り）
@@ -707,7 +728,9 @@ export const FROM_ADDRESS = 'bulr <onboarding@resend.dev>';
 ```typescript
 // apps/web/lib/email/templates/magic-link.ts
 export function renderMagicLinkEmail({ url }: { url: string }): {
-  subject: string; html: string; text: string;
+  subject: string;
+  html: string;
+  text: string;
 } {
   const subject = '[bulr] サインインリンク / Sign-in link';
   const text = `bulr へのサインインリンクです（15 分で失効）。
@@ -742,12 +765,13 @@ If you didn't request this, please ignore this email.
 
 #### Guards
 
-| Field | Detail |
-|-------|--------|
-| Intent | 認証ヘルパー全部入り（`AuthError` / `getCurrentUser` / `requireUser` / `requireAdmin` / `requireSessionOwnership`） |
-| Requirements | 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8 |
+| Field        | Detail                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Intent       | 認証ヘルパー全部入り（`AuthError` / `getCurrentUser` / `requireUser` / `requireAdmin` / `requireSessionOwnership`） |
+| Requirements | 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8                                                                             |
 
 **Responsibilities & Constraints**
+
 - `AuthError` クラス: `code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND'`
 - `getCurrentUser()`: `auth.api.getSession({ headers: await headers() })` を呼び、null セーフな `{ id, email } | null` を返す
 - `requireUser()`: getCurrentUser で null なら `throw new AuthError('UNAUTHORIZED')`
@@ -760,7 +784,10 @@ import { headers } from 'next/headers';
 import { auth } from './auth/server';
 
 export class AuthError extends Error {
-  constructor(public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND', message?: string) {
+  constructor(
+    public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND',
+    message?: string,
+  ) {
     super(message ?? code);
   }
 }
@@ -779,8 +806,10 @@ export async function requireUser() {
 
 export async function requireAdmin() {
   const user = await requireUser();
-  const allowed = process.env.ADMIN_ALLOWED_EMAILS
-    ?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
+  const allowed =
+    process.env.ADMIN_ALLOWED_EMAILS?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
   if (allowed.length === 0 || !allowed.includes(user.email)) {
     throw new AuthError('FORBIDDEN');
   }
@@ -799,18 +828,20 @@ export async function requireSessionOwnership(
 **Contracts**: Service
 
 **Implementation Notes**
+
 - Integration: `security.md` L36-58 の認証ヘルパー仕様にそのまま準拠
 - Validation: smoke test ページ `/admin/_health` で `requireAdmin()` を呼び、3 ケース（未サインイン / 非許可メール / 許可メール）で挙動確認
 - Risks: `auth.api.getSession` の signature が Better Auth 1.6.x の最新版で変わる可能性 → ピン止めバージョンで固定
 
 #### SafeAction
 
-| Field | Detail |
-|-------|--------|
-| Intent | Server Action ラッパー（`authedAction` / `adminAction`）、サードパーティ非依存の自前軽量実装 |
-| Requirements | 5.6-5.10, 9.6 |
+| Field        | Detail                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| Intent       | Server Action ラッパー（`authedAction` / `adminAction`）、サードパーティ非依存の自前軽量実装 |
+| Requirements | 5.6-5.10, 9.6                                                                                |
 
 **Responsibilities & Constraints**
+
 - `authedAction(schema, handler)`: `requireUser()` → `schema.parse(input)` → `handler(parsed, { userId, email })`、`AuthError` / `ZodError` / `RateLimitError` を捕捉して `{ ok: false, error: { code, message } }` で返す（RateLimitError は `code: 'RATE_LIMITED'`、handler 内で `checkAndIncrement` 呼び出しが throw するため捕捉が必要）
 - `adminAction(schema, handler)`: 同様だが `requireAdmin()` を呼ぶ
 - 戻り値型: `{ ok: true; data: R } | { ok: false; error: { code: string; message: string } }`
@@ -843,8 +874,10 @@ export function authedAction<I, R>(
       return { ok: true, data };
     } catch (e) {
       if (e instanceof AuthError) return { ok: false, error: { code: e.code, message: e.message } };
-      if (e instanceof ZodError) return { ok: false, error: { code: 'INVALID_INPUT', message: e.message } };
-      if (e instanceof RateLimitError) return { ok: false, error: { code: 'RATE_LIMITED', message: e.message } };
+      if (e instanceof ZodError)
+        return { ok: false, error: { code: 'INVALID_INPUT', message: e.message } };
+      if (e instanceof RateLimitError)
+        return { ok: false, error: { code: 'RATE_LIMITED', message: e.message } };
       throw e;
     }
   };
@@ -862,8 +895,10 @@ export function adminAction<I, R>(
       return { ok: true, data };
     } catch (e) {
       if (e instanceof AuthError) return { ok: false, error: { code: e.code, message: e.message } };
-      if (e instanceof ZodError) return { ok: false, error: { code: 'INVALID_INPUT', message: e.message } };
-      if (e instanceof RateLimitError) return { ok: false, error: { code: 'RATE_LIMITED', message: e.message } };
+      if (e instanceof ZodError)
+        return { ok: false, error: { code: 'INVALID_INPUT', message: e.message } };
+      if (e instanceof RateLimitError)
+        return { ok: false, error: { code: 'RATE_LIMITED', message: e.message } };
       throw e;
     }
   };
@@ -874,12 +909,13 @@ export function adminAction<I, R>(
 
 #### RateLimitTs
 
-| Field | Detail |
-|-------|--------|
-| Intent | DB ベースの汎用レート制限（key prefix で email/ip/session/api/turn/msg/llm を区別、`assessment-engine` spec も再利用） |
-| Requirements | 8.1, 8.3, 8.5, 8.6, 8.7 |
+| Field        | Detail                                                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Intent       | DB ベースの汎用レート制限（key prefix で email/ip/session/api/turn/msg/llm を区別、`assessment-engine` spec も再利用） |
+| Requirements | 8.1, 8.3, 8.5, 8.6, 8.7                                                                                                |
 
 **Responsibilities & Constraints**
+
 - `checkAndIncrement(key: string, opts: { limit: number; windowMs: number }): Promise<void>` → 制限超過なら throw
 - 内部処理: `INSERT ... ON CONFLICT (key) DO UPDATE SET count = CASE WHEN window_start + windowMs > now() THEN count + 1 ELSE 1 END, window_start = CASE WHEN window_start + windowMs > now() THEN window_start ELSE now() END`、その後 SELECT で count を確認、`> limit` なら throw
 - key prefix のドキュメント: `email:` / `ip:` / `session:` / `api:` / `turn:` / `msg:` / `llm:` を本ファイルのコメントで列挙、`assessment-engine` spec が `api:` / `turn:` / `msg:` / `llm:` を利用する想定を明記
@@ -907,7 +943,9 @@ import { sql } from 'drizzle-orm';
 import { AuthError } from './guards';
 
 export class RateLimitError extends Error {
-  constructor(message: string) { super(message); }
+  constructor(message: string) {
+    super(message);
+  }
 }
 
 export async function checkAndIncrement(
@@ -940,6 +978,7 @@ export async function checkAndIncrement(
 **Contracts**: Service
 
 **Implementation Notes**
+
 - Integration: dishxdish パターンを bulr 用に簡略化
 - Validation: `/sign-in` で同じメールに 4 回連続送信 → 4 回目が拒否される、別の IP で同じメールに送信 → IP 制限に達するまで送信可
 - Risks: `db.execute` で `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` の構文が Drizzle 0.45.x で動作する形を確認（Drizzle のバージョンによっては `db.execute` の戻り値の型が異なる）
@@ -948,10 +987,10 @@ export async function checkAndIncrement(
 
 #### BetterAuthApiRoute
 
-| Field | Detail |
-|-------|--------|
-| Intent | Better Auth ハンドラを `/api/auth/[...all]` で公開 |
-| Requirements | 1.7, 1.9, 1.10, 3.6 |
+| Field        | Detail                                             |
+| ------------ | -------------------------------------------------- |
+| Intent       | Better Auth ハンドラを `/api/auth/[...all]` で公開 |
+| Requirements | 1.7, 1.9, 1.10, 3.6                                |
 
 ```typescript
 // apps/web/app/api/auth/[...all]/route.ts
@@ -965,12 +1004,13 @@ export const { GET, POST } = toNextJsHandler(auth);
 
 #### SignInPage
 
-| Field | Detail |
-|-------|--------|
-| Intent | 面接官サインイン UI |
+| Field        | Detail                         |
+| ------------ | ------------------------------ |
+| Intent       | 面接官サインイン UI            |
 | Requirements | 1.8, 8.2, 8.4, 11.1-11.4, 11.7 |
 
 **Responsibilities & Constraints**
+
 - Server Component でサインイン済み（`getCurrentUser()` 非 null）なら `/interviews` へ redirect
 - 未サインインならクライアント Component（`'use client'`）でフォーム表示
 - フォーム送信時に `signIn.magicLink({ email, callbackURL: '/interviews' })` 呼び出し
@@ -982,12 +1022,13 @@ export const { GET, POST } = toNextJsHandler(auth);
 
 #### AdminLoginPage
 
-| Field | Detail |
-|-------|--------|
-| Intent | 管理画面ログイン案内（Basic 認証通過後にアクセスされるページ） |
-| Requirements | 4.5, 11.5, 11.6, 11.7 |
+| Field        | Detail                                                         |
+| ------------ | -------------------------------------------------------------- |
+| Intent       | 管理画面ログイン案内（Basic 認証通過後にアクセスされるページ） |
+| Requirements | 4.5, 11.5, 11.6, 11.7                                          |
 
 **Responsibilities & Constraints**
+
 - Basic 認証通過済み（proxy.ts が pass through した）状態のため、Basic 認証ダイアログは出ない
 - 「Basic 認証通過 OK。次に管理者メールアドレスで Magic Link サインインしてください」表示
 - `/sign-in?redirect=/admin/_health` へのリンク
@@ -997,12 +1038,13 @@ export const { GET, POST } = toNextJsHandler(auth);
 
 #### AdminHealthPage
 
-| Field | Detail |
-|-------|--------|
-| Intent | smoke test ページ、admin-review-panel spec で削除予定 |
-| Requirements | 4.8, 10.1-10.8 |
+| Field        | Detail                                                |
+| ------------ | ----------------------------------------------------- |
+| Intent       | smoke test ページ、admin-review-panel spec で削除予定 |
+| Requirements | 4.8, 10.1-10.8                                        |
 
 **Responsibilities & Constraints**
+
 - ファイル冒頭コメント: 「本ページは authentication spec の smoke test 用に一時設置。admin-review-panel spec で `/admin/sessions` を実装した時点で削除する」
 - Server Component で `requireAdmin()` 呼び出し
 - 成功時に「OK: admin authenticated」+ `<email>` を `<pre>` で表示
@@ -1048,12 +1090,13 @@ export default async function AdminHealthPage() {
 
 #### Proxy
 
-| Field | Detail |
-|-------|--------|
-| Intent | UX リダイレクト + Basic 認証チェック、CVE-2025-29927 教訓を JSDoc に明記 |
-| Requirements | 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2 |
+| Field        | Detail                                                                   |
+| ------------ | ------------------------------------------------------------------------ |
+| Intent       | UX リダイレクト + Basic 認証チェック、CVE-2025-29927 教訓を JSDoc に明記 |
+| Requirements | 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2                                         |
 
 **Responsibilities & Constraints**
+
 - ファイル冒頭の JSDoc コメント:
   ```
   /**
@@ -1114,7 +1157,8 @@ export function proxy(request: NextRequest) {
     const [user, ...rest] = decoded.split(':');
     const password = rest.join(':');
     if (
-      !user || !password ||
+      !user ||
+      !password ||
       user !== process.env.ADMIN_BASIC_AUTH_USER ||
       password !== process.env.ADMIN_BASIC_AUTH_PASSWORD
     ) {
@@ -1149,12 +1193,13 @@ export const config = { matcher: ['/interviews/:path*', '/admin/:path*'] };
 
 #### DbAuthSchema
 
-| Field | Detail |
-|-------|--------|
-| Intent | Better Auth 管理テーブル（user / session / account / verification）を Drizzle で定義、独自カラム追加なし |
-| Requirements | 7.1, 7.4, 7.8 |
+| Field        | Detail                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| Intent       | Better Auth 管理テーブル（user / session / account / verification）を Drizzle で定義、独自カラム追加なし |
+| Requirements | 7.1, 7.4, 7.8                                                                                            |
 
 **Responsibilities & Constraints**
+
 - Better Auth 1.6.x の標準スキーマに従う（公式ドキュメントの schema 例をそのまま流用）
 - 主要カラム:
   - `user`: `id text PK`, `email text UNIQUE NOT NULL`, `email_verified boolean DEFAULT false`, `name text`, `image text`, `created_at`, `updated_at`
@@ -1169,10 +1214,10 @@ export const config = { matcher: ['/interviews/:path*', '/admin/:path*'] };
 
 #### DbUserProfileSchema
 
-| Field | Detail |
-|-------|--------|
-| Intent | 面接官プロファイル（user 1:1 FK） |
-| Requirements | 7.2, 7.4, 7.8, 7.9 |
+| Field        | Detail                            |
+| ------------ | --------------------------------- |
+| Intent       | 面接官プロファイル（user 1:1 FK） |
+| Requirements | 7.2, 7.4, 7.8, 7.9                |
 
 ```typescript
 // packages/db/src/schema/user-profile.ts
@@ -1180,7 +1225,9 @@ import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 
 export const userProfile = pgTable('user_profile', {
-  userId: text('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
   displayName: text('display_name').notNull(),
   roleInOrg: text('role_in_org'),
   yearsOfExperience: integer('years_of_experience'),
@@ -1196,10 +1243,10 @@ export type NewUserProfile = typeof userProfile.$inferInsert;
 
 #### DbRateLimitSchema
 
-| Field | Detail |
-|-------|--------|
-| Intent | 共通レート制限テーブル、key prefix で email/ip/session/chat を区別 |
-| Requirements | 7.3, 7.4, 7.8 |
+| Field        | Detail                                                             |
+| ------------ | ------------------------------------------------------------------ |
+| Intent       | 共通レート制限テーブル、key prefix で email/ip/session/chat を区別 |
+| Requirements | 7.3, 7.4, 7.8                                                      |
 
 ```typescript
 // packages/db/src/schema/rate-limit.ts
@@ -1219,10 +1266,10 @@ export type NewRateLimit = typeof rateLimit.$inferInsert;
 
 #### DbSchemaIndex
 
-| Field | Detail |
-|-------|--------|
-| Intent | バレルエクスポート更新 |
-| Requirements | 7.4 |
+| Field        | Detail                 |
+| ------------ | ---------------------- |
+| Intent       | バレルエクスポート更新 |
+| Requirements | 7.4                    |
 
 ```typescript
 // packages/db/src/schema/index.ts (本 spec で追加する行)
@@ -1235,12 +1282,13 @@ export * from './rate-limit';
 
 #### DrizzleMigration
 
-| Field | Detail |
-|-------|--------|
-| Intent | drizzle-kit migration ファイル生成 |
-| Requirements | 7.7, 7.8 |
+| Field        | Detail                             |
+| ------------ | ---------------------------------- |
+| Intent       | drizzle-kit migration ファイル生成 |
+| Requirements | 7.7, 7.8                           |
 
 **Responsibilities & Constraints**
+
 - 開発時: `pnpm --filter @bulr/db push`（dev branch DATABASE_URL に対して、スキーマ反映のみ、ファイル生成なし）
 - 本番反映時: `pnpm --filter @bulr/db generate` で `packages/db/drizzle/<番号>_<suffix>.sql` を生成 → git コミット → レビュー → `pnpm --filter @bulr/db migrate`（production branch DATABASE_URL）
 - 番号 `<番号>` は drizzle-kit が決定（例: `0001_<suffix>.sql`）。本スペックでハードコードしない、`packages/db/drizzle/*_authentication.sql` の glob で参照
@@ -1270,14 +1318,14 @@ erDiagram
 
 ### Logical Data Model
 
-| Table | Owner | Key | Notes |
-|-------|-------|-----|-------|
-| user | Better Auth | id (PK), email (UNIQUE) | bulr で独自カラム追加禁止 |
-| session | Better Auth | id (PK), user_id (FK), token (UNIQUE) | HttpOnly Cookie 名: `better-auth.session_token` |
-| account | Better Auth | id (PK), user_id (FK), provider_id, account_id | Magic Link は password 不要 |
-| verification | Better Auth | id (PK), identifier, expires_at | Magic Link token、15 分 |
-| user_profile | bulr | user_id (PK + FK to user.id ON DELETE CASCADE) | display_name (NOT NULL), role_in_org? (NULL OK), years_of_experience? (NULL OK), created_at, updated_at |
-| rate_limit | bulr | key (PK) | count (default 0), window_start (default now()) |
+| Table        | Owner       | Key                                            | Notes                                                                                                   |
+| ------------ | ----------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| user         | Better Auth | id (PK), email (UNIQUE)                        | bulr で独自カラム追加禁止                                                                               |
+| session      | Better Auth | id (PK), user_id (FK), token (UNIQUE)          | HttpOnly Cookie 名: `better-auth.session_token`                                                         |
+| account      | Better Auth | id (PK), user_id (FK), provider_id, account_id | Magic Link は password 不要                                                                             |
+| verification | Better Auth | id (PK), identifier, expires_at                | Magic Link token、15 分                                                                                 |
+| user_profile | bulr        | user_id (PK + FK to user.id ON DELETE CASCADE) | display_name (NOT NULL), role_in_org? (NULL OK), years_of_experience? (NULL OK), created_at, updated_at |
+| rate_limit   | bulr        | key (PK)                                       | count (default 0), window_start (default now())                                                         |
 
 ### Physical Data Model (Postgres)
 
@@ -1351,11 +1399,11 @@ erDiagram
    - 同じ IP から異なる 21 メールに送信 → 21 回目で「現在ご利用が混み合っています」表示
    - Requirements: 8.3, 8.4
 
-7. **proxy.ts /interviews/* 未認証リダイレクト**
+7. **proxy.ts /interviews/\* 未認証リダイレクト**
    - サインアウト状態で `/interviews` 訪問 → `/sign-in` にリダイレクト
    - Requirements: 6.3
 
-8. **proxy.ts /admin/* Basic 認証要求**
+8. **proxy.ts /admin/\* Basic 認証要求**
    - `/admin/_health` 訪問 → ブラウザに Basic 認証ダイアログ → 不正な credentials で 401、正しい credentials で pass through
    - Requirements: 4.1, 4.2, 6.4, 6.5
 
@@ -1388,7 +1436,7 @@ erDiagram
 - **管理画面 Basic + 許可メール二重 (`security.md` L237-250)**: 単一防御層に依存しない
 - **Zod 入力検証 (`security.md` L66-83)**: メール (`.email().trim().max(254)`), display_name (`.trim().min(1).max(100)`), role_in_org (`.trim().max(100).optional()`)
 - **HttpOnly + Secure + SameSite=Lax cookies (`security.md` L184-188)**: CSRF / XSS のベースライン防御
-- **シークレット管理 (`security.md` L203-216)**: BETTER_AUTH_SECRET / RESEND_API_KEY / ADMIN_* はサーバー専用、`NEXT_PUBLIC_` プレフィックスなし
+- **シークレット管理 (`security.md` L203-216)**: BETTER*AUTH_SECRET / RESEND_API_KEY / ADMIN*\* はサーバー専用、`NEXT_PUBLIC_` プレフィックスなし
 - **fail secure**: ADMIN_ALLOWED_EMAILS が未設定 / 空ならすべての admin アクセスを拒否
 
 ## Open Questions / Risks

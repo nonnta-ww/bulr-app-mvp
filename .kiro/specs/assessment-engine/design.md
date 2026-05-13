@@ -311,21 +311,21 @@ graph TB
 
 ### Technology Stack
 
-| Layer | Choice / Version | Role in Feature | Notes |
-|-------|------------------|-----------------|-------|
-| Frontend | Next.js 16 App Router + React 19 + Tailwind CSS 4 | 面接官 4 ページ、状態 A/B Client Component | `monorepo-foundation` 既設 |
-| 録音 | MediaRecorder API（ブラウザ標準）| `audio/webm; codecs=opus` 優先 + `audio/mp4` フォールバック | `apps/web/lib/audio/recorder.ts` |
-| 音声ストレージ | Vercel Blob ^0.27 | `interview-turn/{session_id}/{turn_id}.{ext}` 構造化命名、30 日 TTL | サーバーサイドのみ、Blob URL を Client に返さない |
-| 文字起こし | OpenAI Whisper API（`whisper-1`、`openai` SDK ^4）| 音声 → 生 transcript | 50MB / 10 分上限 |
-| LLM | Anthropic Claude Sonnet 4.6（`@ai-sdk/anthropic` ^3、Vercel AI SDK 6）| 5 関数すべて | `generateObject` 中心、maxRetries=2 |
-| 構造化出力 | Vercel AI SDK 6 `generateObject` + Zod ^4 | Zod スキーマで LLM 出力強制 + DB 書き込み前再検証 | `useChat` / `streamText` / Tool Use ループ未使用 |
-| ORM | Drizzle ORM ^0.45 + drizzle-kit ^0.31 + `pg` ^8 | 6 テーブル定義 + マイグレーション | `monorepo-foundation` 既設 |
-| Markdown rendering | `react-markdown` ^9 | 面接後レポートの `summary_text` 表示 | XSS 防止、`dangerouslySetInnerHTML` 不使用 |
-| 認証 | Better Auth 1.6 + Magic Link + 認証ヘルパー | `requireUser` / `authedAction` / `requireSessionOwnership` 再利用 | `authentication` 既設 |
-| レート制限 | DB ベース `rate_limit` テーブル + `apps/web/lib/rate-limit.ts` | 1 日 5 セッション / API 30/分 / LLM 100/sess / ターン 50 / メッセージ 200 | `authentication` 既設テーブル + ヘルパー |
-| Cron | Vercel Cron（vercel.json 既設）+ `CRON_SECRET` Bearer | 03:00 JST 毎日 audio-purge 実行 | `multi-env-infrastructure` 既設 |
-| Runtime | Node.js 22 LTS、`runtime: 'nodejs'` API Routes | Drizzle + pg.Pool 利用のため Edge ではなく Node | 全 API ルートに明示 |
-| セキュリティヘッダー | `Permissions-Policy: microphone=(self), camera=(), geolocation=()` 等 | MediaRecorder 利用に必須 | `apps/web/next.config.ts` で全 response に付与 |
+| Layer                | Choice / Version                                                       | Role in Feature                                                           | Notes                                             |
+| -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------- |
+| Frontend             | Next.js 16 App Router + React 19 + Tailwind CSS 4                      | 面接官 4 ページ、状態 A/B Client Component                                | `monorepo-foundation` 既設                        |
+| 録音                 | MediaRecorder API（ブラウザ標準）                                      | `audio/webm; codecs=opus` 優先 + `audio/mp4` フォールバック               | `apps/web/lib/audio/recorder.ts`                  |
+| 音声ストレージ       | Vercel Blob ^0.27                                                      | `interview-turn/{session_id}/{turn_id}.{ext}` 構造化命名、30 日 TTL       | サーバーサイドのみ、Blob URL を Client に返さない |
+| 文字起こし           | OpenAI Whisper API（`whisper-1`、`openai` SDK ^4）                     | 音声 → 生 transcript                                                      | 50MB / 10 分上限                                  |
+| LLM                  | Anthropic Claude Sonnet 4.6（`@ai-sdk/anthropic` ^3、Vercel AI SDK 6） | 5 関数すべて                                                              | `generateObject` 中心、maxRetries=2               |
+| 構造化出力           | Vercel AI SDK 6 `generateObject` + Zod ^4                              | Zod スキーマで LLM 出力強制 + DB 書き込み前再検証                         | `useChat` / `streamText` / Tool Use ループ未使用  |
+| ORM                  | Drizzle ORM ^0.45 + drizzle-kit ^0.31 + `pg` ^8                        | 6 テーブル定義 + マイグレーション                                         | `monorepo-foundation` 既設                        |
+| Markdown rendering   | `react-markdown` ^9                                                    | 面接後レポートの `summary_text` 表示                                      | XSS 防止、`dangerouslySetInnerHTML` 不使用        |
+| 認証                 | Better Auth 1.6 + Magic Link + 認証ヘルパー                            | `requireUser` / `authedAction` / `requireSessionOwnership` 再利用         | `authentication` 既設                             |
+| レート制限           | DB ベース `rate_limit` テーブル + `apps/web/lib/rate-limit.ts`         | 1 日 5 セッション / API 30/分 / LLM 100/sess / ターン 50 / メッセージ 200 | `authentication` 既設テーブル + ヘルパー          |
+| Cron                 | Vercel Cron（vercel.json 既設）+ `CRON_SECRET` Bearer                  | 03:00 JST 毎日 audio-purge 実行                                           | `multi-env-infrastructure` 既設                   |
+| Runtime              | Node.js 22 LTS、`runtime: 'nodejs'` API Routes                         | Drizzle + pg.Pool 利用のため Edge ではなく Node                           | 全 API ルートに明示                               |
+| セキュリティヘッダー | `Permissions-Policy: microphone=(self), camera=(), geolocation=()` 等  | MediaRecorder 利用に必須                                                  | `apps/web/next.config.ts` で全 response に付与    |
 
 ## File Structure Plan
 
@@ -438,7 +438,7 @@ bulr-app-mvp/
 - `apps/web/app/admin/_health/page.tsx`
 - `apps/web/app/admin/_health/`（ディレクトリ）
 
-> 各ファイルは単一責務。新規作成: apps/web 配下 16 ファイル、packages/types 0 新規（既存 2 ファイル更新 + index 更新）、packages/db 8 ファイル（6 schema + 3 queries、index 更新は別カウント）、packages/ai 9 ファイル + drizzle migration（drizzle-kit 自動生成）。更新: apps/web/package.json + next.config.ts、packages/types/src/index.ts、packages/db/src/schema/index.ts、packages/db/src/queries/index.ts、packages/ai/src/client.ts + index.ts。削除: admin/_health ディレクトリ + page.tsx。
+> 各ファイルは単一責務。新規作成: apps/web 配下 16 ファイル、packages/types 0 新規（既存 2 ファイル更新 + index 更新）、packages/db 8 ファイル（6 schema + 3 queries、index 更新は別カウント）、packages/ai 9 ファイル + drizzle migration（drizzle-kit 自動生成）。更新: apps/web/package.json + next.config.ts、packages/types/src/index.ts、packages/db/src/schema/index.ts、packages/db/src/queries/index.ts、packages/ai/src/client.ts + index.ts。削除: admin/\_health ディレクトリ + page.tsx。
 
 ## System Flows
 
@@ -668,80 +668,80 @@ sequenceDiagram
 
 ## Requirements Traceability
 
-| Requirement | Summary | Components | Interfaces | Flows |
-|-------------|---------|------------|------------|-------|
-| 1.1-1.12 | 共通型 (profile.ts + evaluation.ts) | TypesProfile, TypesEvaluation | packages/types exports map | typecheck flow |
-| 2.1-2.15 | DB 6 テーブル + migration | SchemaCandidate, SchemaInterviewSession, SchemaQuestionProposal, SchemaInterviewTurn, SchemaPatternCoverage, SchemaSessionReport, MigrationFile | Drizzle pgTable | migration flow |
-| 3.1-3.9 | 候補者情報入力 + セッション作成 | InterviewsNewPage, CandidateForm, CreateSessionAction, SelectPlannedPatterns | createSession Server Action | state machine 1 |
-| 4.1-4.7 | セッション一覧 + 再開 | InterviewsListPage | Server Component | session list flow |
-| 5.1-5.12 | 状態 A 録音中 UI | InterviewSessionPage, RecordingState, AudioRecorder | use client component | state machine 2A |
-| 6.1-6.8 | 状態 B 候補選択 UI | InterviewSessionPage, ProposalChoiceState, SelectProposalChoiceAction | use client component | state machine 2B |
-| 7.1-7.16 | 1 ターン処理 API（Core/Prepare 分離 + 冪等性） | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit | POST /api/interview/turns/next | 1 turn sequence |
-| 23.1-23.7 | 提案再生成 API | ProposalRegenerateRoute, CreateLlmContext, ProposeNextQuestions, ValidateLLMOutput, RateLimit | POST /api/interview/proposal/regenerate | proposal regenerate sequence |
-| 24.1-24.5 | パターン遷移時の集約トリガ（Prepare-1a） | TurnsNextRoute, AnalyzeTurn, AggregatePatternCoverage, LoadRecentTurns, SchemaPatternCoverage | TurnsNextRoute Prepare phase | 1 turn sequence (Prepare-1a branch) |
-| 25.1-25.8 | 全ターン話者分離（面接官質問音読の構造的除去） | TurnsNextRoute, SplitInterviewerCandidate | splitInterviewerCandidate w/ questionTextHint | 1 turn sequence (Step 7) |
-| 8.1-8.12 | 5 LLM 関数 | AnalyzeTurn, SplitInterviewerCandidate, ProposeNextQuestions, AggregatePatternCoverage, GenerateSessionReport, CreateLlmContext, ValidateLLMOutput, ClientPackagesAi | packages/ai functions | LLM orchestration |
-| 9.1-9.6 | システムプロンプト | BuildSystemPrompt | packages/ai prompts | LLM orchestration |
-| 10.1-10.11 | Whisper + 音声処理 | Transcribe, AudioRecorder, BlobClient, NextConfigCSP | packages/ai whisper + apps/web lib/audio | 1 turn sequence |
-| 11.1-11.14 | finalize API + report | FinalizeRoute, GenerateSessionReport, InterviewsReportPage, Heatmap | POST /api/interview/finalize, Server Component | state machine 3 |
-| 12.1-12.7 | フリー質問の許容 | SchemaInterviewTurn, AnalyzeTurn, AggregatePatternCoverage, GenerateSessionReport, Heatmap | pattern_id null + pattern_match_confidence off_pattern | LLM orchestration |
-| 13.1-13.6 | 詰まり判定 + 4 段階 | AnalyzeTurn, AggregatePatternCoverage, ProposeNextQuestions, BuildSystemPrompt | LlmAnalysis + LlmEvaluation Zod | LLM orchestration |
-| 14.1-14.8 | LLM 出力検証 + フォールバック | ValidateLLMOutput | validateAndFallback util | LLM orchestration |
-| 15.1-15.7 | レート制限 | RateLimit (auth spec 既設), CreateSessionAction, TurnsNextRoute | rate_limit table key prefix | 1 turn sequence |
-| 16.1-16.8 | Vercel Cron 音声削除 | AudioPurgeRoute, BlobClient | GET /api/cron/audio-purge | Cron flow |
-| 17.1-17.5 | セキュリティヘッダー | NextConfigCSP | apps/web/next.config.ts headers() | response |
-| 18.1-18.5 | プロンプトインジェクション防御 | BuildSystemPrompt, TurnsNextRoute (transcript size limit) | system prompt section 2 | LLM orchestration |
-| 19.1-19.5 | smoke test 削除 | AdminHealthDelete | filesystem delete | — |
-| 20.1-20.6 | 認証統合 | TurnsNextRoute, FinalizeRoute, AudioPurgeRoute, CreateSessionAction, 全 Server Component | requireUser + requireSessionOwnership + authedAction | each flow |
-| 21.1-21.5 | 共通クエリ | LoadSessionWithTurns, LoadCompletedPatternCodes, LoadRecentTurns | packages/db/src/queries/interview | various flows |
-| 22.1-22.5 | テスト戦略 | （手動 E2E、フレームワーク非導入）| docs | manual test |
+| Requirement | Summary                                        | Components                                                                                                                                                           | Interfaces                                             | Flows                               |
+| ----------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------- |
+| 1.1-1.12    | 共通型 (profile.ts + evaluation.ts)            | TypesProfile, TypesEvaluation                                                                                                                                        | packages/types exports map                             | typecheck flow                      |
+| 2.1-2.15    | DB 6 テーブル + migration                      | SchemaCandidate, SchemaInterviewSession, SchemaQuestionProposal, SchemaInterviewTurn, SchemaPatternCoverage, SchemaSessionReport, MigrationFile                      | Drizzle pgTable                                        | migration flow                      |
+| 3.1-3.9     | 候補者情報入力 + セッション作成                | InterviewsNewPage, CandidateForm, CreateSessionAction, SelectPlannedPatterns                                                                                         | createSession Server Action                            | state machine 1                     |
+| 4.1-4.7     | セッション一覧 + 再開                          | InterviewsListPage                                                                                                                                                   | Server Component                                       | session list flow                   |
+| 5.1-5.12    | 状態 A 録音中 UI                               | InterviewSessionPage, RecordingState, AudioRecorder                                                                                                                  | use client component                                   | state machine 2A                    |
+| 6.1-6.8     | 状態 B 候補選択 UI                             | InterviewSessionPage, ProposalChoiceState, SelectProposalChoiceAction                                                                                                | use client component                                   | state machine 2B                    |
+| 7.1-7.16    | 1 ターン処理 API（Core/Prepare 分離 + 冪等性） | TurnsNextRoute, BlobClient, Transcribe, CreateLlmContext, AnalyzeTurn, SplitIC, ProposeQ, AggCov, ValidateLLMOutput, RateLimit                                       | POST /api/interview/turns/next                         | 1 turn sequence                     |
+| 23.1-23.7   | 提案再生成 API                                 | ProposalRegenerateRoute, CreateLlmContext, ProposeNextQuestions, ValidateLLMOutput, RateLimit                                                                        | POST /api/interview/proposal/regenerate                | proposal regenerate sequence        |
+| 24.1-24.5   | パターン遷移時の集約トリガ（Prepare-1a）       | TurnsNextRoute, AnalyzeTurn, AggregatePatternCoverage, LoadRecentTurns, SchemaPatternCoverage                                                                        | TurnsNextRoute Prepare phase                           | 1 turn sequence (Prepare-1a branch) |
+| 25.1-25.8   | 全ターン話者分離（面接官質問音読の構造的除去） | TurnsNextRoute, SplitInterviewerCandidate                                                                                                                            | splitInterviewerCandidate w/ questionTextHint          | 1 turn sequence (Step 7)            |
+| 8.1-8.12    | 5 LLM 関数                                     | AnalyzeTurn, SplitInterviewerCandidate, ProposeNextQuestions, AggregatePatternCoverage, GenerateSessionReport, CreateLlmContext, ValidateLLMOutput, ClientPackagesAi | packages/ai functions                                  | LLM orchestration                   |
+| 9.1-9.6     | システムプロンプト                             | BuildSystemPrompt                                                                                                                                                    | packages/ai prompts                                    | LLM orchestration                   |
+| 10.1-10.11  | Whisper + 音声処理                             | Transcribe, AudioRecorder, BlobClient, NextConfigCSP                                                                                                                 | packages/ai whisper + apps/web lib/audio               | 1 turn sequence                     |
+| 11.1-11.14  | finalize API + report                          | FinalizeRoute, GenerateSessionReport, InterviewsReportPage, Heatmap                                                                                                  | POST /api/interview/finalize, Server Component         | state machine 3                     |
+| 12.1-12.7   | フリー質問の許容                               | SchemaInterviewTurn, AnalyzeTurn, AggregatePatternCoverage, GenerateSessionReport, Heatmap                                                                           | pattern_id null + pattern_match_confidence off_pattern | LLM orchestration                   |
+| 13.1-13.6   | 詰まり判定 + 4 段階                            | AnalyzeTurn, AggregatePatternCoverage, ProposeNextQuestions, BuildSystemPrompt                                                                                       | LlmAnalysis + LlmEvaluation Zod                        | LLM orchestration                   |
+| 14.1-14.8   | LLM 出力検証 + フォールバック                  | ValidateLLMOutput                                                                                                                                                    | validateAndFallback util                               | LLM orchestration                   |
+| 15.1-15.7   | レート制限                                     | RateLimit (auth spec 既設), CreateSessionAction, TurnsNextRoute                                                                                                      | rate_limit table key prefix                            | 1 turn sequence                     |
+| 16.1-16.8   | Vercel Cron 音声削除                           | AudioPurgeRoute, BlobClient                                                                                                                                          | GET /api/cron/audio-purge                              | Cron flow                           |
+| 17.1-17.5   | セキュリティヘッダー                           | NextConfigCSP                                                                                                                                                        | apps/web/next.config.ts headers()                      | response                            |
+| 18.1-18.5   | プロンプトインジェクション防御                 | BuildSystemPrompt, TurnsNextRoute (transcript size limit)                                                                                                            | system prompt section 2                                | LLM orchestration                   |
+| 19.1-19.5   | smoke test 削除                                | AdminHealthDelete                                                                                                                                                    | filesystem delete                                      | —                                   |
+| 20.1-20.6   | 認証統合                                       | TurnsNextRoute, FinalizeRoute, AudioPurgeRoute, CreateSessionAction, 全 Server Component                                                                             | requireUser + requireSessionOwnership + authedAction   | each flow                           |
+| 21.1-21.5   | 共通クエリ                                     | LoadSessionWithTurns, LoadCompletedPatternCodes, LoadRecentTurns                                                                                                     | packages/db/src/queries/interview                      | various flows                       |
+| 22.1-22.5   | テスト戦略                                     | （手動 E2E、フレームワーク非導入）                                                                                                                                   | docs                                                   | manual test                         |
 
 ## Components and Interfaces
 
-| Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
-|-----------|--------------|--------|--------------|--------------------------|-----------|
-| TypesProfile | packages/types | InterviewerProfile / CandidateInfo / SystemType 型 | 1.1, 1.2, 1.3, 1.11, 1.12 | TypeScript 5.x (P0) | State |
-| TypesEvaluation | packages/types | LlmAnalysis / LlmEvaluation / ManualEvaluation / HeatmapData / StuckType / PatternMatchConfidence / QuestionIntent 型 | 1.4-1.11, 1.12 | TypeScript 5.x (P0) | State |
-| SchemaCandidate | packages/db/schema | candidate テーブル | 2.1, 2.10 | drizzle-orm (P0), nanoid (P0) | State |
-| SchemaInterviewSession | packages/db/schema | interview_session + status enum | 2.2, 2.10, 2.11 | drizzle-orm (P0), SchemaCandidate (P0), auth.user (P0) | State |
-| SchemaQuestionProposal | packages/db/schema | question_proposal + intent enum | 2.3, 2.10, 2.12 | SchemaInterviewSession (P0) | State |
-| SchemaInterviewTurn | packages/db/schema | interview_turn + 2 enum + jsonb columns | 2.4, 2.10, 2.13, 2.14, 12.1 | SchemaInterviewSession (P0), SchemaAssessmentPattern (P0), SchemaQuestionProposal (P1) | State |
-| SchemaPatternCoverage | packages/db/schema | pattern_coverage + UNIQUE + stuck_type enum | 2.5, 2.10, 2.15 | SchemaInterviewSession (P0), SchemaAssessmentPattern (P0) | State |
-| SchemaSessionReport | packages/db/schema | session_report + session_id UNIQUE | 2.6, 2.10 | SchemaInterviewSession (P0) | State |
-| MigrationFile | packages/db/drizzle | drizzle-kit 生成の DDL | 2.8, 2.9, 2.10 | drizzle-kit (P0), 上記 6 schema (P0) | State |
-| LoadSessionWithTurns | packages/db/queries/interview | session + turns + latest proposal + candidate 取得 | 21.1, 21.4 | SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal + SchemaCandidate (P0) | Service |
-| LoadCompletedPatternCodes | packages/db/queries/interview | 完了済み pattern_code リスト | 21.2, 21.4 | SchemaPatternCoverage + SchemaAssessmentPattern (P0) | Service |
-| LoadRecentTurns | packages/db/queries/interview | 直近 N ターン + transcript + llm_analysis | 21.3, 21.4 | SchemaInterviewTurn (P0) | Service |
-| ClientPackagesAi | packages/ai | Anthropic Claude Sonnet 4.6 モデル定義 | 8.9 | @ai-sdk/anthropic (P0) | State |
-| BuildSystemPrompt | packages/ai/prompts | 13 セクション システムプロンプト純関数 | 9.1-9.6, 13.6, 18.1, 18.5 | TypesProfile (P0), TypesEvaluation (P0) | Service (pure function) |
-| CreateLlmContext | packages/ai/lib | sessionId / userId 束縛クロージャ | 7.7, 8.8 | TypesEvaluation (P0) | Service |
-| ValidateLLMOutput | packages/ai/lib | safeParse + フォールバック | 8.12, 14.1-14.8 | Zod 4.x (P0) | Service |
-| AnalyzeTurn | packages/ai/functions | このターン 5 次元シグナル + 到達段階 + match confidence + matched_pattern_id + stuck_signal | 8.1, 8.2, 12.2, 13.1, 13.6, 18.2, 24.1 | BuildSystemPrompt (P0), CreateLlmContext (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0), assessment_pattern (P0) | Service |
-| SplitInterviewerCandidate | packages/ai/functions | 全ターン共通の話者分離（questionTextHint で精度向上） | 8.3, 25.1-25.5 | BuildSystemPrompt (P0), Claude Sonnet 4.6 (P0) | Service |
-| ProposeNextQuestions | packages/ai/functions | 3 候補 (必ず 1 つは next_pattern) | 8.4, 8.5, 12.7, 13.4 | BuildSystemPrompt (P0), LoadCompletedPatternCodes (P0), LoadRecentTurns (P0), Claude Sonnet 4.6 (P0) | Service |
-| AggregatePatternCoverage | packages/ai/functions | 複数ターン統合 5 次元最終スコア | 8.6, 13.2, 13.3, 13.5 | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0) | Service |
-| GenerateSessionReport | packages/ai/functions | HeatmapData + summary_text | 8.7, 11.5, 12.5, 13.6 | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0) | Service |
-| Transcribe | packages/ai/whisper | OpenAI Whisper API ラッパー | 10.1-10.5 | openai SDK (P0), OPENAI_API_KEY (P0) | Service |
-| AudioRecorder | apps/web/lib/audio | 'use client' MediaRecorder ラッパー | 5.4, 5.7, 5.11, 5.12, 10.6, 10.11 | MediaRecorder API (P0) | Service |
-| BlobClient | apps/web/lib/audio | サーバーサイドのみ Vercel Blob ヘルパー | 10.7-10.10, 16.4, 16.5 | @vercel/blob (P0), BLOB_READ_WRITE_TOKEN (P0) | Service |
-| SelectPlannedPatterns | apps/web/lib/queries | assessment_pattern 8-12 件選定純関数 | 3.5 | assessment_pattern (P0) | Service (pure) |
-| CreateSessionAction | apps/web/lib/actions | candidate + interview_session 作成 Server Action | 3.3-3.9, 15.2, 20.4 | authedAction (P0), SchemaCandidate + SchemaInterviewSession (P0), SelectPlannedPatterns (P0), RateLimit (P0) | Service (Server Action) |
-| SelectProposalChoiceAction | apps/web/lib/actions | selected_index 保存 Server Action | 6.5, 6.6 | authedAction (P0), SchemaQuestionProposal (P0) | Service (Server Action) |
-| InterviewsListPage | apps/web/(interviewer)/interviews | セッション一覧 Server Component | 4.1-4.7, 20.5 | requireUser (P0), SchemaInterviewSession + SchemaCandidate + SchemaInterviewTurn (P0) | State (UI) |
-| InterviewsNewPage | apps/web/(interviewer)/interviews/new | 候補者情報入力 Server Component + Client Form | 3.1-3.2, 3.7 | requireUser (P0), CreateSessionAction (P0), CandidateForm (P0) | State (UI) |
-| CandidateForm | apps/web/(interviewer)/interviews/_components | 'use client' 候補者情報入力フォーム | 3.1, 3.2 | CreateSessionAction (P0), Zod (P0) | State (UI) |
-| InterviewSessionPage | apps/web/(interviewer)/interviews/[sessionId] | 面接中 Server Component + use client wrap | 5.1, 6.1, 20.5 | requireUser + requireSessionOwnership (P0), LoadSessionWithTurns (P0), InterviewSessionRunner (P0) | State (UI) |
-| InterviewSessionRunner | apps/web/(interviewer)/interviews/_components | 'use client' 状態 A/B controller | 5.1, 6.1, 6.5-6.8 | RecordingState (P0), ProposalChoiceState (P0), SelectProposalChoiceAction (P0) | State (UI) |
-| RecordingState | apps/web/(interviewer)/interviews/_components | 'use client' 状態 A UI | 5.2-5.12 | AudioRecorder (P0) | State (UI) |
-| ProposalChoiceState | apps/web/(interviewer)/interviews/_components | 'use client' 状態 B UI | 6.1-6.8 | SelectProposalChoiceAction (P0) | State (UI) |
-| InterviewsReportPage | apps/web/(interviewer)/interviews/[sessionId]/report | 面接後レポート Server Component | 11.9-11.14, 20.5 | requireUser + requireSessionOwnership (P0), SchemaSessionReport (P0), SchemaPatternCoverage (P0), Heatmap (P0), react-markdown (P0) | State (UI) |
-| Heatmap | apps/web/(interviewer)/interviews/_components | CSS 横棒ヒートマップ Server Component | 11.11, 12.6 | TypesEvaluation (P0), Tailwind (P0) | State (UI) |
-| TurnsNextRoute | apps/web/app/api/interview/turns/next | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId 冪等性、Prepare-1a パターン遷移集約、全ターン話者分離 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1, 24.1-24.5, 25.1-25.8 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), LoadRecentTurns (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API) |
-| ProposalRegenerateRoute | apps/web/app/api/interview/proposal/regenerate | Prepare-2 失敗時の提案再生成 API runtime nodejs、proposal の冪等性チェックあり | 23.1-23.7, 20.1 | requireUser + requireSessionOwnership (P0), CreateLlmContext (P0), ProposeNextQuestions (P0), ValidateLLMOutput (P0), RateLimit (P0), SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal (P0), LoadSessionWithTurns (P0), LoadCompletedPatternCodes (P0) | Service (API) |
-| FinalizeRoute | apps/web/app/api/interview/finalize | セッション終了 API runtime nodejs | 11.1-11.8, 20.2 | requireUser + requireSessionOwnership (P0), AggregatePatternCoverage (P0), GenerateSessionReport (P0), SchemaPatternCoverage + SchemaSessionReport + SchemaInterviewSession (P0) | Service (API) |
-| AudioPurgeRoute | apps/web/app/api/cron/audio-purge | Vercel Cron 音声削除 runtime nodejs | 16.1-16.8, 20.3 | CRON_SECRET (P0), BlobClient (P0), SchemaInterviewTurn (P0) | Service (Cron) |
-| NextConfigCSP | apps/web | Permissions-Policy + CSP セキュリティヘッダー | 17.1-17.5 | Next.js 16 headers() (P0) | State |
-| AdminHealthDelete | apps/web/app/admin/_health | smoke test ページ削除 | 19.1-19.5 | filesystem (P0) | State |
+| Component                  | Domain/Layer                                         | Intent                                                                                                                            | Req Coverage                                                | Key Dependencies (P0/P1)                                                                                                                                                                                                                                                                              | Contracts               |
+| -------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| TypesProfile               | packages/types                                       | InterviewerProfile / CandidateInfo / SystemType 型                                                                                | 1.1, 1.2, 1.3, 1.11, 1.12                                   | TypeScript 5.x (P0)                                                                                                                                                                                                                                                                                   | State                   |
+| TypesEvaluation            | packages/types                                       | LlmAnalysis / LlmEvaluation / ManualEvaluation / HeatmapData / StuckType / PatternMatchConfidence / QuestionIntent 型             | 1.4-1.11, 1.12                                              | TypeScript 5.x (P0)                                                                                                                                                                                                                                                                                   | State                   |
+| SchemaCandidate            | packages/db/schema                                   | candidate テーブル                                                                                                                | 2.1, 2.10                                                   | drizzle-orm (P0), nanoid (P0)                                                                                                                                                                                                                                                                         | State                   |
+| SchemaInterviewSession     | packages/db/schema                                   | interview_session + status enum                                                                                                   | 2.2, 2.10, 2.11                                             | drizzle-orm (P0), SchemaCandidate (P0), auth.user (P0)                                                                                                                                                                                                                                                | State                   |
+| SchemaQuestionProposal     | packages/db/schema                                   | question_proposal + intent enum                                                                                                   | 2.3, 2.10, 2.12                                             | SchemaInterviewSession (P0)                                                                                                                                                                                                                                                                           | State                   |
+| SchemaInterviewTurn        | packages/db/schema                                   | interview_turn + 2 enum + jsonb columns                                                                                           | 2.4, 2.10, 2.13, 2.14, 12.1                                 | SchemaInterviewSession (P0), SchemaAssessmentPattern (P0), SchemaQuestionProposal (P1)                                                                                                                                                                                                                | State                   |
+| SchemaPatternCoverage      | packages/db/schema                                   | pattern_coverage + UNIQUE + stuck_type enum                                                                                       | 2.5, 2.10, 2.15                                             | SchemaInterviewSession (P0), SchemaAssessmentPattern (P0)                                                                                                                                                                                                                                             | State                   |
+| SchemaSessionReport        | packages/db/schema                                   | session_report + session_id UNIQUE                                                                                                | 2.6, 2.10                                                   | SchemaInterviewSession (P0)                                                                                                                                                                                                                                                                           | State                   |
+| MigrationFile              | packages/db/drizzle                                  | drizzle-kit 生成の DDL                                                                                                            | 2.8, 2.9, 2.10                                              | drizzle-kit (P0), 上記 6 schema (P0)                                                                                                                                                                                                                                                                  | State                   |
+| LoadSessionWithTurns       | packages/db/queries/interview                        | session + turns + latest proposal + candidate 取得                                                                                | 21.1, 21.4                                                  | SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal + SchemaCandidate (P0)                                                                                                                                                                                                          | Service                 |
+| LoadCompletedPatternCodes  | packages/db/queries/interview                        | 完了済み pattern_code リスト                                                                                                      | 21.2, 21.4                                                  | SchemaPatternCoverage + SchemaAssessmentPattern (P0)                                                                                                                                                                                                                                                  | Service                 |
+| LoadRecentTurns            | packages/db/queries/interview                        | 直近 N ターン + transcript + llm_analysis                                                                                         | 21.3, 21.4                                                  | SchemaInterviewTurn (P0)                                                                                                                                                                                                                                                                              | Service                 |
+| ClientPackagesAi           | packages/ai                                          | Anthropic Claude Sonnet 4.6 モデル定義                                                                                            | 8.9                                                         | @ai-sdk/anthropic (P0)                                                                                                                                                                                                                                                                                | State                   |
+| BuildSystemPrompt          | packages/ai/prompts                                  | 13 セクション システムプロンプト純関数                                                                                            | 9.1-9.6, 13.6, 18.1, 18.5                                   | TypesProfile (P0), TypesEvaluation (P0)                                                                                                                                                                                                                                                               | Service (pure function) |
+| CreateLlmContext           | packages/ai/lib                                      | sessionId / userId 束縛クロージャ                                                                                                 | 7.7, 8.8                                                    | TypesEvaluation (P0)                                                                                                                                                                                                                                                                                  | Service                 |
+| ValidateLLMOutput          | packages/ai/lib                                      | safeParse + フォールバック                                                                                                        | 8.12, 14.1-14.8                                             | Zod 4.x (P0)                                                                                                                                                                                                                                                                                          | Service                 |
+| AnalyzeTurn                | packages/ai/functions                                | このターン 5 次元シグナル + 到達段階 + match confidence + matched_pattern_id + stuck_signal                                       | 8.1, 8.2, 12.2, 13.1, 13.6, 18.2, 24.1                      | BuildSystemPrompt (P0), CreateLlmContext (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0), assessment_pattern (P0)                                                                                                                                                                                | Service                 |
+| SplitInterviewerCandidate  | packages/ai/functions                                | 全ターン共通の話者分離（questionTextHint で精度向上）                                                                             | 8.3, 25.1-25.5                                              | BuildSystemPrompt (P0), Claude Sonnet 4.6 (P0)                                                                                                                                                                                                                                                        | Service                 |
+| ProposeNextQuestions       | packages/ai/functions                                | 3 候補 (必ず 1 つは next_pattern)                                                                                                 | 8.4, 8.5, 12.7, 13.4                                        | BuildSystemPrompt (P0), LoadCompletedPatternCodes (P0), LoadRecentTurns (P0), Claude Sonnet 4.6 (P0)                                                                                                                                                                                                  | Service                 |
+| AggregatePatternCoverage   | packages/ai/functions                                | 複数ターン統合 5 次元最終スコア                                                                                                   | 8.6, 13.2, 13.3, 13.5                                       | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0)                                                                                                                                                                                                                                | Service                 |
+| GenerateSessionReport      | packages/ai/functions                                | HeatmapData + summary_text                                                                                                        | 8.7, 11.5, 12.5, 13.6                                       | BuildSystemPrompt (P0), ValidateLLMOutput (P0), Claude Sonnet 4.6 (P0)                                                                                                                                                                                                                                | Service                 |
+| Transcribe                 | packages/ai/whisper                                  | OpenAI Whisper API ラッパー                                                                                                       | 10.1-10.5                                                   | openai SDK (P0), OPENAI_API_KEY (P0)                                                                                                                                                                                                                                                                  | Service                 |
+| AudioRecorder              | apps/web/lib/audio                                   | 'use client' MediaRecorder ラッパー                                                                                               | 5.4, 5.7, 5.11, 5.12, 10.6, 10.11                           | MediaRecorder API (P0)                                                                                                                                                                                                                                                                                | Service                 |
+| BlobClient                 | apps/web/lib/audio                                   | サーバーサイドのみ Vercel Blob ヘルパー                                                                                           | 10.7-10.10, 16.4, 16.5                                      | @vercel/blob (P0), BLOB_READ_WRITE_TOKEN (P0)                                                                                                                                                                                                                                                         | Service                 |
+| SelectPlannedPatterns      | apps/web/lib/queries                                 | assessment_pattern 8-12 件選定純関数                                                                                              | 3.5                                                         | assessment_pattern (P0)                                                                                                                                                                                                                                                                               | Service (pure)          |
+| CreateSessionAction        | apps/web/lib/actions                                 | candidate + interview_session 作成 Server Action                                                                                  | 3.3-3.9, 15.2, 20.4                                         | authedAction (P0), SchemaCandidate + SchemaInterviewSession (P0), SelectPlannedPatterns (P0), RateLimit (P0)                                                                                                                                                                                          | Service (Server Action) |
+| SelectProposalChoiceAction | apps/web/lib/actions                                 | selected_index 保存 Server Action                                                                                                 | 6.5, 6.6                                                    | authedAction (P0), SchemaQuestionProposal (P0)                                                                                                                                                                                                                                                        | Service (Server Action) |
+| InterviewsListPage         | apps/web/(interviewer)/interviews                    | セッション一覧 Server Component                                                                                                   | 4.1-4.7, 20.5                                               | requireUser (P0), SchemaInterviewSession + SchemaCandidate + SchemaInterviewTurn (P0)                                                                                                                                                                                                                 | State (UI)              |
+| InterviewsNewPage          | apps/web/(interviewer)/interviews/new                | 候補者情報入力 Server Component + Client Form                                                                                     | 3.1-3.2, 3.7                                                | requireUser (P0), CreateSessionAction (P0), CandidateForm (P0)                                                                                                                                                                                                                                        | State (UI)              |
+| CandidateForm              | apps/web/(interviewer)/interviews/\_components       | 'use client' 候補者情報入力フォーム                                                                                               | 3.1, 3.2                                                    | CreateSessionAction (P0), Zod (P0)                                                                                                                                                                                                                                                                    | State (UI)              |
+| InterviewSessionPage       | apps/web/(interviewer)/interviews/[sessionId]        | 面接中 Server Component + use client wrap                                                                                         | 5.1, 6.1, 20.5                                              | requireUser + requireSessionOwnership (P0), LoadSessionWithTurns (P0), InterviewSessionRunner (P0)                                                                                                                                                                                                    | State (UI)              |
+| InterviewSessionRunner     | apps/web/(interviewer)/interviews/\_components       | 'use client' 状態 A/B controller                                                                                                  | 5.1, 6.1, 6.5-6.8                                           | RecordingState (P0), ProposalChoiceState (P0), SelectProposalChoiceAction (P0)                                                                                                                                                                                                                        | State (UI)              |
+| RecordingState             | apps/web/(interviewer)/interviews/\_components       | 'use client' 状態 A UI                                                                                                            | 5.2-5.12                                                    | AudioRecorder (P0)                                                                                                                                                                                                                                                                                    | State (UI)              |
+| ProposalChoiceState        | apps/web/(interviewer)/interviews/\_components       | 'use client' 状態 B UI                                                                                                            | 6.1-6.8                                                     | SelectProposalChoiceAction (P0)                                                                                                                                                                                                                                                                       | State (UI)              |
+| InterviewsReportPage       | apps/web/(interviewer)/interviews/[sessionId]/report | 面接後レポート Server Component                                                                                                   | 11.9-11.14, 20.5                                            | requireUser + requireSessionOwnership (P0), SchemaSessionReport (P0), SchemaPatternCoverage (P0), Heatmap (P0), react-markdown (P0)                                                                                                                                                                   | State (UI)              |
+| Heatmap                    | apps/web/(interviewer)/interviews/\_components       | CSS 横棒ヒートマップ Server Component                                                                                             | 11.11, 12.6                                                 | TypesEvaluation (P0), Tailwind (P0)                                                                                                                                                                                                                                                                   | State (UI)              |
+| TurnsNextRoute             | apps/web/app/api/interview/turns/next                | 1 ターン処理 API runtime nodejs、Core/Prepare 分離、クライアント生成 turnId 冪等性、Prepare-1a パターン遷移集約、全ターン話者分離 | 7.1-7.16, 12.3, 15.3-15.6, 18.3, 20.1, 24.1-24.5, 25.1-25.8 | requireUser + requireSessionOwnership (P0), BlobClient (P0), Transcribe (P0), CreateLlmContext (P0), AnalyzeTurn (P0), SplitInterviewerCandidate (P0), ProposeNextQuestions (P0), AggregatePatternCoverage (P0), LoadRecentTurns (P0), ValidateLLMOutput (P0), RateLimit (P0), Schema 6 テーブル (P0) | Service (API)           |
+| ProposalRegenerateRoute    | apps/web/app/api/interview/proposal/regenerate       | Prepare-2 失敗時の提案再生成 API runtime nodejs、proposal の冪等性チェックあり                                                    | 23.1-23.7, 20.1                                             | requireUser + requireSessionOwnership (P0), CreateLlmContext (P0), ProposeNextQuestions (P0), ValidateLLMOutput (P0), RateLimit (P0), SchemaInterviewSession + SchemaInterviewTurn + SchemaQuestionProposal (P0), LoadSessionWithTurns (P0), LoadCompletedPatternCodes (P0)                           | Service (API)           |
+| FinalizeRoute              | apps/web/app/api/interview/finalize                  | セッション終了 API runtime nodejs                                                                                                 | 11.1-11.8, 20.2                                             | requireUser + requireSessionOwnership (P0), AggregatePatternCoverage (P0), GenerateSessionReport (P0), SchemaPatternCoverage + SchemaSessionReport + SchemaInterviewSession (P0)                                                                                                                      | Service (API)           |
+| AudioPurgeRoute            | apps/web/app/api/cron/audio-purge                    | Vercel Cron 音声削除 runtime nodejs                                                                                               | 16.1-16.8, 20.3                                             | CRON_SECRET (P0), BlobClient (P0), SchemaInterviewTurn (P0)                                                                                                                                                                                                                                           | Service (Cron)          |
+| NextConfigCSP              | apps/web                                             | Permissions-Policy + CSP セキュリティヘッダー                                                                                     | 17.1-17.5                                                   | Next.js 16 headers() (P0)                                                                                                                                                                                                                                                                             | State                   |
+| AdminHealthDelete          | apps/web/app/admin/\_health                          | smoke test ページ削除                                                                                                             | 19.1-19.5                                                   | filesystem (P0)                                                                                                                                                                                                                                                                                       | State                   |
 
 ### Detailed Component Specifications
 
@@ -750,7 +750,12 @@ sequenceDiagram
 ```typescript
 // packages/types/src/profile.ts (概要)
 export type SystemType =
-  | 'btoc' | 'btob_saas' | 'business' | 'payment' | 'embedded' | 'data_platform';
+  | 'btoc'
+  | 'btob_saas'
+  | 'business'
+  | 'payment'
+  | 'embedded'
+  | 'data_platform';
 
 export interface InterviewerProfile {
   displayName: string;
@@ -799,25 +804,28 @@ export interface LlmEvaluation {
   level_reached: 0 | 1 | 2 | 3 | 4;
   stuck_type: StuckType | null;
   notes: string;
-  evaluated_at: string;  // ISO 8601
+  evaluated_at: string; // ISO 8601
 }
 
 export interface ManualEvaluation extends Omit<LlmEvaluation, 'evaluated_at'> {
-  reviewer: string;  // admin email
-  reviewed_at: string;  // ISO 8601
+  reviewer: string; // admin email
+  reviewed_at: string; // ISO 8601
 }
 
 export interface HeatmapData {
   // by_category のキーは @bulr/db の PatternCategory 値 ('design'|'trouble'|'performance'|'security'|'organization'|'ai')。
   // packages/types -> @bulr/db の依存を避けるため Record<string, ...> で宣言し、ランタイム契約で保証する。
-  by_category: Record<string, {
-    avg_authenticity: number;
-    avg_judgment: number;
-    avg_scope: number;
-    avg_meta_cognition: number;
-    avg_ai_literacy: number;
-    pattern_count: number;
-  }>;
+  by_category: Record<
+    string,
+    {
+      avg_authenticity: number;
+      avg_judgment: number;
+      avg_scope: number;
+      avg_meta_cognition: number;
+      avg_ai_literacy: number;
+      pattern_count: number;
+    }
+  >;
   scope_distribution: Record<1 | 2 | 3 | 4 | 5, number>;
   ai_literacy_distribution: Record<0 | 1 | 2 | 3, number>;
   free_question_count: number;
@@ -830,7 +838,9 @@ export interface HeatmapData {
 // packages/db/src/schema/candidate.ts (概要)
 // 命名規則: JS プロパティ名 = camelCase、DB カラム名（文字列引数）= snake_case (structure.md)
 export const candidate = pgTable('candidate', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
   name: text('name').notNull(),
   appliedRole: text('applied_role').notNull(),
   backgroundSummary: text('background_summary').notNull(),
@@ -840,16 +850,28 @@ export const candidate = pgTable('candidate', {
 });
 
 // packages/db/src/schema/interview-session.ts (概要)
-export const sessionStatus = pgEnum('interview_session_status',
-  ['draft', 'in_progress', 'completed', 'abandoned']);
+export const sessionStatus = pgEnum('interview_session_status', [
+  'draft',
+  'in_progress',
+  'completed',
+  'abandoned',
+]);
 export const interviewSession = pgTable('interview_session', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
-  interviewerId: text('interviewer_id').notNull().references(() => user.id),
-  candidateId: text('candidate_id').notNull().references(() => candidate.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  interviewerId: text('interviewer_id')
+    .notNull()
+    .references(() => user.id),
+  candidateId: text('candidate_id')
+    .notNull()
+    .references(() => candidate.id),
   status: sessionStatus('status').notNull().default('draft'),
   role: text('role').notNull().default('backend'),
   plannedPatternCodes: text('planned_pattern_codes').array().notNull(),
-  consentObtainedAt: timestamp('consent_obtained_at', { withTimezone: true }).notNull().defaultNow(),
+  consentObtainedAt: timestamp('consent_obtained_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   consentVersion: text('consent_version').notNull().default('ja-v1'),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -858,11 +880,18 @@ export const interviewSession = pgTable('interview_session', {
 });
 
 // packages/db/src/schema/question-proposal.ts (概要)
-export const questionIntent = pgEnum('question_intent',
-  ['deep_dive', 'meta_cognition', 'next_pattern']);
+export const questionIntent = pgEnum('question_intent', [
+  'deep_dive',
+  'meta_cognition',
+  'next_pattern',
+]);
 export const questionProposal = pgTable('question_proposal', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
-  sessionId: text('session_id').notNull().references(() => interviewSession.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  sessionId: text('session_id')
+    .notNull()
+    .references(() => interviewSession.id),
   preparedForTurnNo: integer('prepared_for_turn_no').notNull(),
   candidate1Text: text('candidate_1_text').notNull(),
   candidate1Intent: questionIntent('candidate_1_intent').notNull(),
@@ -870,26 +899,38 @@ export const questionProposal = pgTable('question_proposal', {
   candidate2Intent: questionIntent('candidate_2_intent').notNull(),
   candidate3Text: text('candidate_3_text').notNull(),
   candidate3Intent: questionIntent('candidate_3_intent').notNull(),
-  selectedIndex: integer('selected_index'),  // 1/2/3/null
+  selectedIndex: integer('selected_index'), // 1/2/3/null
   generatedAt: timestamp('generated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // packages/db/src/schema/interview-turn.ts (概要)
-export const questionSource = pgEnum('question_source',
-  ['llm_candidate_1', 'llm_candidate_2', 'llm_candidate_3', 'manual']);
-export const patternMatchConfidence = pgEnum('pattern_match_confidence',
-  ['exact', 'inferred_high', 'inferred_low', 'off_pattern']);
+export const questionSource = pgEnum('question_source', [
+  'llm_candidate_1',
+  'llm_candidate_2',
+  'llm_candidate_3',
+  'manual',
+]);
+export const patternMatchConfidence = pgEnum('pattern_match_confidence', [
+  'exact',
+  'inferred_high',
+  'inferred_low',
+  'off_pattern',
+]);
 export const interviewTurn = pgTable('interview_turn', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
-  sessionId: text('session_id').notNull().references(() => interviewSession.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  sessionId: text('session_id')
+    .notNull()
+    .references(() => interviewSession.id),
   sequenceNo: integer('sequence_no').notNull(),
-  patternId: text('pattern_id').references(() => assessmentPattern.id),  // nullable
+  patternId: text('pattern_id').references(() => assessmentPattern.id), // nullable
   proposalId: text('proposal_id').references(() => questionProposal.id),
   questionSource: questionSource('question_source').notNull(),
   questionText: text('question_text').notNull(),
   audioKey: text('audio_key'),
   audioExpiresAt: timestamp('audio_expires_at', { withTimezone: true }),
-  transcript: jsonb('transcript').notNull(),  // { interviewer?: string, candidate: string, raw: string }
+  transcript: jsonb('transcript').notNull(), // { interviewer?: string, candidate: string, raw: string }
   llmAnalysis: jsonb('llm_analysis').notNull().$type<LlmAnalysis>(),
   patternMatchConfidence: patternMatchConfidence('pattern_match_confidence').notNull(),
   offPatternSummary: text('off_pattern_summary'),
@@ -898,27 +939,48 @@ export const interviewTurn = pgTable('interview_turn', {
 });
 
 // packages/db/src/schema/pattern-coverage.ts (概要)
-export const stuckType = pgEnum('stuck_type',
-  ['not_experienced', 'shallow', 'single_option', 'rigid']);
-export const patternCoverage = pgTable('pattern_coverage', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
-  sessionId: text('session_id').notNull().references(() => interviewSession.id),
-  patternId: text('pattern_id').notNull().references(() => assessmentPattern.id),
-  levelReached: integer('level_reached').notNull(),  // 0-4
-  stuckType: stuckType('stuck_type'),  // nullable
-  llmEvaluation: jsonb('llm_evaluation').notNull().$type<LlmEvaluation>(),
-  manualEvaluation: jsonb('manual_evaluation').$type<ManualEvaluation>(),  // nullable, admin-review-panel が書く
-  turnIds: text('turn_ids').array().notNull(),
-  finalizedAt: timestamp('finalized_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  sessionPatternUnique: uniqueIndex('pattern_coverage_session_pattern_unique')
-    .on(t.sessionId, t.patternId),
-}));
+export const stuckType = pgEnum('stuck_type', [
+  'not_experienced',
+  'shallow',
+  'single_option',
+  'rigid',
+]);
+export const patternCoverage = pgTable(
+  'pattern_coverage',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => interviewSession.id),
+    patternId: text('pattern_id')
+      .notNull()
+      .references(() => assessmentPattern.id),
+    levelReached: integer('level_reached').notNull(), // 0-4
+    stuckType: stuckType('stuck_type'), // nullable
+    llmEvaluation: jsonb('llm_evaluation').notNull().$type<LlmEvaluation>(),
+    manualEvaluation: jsonb('manual_evaluation').$type<ManualEvaluation>(), // nullable, admin-review-panel が書く
+    turnIds: text('turn_ids').array().notNull(),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    sessionPatternUnique: uniqueIndex('pattern_coverage_session_pattern_unique').on(
+      t.sessionId,
+      t.patternId,
+    ),
+  }),
+);
 
 // packages/db/src/schema/session-report.ts (概要)
 export const sessionReport = pgTable('session_report', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
-  sessionId: text('session_id').notNull().unique().references(() => interviewSession.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  sessionId: text('session_id')
+    .notNull()
+    .unique()
+    .references(() => interviewSession.id),
   heatmapData: jsonb('heatmap_data').notNull().$type<HeatmapData>(),
   summaryText: text('summary_text').notNull(),
   generatedAt: timestamp('generated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -936,11 +998,22 @@ export interface SystemPromptCtx {
   interviewerProfile: InterviewerProfile;
   candidateInfo: CandidateInfo;
   plannedPatterns: Array<{ code: string; title: string; category: string }>;
-  currentPattern?: { code: string; title: string; description: string;
-    level_1_intro: string; level_2_focus: string; level_3_focus: string; level_4_focus: string;
-    signals: string[]; ai_perspective: string };
-  completedCoverage: Array<{ pattern_code: string; level_reached: number;
-    evaluation: LlmEvaluation }>;
+  currentPattern?: {
+    code: string;
+    title: string;
+    description: string;
+    level_1_intro: string;
+    level_2_focus: string;
+    level_3_focus: string;
+    level_4_focus: string;
+    signals: string[];
+    ai_perspective: string;
+  };
+  completedCoverage: Array<{
+    pattern_code: string;
+    level_reached: number;
+    evaluation: LlmEvaluation;
+  }>;
 }
 
 export function buildSystemPrompt(ctx: SystemPromptCtx): string {
@@ -1015,7 +1088,12 @@ export const SAFE_LLM_EVALUATION_FALLBACK: LlmEvaluation = {
 };
 
 export const SAFE_LLM_ANALYSIS_FALLBACK: LlmAnalysis = {
-  signals: { authenticity: 'absent', judgment: 'absent', meta_cognition: 'absent', ai_literacy: 'absent' },
+  signals: {
+    authenticity: 'absent',
+    judgment: 'absent',
+    meta_cognition: 'absent',
+    ai_literacy: 'absent',
+  },
   scope_signal: null,
   level_reached_estimate: 0,
   pattern_match_confidence: 'off_pattern',
@@ -1032,7 +1110,9 @@ export const SAFE_PROPOSAL_FALLBACK = {
 
 export const SAFE_SESSION_REPORT_FALLBACK: { heatmap_data: HeatmapData; summary_text: string } = {
   summary_text: 'レポート生成失敗、面接官は管理画面で原データを確認してください',
-  heatmap_data: { /* 全カテゴリ 0 */ },
+  heatmap_data: {
+    /* 全カテゴリ 0 */
+  },
 };
 ```
 
@@ -1383,17 +1463,21 @@ export const runtime = 'nodejs';
 
 const inputSchema = z.object({
   sessionId: z.string(),
-  afterTurnId: z.string().length(21),  // 提案の起点となる直前ターン ID
+  afterTurnId: z.string().length(21), // 提案の起点となる直前ターン ID
 });
 
 export async function POST(request: Request) {
   const user = await requireUser();
   const input = inputSchema.parse(await request.json());
 
-  const session = await db.query.interviewSession.findFirst({ where: eq(interviewSession.id, input.sessionId) });
+  const session = await db.query.interviewSession.findFirst({
+    where: eq(interviewSession.id, input.sessionId),
+  });
   await requireSessionOwnership(session, user.id);
 
-  const afterTurn = await db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.afterTurnId) });
+  const afterTurn = await db.query.interviewTurn.findFirst({
+    where: eq(interviewTurn.id, input.afterTurnId),
+  });
   if (!afterTurn || afterTurn.sessionId !== input.sessionId) {
     return Response.json({ error: 'turn_not_found' }, { status: 404 });
   }
@@ -1420,29 +1504,40 @@ export async function POST(request: Request) {
     const completed = await loadCompletedPatternCodes(input.sessionId);
     const sessionState = await loadSessionWithTurns(input.sessionId, user.id);
     const proposalDraft = await withRetry(
-      () => llm.proposeNextQuestions({ sessionState, plannedPatterns: session.plannedPatternCodes, completed }),
+      () =>
+        llm.proposeNextQuestions({
+          sessionState,
+          plannedPatterns: session.plannedPatternCodes,
+          completed,
+        }),
       'proposeNextQ.regenerate',
     );
     const [proposal] = await db.transaction(async (tx) => {
       // 成功時のみカウンタ INCREMENT
       await incrementRateLimit(tx, 'api:' + user.id + ':minute');
       await incrementRateLimit(tx, 'llm:' + input.sessionId);
-      return await tx.insert(questionProposal).values({
-        id: nanoid(),
-        sessionId: input.sessionId,
-        preparedForTurnNo: targetTurnNo,
-        candidate1Text: proposalDraft.candidates[0].text,
-        candidate1Intent: proposalDraft.candidates[0].intent,
-        candidate2Text: proposalDraft.candidates[1].text,
-        candidate2Intent: proposalDraft.candidates[1].intent,
-        candidate3Text: proposalDraft.candidates[2].text,
-        candidate3Intent: proposalDraft.candidates[2].intent,
-        selectedIndex: null,
-      }).returning();
+      return await tx
+        .insert(questionProposal)
+        .values({
+          id: nanoid(),
+          sessionId: input.sessionId,
+          preparedForTurnNo: targetTurnNo,
+          candidate1Text: proposalDraft.candidates[0].text,
+          candidate1Intent: proposalDraft.candidates[0].intent,
+          candidate2Text: proposalDraft.candidates[1].text,
+          candidate2Intent: proposalDraft.candidates[1].intent,
+          candidate3Text: proposalDraft.candidates[2].text,
+          candidate3Intent: proposalDraft.candidates[2].intent,
+          selectedIndex: null,
+        })
+        .returning();
     });
     return Response.json({ proposal });
   } catch (e) {
-    console.error(`[proposal/regenerate] failed sessionId=${input.sessionId} afterTurnId=${input.afterTurnId}`, e);
+    console.error(
+      `[proposal/regenerate] failed sessionId=${input.sessionId} afterTurnId=${input.afterTurnId}`,
+      e,
+    );
     return Response.json({ error: 'proposal_generation_failed', retryable: true }, { status: 503 });
   }
 }
@@ -1463,16 +1558,13 @@ export async function GET(request: Request) {
   const expired = await db
     .select({ id: interviewTurn.id, audioKey: interviewTurn.audioKey })
     .from(interviewTurn)
-    .where(and(
-      isNotNull(interviewTurn.audioKey),
-      lte(interviewTurn.audioExpiresAt, new Date()),
-    ));
+    .where(and(isNotNull(interviewTurn.audioKey), lte(interviewTurn.audioExpiresAt, new Date())));
 
   let deleted = 0;
   let failed = 0;
   for (const row of expired) {
     try {
-      await del(row.audioKey!);  // @vercel/blob
+      await del(row.audioKey!); // @vercel/blob
       await db.update(interviewTurn).set({ audioKey: null }).where(eq(interviewTurn.id, row.id));
       deleted++;
     } catch (err) {
@@ -1501,7 +1593,7 @@ const securityHeaders = [
       "connect-src 'self' https://api.anthropic.com https://api.openai.com https://*.blob.vercel-storage.com",
       "img-src 'self' data: blob:",
       "media-src 'self' blob:",
-      "script-src 'self' 'unsafe-inline'",  // Next.js dev で 'unsafe-eval' が必要なら判断
+      "script-src 'self' 'unsafe-inline'", // Next.js dev で 'unsafe-eval' が必要なら判断
       "style-src 'self' 'unsafe-inline'",
     ].join('; '),
   },
@@ -1623,6 +1715,7 @@ graph TB
 ```
 
 ステップ:
+
 1. 6 schema ファイル + `index.ts` 更新を実装
 2. `pnpm --filter @bulr/db generate` でマイグレーション生成（連番は drizzle-kit 決定、`packages/db/drizzle/*_assessment_engine.sql` glob で参照）
 3. 生成 SQL レビュー: `CREATE TYPE interview_session_status`、`question_intent`、`question_source`、`pattern_match_confidence`、`stuck_type` の 5 enum + 6 テーブル + 制約（FK、UNIQUE、CHECK）が含まれることを確認
@@ -1634,22 +1727,22 @@ graph TB
 
 ### Error Strategy
 
-| 失敗モード | 検知 | 対応 |
-|-----------|------|------|
-| MediaRecorder の取得失敗（マイク権限拒否）| `'use client'` Component で catch | ユーザーに「マイクへのアクセスを許可してください」と表示、再試行ボタン提供 |
-| Audio 50MB / 10 分超過 | クライアント側で事前検知 + API でも検証 | クライアントは再録音、API は 400 |
-| MIME type 不正（audio/webm 以外）| Zod 入力検証 | API は 400 |
-| 認証失敗（cookie 切れ等）| `requireUser` の `AuthError` | Server Component: `/sign-in` redirect、API: 401 |
-| セッション所有権違反 | `requireSessionOwnership` | 403 |
-| レート制限超過 | `rate_limit.ts` の checkAndIncrement | 429 |
-| Vercel Blob upload 失敗 | `@vercel/blob` の throw | 500、ユーザーには「音声の保存に失敗、もう一度お試しください」 |
-| Whisper API 失敗（timeout 等）| `transcribeAudio` の throw | 500、ユーザーには「文字起こしに失敗、もう一度お試しください」 |
-| LLM 出力 Zod 違反 | `generateObject` の maxRetries=2 後、`validateAndFallback` | 安全側フォールバック値で続行、`console.error` ログ |
-| Anthropic API 失敗 | `generateObject` の throw | 500、ユーザーには「分析に失敗、もう一度お試しください」 |
-| DB FK 違反 | Drizzle の throw | 500、ユーザーには「保存に失敗」 |
-| Cron 認証失敗 | Bearer 検証 | 401 |
-| Cron Blob 削除部分失敗 | try/catch 個別 | 成功分だけ DB 更新、失敗分は次回 Cron で再試行可能なまま残す（idempotent）|
-| プロンプトインジェクション攻撃 | システムプロンプト + Zod スキーマで構造的に吸収 | 採用推奨等のフリーテキストフィールドを最初から定義しないため、攻撃が成立しない |
+| 失敗モード                                 | 検知                                                       | 対応                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| MediaRecorder の取得失敗（マイク権限拒否） | `'use client'` Component で catch                          | ユーザーに「マイクへのアクセスを許可してください」と表示、再試行ボタン提供     |
+| Audio 50MB / 10 分超過                     | クライアント側で事前検知 + API でも検証                    | クライアントは再録音、API は 400                                               |
+| MIME type 不正（audio/webm 以外）          | Zod 入力検証                                               | API は 400                                                                     |
+| 認証失敗（cookie 切れ等）                  | `requireUser` の `AuthError`                               | Server Component: `/sign-in` redirect、API: 401                                |
+| セッション所有権違反                       | `requireSessionOwnership`                                  | 403                                                                            |
+| レート制限超過                             | `rate_limit.ts` の checkAndIncrement                       | 429                                                                            |
+| Vercel Blob upload 失敗                    | `@vercel/blob` の throw                                    | 500、ユーザーには「音声の保存に失敗、もう一度お試しください」                  |
+| Whisper API 失敗（timeout 等）             | `transcribeAudio` の throw                                 | 500、ユーザーには「文字起こしに失敗、もう一度お試しください」                  |
+| LLM 出力 Zod 違反                          | `generateObject` の maxRetries=2 後、`validateAndFallback` | 安全側フォールバック値で続行、`console.error` ログ                             |
+| Anthropic API 失敗                         | `generateObject` の throw                                  | 500、ユーザーには「分析に失敗、もう一度お試しください」                        |
+| DB FK 違反                                 | Drizzle の throw                                           | 500、ユーザーには「保存に失敗」                                                |
+| Cron 認証失敗                              | Bearer 検証                                                | 401                                                                            |
+| Cron Blob 削除部分失敗                     | try/catch 個別                                             | 成功分だけ DB 更新、失敗分は次回 Cron で再試行可能なまま残す（idempotent）     |
+| プロンプトインジェクション攻撃             | システムプロンプト + Zod スキーマで構造的に吸収            | 採用推奨等のフリーテキストフィールドを最初から定義しないため、攻撃が成立しない |
 
 ### Monitoring
 

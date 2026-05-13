@@ -7,6 +7,7 @@
 > 本番品質のインフラを揃えることではない。
 >
 > **関連ドキュメント**
+>
 > - 戦略・コンセプト全体：`bulr-handoff.md`
 > - プロダクト体験詳細：`bulr-product-direction.md`
 > - 状況パターン定義：`02-questionnaire-patterns.md`
@@ -58,6 +59,7 @@
 ```
 
 **Stage 1 で導入しないもの**
+
 - Cloudflare R2（Vercel Blob で十分）
 - PostHog（受験者数が少なすぎて分析不要）
 - Sentry（手動でログ確認で十分）
@@ -71,46 +73,46 @@
 
 ### フロントエンド + バックエンド
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Framework | Next.js 16 (App Router) | フロント+API両対応 |
-| UI | React 19 | UIライブラリ |
-| Styling | Tailwind CSS 4 | ユーティリティCSS |
-| UI Components | shadcn/ui ベース | 必要最小限のコンポーネント |
-| AI 構造化出力 | Vercel AI SDK 6 (`generateObject`) | Zod スキーマ準拠の LLM 出力 |
-| LLM Client | Anthropic SDK | Claude Sonnet 4.6 |
-| 音声文字起こし | OpenAI SDK | Whisper API ラッパー |
-| 録音 | ブラウザ標準 MediaRecorder API | 音声キャプチャ |
-| Type Safety | TypeScript | 全層で使用 |
-| Validation | Zod | スキーマ検証、LLM 出力検証 |
+| 層             | 技術                               | 役割                        |
+| -------------- | ---------------------------------- | --------------------------- |
+| Framework      | Next.js 16 (App Router)            | フロント+API両対応          |
+| UI             | React 19                           | UIライブラリ                |
+| Styling        | Tailwind CSS 4                     | ユーティリティCSS           |
+| UI Components  | shadcn/ui ベース                   | 必要最小限のコンポーネント  |
+| AI 構造化出力  | Vercel AI SDK 6 (`generateObject`) | Zod スキーマ準拠の LLM 出力 |
+| LLM Client     | Anthropic SDK                      | Claude Sonnet 4.6           |
+| 音声文字起こし | OpenAI SDK                         | Whisper API ラッパー        |
+| 録音           | ブラウザ標準 MediaRecorder API     | 音声キャプチャ              |
+| Type Safety    | TypeScript                         | 全層で使用                  |
+| Validation     | Zod                                | スキーマ検証、LLM 出力検証  |
 
 **Stage 1 で使わないもの**：`useChat` / `streamText`（v1 はチャット UI 前提だったが v2 は使わない）、Tool Use ループ（サーバー側オーケストレーションで決定論的に呼ぶ）
 
 ### データベース
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| DB | Neon Postgres | サーバーレスPostgres |
-| ORM | Drizzle ORM (0.45.x stable) | 型安全なクエリ |
-| Migration | drizzle-kit | スキーマ管理 |
+| 層        | 技術                        | 役割                 |
+| --------- | --------------------------- | -------------------- |
+| DB        | Neon Postgres               | サーバーレスPostgres |
+| ORM       | Drizzle ORM (0.45.x stable) | 型安全なクエリ       |
+| Migration | drizzle-kit                 | スキーマ管理         |
 
 **Stage 1 で導入しないもの**：pgvector（セマンティック検索は Stage 2 で必要になったら追加）
 
 ### ストレージ
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| 音声 | Vercel Blob | 面接音声を30日保存 |
+| 層   | 技術        | 役割                                         |
+| ---- | ----------- | -------------------------------------------- |
+| 音声 | Vercel Blob | 面接音声を30日保存                           |
 | 削除 | Vercel Cron | 毎日 1 回、`audio_expires_at` 経過音声を削除 |
 
 ### 認証
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Auth | Better Auth (1.6.x) | OSS認証ライブラリ |
-| Method | Magic Link のみ | パスワードレス（面接官向け） |
-| Email | Resend | マジックリンク配信 |
-| 管理画面 | Basic 認証 + ADMIN_ALLOWED_EMAILS | 二重チェック |
+| 層       | 技術                              | 役割                         |
+| -------- | --------------------------------- | ---------------------------- |
+| Auth     | Better Auth (1.6.x)               | OSS認証ライブラリ            |
+| Method   | Magic Link のみ                   | パスワードレス（面接官向け） |
+| Email    | Resend                            | マジックリンク配信           |
+| 管理画面 | Basic 認証 + ADMIN_ALLOWED_EMAILS | 二重チェック                 |
 
 **Stage 1 で導入しないもの**：Google OAuth、SSO、ワークスペース別認証。Stage 1 の認証要件は「面接官を識別する」だけなので、マジックリンクで十分。創業者の管理画面は Basic 認証 + 許可メールリストの二重チェック。
 
@@ -122,11 +124,11 @@
 
 ### インフラ
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Hosting | Vercel (Hobby プラン) | フロント + API ホスティング |
-| Domain | 仮ドメイン or bulr.net | プロトタイプ用 |
-| Cron | Vercel Cron | 音声削除ジョブ |
+| 層      | 技術                   | 役割                        |
+| ------- | ---------------------- | --------------------------- |
+| Hosting | Vercel (Hobby プラン)  | フロント + API ホスティング |
+| Domain  | 仮ドメイン or bulr.net | プロトタイプ用              |
+| Cron    | Vercel Cron            | 音声削除ジョブ              |
 
 **Stage 1 では Vercel プロジェクトは1つ**。apps/web 内の `/admin` ルートで管理画面を提供する。Stage 2 で apps/admin を分離する。
 
@@ -269,6 +271,7 @@ API:
 ### 関数構成
 
 **サーバー内部関数（決定論的、LLM 呼び出しなし）**
+
 - `transcribeAudio(blob)` — OpenAI Whisper API ラッパー
 - `uploadToBlob(blob, key)` — Vercel Blob アップロード
 - `purgeExpiredAudio()` — Vercel Cron から呼ばれる削除ジョブ
@@ -278,11 +281,11 @@ API:
 ```typescript
 // packages/ai/src/functions/
 const llm = {
-  analyzeTurn,                  // このターンで観察できた 5 次元シグナル + 到達段階推定
-  splitInterviewerCandidate,    // 「自分で次を聞く」用、文脈から質問+回答を分離
-  proposeNextQuestions,         // 3 候補生成（深掘り / メタ認知 / 次パターン）
-  aggregatePatternCoverage,     // パターン完了時、複数ターンを統合して5次元最終スコア + level_reached + stuck_type
-  generateSessionReport,        // 面接終了時、ヒートマップ JSON + サマリーテキスト生成
+  analyzeTurn, // このターンで観察できた 5 次元シグナル + 到達段階推定
+  splitInterviewerCandidate, // 「自分で次を聞く」用、文脈から質問+回答を分離
+  proposeNextQuestions, // 3 候補生成（深掘り / メタ認知 / 次パターン）
+  aggregatePatternCoverage, // パターン完了時、複数ターンを統合して5次元最終スコア + level_reached + stuck_type
+  generateSessionReport, // 面接終了時、ヒートマップ JSON + サマリーテキスト生成
 };
 ```
 
@@ -374,6 +377,7 @@ const llm = {
 ## データモデル（Stage 1 最小構成）
 
 ### Better Auth 管理テーブル
+
 - `user` (面接官)
 - `session`, `account`, `verification`
 
@@ -437,6 +441,7 @@ session_report                 # 面接終了時に生成
 ```
 
 ### Stage 1 で作らないテーブル
+
 - `workspace`, `workspace_user`（マルチテナント不要）
 - `application`, `offer`, `match`, `referral_fee`（人材紹介は Stage 3）
 - `skill_heatmap`（パターン集約とは別の集計テーブル、Stage 2）
@@ -444,17 +449,20 @@ session_report                 # 面接終了時に生成
 ## 同意・プライバシー方針
 
 ### Stage 1 の同意フロー
+
 - 面接官が事前メールで候補者に説明、口頭/メール返信で OK 取得
 - セッション作成時に `consent_obtained_at` を自動付与（暗黙的に「面接官が事前取得済み」とみなす）
 - 同意文は `docs/consent/ja-v1.md` に格納、`consent_version` でバージョン管理
 - UI 上のチェックボックスは Stage 1 では設けない（Stage 2 で再考）
 
 ### 音声データの取り扱い
+
 - Vercel Blob に保存、`audio_expires_at = created_at + 30 days`
 - Vercel Cron が毎日 1 回、`audio_expires_at <= now()` の音声を物理削除
 - 削除時に `interview_turn.audio_key` を null クリア
 
 ### 候補者からの削除請求
+
 - bulr のデータオーナーは企業側（面接官）
 - 候補者からの削除請求は企業側機能で対応（Stage 3 以降）
 - Stage 1 では bulr 側に削除フローを設けない
@@ -462,27 +470,32 @@ session_report                 # 面接終了時に生成
 ## セキュリティ方針（最小限）
 
 ### 認証
+
 - HttpOnly + Secure + SameSite=Lax cookies
 - Magic Link は使い切り、有効期限15分
 - 管理画面は Basic 認証 + 許可メールリスト二重チェック（環境変数 `ADMIN_ALLOWED_EMAILS`）
 
 ### データ
+
 - 全 DB アクセスはサーバーサイドのみ
 - 面接官データは `interviewer_id` でスコープ
 - 候補者データは `interview_session.interviewer_id` 経由でスコープ
 - 個人情報は最小化（candidate.name, email のみ、メールは optional）
 
 ### LLM
+
 - システムプロンプトの保護（ユーザー入力でオーバーライド不可）
 - 1 ターン当たりの transcript 文字数上限（5000 文字）
 - LLM 出力は DB 書き込み前に Zod 検証
 - レート制限（面接官あたり 1 日 5 セッション、API 1 分 30 リクエスト）
 
 ### 音声
+
 - Vercel Blob のアクセスはサーバーサイドのみ（署名付き URL は使わない）
 - 音声 URL を transcript レスポンスに含めない（クライアント漏洩防止）
 
 ### 通信
+
 - HTTPS 強制（Vercel デフォルト）
 
 ## コスト試算（Stage 1）
@@ -530,6 +543,7 @@ ADMIN_BASIC_AUTH_PASSWORD=        # Basic 認証パスワード
 ```
 
 **Stage 2 で追加される環境変数**
+
 - PostHog 関連
 - Sentry 関連
 - Helicone 関連
@@ -558,6 +572,7 @@ CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
 ## 開発体験
 
 ### 推奨開発環境
+
 - Node.js 22 LTS
 - pnpm 10+
 - VS Code (with extensions: ESLint, Prettier, Tailwind, Drizzle)
@@ -565,6 +580,7 @@ CI/CD は最小限。本格的なテスト整備は Stage 2 以降。
 - Whisper API のローカルテストには `OPENAI_API_KEY` 必須
 
 ### コーディング規約
+
 - TypeScript strict mode
 - ESLint + Prettier
 - Conventional Commits (feat:, fix:, etc.)

@@ -23,14 +23,14 @@ Stage 1 はモノレポ（Turborepo + pnpm workspaces）に **apps/web 単一ア
 
 外部サービスは最小:
 
-| サービス | 役割 | Stage 1 で必須か |
-|---|---|---|
-| Anthropic Claude API | LLM 分析・質問候補生成（Sonnet 4.6） | 必須 |
-| OpenAI Whisper API | 音声文字起こし | 必須 |
-| Vercel Blob | 音声ファイル保存（30 日自動削除） | 必須 |
-| Neon Postgres | サーバーレス DB（dev / prod ブランチ分離） | 必須 |
-| Resend | Magic Link 配信 | 必須 |
-| Vercel | ホスティング + プレビュー環境 + Cron | 必須 |
+| サービス             | 役割                                       | Stage 1 で必須か |
+| -------------------- | ------------------------------------------ | ---------------- |
+| Anthropic Claude API | LLM 分析・質問候補生成（Sonnet 4.6）       | 必須             |
+| OpenAI Whisper API   | 音声文字起こし                             | 必須             |
+| Vercel Blob          | 音声ファイル保存（30 日自動削除）          | 必須             |
+| Neon Postgres        | サーバーレス DB（dev / prod ブランチ分離） | 必須             |
+| Resend               | Magic Link 配信                            | 必須             |
+| Vercel               | ホスティング + プレビュー環境 + Cron       | 必須             |
 
 **Stage 2 で追加するもの**: Cloudflare R2（Vercel Blob から移行する場合）、PostHog、Sentry、Helicone、BetterStack、Deepgram（話者分離 API）。Stage 1 では Vercel 標準ダッシュボード + 手動ログ確認で十分。
 
@@ -38,45 +38,45 @@ Stage 1 はモノレポ（Turborepo + pnpm workspaces）に **apps/web 単一ア
 
 ### フロントエンド + バックエンド
 
-| 層 | 技術 |
-|---|---|
-| Framework | Next.js 16 (App Router、Turbopack stable、React Compiler) |
-| UI | React 19 |
-| Styling | Tailwind CSS 4 + shadcn/ui ベース |
-| AI 構造化出力 | Vercel AI SDK 6 (`generateObject`) |
-| LLM Client | Anthropic SDK (Claude Sonnet 4.6) |
-| 音声文字起こし | OpenAI SDK (Whisper) |
-| 録音 | ブラウザ標準 MediaRecorder API |
-| Type Safety | TypeScript (strict mode、no `any`) |
-| Validation | Zod (スキーマ検証 + LLM 出力検証) |
+| 層             | 技術                                                      |
+| -------------- | --------------------------------------------------------- |
+| Framework      | Next.js 16 (App Router、Turbopack stable、React Compiler) |
+| UI             | React 19                                                  |
+| Styling        | Tailwind CSS 4 + shadcn/ui ベース                         |
+| AI 構造化出力  | Vercel AI SDK 6 (`generateObject`)                        |
+| LLM Client     | Anthropic SDK (Claude Sonnet 4.6)                         |
+| 音声文字起こし | OpenAI SDK (Whisper)                                      |
+| 録音           | ブラウザ標準 MediaRecorder API                            |
+| Type Safety    | TypeScript (strict mode、no `any`)                        |
+| Validation     | Zod (スキーマ検証 + LLM 出力検証)                         |
 
 **Stage 1 で使わないもの**: `useChat` / `streamText`（v1 用、v2 ではチャット UI を持たない）、Vercel AI SDK の Tool Use ループ（サーバー側オーケストレーションで決定論的に呼ぶ）
 
 ### データベース
 
-| 層 | 技術 |
-|---|---|
-| DB | Neon Postgres (サーバーレス、dev / prod ブランチ) |
-| ORM | Drizzle ORM 0.45.x stable |
+| 層        | 技術                                                    |
+| --------- | ------------------------------------------------------- |
+| DB        | Neon Postgres (サーバーレス、dev / prod ブランチ)       |
+| ORM       | Drizzle ORM 0.45.x stable                               |
 | Migration | drizzle-kit (generate → push for dev、migrate for prod) |
 
 **Stage 1 で導入しないもの**: pgvector（セマンティック検索は Stage 2 以降）
 
 ### ストレージ
 
-| 層 | 技術 |
-|---|---|
-| 音声 | Vercel Blob |
+| 層   | 技術                                                               |
+| ---- | ------------------------------------------------------------------ |
+| 音声 | Vercel Blob                                                        |
 | 削除 | Vercel Cron（毎日 1 回、`audio_expires_at <= now()` の音声を削除） |
 
 ### 認証
 
-| 層 | 技術 |
-|---|---|
-| Auth | Better Auth 1.6.x |
-| 面接官 | Magic Link (パスワードレス、有効期限 15 分、使い切り) |
+| 層       | 技術                                                       |
+| -------- | ---------------------------------------------------------- |
+| Auth     | Better Auth 1.6.x                                          |
+| 面接官   | Magic Link (パスワードレス、有効期限 15 分、使い切り)      |
 | 管理画面 | Basic 認証 + `ADMIN_ALLOWED_EMAILS` 許可リスト二重チェック |
-| Email | Resend |
+| Email    | Resend                                                     |
 
 **Stage 2 で追加**: Google OAuth、SSO、ワークスペース別認証
 
@@ -90,11 +90,11 @@ Stage 2 で next-intl 4 を導入。
 
 ### インフラ
 
-| 層 | 技術 |
-|---|---|
+| 層      | 技術                                             |
+| ------- | ------------------------------------------------ |
 | Hosting | Vercel (Hobby プラン、apps/web 単一プロジェクト) |
-| Domain | プロトタイプ用仮ドメイン or bulr.net |
-| Cron | Vercel Cron (vercel.json で定義) |
+| Domain  | プロトタイプ用仮ドメイン or bulr.net             |
+| Cron    | Vercel Cron (vercel.json で定義)                 |
 
 Stage 2 で apps/admin を分離し `admin.bulr.net` サブドメインに切り替え。
 
@@ -116,22 +116,22 @@ Stage 2 で Sentry / PostHog / Helicone を本格導入。
 
 ### サーバー内部関数（決定論的、LLM 呼び出しなし）
 
-| 関数 | 役割 |
-|---|---|
-| `transcribeAudio(blob)` | OpenAI Whisper API ラッパー |
-| `uploadToBlob(blob, key)` | Vercel Blob アップロード、`audio_key` を返す |
-| `purgeExpiredAudio()` | Vercel Cron から呼ばれる削除ジョブ（毎日 1 回） |
+| 関数                      | 役割                                            |
+| ------------------------- | ----------------------------------------------- |
+| `transcribeAudio(blob)`   | OpenAI Whisper API ラッパー                     |
+| `uploadToBlob(blob, key)` | Vercel Blob アップロード、`audio_key` を返す    |
+| `purgeExpiredAudio()`     | Vercel Cron から呼ばれる削除ジョブ（毎日 1 回） |
 
 ### LLM 関数一覧（generateObject + Zod 構造化出力）
 
 ```typescript
 // packages/ai/src/functions/
 const llm = {
-  analyzeTurn,                  // このターンで観察できた 5 次元シグナル + 到達段階推定 + nearest_patterns
-  splitInterviewerCandidate,    // 「自分で次を聞く」用、文脈から質問+回答を分離
-  proposeNextQuestions,         // 3 候補生成（深掘り / メタ認知 / 次パターン）
-  aggregatePatternCoverage,     // パターン完了時、複数ターンを統合して 5 次元最終スコア + level_reached + stuck_type
-  generateSessionReport,        // 面接終了時、ヒートマップ JSON + サマリーテキスト生成
+  analyzeTurn, // このターンで観察できた 5 次元シグナル + 到達段階推定 + nearest_patterns
+  splitInterviewerCandidate, // 「自分で次を聞く」用、文脈から質問+回答を分離
+  proposeNextQuestions, // 3 候補生成（深掘り / メタ認知 / 次パターン）
+  aggregatePatternCoverage, // パターン完了時、複数ターンを統合して 5 次元最終スコア + level_reached + stuck_type
+  generateSessionReport, // 面接終了時、ヒートマップ JSON + サマリーテキスト生成
 };
 ```
 
@@ -157,21 +157,21 @@ const llm = {
 
 ### 4 段階深掘りの責務
 
-| 段階 | 何を引き出すか | LLM の振る舞い |
-|---|---|---|
-| 第 1 段 | 経験有無 + 一文の状況描写 | yes/no と短い再現性確認 |
+| 段階    | 何を引き出すか                 | LLM の振る舞い                                   |
+| ------- | ------------------------------ | ------------------------------------------------ |
+| 第 1 段 | 経験有無 + 一文の状況描写      | yes/no と短い再現性確認                          |
 | 第 2 段 | 真贋（時系列・固有性・関係者） | 「最初に何を見たか」「捨てた仮説」を時系列で確認 |
-| 第 3 段 | 判断力（選択肢・トレードオフ） | 複数の代替案・判断軸・コスト評価を引き出す |
-| 第 4 段 | メタ認知 + AI 活用観点 | 「規模が違えば」「AI 前提なら」で再判断を問う |
+| 第 3 段 | 判断力（選択肢・トレードオフ） | 複数の代替案・判断軸・コスト評価を引き出す       |
+| 第 4 段 | メタ認知 + AI 活用観点         | 「規模が違えば」「AI 前提なら」で再判断を問う    |
 
 詳細は `assessment-design.md` と `evaluation-rubric.md` を参照。
 
 ### 会話メモリ管理
 
-| 種別 | 実装 |
-|---|---|
-| 短期記憶（直近ターンの文脈） | DB から直近 5-10 ターンの transcript + llm_analysis を読み込み、proposeNextQuestions / analyzeTurn のプロンプトに注入 |
-| 長期記憶（パターン別の到達状況） | pattern_coverage テーブルから現セッションの coverage を読み込み、「どのパターンが完了か / 未着手か」を LLM に伝える |
+| 種別                             | 実装                                                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 短期記憶（直近ターンの文脈）     | DB から直近 5-10 ターンの transcript + llm_analysis を読み込み、proposeNextQuestions / analyzeTurn のプロンプトに注入 |
+| 長期記憶（パターン別の到達状況） | pattern_coverage テーブルから現セッションの coverage を読み込み、「どのパターンが完了か / 未着手か」を LLM に伝える   |
 
 ### 使用しないもの
 

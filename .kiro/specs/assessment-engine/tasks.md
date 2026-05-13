@@ -3,6 +3,7 @@
 > 本タスクリストは `assessment-engine` spec の実装手順を記述する。各サブタスクは 1〜3 時間で完了できる粒度。`(P)` マーカーは並列実行可能タスク。`_Boundary:_` は責務範囲、`_Depends:_` は他タスクへの依存。
 >
 > **重要**:
+>
 > - LLM 関数の入出力は必ず Zod スキーマで構造化検証する。範囲外 / 必須欠落の場合は `validateAndFallback` で安全側フォールバックに切り替える。
 > - 5 LLM 関数は `createLlmContext({ sessionId, userId })` クロージャ経由で呼び出し、AI 出力からの sessionId を内部で使わない（hallucination 防御）。
 > - `useChat` / `streamText` / Tool Use ループは使わない（`tech.md` L53）。サーバー側オーケストレーションで決定論的に順次呼ぶ。
@@ -441,58 +442,27 @@
   4. Zod スキーマで他フィールド検証（`turnId` は `z.string().length(21)`）
   5. `db.query.interviewSession.findFirst({...})` で session 取得 → `requireSessionOwnership(session, user.id)`
 
-  **Step 3: 冪等性チェック（Requirement 7.13）**
-  6. `db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.turnId) })` で既存ターン検索
-  7. 既存ターンが見つかった場合、関連する `question_proposal` (preparedForTurnNo = sequenceNo+1) と `pattern_coverage` (patternId 一致) を読み込み、`{ turn, coverage, proposal }` を 200 で返却して終了（**Whisper/LLM 再呼び出しなし**）
+  **Step 3: 冪等性チェック（Requirement 7.13）** 6. `db.query.interviewTurn.findFirst({ where: eq(interviewTurn.id, input.turnId) })` で既存ターン検索 7. 既存ターンが見つかった場合、関連する `question_proposal` (preparedForTurnNo = sequenceNo+1) と `pattern_coverage` (patternId 一致) を読み込み、`{ turn, coverage, proposal }` を 200 で返却して終了（**Whisper/LLM 再呼び出しなし**）
 
-  **Step 4: レート制限「チェックのみ」**
-  8. `checkRateLimit(key, { limit, windowMs })` を呼ぶ（INCREMENT はしない）: `api:userId:minute` 30/分、`turn:sessionId` 50/24h、`msg:sessionId` 200/24h、`llm:sessionId` 100/24h
-  9. 制限超過時は 429 を返す
+  **Step 4: レート制限「チェックのみ」** 8. `checkRateLimit(key, { limit, windowMs })` を呼ぶ（INCREMENT はしない）: `api:userId:minute` 30/分、`turn:sessionId` 50/24h、`msg:sessionId` 200/24h、`llm:sessionId` 100/24h 9. 制限超過時は 429 を返す
 
-  **Core フェーズ（try/catch で外側を包む、失敗時 503 + retryable: true）**
+  **Core フェーズ（try/catch で外側を包む、失敗時 503 + retryable: true）** 10. `const audioKey = 'interview-turn/${sessionId}/${turnId}.${ext}'`（turnId 依存で idempotent）11. `await withRetry(() => uploadToBlob(audio, audioKey), 'uploadToBlob')` — 1 回リトライ 12. `audioExpiresAt = now + 30 days` 13. `await withRetry(() => transcribeAudio(audio), 'transcribeAudio')` — 1 回リトライ 14. `const llm = createLlmContext({ sessionId, userId })` 15. **全ターン共通の話者分離**（Requirement 25）: `const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript, questionTextHint: input.questionSource === 'manual' ? null : (input.questionText ?? null) }), 'splitIC')` — 1 回リトライ
+  15a. `const transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript }`（DB 保存形式）16. `const currentPattern = patternId ? await db.query.assessmentPattern.findFirst({...}) : null` 17. `const history = await loadRecentTurns(sessionId, 10)` 18. `const analysis = await withRetry(() => llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history }), 'analyzeTurn')` — **候補者発話のみ** を渡す（Requirement 25.3）、1 回リトライ 19. **DB トランザクション**: `db.transaction(async (tx) => { ... })` 内で: - `tx.insert(interviewTurn).values({ id: input.turnId, ... }).returning()` — 主キーはクライアント turnId - `incrementRateLimit(tx, 'api:' + userId + ':minute')` - `incrementRateLimit(tx, 'turn:' + sessionId)` - `incrementRateLimit(tx, 'msg:' + sessionId)` - `incrementRateLimit(tx, 'llm:' + sessionId)` - return inserted
 
-  10. `const audioKey = 'interview-turn/${sessionId}/${turnId}.${ext}'`（turnId 依存で idempotent）
-  11. `await withRetry(() => uploadToBlob(audio, audioKey), 'uploadToBlob')` — 1 回リトライ
-  12. `audioExpiresAt = now + 30 days`
-  13. `await withRetry(() => transcribeAudio(audio), 'transcribeAudio')` — 1 回リトライ
-  14. `const llm = createLlmContext({ sessionId, userId })`
-  15. **全ターン共通の話者分離**（Requirement 25）: `const split = await withRetry(() => llm.splitInterviewerCandidate({ transcript: rawTranscript, questionTextHint: input.questionSource === 'manual' ? null : (input.questionText ?? null) }), 'splitIC')` — 1 回リトライ
-  15a. `const transcript = { interviewer: split.interviewer_text, candidate: split.candidate_text, raw: rawTranscript }`（DB 保存形式）
-  16. `const currentPattern = patternId ? await db.query.assessmentPattern.findFirst({...}) : null`
-  17. `const history = await loadRecentTurns(sessionId, 10)`
-  18. `const analysis = await withRetry(() => llm.analyzeTurn({ transcript: transcript.candidate, currentPattern, history }), 'analyzeTurn')` — **候補者発話のみ** を渡す（Requirement 25.3）、1 回リトライ
-  19. **DB トランザクション**: `db.transaction(async (tx) => { ... })` 内で:
-      - `tx.insert(interviewTurn).values({ id: input.turnId, ... }).returning()` — 主キーはクライアント turnId
-      - `incrementRateLimit(tx, 'api:' + userId + ':minute')`
-      - `incrementRateLimit(tx, 'turn:' + sessionId)`
-      - `incrementRateLimit(tx, 'msg:' + sessionId)`
-      - `incrementRateLimit(tx, 'llm:' + sessionId)`
-      - return inserted
+  **Prepare フェーズ（個別 try/catch、失敗してもターン確定済み、レスポンスは 200）** 20. **effective patternId 確定**（Requirement 24.1）:
+  `typescript
+const effectivePatternId = (() => {
+  if (analysis.pattern_match_confidence === 'off_pattern') return null;
+  if (input.questionSource === 'manual') {
+    return ['exact', 'inferred_high'].includes(analysis.pattern_match_confidence)
+      ? analysis.matched_pattern_id
+      : null;
+  }
+  return input.patternId ?? null;
+})();
+` 21. **Prepare-1a**（パターン遷移時集約、Requirement 24）: try ブロック内で: - 前ターン取得（現ターンは Step 19 で INSERT 済みなので、sequenceNo < turn.sequenceNo で取得）: `const previousTurn = await db.query.interviewTurn.findFirst({ where: and(eq(interviewTurn.sessionId, input.sessionId), lt(interviewTurn.sequenceNo, turn.sequenceNo)), orderBy: desc(interviewTurn.sequenceNo) });` - `const transitionDetected = previousTurn && previousTurn.patternId !== null && previousTurn.patternId !== effectivePatternId` - `if (transitionDetected) { const previousPattern = await db.query.assessmentPattern.findFirst({...}); const previousPatternTurns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, previousTurn.patternId)), orderBy: asc(sequenceNo)}); const llmEvaluation = await withRetry(() => llm.aggregatePatternCoverage({turns: previousPatternTurns, pattern: previousPattern}), 'aggregateCov.transition'); [transitionCoverage] = await db.insert(patternCoverage).values({id: nanoid(), sessionId, patternId: previousTurn.patternId, levelReached: llmEvaluation.level_reached, stuckType: llmEvaluation.stuck_type, llmEvaluation, manualEvaluation: null, turnIds: previousPatternTurns.map(t => t.id)}).onConflictDoUpdate({target: [patternCoverage.sessionId, patternCoverage.patternId], set: {levelReached, stuckType, llmEvaluation, turnIds, finalizedAt: new Date()}}).returning(); }` - catch で `console.error('[turns/next] Prepare-1a transition aggregateCov failed', e)` + `transitionCoverage = null` 続行22. **Prepare-1b**（同パターン完了時集約、Requirement 13）: try ブロック内で `if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal))` → `const turns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, currentPattern.id))})` → `await withRetry(() => llm.aggregatePatternCoverage({turns, pattern: currentPattern}), 'aggregateCov.completion')` → `db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning()` → catch で `console.error` + `coverage = null` 続行（finalize でカバー）23. **Prepare-2**（次の質問候補生成）: try ブロック内で `await withRetry(() => llm.proposeNextQuestions({...}), 'proposeNextQ')` → `db.insert(questionProposal).values({...}).returning()` → catch で `console.error` + `proposal = null` 続行（クライアントは `/api/interview/proposal/regenerate` を呼ぶ）
 
-  **Prepare フェーズ（個別 try/catch、失敗してもターン確定済み、レスポンスは 200）**
-
-  20. **effective patternId 確定**（Requirement 24.1）:
-      ```typescript
-      const effectivePatternId = (() => {
-        if (analysis.pattern_match_confidence === 'off_pattern') return null;
-        if (input.questionSource === 'manual') {
-          return ['exact', 'inferred_high'].includes(analysis.pattern_match_confidence)
-            ? analysis.matched_pattern_id
-            : null;
-        }
-        return input.patternId ?? null;
-      })();
-      ```
-  21. **Prepare-1a**（パターン遷移時集約、Requirement 24）: try ブロック内で:
-      - 前ターン取得（現ターンは Step 19 で INSERT 済みなので、sequenceNo < turn.sequenceNo で取得）: `const previousTurn = await db.query.interviewTurn.findFirst({ where: and(eq(interviewTurn.sessionId, input.sessionId), lt(interviewTurn.sequenceNo, turn.sequenceNo)), orderBy: desc(interviewTurn.sequenceNo) });`
-      - `const transitionDetected = previousTurn && previousTurn.patternId !== null && previousTurn.patternId !== effectivePatternId`
-      - `if (transitionDetected) { const previousPattern = await db.query.assessmentPattern.findFirst({...}); const previousPatternTurns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, previousTurn.patternId)), orderBy: asc(sequenceNo)}); const llmEvaluation = await withRetry(() => llm.aggregatePatternCoverage({turns: previousPatternTurns, pattern: previousPattern}), 'aggregateCov.transition'); [transitionCoverage] = await db.insert(patternCoverage).values({id: nanoid(), sessionId, patternId: previousTurn.patternId, levelReached: llmEvaluation.level_reached, stuckType: llmEvaluation.stuck_type, llmEvaluation, manualEvaluation: null, turnIds: previousPatternTurns.map(t => t.id)}).onConflictDoUpdate({target: [patternCoverage.sessionId, patternCoverage.patternId], set: {levelReached, stuckType, llmEvaluation, turnIds, finalizedAt: new Date()}}).returning(); }`
-      - catch で `console.error('[turns/next] Prepare-1a transition aggregateCov failed', e)` + `transitionCoverage = null` 続行
-  22. **Prepare-1b**（同パターン完了時集約、Requirement 13）: try ブロック内で `if (currentPattern && (analysis.level_reached_estimate === 4 || analysis.stuck_signal))` → `const turns = await db.query.interviewTurn.findMany({where: and(eq(sessionId), eq(patternId, currentPattern.id))})` → `await withRetry(() => llm.aggregatePatternCoverage({turns, pattern: currentPattern}), 'aggregateCov.completion')` → `db.insert(patternCoverage).values({...}).onConflictDoUpdate({...}).returning()` → catch で `console.error` + `coverage = null` 続行（finalize でカバー）
-  23. **Prepare-2**（次の質問候補生成）: try ブロック内で `await withRetry(() => llm.proposeNextQuestions({...}), 'proposeNextQ')` → `db.insert(questionProposal).values({...}).returning()` → catch で `console.error` + `proposal = null` 続行（クライアントは `/api/interview/proposal/regenerate` を呼ぶ）
-
-  **Step 12: レスポンス**
-  24. `Response.json({ turn, coverage, transitionCoverage, proposal })` を 200 で返す（全フィールド nullable）
+  **Step 12: レスポンス** 24. `Response.json({ turn, coverage, transitionCoverage, proposal })` を 200 で返す（全フィールド nullable）
 
 - 補助ヘルパー: `withRetry<T>(fn, label)` を route.ts 内ローカル関数として定義（1 回リトライ、2 回目失敗で throw、ログに `[turns/next] ${label} failed, retrying once` を出力）
 - エラー応答:

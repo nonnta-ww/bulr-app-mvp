@@ -54,74 +54,74 @@
 
 ### フロントエンド + バックエンド
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Framework | Next.js 16 (App Router) | フロント+API両対応 (Turbopack stable, React Compiler) |
-| UI | React 19 | UIライブラリ (React Compiler 対応) |
-| Styling | Tailwind CSS 4 | ユーティリティCSS |
-| UI Components | shadcn/ui ベース | カスタマイズ可能なUI |
-| Data Visualization | Recharts / D3 | ヒートマップ、レーダーチャート |
-| AI Streaming | Vercel AI SDK 6 | useChat hook、streamText、ToolLoopAgent |
-| LLM Client | Anthropic SDK | Claude API |
-| Type Safety | TypeScript | 全層で使用 |
-| Validation | Zod | スキーマ検証、Tool Use |
-| Data Fetching | TanStack Query | クライアントサイドのデータキャッシュ |
+| 層                 | 技術                    | 役割                                                  |
+| ------------------ | ----------------------- | ----------------------------------------------------- |
+| Framework          | Next.js 16 (App Router) | フロント+API両対応 (Turbopack stable, React Compiler) |
+| UI                 | React 19                | UIライブラリ (React Compiler 対応)                    |
+| Styling            | Tailwind CSS 4          | ユーティリティCSS                                     |
+| UI Components      | shadcn/ui ベース        | カスタマイズ可能なUI                                  |
+| Data Visualization | Recharts / D3           | ヒートマップ、レーダーチャート                        |
+| AI Streaming       | Vercel AI SDK 6         | useChat hook、streamText、ToolLoopAgent               |
+| LLM Client         | Anthropic SDK           | Claude API                                            |
+| Type Safety        | TypeScript              | 全層で使用                                            |
+| Validation         | Zod                     | スキーマ検証、Tool Use                                |
+| Data Fetching      | TanStack Query          | クライアントサイドのデータキャッシュ                  |
 
 ### データベース
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| DB | Neon Postgres | サーバーレスPostgres |
-| ORM | Drizzle ORM | 型安全なクエリ |
-| Migration | drizzle-kit | スキーマ管理 |
-| Vector | pgvector | 経験パターン・スキルプロファイルのセマンティック検索 |
-| Cache | Vercel KV (Redis) | セッションキャッシュ、レート制限 |
+| 層        | 技術              | 役割                                                 |
+| --------- | ----------------- | ---------------------------------------------------- |
+| DB        | Neon Postgres     | サーバーレスPostgres                                 |
+| ORM       | Drizzle ORM       | 型安全なクエリ                                       |
+| Migration | drizzle-kit       | スキーマ管理                                         |
+| Vector    | pgvector          | 経験パターン・スキルプロファイルのセマンティック検索 |
+| Cache     | Vercel KV (Redis) | セッションキャッシュ、レート制限                     |
 
 ### 認証・ユーザー管理
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Auth | Better Auth (1.6.x) | OSS認証ライブラリ |
-| Method | Magic Link | パスワードレス（個人向け、企業向け共通） |
-| Method | Google OAuth | ソーシャルログイン |
-| Method | GitHub OAuth | エンジニア向け |
-| Method | SSO (SAML/OIDC) | エンタープライズ企業向け |
-| Method | ID/Password | 一部の企業要件で必要 |
-| Email | Resend + React Email | メール配信・テンプレート |
+| 層     | 技術                 | 役割                                     |
+| ------ | -------------------- | ---------------------------------------- |
+| Auth   | Better Auth (1.6.x)  | OSS認証ライブラリ                        |
+| Method | Magic Link           | パスワードレス（個人向け、企業向け共通） |
+| Method | Google OAuth         | ソーシャルログイン                       |
+| Method | GitHub OAuth         | エンジニア向け                           |
+| Method | SSO (SAML/OIDC)      | エンタープライズ企業向け                 |
+| Method | ID/Password          | 一部の企業要件で必要                     |
+| Email  | Resend + React Email | メール配信・テンプレート                 |
 
 ### マルチテナント
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Workspace | bz.bulr.net/{slug}/* | URL ベースのワークスペース分離 |
-| Authorization | Workspace × Role | RBAC（owner / admin / member / interviewer） |
-| Data Isolation | workspace_id スコープ | 全テーブルに workspace_id を持つ |
+| 層             | 技術                  | 役割                                         |
+| -------------- | --------------------- | -------------------------------------------- |
+| Workspace      | bz.bulr.net/{slug}/\* | URL ベースのワークスペース分離               |
+| Authorization  | Workspace × Role      | RBAC（owner / admin / member / interviewer） |
+| Data Isolation | workspace_id スコープ | 全テーブルに workspace_id を持つ             |
 
 ### 国際化
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| i18n | next-intl 4 | App Router 対応 |
-| Translation | JSON | 日本語・英語（Phase 2）、その他言語は需要に応じて |
+| 層          | 技術        | 役割                                              |
+| ----------- | ----------- | ------------------------------------------------- |
+| i18n        | next-intl 4 | App Router 対応                                   |
+| Translation | JSON        | 日本語・英語（Phase 2）、その他言語は需要に応じて |
 
 ### インフラ
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Hosting | Vercel (Pro) | フロント + API ホスティング |
-| Storage | Cloudflare R2 | CV、ポートフォリオ、画像配信 |
-| CDN | Vercel Edge Network | 静的アセット配信 |
-| Domain | bulr.net (Cloudflare Registrar) | 本番ドメイン |
+| 層      | 技術                            | 役割                         |
+| ------- | ------------------------------- | ---------------------------- |
+| Hosting | Vercel (Pro)                    | フロント + API ホスティング  |
+| Storage | Cloudflare R2                   | CV、ポートフォリオ、画像配信 |
+| CDN     | Vercel Edge Network             | 静的アセット配信             |
+| Domain  | bulr.net (Cloudflare Registrar) | 本番ドメイン                 |
 
 ### 監視・分析
 
-| 層 | 技術 | 役割 |
-|---|---|---|
-| Web Analytics | Vercel Analytics | パフォーマンス計測 |
-| Product Analytics | PostHog | イベント・ファネル分析 |
-| Error Tracking | Sentry | フロント+バック エラー |
-| LLM Monitoring | Helicone | LLMコスト・レイテンシ・プロンプト履歴 |
-| Uptime | BetterStack | 死活監視 |
+| 層                | 技術             | 役割                                  |
+| ----------------- | ---------------- | ------------------------------------- |
+| Web Analytics     | Vercel Analytics | パフォーマンス計測                    |
+| Product Analytics | PostHog          | イベント・ファネル分析                |
+| Error Tracking    | Sentry           | フロント+バック エラー                |
+| LLM Monitoring    | Helicone         | LLMコスト・レイテンシ・プロンプト履歴 |
+| Uptime            | BetterStack      | 死活監視                              |
 
 ## モノレポ構成
 
@@ -309,28 +309,28 @@ Turborepo Remote Cache でビルド時間最適化
 ```typescript
 // 問診中に使うツール
 const interviewTools = {
-  selectNextPattern,        // 次に質問する状況パターンを選択
-  recordAnswer,             // 回答を構造化保存
-  evaluateAnswer,           // 回答の深さを評価（4段階）
-  generateFollowUp,         // 深掘り質問を生成
-  finalizeSession,          // 問診完了処理
+  selectNextPattern, // 次に質問する状況パターンを選択
+  recordAnswer, // 回答を構造化保存
+  evaluateAnswer, // 回答の深さを評価（4段階）
+  generateFollowUp, // 深掘り質問を生成
+  finalizeSession, // 問診完了処理
 };
 
 // レポート生成時に使うツール
 const reportTools = {
-  generateHeatmap,          // スキルヒートマップ生成
-  matchToJobRequirement,    // 求人要件とのマッチング
-  suggestGrowthAreas,       // 成長領域の提案
-  identifyPartyFit,         // パーティ編成適性判定
+  generateHeatmap, // スキルヒートマップ生成
+  matchToJobRequirement, // 求人要件とのマッチング
+  suggestGrowthAreas, // 成長領域の提案
+  identifyPartyFit, // パーティ編成適性判定
   generateInterviewerNotes, // 面接時の確認ポイント生成
 };
 
 // パーティ編成時に使うツール
 const partyTools = {
-  analyzeCurrentTeam,       // 現有チームの分析
-  identifyGaps,             // 不足役割の特定
-  recommendCandidates,      // 候補者の推薦
-  simulateTeamComposition,  // チーム編成シミュレーション
+  analyzeCurrentTeam, // 現有チームの分析
+  identifyGaps, // 不足役割の特定
+  recommendCandidates, // 候補者の推薦
+  simulateTeamComposition, // チーム編成シミュレーション
 };
 ```
 
@@ -372,6 +372,7 @@ const partyTools = {
 目的：自己理解＋成長ガイド
 
 #### 構成
+
 - 現在のレベル（文章で表現、数値スコアなし）
 - あなたの強み Top3
 - 今後6〜12ヶ月で伸ばすと良いポイント（最大3つ）
@@ -381,6 +382,7 @@ const partyTools = {
 - 最後の一言メッセージ
 
 #### 制約
+
 - 数値スコア・点数は表示しない
 - 他人との比較（偏差値・順位）は出さない
 - 企業名や「この会社に受かる」などは書かない
@@ -390,6 +392,7 @@ const partyTools = {
 目的：書類選考・面接での意思決定支援
 
 #### 構成
+
 - ヘッダー（想定ロールレベル、一言サマリー、任せられる仕事レベル）
 - スキルバランスマップ（カテゴリ別レベル 0-4）
 - 求人とのマッチ情報（必須スキルカバー率、要素別マッチ）
@@ -620,9 +623,11 @@ ADMIN_ALLOWED_EMAILS=             # 管理者メール許可リスト (CSV)
 ## ロードマップとの対応
 
 ### Stage 1（Month 1-3）：MVP 検証
+
 → `01-architecture-mvp.md` に記載
 
 ### Stage 2（Month 4-12）：本格立ち上げ
+
 - apps/admin の分離
 - 監視・分析の本格導入（Sentry, PostHog, Helicone）
 - Cloudflare R2 導入
@@ -631,6 +636,7 @@ ADMIN_ALLOWED_EMAILS=             # 管理者メール許可リスト (CSV)
 - 最初の有料企業顧客（5-20社）
 
 ### Stage 3（Year 2）：マルチテナント本格化
+
 - apps/business の分離（bz.bulr.net）
 - ワークスペース機能、求人管理、応募管理
 - ヒートマップ可視化の完成
@@ -638,6 +644,7 @@ ADMIN_ALLOWED_EMAILS=             # 管理者メール許可リスト (CSV)
 - API 公開（他サービスへの組み込み）
 
 ### Stage 4（Year 3-5）：パーティ編成 & 標準化
+
 - 現有メンバーのヒートマップ集約
 - パーティ編成シミュレーション
 - 「bulr スコア」の業界標準化

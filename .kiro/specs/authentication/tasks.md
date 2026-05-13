@@ -19,7 +19,7 @@
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/package.json` の `dependencies` に以下を追加:
     - `"better-auth": "^1.6.0"`
     - `"resend": "^4.0.0"`
-  - 既存の依存（next / react / @bulr/*）と整合する形で merge
+  - 既存の依存（next / react / @bulr/\*）と整合する形で merge
   - ルートで `pnpm install` を実行し、lockfile が更新されることを確認
   - 観測可能な完了状態: `pnpm install` 完了、`apps/web/node_modules/better-auth/package.json` と `apps/web/node_modules/resend/package.json` が存在
   - _Requirements: 1.1, 2.1_
@@ -238,7 +238,7 @@
     - 「このファイルは UX リダイレクトと管理画面 Basic 認証チェックのみを担当する」
     - 「CVE-2025-29927 (2025 年に発覚した Next.js middleware bypass 攻撃) の教訓により、認可は本ファイルに依存してはならない」
     - 「各 Server Component / Server Action / API Route で requireUser() / requireAdmin() を独立に呼び出すこと」
-    - 「やること: /interviews/* の Cookie 存在チェック → /sign-in リダイレクト、/admin/* の Basic 認証チェック」
+    - 「やること: /interviews/_ の Cookie 存在チェック → /sign-in リダイレクト、/admin/_ の Basic 認証チェック」
     - 「やらないこと: Better Auth セッション validation、ADMIN_ALLOWED_EMAILS 検査、Server Action / API Route の認可」
   - `proxy(request: NextRequest)` を export（Next.js 16 の rename に従う、仮に最終仕様で `middleware` のままなら export 名を `middleware` に戻して `middleware.ts` ファイル名にする）
   - `/admin/*` 処理:

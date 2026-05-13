@@ -8,6 +8,7 @@
 bulr Stage 1 MVP プロトタイプ：**面接アシスタント型で実務判断力を可視化** するシステムを 0 から構築する。3 ヶ月で「バックエンドエンジニア向けの面接アシスタントを作り、創業者および協力面接官 5-10 人が、ベトナム人 20-30 人 + 日本人 10-20 人の面接で実際に使い、問診パターンに基づく面接結果と、面接官の独自判断との一致度を確認する」検証ゴールを達成するために必要な、最小機能の実装ロードマップ。
 
 `/kiro-discovery` の判定（v2 移行後）:
+
 - **greenfield**: 既存実装ゼロ。リポジトリは bootstrap commit + docs/ + .kiro/steering/ のみ
 - **steering 完備**: product / tech / structure / security / assessment-design / evaluation-rubric の 7 ファイル（roadmap 含む）で spec 作成時の上位規約を固定済み
 - **参照プロジェクト**: `dishxdish-app-mvp` が部分的に同一の技術スタック（Next.js 16 + Vercel AI SDK 6 + Claude Sonnet 4.6 + Neon + Drizzle + Better Auth Magic Link + Turborepo + pnpm）で稼働中。viability は参照プロジェクトで実証済み。bulr 固有の追加要素は OpenAI Whisper + Vercel Blob + 状態A/B UI + 5 LLM 関数

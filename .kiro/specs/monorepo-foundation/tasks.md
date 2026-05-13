@@ -163,7 +163,7 @@
   - 観測可能な完了状態: `@bulr/types/profile` と `@bulr/types/evaluation` のサブパス import が型チェックを通過することを 1 回確認し、その後コードを元に戻す
   - _Requirements: 4.2, 4.7, 6.5_
   - _Depends: 4.2_
-- [ ] 4.7 Prettier 整形安定の確認
+- [x] 4.7 Prettier 整形安定の確認
   - ルートで `npx prettier --check .` を実行し、既存ファイル（`package.json` 等を除く `.ts` / `.tsx` / `.mjs` / `.json` / `.md`）に対してエラーなく完了することを確認
   - 観測可能な完了状態: `npx prettier --check .` の終了コードが 0 で、全ファイルが "matched" と表示される
   - _Requirements: 1.5, 8.4, 8.5_

@@ -146,7 +146,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 9. The packages/db shall `pnpm --filter @bulr/db generate` で 6 テーブル + 各種 enum の CREATE TYPE / CREATE TABLE 文がマイグレーションファイルに含まれる。
 10. The packages/db shall `pnpm --filter @bulr/db push` を dev branch に対して実行成功し、`psql` または Neon Console で 6 テーブルがすべて作成されたことを確認できる。
 11. The interview_session.status enum shall `'draft' | 'in_progress' | 'completed' | 'abandoned'` の 4 値を持つ。
-12. The question_proposal.candidate_*_intent enum shall `'deep_dive' | 'meta_cognition' | 'next_pattern'` の 3 値を持つ。
+12. The question*proposal.candidate*\*\_intent enum shall `'deep_dive' | 'meta_cognition' | 'next_pattern'` の 3 値を持つ。
 13. The interview_turn.question_source enum shall `'llm_candidate_1' | 'llm_candidate_2' | 'llm_candidate_3' | 'manual'` の 4 値を持つ。
 14. The interview_turn.pattern_match_confidence enum shall `'exact' | 'inferred_high' | 'inferred_low' | 'off_pattern'` の 4 値を持つ。
 15. The pattern_coverage.stuck_type enum shall `'not_experienced' | 'shallow' | 'single_option' | 'rigid'` の 4 値を持つ。
@@ -429,7 +429,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 4. The LLM 出力 shall Zod スキーマで構造化検証され、システムプロンプト上書きを意図した自然言語応答が `notes` 等にしか入らない形になる（採用推奨 / 不採用推奨等のフリーテキストフィールドを最初から定義しない）。
 5. The システムプロンプト shall 採用推奨コメントを LLM が出力しない旨を明示的に含む。
 
-### Requirement 19: smoke test ページ削除（/admin/_health/）
+### Requirement 19: smoke test ページ削除（/admin/\_health/）
 
 **Objective:** As a プロジェクト全体, I want `authentication` spec で一時設置された `/admin/_health/` smoke test ページを本スペックで削除したい, so that 本スペック完了時点で面接官向け基本フロー（`/interviews/*`）が一通り動作し、smoke test の役目を終える。
 

@@ -136,7 +136,7 @@ bulr-app-mvp/
 ```typescript
 // パッケージ参照（workspace）
 import { db } from '@bulr/db';
-import { sessionListQuery } from '@bulr/db/queries/admin';  // サブパス export
+import { sessionListQuery } from '@bulr/db/queries/admin'; // サブパス export
 import { analyzeTurn } from '@bulr/ai';
 import type { LlmEvaluation } from '@bulr/types/evaluation';
 import type { ProfileInput } from '@bulr/types/profile';
@@ -210,17 +210,17 @@ rate_limit (Magic Link + API レート制限の共通テーブル)
 
 ### 主要テーブル概要
 
-| テーブル | 用途 | オーナー |
-|---|---|---|
-| `user_profile` | bulr 固有面接官設定 | user |
-| `candidate` | 候補者マスタ（name, applied_role, background_summary, email?） | (Stage 3 で人材紹介伸長) |
-| `interview_session` | 面接セッション（interviewer_id, candidate_id, status, role, planned_pattern_codes, consent_obtained_at, consent_version） | user |
-| `assessment_pattern` | 状況パターンマスタ（code / category / 4 段階質問テンプレ） | admin（創業者シード） |
-| `question_proposal` | 各ターン前の3候補ログ（候補1/2/3 + intent + selected_index） | session |
-| `interview_turn` | ターン記録（audio_key + transcript + llm_analysis + pattern_match_confidence） | session |
-| `pattern_coverage` | パターン集約（level_reached + stuck_type + llm_evaluation + manual_evaluation） | session |
-| `session_report` | 面接後レポート（heatmap_data + summary_text） | session |
-| `rate_limit` | Magic Link + チャット API のレート制限 | (キー: email/ip/userId) |
+| テーブル             | 用途                                                                                                                      | オーナー                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `user_profile`       | bulr 固有面接官設定                                                                                                       | user                     |
+| `candidate`          | 候補者マスタ（name, applied_role, background_summary, email?）                                                            | (Stage 3 で人材紹介伸長) |
+| `interview_session`  | 面接セッション（interviewer_id, candidate_id, status, role, planned_pattern_codes, consent_obtained_at, consent_version） | user                     |
+| `assessment_pattern` | 状況パターンマスタ（code / category / 4 段階質問テンプレ）                                                                | admin（創業者シード）    |
+| `question_proposal`  | 各ターン前の3候補ログ（候補1/2/3 + intent + selected_index）                                                              | session                  |
+| `interview_turn`     | ターン記録（audio_key + transcript + llm_analysis + pattern_match_confidence）                                            | session                  |
+| `pattern_coverage`   | パターン集約（level_reached + stuck_type + llm_evaluation + manual_evaluation）                                           | session                  |
+| `session_report`     | 面接後レポート（heatmap_data + summary_text）                                                                             | session                  |
+| `rate_limit`         | Magic Link + チャット API のレート制限                                                                                    | (キー: email/ip/userId)  |
 
 ### Stage 1 で作らないテーブル（Stage 2 以降）
 
