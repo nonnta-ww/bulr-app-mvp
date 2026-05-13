@@ -113,7 +113,7 @@
   - 観測可能な完了状態: 上記 5 設定ファイルが apps/web に存在し、`pnpm --filter @bulr/web typecheck` がエラーなく完了
   - _Requirements: 2.1, 2.3, 2.4, 2.5_
   - _Depends: 1.3, 3.1_
-- [ ] 3.3 apps/web の App Router 最小ページを作成
+- [x] 3.3 apps/web の App Router 最小ページを作成
   - `apps/web/app/globals.css` に `@import "tailwindcss";` を含める
   - `apps/web/app/layout.tsx` で `<html lang="ja"><body>{children}</body></html>` のルートレイアウトを定義し、`globals.css` を import
   - `apps/web/app/page.tsx` で空ランディング（例: `<main className="p-8"><h1 className="text-2xl font-bold">bulr</h1><p className="text-neutral-600">AI 面接アシスタント (準備中)</p></main>`）を返す Server Component を定義
