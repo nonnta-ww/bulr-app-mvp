@@ -80,7 +80,7 @@
 
 > 各カテゴリのファイルは `docs/02-questionnaire-patterns.md` と `docs/03-probe-logic.md` から手動転記する。サブタスクごとに PR レビューが可能な単位に分割。各サブタスクの完了基準は「ファイル内に該当数の `AssessmentPatternSeed` オブジェクトが宣言され、TypeScript typecheck が通る」+「Markdown 元と内容が一致（PR diff レビュー）」。
 
-### 4.1 設計判断カテゴリ D-01〜D-15 を `design.ts` に転記 (P)
+### 4.1 ✅ 設計判断カテゴリ D-01〜D-15 を `design.ts` に転記 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/patterns/design.ts` を新規作成
 - `import type { AssessmentPatternSeed } from '../types'`
