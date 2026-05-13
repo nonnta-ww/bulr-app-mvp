@@ -7,7 +7,7 @@
 ## Foundation: ルート設定とビルド基盤
 
 - [ ] 1. ルート設定ファイル一式の作成
-- [ ] 1.1 `package.json` をルートに作成
+- [x] 1.1 `package.json` をルートに作成
   - `name: "bulr-app-mvp"`、`private: true`、`packageManager: "pnpm@10.x.x"`、`engines: { node: ">=22.0.0", pnpm: ">=10" }` を設定
   - `scripts.dev: "turbo run dev"`、`scripts.build: "turbo run build"`、`scripts.typecheck: "turbo run typecheck"`、`scripts.lint: "turbo run lint"` を定義
   - `devDependencies` に `turbo` ^2.9、`typescript` ^5.4、`eslint` ^9.39、`prettier` ^3.8、`typescript-eslint` ^8.59、`@typescript-eslint/eslint-plugin` ^8、`@typescript-eslint/parser` ^8 を宣言
