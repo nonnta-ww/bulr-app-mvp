@@ -47,7 +47,7 @@
 - _Depends: 1.1, 1.2_
 - _Requirements: 2.1, 2.4_
 
-### 2.2 dev branch への push 動作確認
+### 2.2 ✅ dev branch への push 動作確認
 
 - `DATABASE_URL` を dev branch（Neon dev）に設定（`.env.local` 経由 or 環境変数）
 - `pnpm --filter @bulr/db push` を実行し、エラーなく完了することを確認
@@ -62,7 +62,7 @@
 
 ## 3. シードデータ型定義
 
-### 3.1 `AssessmentPatternSeed` / `PatternCategory` 型を実装 (P)
+### 3.1 ✅ `AssessmentPatternSeed` / `PatternCategory` 型を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/types.ts` を新規作成
 - `PatternCategory` 型：`'design' | 'trouble' | 'performance' | 'security' | 'organization' | 'ai'` のユニオン（schema の `patternCategory.enumValues` から導出してもよい、その場合 `(typeof patternCategory.enumValues)[number]`）
