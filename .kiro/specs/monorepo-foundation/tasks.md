@@ -131,7 +131,7 @@
   - 観測可能な完了状態: `pnpm install` がエラーなく完了し、`pnpm-lock.yaml` が repo ルートに存在する
   - _Requirements: 1.6, 6.1, 6.2_
   - _Depends: 1.1, 1.2, 1.6, 2.1, 2.2, 2.3, 2.4, 3.1_
-- [ ] 4.2 `pnpm typecheck` 全 workspace 並列実行
+- [x] 4.2 `pnpm typecheck` 全 workspace 並列実行
   - ルートで `pnpm typecheck` を実行し、5 workspace（apps/web + packages/{db,types,lib,ai}）すべてで `tsc --noEmit` がエラーなく完了することを確認
   - Turborepo の依存解決により `packages/types` → `packages/{db,lib}` → `packages/ai` → `apps/web` の順で実行される
   - 観測可能な完了状態: `pnpm typecheck` の終了コードが 0 で、全 5 workspace が SUCCESS と表示される
