@@ -153,7 +153,7 @@
 
 ## 5. 集約 + 件数チェック
 
-### 5.1 6 ファイルを集約する `assessment-patterns.ts` を実装
+### 5.1 ✅ 6 ファイルを集約する `assessment-patterns.ts` を実装
 
 - `bulr-app-mvp/packages/db/src/seeds/assessment-patterns.ts` を新規作成
 - 6 つの SeedFiles を import し、`assessmentPatterns: readonly AssessmentPatternSeed[]` を spread で結合 export
