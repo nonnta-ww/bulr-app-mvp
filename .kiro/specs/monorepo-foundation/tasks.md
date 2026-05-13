@@ -17,7 +17,7 @@
   - `packages: ["apps/*", "packages/*"]` を定義
   - 観測可能な完了状態: `bulr-app-mvp/pnpm-workspace.yaml` が存在し、apps と packages のグロブが定義されている
   - _Requirements: 1.2_
-- [ ] 1.3 `tsconfig.base.json` を作成
+- [x] 1.3 `tsconfig.base.json` を作成
   - `compilerOptions` に `strict: true`、`noUncheckedIndexedAccess: true`、`module: "ESNext"`、`moduleResolution: "bundler"`、`target: "ES2022"`、`skipLibCheck: true`、`esModuleInterop: true`、`allowSyntheticDefaultImports: true`、`resolveJsonModule: true`、`isolatedModules: true`、`noEmit: true`、`incremental: true` を設定
   - `exclude: ["node_modules"]` を設定
   - 観測可能な完了状態: ファイル単独で `npx tsc --noEmit -p tsconfig.base.json` 相当の構文チェックが通る
