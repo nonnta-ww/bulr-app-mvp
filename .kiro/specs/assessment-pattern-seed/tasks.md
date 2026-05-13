@@ -105,7 +105,7 @@
 - _Depends: 3.1_
 - _Requirements: 4.1, 4.3, 4.9, 4.10, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-### 4.3 性能・規模カテゴリ P-01〜P-08 を `performance.ts` に転記 (P)
+### 4.3 ✅ 性能・規模カテゴリ P-01〜P-08 を `performance.ts` に転記 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/patterns/performance.ts` を新規作成
 - `performancePatterns: readonly AssessmentPatternSeed[]` を export、8 件
