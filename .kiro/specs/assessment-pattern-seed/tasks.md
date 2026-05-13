@@ -116,7 +116,7 @@
 - _Depends: 3.1_
 - _Requirements: 4.1, 4.4, 4.9, 4.10, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-### 4.4 セキュリティ・データカテゴリ S-01〜S-08 を `security.ts` に転記 (P)
+### 4.4 ✅ セキュリティ・データカテゴリ S-01〜S-08 を `security.ts` に転記 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/patterns/security.ts` を新規作成
 - `securityPatterns: readonly AssessmentPatternSeed[]` を export、8 件
