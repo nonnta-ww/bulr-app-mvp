@@ -88,7 +88,7 @@ pnpm dev
 
 | サービス | URL |
 |---|---|
-| **web アプリ** | http://localhost:3000 |
+| **web アプリ** | http://localhost:3020 |
 | **DB（直接接続）** | `psql postgresql://bulr:dev_password@localhost:5433/bulr_dev` |
 
 ---

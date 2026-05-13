@@ -231,7 +231,7 @@ API:
 
 ```
 開発:
-  http://localhost:3000          apps/web
+  http://localhost:3020          apps/web
 
 ステージング:
   Vercel Preview URL（PR ごとに自動生成）
