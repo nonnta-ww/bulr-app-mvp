@@ -12,6 +12,12 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint"
   },
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.10",
+      "esbuild": ">=0.25.0"
+    }
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
