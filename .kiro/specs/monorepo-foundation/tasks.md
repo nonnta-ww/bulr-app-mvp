@@ -150,7 +150,7 @@
   - 観測可能な完了状態: `curl http://localhost:3000/` が HTTP 200 を返し、空ランディングが表示される
   - _Requirements: 2.6_
   - _Depends: 4.2_
-- [ ] 4.5 `pnpm build` 全 workspace 並列実行
+- [x] 4.5 `pnpm build` 全 workspace 並列実行
   - ルートで `pnpm build` を実行し、apps/web の Next.js ビルドが成功することを確認
   - `apps/web/.next/` 配下に build 成果物（`build-manifest.json`、`server/`、`static/` 等）が生成されることを確認
   - 観測可能な完了状態: `pnpm build` の終了コードが 0 で、`apps/web/.next/build-manifest.json` が存在する
