@@ -36,7 +36,7 @@
 
 ## 2. マイグレーション生成
 
-### 2.1 drizzle-kit generate でマイグレーション SQL 生成
+### 2.1 ✅ drizzle-kit generate でマイグレーション SQL 生成
 
 - `bulr-app-mvp` ルートで `pnpm --filter @bulr/db generate` を実行
 - `bulr-app-mvp/packages/db/drizzle/*_assessment_patterns.sql` の glob に一致するマイグレーションファイルが 1 つ生成されることを確認（連番は drizzle-kit が決定、ハードコードしない）
