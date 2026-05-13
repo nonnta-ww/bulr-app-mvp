@@ -104,7 +104,7 @@
   - `devDependencies`: `@types/react` ^19、`@types/react-dom` ^19、`@types/node` ^22、`typescript` ^5.4
   - 観測可能な完了状態: `apps/web/package.json` が存在し、`@bulr/*` の 4 workspace 依存が `workspace:*` で宣言されている
   - _Requirements: 2.1, 2.3, 2.8, 6.1, 6.5_
-- [ ] 3.2 apps/web の Next.js / Tailwind / TypeScript 設定ファイルを作成
+- [x] 3.2 apps/web の Next.js / Tailwind / TypeScript 設定ファイルを作成
   - `apps/web/tsconfig.json`: `extends: "../../tsconfig.base.json"`、`compilerOptions: { jsx: "preserve", noEmit: true, plugins: [{ name: "next" }], paths: { "@/*": ["./*"] } }`、`include: ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]`、`exclude: ["node_modules"]`
   - `apps/web/next.config.ts`: `import type { NextConfig } from 'next'; const nextConfig: NextConfig = { reactCompiler: true }; export default nextConfig;`
   - `apps/web/postcss.config.mjs`: `export default { plugins: { '@tailwindcss/postcss': {} } };`
