@@ -138,7 +138,7 @@
 - _Depends: 3.1_
 - _Requirements: 4.1, 4.6, 4.9, 4.10, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-### 4.6 AI 活用カテゴリ A-01〜A-06 を `ai.ts` に転記 (P)
+### 4.6 ✅ AI 活用カテゴリ A-01〜A-06 を `ai.ts` に転記 (P)
 
 - `bulr-app-mvp/packages/db/src/seeds/patterns/ai.ts` を新規作成
 - `aiPatterns: readonly AssessmentPatternSeed[]` を export、6 件
