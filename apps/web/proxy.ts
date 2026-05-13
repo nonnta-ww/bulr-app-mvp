@@ -24,7 +24,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * UX リダイレクトと /admin/* に対する Basic 認証チェックのみを担う。
  * 認可判定（セッション有効性 / 許可メール検査）は行わない。
  */
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   // /admin/* への Basic 認証チェック
