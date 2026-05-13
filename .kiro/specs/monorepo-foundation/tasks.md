@@ -13,7 +13,7 @@
   - `devDependencies` に `turbo` ^2.9、`typescript` ^5.4、`eslint` ^9.39、`prettier` ^3.8、`typescript-eslint` ^8.59、`@typescript-eslint/eslint-plugin` ^8、`@typescript-eslint/parser` ^8 を宣言
   - 観測可能な完了状態: `bulr-app-mvp/package.json` が存在し、`engines` と `scripts` が要求どおりの値で定義されている
   - _Requirements: 1.1, 1.2, 1.3, 7.1_
-- [ ] 1.2 `pnpm-workspace.yaml` を作成
+- [x] 1.2 `pnpm-workspace.yaml` を作成
   - `packages: ["apps/*", "packages/*"]` を定義
   - 観測可能な完了状態: `bulr-app-mvp/pnpm-workspace.yaml` が存在し、apps と packages のグロブが定義されている
   - _Requirements: 1.2_
