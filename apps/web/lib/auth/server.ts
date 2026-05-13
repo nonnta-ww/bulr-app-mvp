@@ -10,7 +10,7 @@ import { userProfile } from '@bulr/db/schema';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink } from 'better-auth/plugins';
-import { FROM_ADDRESS, resend } from '../email/resend';
+import { sendEmail } from '../email/resend';
 import { renderMagicLinkEmail } from '../email/templates/magic-link';
 import { checkAndIncrement } from '../rate-limit';
 
@@ -83,14 +83,8 @@ export const auth = betterAuth({
         // メール本文生成
         const { subject, html, text } = renderMagicLinkEmail({ url });
 
-        // メール送信
-        await resend.emails.send({
-          from: FROM_ADDRESS,
-          to: email,
-          subject,
-          html,
-          text,
-        });
+        // メール送信（dev: Mailpit SMTP / prod: Resend API）
+        await sendEmail({ to: email, subject, html, text });
       },
     }),
   ],

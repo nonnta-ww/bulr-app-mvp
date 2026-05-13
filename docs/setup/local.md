@@ -89,6 +89,7 @@ pnpm dev
 | サービス | URL |
 |---|---|
 | **web アプリ** | http://localhost:3020 |
+| **Mailpit（メール受信確認）** | http://localhost:8025 |
 | **DB（直接接続）** | `psql postgresql://bulr:dev_password@localhost:5433/bulr_dev` |
 
 ---
