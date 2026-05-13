@@ -54,7 +54,7 @@
 > 1.x 完了後、2.x の各サブタスクは別ディレクトリ・別 package.json を作るため `(P)` で並列実行可能。互いに依存しないファイル群を独立に作成する。
 
 - [ ] 2. ワークスペース パッケージのスケルトン作成
-- [ ] 2.1 (P) `packages/types` スケルトンを作成
+- [x] 2.1 (P) `packages/types` スケルトンを作成
   - `packages/types/package.json` に `name: "@bulr/types"`、`private: true`、`version: "0.0.1"`、`exports: { ".": "./src/index.ts", "./profile": "./src/profile.ts", "./evaluation": "./src/evaluation.ts" }`、`main: "./src/index.ts"`、`scripts: { typecheck: "tsc --noEmit", lint: "eslint ." }` を定義
   - `dependencies` フィールドは含めない（runtime 依存ゼロ）。`devDependencies` に `typescript` ^5.4 のみ
   - `packages/types/tsconfig.json` で `extends: "../../tsconfig.base.json"`、`include: ["src/**/*"]` を設定
