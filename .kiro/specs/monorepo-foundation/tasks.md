@@ -62,7 +62,7 @@
   - 観測可能な完了状態: `pnpm --filter @bulr/types typecheck` がエラーなく完了し、`@bulr/types` の `package.json` が `exports` map に 3 サブパス（`.` / `./profile` / `./evaluation`）を宣言している
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 6.4_
   - _Boundary: TypesPackage_
-- [ ] 2.2 (P) `packages/db` スケルトンと Drizzle 初期化
+- [x] 2.2 (P) `packages/db` スケルトンと Drizzle 初期化
   - `packages/db/package.json` に `name: "@bulr/db"`、`private: true`、`version: "0.0.1"`、`exports: { ".": "./src/index.ts" }`、`main: "./src/index.ts"`、`scripts: { typecheck: "tsc --noEmit", lint: "eslint .", generate: "drizzle-kit generate", push: "drizzle-kit push", migrate: "drizzle-kit migrate" }` を定義
   - `dependencies`: `drizzle-orm` ^0.45.0、`pg` ^8、`nanoid` ^5。`devDependencies`: `drizzle-kit` ^0.31.0、`tsx` ^4、`@types/pg` ^8、`typescript` ^5.4。`peerDependencies`: `@bulr/types` `workspace:*`
   - `packages/db/tsconfig.json` で `extends: "../../tsconfig.base.json"`、`include: ["src/**/*", "drizzle.config.ts"]` を設定

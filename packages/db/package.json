@@ -1,0 +1,36 @@
+{
+  "name": "@bulr/db",
+  "private": true,
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./schema/*": "./src/schema/*.ts",
+    "./queries": "./src/queries/index.ts",
+    "./queries/*": "./src/queries/*/index.ts",
+    "./seeds": "./src/seeds/index.ts",
+    "./seeds/*": "./src/seeds/*.ts"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "generate": "drizzle-kit generate",
+    "push": "drizzle-kit push",
+    "migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.0",
+    "nanoid": "^5",
+    "pg": "^8"
+  },
+  "devDependencies": {
+    "@types/pg": "^8",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4",
+    "typescript": "^5.4"
+  },
+  "peerDependencies": {
+    "@bulr/types": "workspace:*"
+  }
+}
