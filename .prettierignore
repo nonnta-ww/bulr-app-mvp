@@ -1,0 +1,13 @@
+# Next.js auto-generated files
+apps/web/next-env.d.ts
+
+# Build artifacts
+.next
+dist
+.turbo
+
+# Dependencies
+node_modules
+
+# Lock files
+pnpm-lock.yaml
