@@ -22,7 +22,7 @@
   - `exclude: ["node_modules"]` を設定
   - 観測可能な完了状態: ファイル単独で `npx tsc --noEmit -p tsconfig.base.json` 相当の構文チェックが通る
   - _Requirements: 1.4, 4.5_
-- [ ] 1.4 `turbo.json` を作成
+- [x] 1.4 `turbo.json` を作成
   - `$schema: "https://turbo.build/schema.json"` を含める
   - `tasks.build`: `dependsOn: ["^build"]`、`outputs: [".next/**", "!.next/cache/**", "dist/**"]`
   - `tasks.dev`: `cache: false`、`persistent: true`
