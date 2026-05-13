@@ -11,7 +11,7 @@
 > 1.x の各サブタスクは独立したファイルを作成・更新するため `(P)` で並列実行可能。
 
 - [ ] 1. 環境変数規約と設定ファイルの整備
-- [ ] 1.1 (P) ルート `.env.example` を作成
+- [x] 1.1 (P) ルート `.env.example` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.env.example` を新規作成
   - 12 変数を以下の順序・グループでプレースホルダ + コメント付きで記載:
     - **共通**: `DATABASE_URL`（Neon Postgres、サーバー専用、Production = production branch URL / Preview = dev branch URL）、`BETTER_AUTH_SECRET`（Auth 暗号化キー、サーバー専用、Production / Preview 両方）、`BETTER_AUTH_URL`（認証コールバック URL、サーバー専用、Production / Preview 別）、`RESEND_API_KEY`（Magic Link 配信、サーバー専用、Production / Preview 両方）、`NEXT_PUBLIC_APP_URL`（アプリのベース URL、クライアント露出可、Production / Preview 別）
@@ -25,7 +25,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.8, 9.3, 10.2, 10.7_
   - _Boundary: EnvExampleConfig_
 
-- [ ] 1.2 (P) `apps/web/.env.local.example` を作成
+- [x] 1.2 (P) `apps/web/.env.local.example` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/.env.local.example` を新規作成
   - ルート `.env.example` と同じ 12 変数を含めるが、ローカル開発特化のデフォルトコメントを追加:
     - `BETTER_AUTH_URL=http://localhost:3000`（コメントで「ローカルではこれで OK、Vercel では各環境のドメインに合わせる」を明示）
@@ -36,14 +36,14 @@
   - _Requirements: 1.5, 1.7, 3.9, 4.6_
   - _Boundary: WebEnvLocalExample_
 
-- [ ] 1.3 (P) `.gitignore` の `.env` 除外確認と必要時の追記
+- [x] 1.3 (P) `.gitignore` の `.env` 除外確認と必要時の追記
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.gitignore` を確認
   - `.env`、`.env.local`、`.env.*.local` の 3 パターンが含まれていない場合のみ追記（`monorepo-foundation` で `.env*.local` は設定済みのため、`.env` 単体と `.env.local` の明示的追加が必要かを確認）
   - 観測可能な完了状態: `.gitignore` に `.env`、`.env.local`、`.env.*.local` の 3 パターンが必ず含まれている
   - _Requirements: 1.6, 10.1_
   - _Boundary: EnvExampleConfig_
 
-- [ ] 1.4 `apps/web/vercel.json` を作成（Vercel Cron 定義）
+- [x] 1.4 `apps/web/vercel.json` を作成（Vercel Cron 定義）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/vercel.json` を新規作成
   - 内容は以下のみ:
     ```json
@@ -61,7 +61,7 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
   - _Boundary: VercelJsonConfig_
 
-- [ ] 1.5 `packages/db/drizzle.config.ts` の DATABASE_URL 読み取り設定を有効化
+- [x] 1.5 `packages/db/drizzle.config.ts` の DATABASE_URL 読み取り設定を有効化
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/packages/db/drizzle.config.ts` を確認・更新
   - `monorepo-foundation` で `dbCredentials.url: process.env.DATABASE_URL ?? ''` の形になっている場合、`process.env.DATABASE_URL!`（non-null assertion）または `process.env.DATABASE_URL` 未定義時に明示的に throw する形に変更
   - 推奨実装例:
@@ -95,7 +95,7 @@
 > 2.x の各サブタスクは独立したマークダウンファイルを作成するため `(P)` で並列実行可能。各ドキュメントは `tech.md` および `security.md` の関連箇所と整合させる。
 
 - [ ] 2. セットアップ手順ドキュメントの整備
-- [ ] 2.1 (P) `docs/setup/README.md` インデックスを作成
+- [x] 2.1 (P) `docs/setup/README.md` インデックスを作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/README.md` を新規作成
   - 内容:
     - 環境マッピング規約（local / Vercel Preview / Vercel Production の 3 段階、staging なし、Stage 1 では 2 環境構成）の明示
@@ -116,7 +116,7 @@
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.6, 9.1, 9.2_
   - _Boundary: DocsSetupReadme_
 
-- [ ] 2.2 (P) `docs/setup/env-vars.md` を作成
+- [x] 2.2 (P) `docs/setup/env-vars.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/env-vars.md` を新規作成
   - 12 環境変数の総合リファレンステーブル（変数名 / 用途 / 参照元 spec / 公開可否 / Vercel 登録先 / 値の取得元 の列を含む）
   - DATABASE_URL の Production = production branch / Preview = dev branch の使い分けを強調セクションで明示（誤って production URL を Preview に登録すると本番 DB を破壊するリスクを警告）
@@ -126,7 +126,7 @@
   - _Requirements: 1.4, 1.8, 4.5, 4.7, 5.6, 5.7, 9.1, 9.3, 9.4, 9.6, 10.3, 10.5_
   - _Boundary: EnvVarsDoc_
 
-- [ ] 2.3 (P) `docs/setup/vercel.md` を作成
+- [x] 2.3 (P) `docs/setup/vercel.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/vercel.md` を新規作成
   - Vercel プロジェクト `bulr-web` 作成手順（Vercel Hobby プラン前提）:
     - GitHub 連携でリポジトリ `bulr-app-mvp` を import
@@ -143,7 +143,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 8.5_
   - _Boundary: VercelSetupDoc_
 
-- [ ] 2.4 (P) `docs/setup/neon.md` を作成
+- [x] 2.4 (P) `docs/setup/neon.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/neon.md` を新規作成
   - Neon プロジェクト作成手順（Free プラン前提）:
     - Neon Console でプロジェクト `bulr` を作成、Region は東京（または大阪、Vercel リージョンと整合）
@@ -160,7 +160,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 9.4, 9.6, 8.5_
   - _Boundary: NeonSetupDoc_
 
-- [ ] 2.5 (P) `docs/setup/resend.md` を作成
+- [x] 2.5 (P) `docs/setup/resend.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/resend.md` を新規作成
   - Resend Free アカウント作成 + API キー取得手順:
     - Resend サインアップ（Free プラン、100 通/日）
@@ -173,7 +173,7 @@
   - _Requirements: 4.1, 4.2, 4.5, 4.7, 8.5_
   - _Boundary: ResendSetupDoc_
 
-- [ ] 2.6 (P) `docs/setup/openai.md` を作成
+- [x] 2.6 (P) `docs/setup/openai.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/openai.md` を新規作成
   - OpenAI アカウント作成 + API キー取得手順:
     - OpenAI Platform でアカウント作成、Billing 情報を登録（Whisper API は従量課金）
@@ -187,7 +187,7 @@
   - _Requirements: 4.1, 4.3, 4.5, 4.7, 8.5_
   - _Boundary: OpenAISetupDoc_
 
-- [ ] 2.7 (P) `docs/setup/anthropic.md` を作成
+- [x] 2.7 (P) `docs/setup/anthropic.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/anthropic.md` を新規作成
   - Anthropic アカウント作成 + API キー取得手順:
     - Anthropic Console でアカウント作成、Billing 情報を登録（Claude API は従量課金）
@@ -201,7 +201,7 @@
   - _Requirements: 4.1, 4.4, 4.5, 4.7, 8.5_
   - _Boundary: AnthropicSetupDoc_
 
-- [ ] 2.8 (P) `docs/setup/vercel-blob.md` を作成
+- [x] 2.8 (P) `docs/setup/vercel-blob.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/vercel-blob.md` を新規作成
   - Vercel Blob ストア作成手順:
     - Vercel プロジェクト `bulr-web` の Storage タブから "Create Database" → Blob を選択
@@ -213,7 +213,7 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.6, 8.5_
   - _Boundary: VercelBlobSetupDoc_
 
-- [ ] 2.9 (P) `docs/setup/cron.md` を作成
+- [x] 2.9 (P) `docs/setup/cron.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/cron.md` を新規作成
   - `CRON_SECRET` 生成手順:
     - 推奨コマンド: `openssl rand -base64 32`（最低 32 バイトのランダム値）
@@ -227,7 +227,7 @@
   - _Requirements: 5.4, 5.5, 5.7, 6.6, 10.6, 8.5_
   - _Boundary: CronSetupDoc_
 
-- [ ] 2.10 (P) `docs/setup/drizzle-kit.md` を作成
+- [x] 2.10 (P) `docs/setup/drizzle-kit.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/drizzle-kit.md` を新規作成
   - drizzle-kit 運用手順:
     - **dev branch への反映**: ローカル `.env.local` に dev branch DATABASE_URL を設定 → `pnpm --filter @bulr/db push` → スキーマが dev branch に直接反映される（マイグレーション履歴は残らない、開発中の試行錯誤用）
@@ -239,7 +239,7 @@
   - _Requirements: 3.6, 3.7, 3.8, 9.5, 8.5_
   - _Boundary: DrizzleKitOpsDoc_
 
-- [ ] 2.11 (P) `docs/setup/ci.md` を作成
+- [x] 2.11 (P) `docs/setup/ci.md` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/ci.md` を新規作成
   - `.github/workflows/ci.yml` の構成説明:
     - トリガ: `pull_request`（opened / synchronize）+ `push` の `branches: [main]`
@@ -253,7 +253,7 @@
   - _Requirements: 7.1, 7.7, 8.5_
   - _Boundary: DocsSetupReadme（補助ドキュメント）_
 
-- [ ] 2.12 ルート `README.md` のセットアップセクション更新
+- [x] 2.12 ルート `README.md` のセットアップセクション更新
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/README.md` を更新
   - 既存内容を尊重し、以下のいずれかの形でセットアップへの入り口を追加:
     - 既存に Setup セクションがある場合: そこに「詳細は `docs/setup/README.md` を参照」のリンク追加
@@ -266,7 +266,7 @@
 ## CI: GitHub Actions ワークフロー
 
 - [ ] 3. CI ワークフローの構築
-- [ ] 3.1 `.github/workflows/ci.yml` を作成
+- [x] 3.1 `.github/workflows/ci.yml` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.github/workflows/ci.yml` を新規作成
   - 内容:
 
@@ -320,7 +320,7 @@
 > 4.x の検証タスクは設定ファイル + ドキュメントが揃った後の動作確認。Owner 手動実施を伴う 5.x と分離。
 
 - [ ] 4. 設定ファイルとドキュメントの統合検証
-- [ ] 4.1 `.env.example` 完整性の確認
+- [x] 4.1 `.env.example` 完整性の確認
   - ルート `.env.example` を読み、12 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）が含まれていることを目視確認
   - 各変数にコメントが付与され、Vercel 登録先（Production / Preview / 両方）が明示されていることを確認
   - 実シークレット値が含まれていないことを目視確認
@@ -328,7 +328,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.8, 10.2, 10.7_
   - _Depends: 1.1_
 
-- [ ] 4.2 `apps/web/.env.local.example` のコピー動作確認
+- [x] 4.2 `apps/web/.env.local.example` のコピー動作確認
   - `cp apps/web/.env.local.example apps/web/.env.local` を実行（一時ファイルとして）
   - `.env.local` が `.gitignore` で除外されていることを `git status` で確認（追跡対象に出現しないこと）
   - 値を仮埋め（DATABASE_URL に Neon dev branch の URL、その他はダミー）し、`pnpm dev` で apps/web (port 3000) が起動することを確認
@@ -337,7 +337,7 @@
   - _Requirements: 1.5, 1.7, 1.6, 3.9_
   - _Depends: 1.2, 1.3_
 
-- [ ] 4.3 `apps/web/vercel.json` の構造検証
+- [x] 4.3 `apps/web/vercel.json` の構造検証
   - `apps/web/vercel.json` を読み、JSON として有効であることを確認（`node -e "JSON.parse(require('fs').readFileSync('apps/web/vercel.json', 'utf8'))"` 等で検証可能）
   - `crons` 配列に 1 エントリが含まれ、`path: "/api/cron/audio-purge"` および `schedule: "0 18 * * *"` であることを確認
   - `headers` / `rewrites` / `redirects` 等の余分なキーが含まれないことを確認
@@ -345,14 +345,14 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
   - _Depends: 1.4_
 
-- [ ] 4.4 `packages/db/drizzle.config.ts` の DATABASE_URL 読み取り検証
+- [x] 4.4 `packages/db/drizzle.config.ts` の DATABASE_URL 読み取り検証
   - 一時的に `DATABASE_URL=postgresql://test:test@localhost:5432/test pnpm --filter @bulr/db generate` を実行し、空 schema でもエラーなく完了することを確認（migration ファイルは生成されないが、drizzle.config.ts は読み取られる）
   - DATABASE_URL を未設定で `pnpm --filter @bulr/db generate` を実行し、明示的なエラーメッセージ（`DATABASE_URL is not defined` 相当）が表示されることを確認
   - 観測可能な完了状態: DATABASE_URL 設定時は drizzle-kit が完了、未設定時は明示的なエラーで fail する
   - _Requirements: 3.4, 3.5_
   - _Depends: 1.5_
 
-- [ ] 4.5 CI ワークフローの動作確認
+- [x] 4.5 CI ワークフローの動作確認
   - 任意の PR（このスペック完了用の PR でも可）を立てて GitHub Actions が起動することを確認
   - 4 ステップ（pnpm install --frozen-lockfile → pnpm typecheck → pnpm lint → pnpm audit --audit-level=moderate）がすべて成功し、「all checks passed」状態になることを確認
   - 万一 audit で false positive が発生した場合は、依存性更新で対応（または個別 ignore を docs/setup/ci.md に記録）
@@ -360,7 +360,7 @@
   - _Requirements: 7.2, 7.4, 7.5, 7.6, 7.7, 7.9, 10.4_
   - _Depends: 3.1_
 
-- [ ] 4.6 `docs/setup/` インデックスとリンク整合性の確認
+- [x] 4.6 `docs/setup/` インデックスとリンク整合性の確認
   - `docs/setup/README.md` の各リンク（`./vercel.md` / `./neon.md` / `./resend.md` / `./openai.md` / `./anthropic.md` / `./vercel-blob.md` / `./cron.md` / `./drizzle-kit.md` / `./ci.md` / `./env-vars.md`）が実在ファイルを指していることを確認
   - 推奨実行順序が 10 ステップ揃っていることを確認
   - リポジトリトップ `README.md` から `docs/setup/README.md` へのリンクが機能することを確認
