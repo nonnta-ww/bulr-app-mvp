@@ -253,7 +253,7 @@
 - _Depends: G0.2_
 - _Requirements: 8.12, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8_
 
-### G3.4 `analyzeTurn` 関数 + Zod スキーマを実装 (P)
+### ✅ G3.4 `analyzeTurn` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/analyze-turn.ts` を新規作成
 - `analyzeTurnOutputSchema` を Zod で定義（Requirement 8.2、24.1 準拠）:
