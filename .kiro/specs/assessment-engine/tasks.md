@@ -297,7 +297,7 @@
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.3, 8.10, 8.11, 8.12_
 
-### G3.6 `proposeNextQuestions` 関数 + Zod スキーマを実装 (P)
+### ✅ G3.6 `proposeNextQuestions` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/propose-next-questions.ts` を新規作成
 - `proposeOutputSchema`: `candidates: z.array(z.object({ text: z.string().min(1).max(500), intent: z.enum(['deep_dive', 'meta_cognition', 'next_pattern']), pattern_id: z.string().optional() })).length(3).refine((cs) => cs.some(c => c.intent === 'next_pattern'), { message: '3 候補のうち最低 1 つは next_pattern intent を含む必要があります' })`
