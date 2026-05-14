@@ -379,7 +379,7 @@
 - _Depends: G1.7_
 - _Requirements: 21.3, 21.4_
 
-### G4.4 `packages/db/src/queries/index.ts` バレル更新
+### ✅ G4.4 `packages/db/src/queries/index.ts` バレル更新
 
 - `bulr-app-mvp/packages/db/src/queries/index.ts` の既存空バレルに `interview/` サブディレクトリの再エクスポートを追加
 - `export * from './interview/load-session-with-turns';` 〜 `export * from './interview/load-recent-turns';`（または `@bulr/db/queries/interview` サブパス exports map を `package.json` に追加するかは実装時判断）
