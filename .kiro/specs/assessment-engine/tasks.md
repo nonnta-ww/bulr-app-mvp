@@ -64,7 +64,7 @@
 - _Boundary: SchemaCandidate_
 - _Requirements: 2.1_
 
-### G1.2 `interview_session` テーブル schema + status enum を実装 (P)
+### ✅ G1.2 `interview_session` テーブル schema + status enum を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/interview-session.ts` を新規作成
 - `pgEnum('interview_session_status', ['draft', 'in_progress', 'completed', 'abandoned'])` を `sessionStatus` という名前で export
