@@ -15,6 +15,13 @@
       "when": 1778676734149,
       "tag": "0001_assessment_patterns",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778773915628,
+      "tag": "0002_green_callisto",
+      "breakpoints": true
     }
   ]
 }

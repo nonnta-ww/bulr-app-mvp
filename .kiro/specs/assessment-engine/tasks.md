@@ -125,7 +125,7 @@
 - _Depends: G1.1, G1.2, G1.3, G1.4, G1.5, G1.6_
 - _Requirements: 2.7_
 
-### G1.8 drizzle-kit generate でマイグレーション生成
+### ✅ G1.8 drizzle-kit generate でマイグレーション生成
 
 - `bulr-app-mvp` ルートで `pnpm --filter @bulr/db generate` を実行
 - `bulr-app-mvp/packages/db/drizzle/*_assessment_engine.sql` の glob に一致するファイルが 1 つ生成される（連番は drizzle-kit 決定、ハードコードしない）
