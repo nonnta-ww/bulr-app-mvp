@@ -398,7 +398,7 @@
 - _Boundary: SelectPlannedPatterns_
 - _Requirements: 3.5_
 
-### G4.6 `createSession` Server Action を実装
+### ✅ G4.6 `createSession` Server Action を実装
 
 - `bulr-app-mvp/apps/web/lib/actions/create-session.ts` を新規作成
 - `'use server';` を冒頭に
