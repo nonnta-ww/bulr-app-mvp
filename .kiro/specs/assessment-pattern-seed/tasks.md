@@ -214,7 +214,7 @@
 
 ## 8. ドキュメント
 
-### 8.1 `docs/setup/seed.md` に投入手順を記載
+### 8.1 ✅ `docs/setup/seed.md` に投入手順を記載
 
 - `bulr-app-mvp/docs/setup/seed.md` を新規作成（`docs/setup/` ディレクトリも新規）
 - 内容：
