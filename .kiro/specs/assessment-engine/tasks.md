@@ -348,7 +348,7 @@
 
 ## G4. 共通クエリ + API ルート
 
-### G4.1 `loadSessionWithTurns` クエリを実装 (P)
+### ✅ G4.1 `loadSessionWithTurns` クエリを実装 (P)
 
 - `bulr-app-mvp/packages/db/src/queries/interview/load-session-with-turns.ts` を新規作成
 - `loadSessionWithTurns(sessionId: string, userId: string): Promise<{ session, candidate, turns, latestProposal } | null>` を実装
