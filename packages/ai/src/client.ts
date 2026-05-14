@@ -1,1 +1,3 @@
-// Anthropic Claude Sonnet 4.6 client is added by assessment-engine spec
+import { anthropic } from '@ai-sdk/anthropic';
+
+export const claudeSonnet46 = anthropic('claude-sonnet-4-6');

@@ -150,7 +150,7 @@
 
 ## G2. Whisper クライアント + Vercel Blob ヘルパー
 
-### G2.1 `packages/ai/src/client.ts` に Anthropic Claude Sonnet 4.6 モデル定義を実装 (P)
+### ✅ G2.1 `packages/ai/src/client.ts` に Anthropic Claude Sonnet 4.6 モデル定義を実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/client.ts` を更新（`monorepo-foundation` で空ファイル予約済み）
 - `import { anthropic } from '@ai-sdk/anthropic';`
