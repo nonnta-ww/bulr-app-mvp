@@ -26,7 +26,7 @@
 - _Boundary: TypesProfile_
 - _Requirements: 1.1, 1.2, 1.3, 1.11, 1.12_
 
-### G0.2 評価関連 7 型を `evaluation.ts` に実装 (P)
+### ✅ G0.2 評価関連 7 型を `evaluation.ts` に実装 (P)
 
 - `bulr-app-mvp/packages/types/src/evaluation.ts` を更新（既存空ファイル → 実体型）
 - `StuckType` ユニオン: `'not_experienced' | 'shallow' | 'single_option' | 'rigid'`
