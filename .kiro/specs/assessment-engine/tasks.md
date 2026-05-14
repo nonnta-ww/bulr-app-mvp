@@ -96,7 +96,7 @@
 - _Depends: G0.2, G1.2, G1.3_
 - _Requirements: 2.4, 2.13, 2.14, 12.1_
 
-### G1.5 `pattern_coverage` テーブル schema + UNIQUE + stuck_type enum を実装 (P)
+### ✅ G1.5 `pattern_coverage` テーブル schema + UNIQUE + stuck_type enum を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/pattern-coverage.ts` を新規作成
 - `pgEnum('stuck_type', ['not_experienced', 'shallow', 'single_option', 'rigid'])`
