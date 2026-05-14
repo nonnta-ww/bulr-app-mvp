@@ -335,7 +335,7 @@
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.7, 8.10, 8.11, 8.12, 11.5, 12.5, 13.6_
 
-### G3.9 `packages/ai/src/index.ts` バレル更新
+### ✅ G3.9 `packages/ai/src/index.ts` バレル更新
 
 - `bulr-app-mvp/packages/ai/src/index.ts` を更新
 - 5 LLM 関数 + `transcribeAudio` + `buildSystemPrompt` + `createLlmContext` + `validateAndFallback` + フォールバック定数の再エクスポート
