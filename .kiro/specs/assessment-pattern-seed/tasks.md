@@ -278,7 +278,9 @@
 - _Depends: 9.1_
 - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-### 9.5 production 投入手順の動作確認
+### 9.5 ⏭️ production 投入手順の動作確認（意図的スキップ）
+
+> **スキップ理由 (2026-05-15)**: production Neon ブランチが未セットアップ（`multi-env-infrastructure` セクション 5 が未実施）。開発はローカル Docker Postgres で進行中。9.1〜9.4 でローカル全検証は完了済み、production 手順は同一コマンドで `docs/setup/seed.md` に文書化済み。クラウドセットアップ後に Owner が手動実施すること。
 
 - `DATABASE_URL` を production Neon ブランチに切り替え
 - `pnpm --filter @bulr/db migrate` を実行し、エラーなく完了することを確認
