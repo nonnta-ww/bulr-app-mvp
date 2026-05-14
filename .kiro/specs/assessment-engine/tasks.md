@@ -309,7 +309,7 @@
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.4, 8.5, 8.10, 8.11, 8.12, 12.7, 13.4_
 
-### G3.7 `aggregatePatternCoverage` 関数 + Zod スキーマを実装 (P)
+### ✅ G3.7 `aggregatePatternCoverage` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/aggregate-pattern-coverage.ts` を新規作成
 - `aggregateOutputSchema`: 5 次元スコア整数（authenticity 0-3、judgment 0-3、scope 1-5、meta_cognition 0-3、ai_literacy 0-3）+ level_reached 0-4 + stuck_type enum or null + notes + evaluated_at
