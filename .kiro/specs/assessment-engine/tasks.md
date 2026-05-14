@@ -41,7 +41,7 @@
 - _Boundary: TypesEvaluation_
 - _Requirements: 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11, 1.12_
 
-### G0.3 `packages/types/src/index.ts` バレル更新
+### ✅ G0.3 `packages/types/src/index.ts` バレル更新
 
 - `bulr-app-mvp/packages/types/src/index.ts` を更新
 - `export * from './profile';` および `export * from './evaluation';` を追加
