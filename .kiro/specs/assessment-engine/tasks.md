@@ -54,7 +54,7 @@
 
 ## G1. DB schema + migration（6 テーブル）
 
-### G1.1 `candidate` テーブル schema を実装 (P)
+### ✅ G1.1 `candidate` テーブル schema を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/candidate.ts` を新規作成
 - `pgTable('candidate', { id: text('id').primaryKey().$defaultFn(() => nanoid()), name, applied_role, background_summary, email (nullable), created_at, updated_at })`
