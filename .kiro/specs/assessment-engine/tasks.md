@@ -203,7 +203,7 @@
 
 ## G3. LLM 関数実装（5 関数 + システムプロンプト + createLlmContext + 出力検証）
 
-### G3.1 `buildSystemPrompt(ctx)` 純関数を実装
+### ✅ G3.1 `buildSystemPrompt(ctx)` 純関数を実装
 
 - `bulr-app-mvp/packages/ai/src/prompts/system-prompt.ts` を新規作成
 - `SystemPromptCtx` interface: `interviewerProfile: InterviewerProfile`、`candidateInfo: CandidateInfo`、`plannedPatterns: Array<{code, title, category}>`、`currentPattern?: { ... }`、`completedCoverage: Array<{pattern_code, level_reached, evaluation}>`
