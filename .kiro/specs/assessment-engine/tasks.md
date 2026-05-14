@@ -186,7 +186,7 @@
 - _Boundary: BlobClient_
 - _Requirements: 10.7, 10.8, 10.9, 10.10_
 
-### G2.4 `apps/web/lib/audio/recorder.ts` に MediaRecorder ラッパーを実装
+### ✅ G2.4 `apps/web/lib/audio/recorder.ts` に MediaRecorder ラッパーを実装
 
 - `bulr-app-mvp/apps/web/lib/audio/recorder.ts` を新規作成
 - ファイル先頭に `'use client';`
