@@ -74,7 +74,7 @@
 - _Depends: G1.1_
 - _Requirements: 2.2, 2.11_
 
-### G1.3 `question_proposal` テーブル schema + intent enum を実装 (P)
+### ✅ G1.3 `question_proposal` テーブル schema + intent enum を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/question-proposal.ts` を新規作成
 - `pgEnum('question_intent', ['deep_dive', 'meta_cognition', 'next_pattern'])` を `questionIntent` という名前で export
