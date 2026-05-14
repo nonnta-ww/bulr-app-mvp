@@ -160,7 +160,7 @@
 - _Boundary: ClientPackagesAi_
 - _Requirements: 8.9_
 
-### G2.2 `packages/ai/src/whisper/transcribe.ts` に OpenAI Whisper API ラッパーを実装 (P)
+### ✅ G2.2 `packages/ai/src/whisper/transcribe.ts` に OpenAI Whisper API ラッパーを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/whisper/transcribe.ts` を新規作成
 - `import OpenAI from 'openai';`
