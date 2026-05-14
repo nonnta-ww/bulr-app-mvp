@@ -238,7 +238,7 @@
 - _Depends: G0.2_
 - _Requirements: 7.7, 8.8_
 
-### G3.3 `validateAndFallback` ヘルパー + フォールバック値定数を実装 (P)
+### ✅ G3.3 `validateAndFallback` ヘルパー + フォールバック値定数を実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/lib/validate-llm-output.ts` を新規作成
 - `validateAndFallback<T>(output: unknown, schema: z.ZodSchema<T>, fallback: T, context: string): T` を実装
