@@ -277,7 +277,7 @@
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.1, 8.2, 8.10, 8.11, 8.12, 12.2, 13.1, 13.6, 18.2, 18.3, 24.1_
 
-### G3.5 `splitInterviewerCandidate` 関数 + Zod スキーマを実装 (P)
+### ✅ G3.5 `splitInterviewerCandidate` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/split-interviewer-candidate.ts` を新規作成
 - `splitOutputSchema = z.object({ interviewer_text: z.string().max(5000), candidate_text: z.string().max(10000) })`
