@@ -182,7 +182,7 @@
 - _Depends: 1.2, 2.2, 5.1_
 - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-### 6.2 件数ログ + 期待値比較を SeedScript に追加
+### 6.2 ✅ 件数ログ + 期待値比較を SeedScript に追加
 
 - `scripts/seed-assessment-patterns.ts` に投入後の検証 + ログ出力を実装
 - 投入完了後、DB に対して `SELECT category, COUNT(*) FROM assessment_pattern GROUP BY category` または `SELECT COUNT(*) FROM assessment_pattern` を実行（または `countByCategory(assessmentPatterns)` を投入直前に算出）
@@ -201,7 +201,7 @@
 
 ## 7. pnpm scripts 登録
 
-### 7.1 ルート `package.json` に `seed:patterns` スクリプトを追加
+### 7.1 ✅ ルート `package.json` に `seed:patterns` スクリプトを追加
 
 - `bulr-app-mvp/package.json` の `scripts` セクションに `"seed:patterns": "tsx scripts/seed-assessment-patterns.ts"` を追加（`tsx` 解決パスは実装時に判断、必要なら `pnpm --filter @bulr/db exec tsx ../../scripts/seed-assessment-patterns.ts` 形式）
 - 既存 scripts (`dev` / `build` / `typecheck` / `lint` 等) は変更しない
