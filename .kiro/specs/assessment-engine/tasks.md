@@ -173,7 +173,7 @@
 - _Boundary: Transcribe_
 - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-### G2.3 `apps/web/lib/audio/blob-client.ts` に Vercel Blob ヘルパーを実装 (P)
+### ✅ G2.3 `apps/web/lib/audio/blob-client.ts` に Vercel Blob ヘルパーを実装 (P)
 
 - `bulr-app-mvp/apps/web/package.json` の `dependencies` に `@vercel/blob` ^0.27 を追加
 - `bulr-app-mvp/apps/web/lib/audio/blob-client.ts` を新規作成（**サーバーサイドのみ**、`'use server'` は付けず Node-only モジュールとして書く）
