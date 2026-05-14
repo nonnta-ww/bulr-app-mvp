@@ -415,7 +415,7 @@
 - _Depends: G1.9, G4.5_
 - _Requirements: 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 15.2, 20.4_
 
-### G4.7 `selectProposalChoice` Server Action を実装
+### ✅ G4.7 `selectProposalChoice` Server Action を実装
 
 - `bulr-app-mvp/apps/web/lib/actions/select-proposal-choice.ts` を新規作成
 - `'use server';`
