@@ -107,7 +107,7 @@
 - _Depends: G0.2, G1.2_
 - _Requirements: 2.5, 2.15_
 
-### G1.6 `session_report` テーブル schema を実装 (P)
+### ✅ G1.6 `session_report` テーブル schema を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/session-report.ts` を新規作成
 - `pgTable('session_report', { id, session_id (FK, .unique()), heatmap_data (jsonb $type<HeatmapData>), summary_text, generated_at default now() })`
