@@ -135,7 +135,7 @@
 - _Depends: G1.7_
 - _Requirements: 2.8, 2.9_
 
-### G1.9 dev branch への push 動作確認
+### ✅ G1.9 dev branch への push 動作確認
 
 - `DATABASE_URL` を Neon dev branch に設定（`.env.local` 経由）
 - `pnpm --filter @bulr/db push` を実行成功
