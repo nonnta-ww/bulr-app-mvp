@@ -116,7 +116,7 @@
 - _Depends: G0.2, G1.2_
 - _Requirements: 2.6_
 
-### G1.7 schema バレル更新
+### ✅ G1.7 schema バレル更新
 
 - `bulr-app-mvp/packages/db/src/schema/index.ts` の既存バレルに 6 新規テーブルの再エクスポートを追加
 - `export * from './candidate';` 〜 `export * from './session-report';`
