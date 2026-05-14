@@ -235,7 +235,7 @@
 
 > Stage 1 は自動テストフレームワーク不採用（design.md 準拠）。手動スモークテストで完了条件を満たす。
 
-### 9.1 シード投入 1 回目 + カウント検証
+### 9.1 ✅ シード投入 1 回目 + カウント検証
 
 - dev branch の `DATABASE_URL` で `pnpm seed:patterns` を実行
 - stdout に `assessment_pattern: total = 57` が出力されることを確認
@@ -247,7 +247,7 @@
 - _Depends: 6.2, 7.1_
 - _Requirements: 6.6, 9.1, 9.2_
 
-### 9.2 シード投入 2 回目（冪等性）の検証
+### 9.2 ✅ シード投入 2 回目（冪等性）の検証
 
 - 9.1 完了後、即座に `pnpm seed:patterns` を再実行
 - エラーなく完了することを確認
@@ -258,7 +258,7 @@
 - _Depends: 9.1_
 - _Requirements: 6.5_
 
-### 9.3 `is_active=false` 保護の検証
+### 9.3 ✅ `is_active=false` 保護の検証
 
 - dev branch で `psql $DATABASE_URL -c "UPDATE assessment_pattern SET is_active = false WHERE code = 'D-01'"`
 - `pnpm seed:patterns` を実行
@@ -269,7 +269,7 @@
 - _Depends: 9.2_
 - _Requirements: 6.3_
 
-### 9.4 DB レコードの内容と Markdown ドキュメントの一致確認
+### 9.4 ✅ DB レコードの内容と Markdown ドキュメントの一致確認
 
 - 各カテゴリから抜き取り検証：D-01, T-01, P-01, S-01, O-01, A-01 の 6 レコードを `psql` で SELECT
 - 各レコードの `title`、`description`、`level_1_intro`、`level_2_focus`、`level_3_focus`、`level_4_focus`、`signals`、`ai_perspective`、`expected_scope_min`、`expected_scope_max` が `docs/02-questionnaire-patterns.md` および `docs/03-probe-logic.md` の対応セクションと一致することを目視確認
@@ -288,7 +288,7 @@
 - _Depends: 9.4, 8.1_
 - _Requirements: 2.3, 6.8_
 
-### 9.6 ドキュメント手順の再現性確認
+### 9.6 ✅ ドキュメント手順の再現性確認
 
 - `docs/setup/seed.md` の手順を新規環境（または `git clean -fdx` 後）で頭から実行
 - マイグレーション生成 → push → seed → 検証クエリの全手順が、ドキュメント記載通りで再現できることを確認
