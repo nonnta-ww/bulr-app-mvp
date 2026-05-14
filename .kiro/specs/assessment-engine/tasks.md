@@ -359,7 +359,7 @@
 - _Depends: G1.7_
 - _Requirements: 21.1, 21.4_
 
-### G4.2 `loadCompletedPatternCodes` クエリを実装 (P)
+### ✅ G4.2 `loadCompletedPatternCodes` クエリを実装 (P)
 
 - `bulr-app-mvp/packages/db/src/queries/interview/load-completed-pattern-codes.ts` を新規作成
 - `loadCompletedPatternCodes(sessionId: string): Promise<string[]>` を実装
