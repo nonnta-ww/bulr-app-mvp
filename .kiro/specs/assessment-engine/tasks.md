@@ -388,7 +388,7 @@
 - _Depends: G4.1, G4.2, G4.3_
 - _Requirements: 21.4, 21.5_
 
-### G4.5 `selectPlannedPatterns` 純関数を実装 (P)
+### ✅ G4.5 `selectPlannedPatterns` 純関数を実装 (P)
 
 - `bulr-app-mvp/apps/web/lib/queries/select-planned-patterns.ts` を新規作成
 - `selectPlannedPatterns(input: { backgroundSummary: string; allActivePatterns: AssessmentPattern[] }): string[]` を実装（戻り値: `pattern_code[]` 8-12 件）
