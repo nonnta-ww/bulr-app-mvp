@@ -369,7 +369,7 @@
 - _Depends: G1.7_
 - _Requirements: 21.2, 21.4_
 
-### G4.3 `loadRecentTurns` クエリを実装 (P)
+### ✅ G4.3 `loadRecentTurns` クエリを実装 (P)
 
 - `bulr-app-mvp/packages/db/src/queries/interview/load-recent-turns.ts` を新規作成
 - `loadRecentTurns(sessionId: string, limit: number = 10): Promise<InterviewTurn[]>` を実装
