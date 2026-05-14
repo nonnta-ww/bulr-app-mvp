@@ -322,7 +322,7 @@
 - _Depends: G2.1, G3.1, G3.2, G3.3_
 - _Requirements: 8.6, 8.10, 8.11, 8.12, 13.2, 13.3, 13.5, 13.6_
 
-### G3.8 `generateSessionReport` 関数 + Zod スキーマを実装 (P)
+### ✅ G3.8 `generateSessionReport` 関数 + Zod スキーマを実装 (P)
 
 - `bulr-app-mvp/packages/ai/src/functions/generate-session-report.ts` を新規作成
 - `reportOutputSchema`: `heatmap_data: HeatmapData zod schema` + `summary_text: string max 10000` + `generated_at: string (ISO)`
