@@ -6,11 +6,13 @@
 >
 > 完了の最終条件: (a) `.env.example` / `apps/web/.env.local.example` / `apps/web/vercel.json` / `.github/workflows/ci.yml` / `docs/setup/*.md` が揃い、(b) PR を立てると CI（typecheck + lint + audit）が成功し、(c) Owner が docs/setup/ の手順通りに Vercel / Neon / Resend / OpenAI / Anthropic / Vercel Blob / CRON_SECRET をセットアップ完了し、(d) main ブランチ push で `https://bulr-web.vercel.app/` が HTTP 200 を返し、Vercel Cron Jobs ダッシュボードに `/api/cron/audio-purge` が登録されていること。
 
+> **実装状況 (2026-05-14 時点)**: セクション 1〜4（設定ファイル・ドキュメント・CI・統合検証、計 24 サブタスク）は完了。spec.json は `phase: implemented`。ただしセクション 5（Owner 手動クラウドセットアップ: Neon / Vercel / Resend / OpenAI / Anthropic / Vercel Blob のアカウント作成と API キー発行）は **未実施**。現在の開発はローカル Docker Postgres で進行中。クラウドデプロイ前にセクション 5 を `docs/setup/` の手順通りに完了させること。
+
 ## Foundation: 環境変数規約と設定ファイル
 
 > 1.x の各サブタスクは独立したファイルを作成・更新するため `(P)` で並列実行可能。
 
-- [ ] 1. 環境変数規約と設定ファイルの整備
+- [x] 1. 環境変数規約と設定ファイルの整備
 - [x] 1.1 (P) ルート `.env.example` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.env.example` を新規作成
   - 12 変数を以下の順序・グループでプレースホルダ + コメント付きで記載:
@@ -94,7 +96,7 @@
 
 > 2.x の各サブタスクは独立したマークダウンファイルを作成するため `(P)` で並列実行可能。各ドキュメントは `tech.md` および `security.md` の関連箇所と整合させる。
 
-- [ ] 2. セットアップ手順ドキュメントの整備
+- [x] 2. セットアップ手順ドキュメントの整備
 - [x] 2.1 (P) `docs/setup/README.md` インデックスを作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/docs/setup/README.md` を新規作成
   - 内容:
@@ -265,7 +267,7 @@
 
 ## CI: GitHub Actions ワークフロー
 
-- [ ] 3. CI ワークフローの構築
+- [x] 3. CI ワークフローの構築
 - [x] 3.1 `.github/workflows/ci.yml` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.github/workflows/ci.yml` を新規作成
   - 内容:
@@ -319,7 +321,7 @@
 
 > 4.x の検証タスクは設定ファイル + ドキュメントが揃った後の動作確認。Owner 手動実施を伴う 5.x と分離。
 
-- [ ] 4. 設定ファイルとドキュメントの統合検証
+- [x] 4. 設定ファイルとドキュメントの統合検証
 - [x] 4.1 `.env.example` 完整性の確認
   - ルート `.env.example` を読み、12 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）が含まれていることを目視確認
   - 各変数にコメントが付与され、Vercel 登録先（Production / Preview / 両方）が明示されていることを確認

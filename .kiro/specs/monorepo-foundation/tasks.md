@@ -6,7 +6,7 @@
 
 ## Foundation: ルート設定とビルド基盤
 
-- [ ] 1. ルート設定ファイル一式の作成
+- [x] 1. ルート設定ファイル一式の作成
 - [x] 1.1 `package.json` をルートに作成
   - `name: "bulr-app-mvp"`、`private: true`、`packageManager: "pnpm@10.x.x"`、`engines: { node: ">=22.0.0", pnpm: ">=10" }` を設定
   - `scripts.dev: "turbo run dev"`、`scripts.build: "turbo run build"`、`scripts.typecheck: "turbo run typecheck"`、`scripts.lint: "turbo run lint"` を定義
@@ -53,7 +53,7 @@
 
 > 1.x 完了後、2.x の各サブタスクは別ディレクトリ・別 package.json を作るため `(P)` で並列実行可能。互いに依存しないファイル群を独立に作成する。
 
-- [ ] 2. ワークスペース パッケージのスケルトン作成
+- [x] 2. ワークスペース パッケージのスケルトン作成
 - [x] 2.1 (P) `packages/types` スケルトンを作成
   - `packages/types/package.json` に `name: "@bulr/types"`、`private: true`、`version: "0.0.1"`、`exports: { ".": "./src/index.ts", "./profile": "./src/profile.ts", "./evaluation": "./src/evaluation.ts" }`、`main: "./src/index.ts"`、`scripts: { typecheck: "tsc --noEmit", lint: "eslint ." }` を定義
   - `dependencies` フィールドは含めない（runtime 依存ゼロ）。`devDependencies` に `typescript` ^5.4 のみ
@@ -96,7 +96,7 @@
   - _Boundary: AiPackage_
   - _Depends: 2.1, 2.2, 2.3_
 
-- [ ] 3. apps/web スケルトンの構築
+- [x] 3. apps/web スケルトンの構築
 - [x] 3.1 `apps/web/package.json` を作成
   - `name: "@bulr/web"`、`private: true`、`version: "0.0.1"` を設定
   - `scripts`: `dev: "next dev --turbopack -p 3000"`、`build: "next build"`、`start: "next start -p 3000"`、`typecheck: "tsc --noEmit"`、`lint: "eslint ."`
@@ -124,7 +124,7 @@
 
 ## Integration: 統合検証
 
-- [ ] 4. ルートレベルでの統合検証
+- [x] 4. ルートレベルでの統合検証
 - [x] 4.1 `pnpm install` 統合実行と lockfile 生成
   - クリーン状態（`node_modules` / `pnpm-lock.yaml` 削除後）からルートで `pnpm install` を実行
   - すべての workspace 依存（`@bulr/db`、`@bulr/types`、`@bulr/lib`、`@bulr/ai`）が解決され、`pnpm-lock.yaml` が生成されることを確認
