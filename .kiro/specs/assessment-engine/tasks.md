@@ -227,7 +227,7 @@
 - _Depends: G0.1, G0.2_
 - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 13.6, 18.1, 18.5_
 
-### G3.2 `createLlmContext(ctx)` クロージャを実装
+### ✅ G3.2 `createLlmContext(ctx)` クロージャを実装
 
 - `bulr-app-mvp/packages/ai/src/lib/create-llm-context.ts` を新規作成
 - `LlmContext` interface: `sessionId: string`、`userId: string`
