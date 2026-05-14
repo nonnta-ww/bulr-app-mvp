@@ -16,7 +16,7 @@
 
 > `monorepo-foundation` で予約済みの exports map (`./profile` / `./evaluation`) を実体化する。runtime 依存（Zod 含む）を持たず、純粋な TypeScript 型のみ。
 
-### G0.1 `SystemType` / `InterviewerProfile` / `CandidateInfo` を `profile.ts` に実装 (P)
+### ✅ G0.1 `SystemType` / `InterviewerProfile` / `CandidateInfo` を `profile.ts` に実装 (P)
 
 - `bulr-app-mvp/packages/types/src/profile.ts` を更新（既存空ファイル → 実体型）
 - `SystemType` ユニオン: `'btoc' | 'btob_saas' | 'business' | 'payment' | 'embedded' | 'data_platform'`
