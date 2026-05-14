@@ -84,7 +84,7 @@
 - _Depends: G1.2_
 - _Requirements: 2.3, 2.12_
 
-### G1.4 `interview_turn` テーブル schema + 2 enum + jsonb columns を実装 (P)
+### ✅ G1.4 `interview_turn` テーブル schema + 2 enum + jsonb columns を実装 (P)
 
 - `bulr-app-mvp/packages/db/src/schema/interview-turn.ts` を新規作成
 - `pgEnum('question_source', ['llm_candidate_1', 'llm_candidate_2', 'llm_candidate_3', 'manual'])`
