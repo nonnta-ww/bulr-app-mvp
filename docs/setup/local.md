@@ -31,7 +31,7 @@ cp .env.example .env.local
 **ローカル Docker DB（自動設定済み）**:
 
 ```dotenv
-DATABASE_URL=postgresql://bulr:dev_password@localhost:5433/bulr_dev
+DATABASE_URL=postgresql://bulr:dev_password@localhost:5434/bulr_dev
 ```
 
 **ご自身で設定が必要なキー**:
@@ -68,7 +68,15 @@ ln -sf ../../.env.local packages/db/.env
 pnpm db:up
 ```
 
-PostgreSQL 17 コンテナが起動します（port 5433）。初回は image の pull に数十秒かかる場合があります。
+PostgreSQL 17 と Mailpit が同時に起動します。初回は image の pull に数十秒かかる場合があります。
+
+| サービス | ポート | 用途 |
+|---|---|---|
+| PostgreSQL 17 | 5434 | ローカル DB |
+| Mailpit SMTP | 1026 | メール送信のキャプチャ |
+| Mailpit Web UI | 8026 | 受信メールの確認（http://localhost:8026） |
+
+Magic Link など認証メールは Mailpit が自動でキャプチャします。Resend API キーはローカル開発では不要です。詳細は [`docs/setup/mailpit.md`](./mailpit.md) を参照してください。
 
 ### 6. DB スキーマを適用
 
@@ -89,8 +97,8 @@ pnpm dev
 | サービス | URL |
 |---|---|
 | **web アプリ** | http://localhost:3020 |
-| **Mailpit（メール受信確認）** | http://localhost:8025 |
-| **DB（直接接続）** | `psql postgresql://bulr:dev_password@localhost:5433/bulr_dev` |
+| **Mailpit（メール受信確認）** | http://localhost:8026 |
+| **DB（直接接続）** | `psql postgresql://bulr:dev_password@localhost:5434/bulr_dev` |
 
 ---
 
@@ -112,7 +120,7 @@ pnpm dev
 
 ```dotenv
 # ローカル Docker
-DATABASE_URL=postgresql://bulr:dev_password@localhost:5433/bulr_dev
+DATABASE_URL=postgresql://bulr:dev_password@localhost:5434/bulr_dev
 
 # Neon dev branch に切り替える場合
 DATABASE_URL=postgresql://<user>:<pass>@<host>-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require

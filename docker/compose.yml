@@ -2,8 +2,8 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "1026:1025"   # SMTP
+      - "8026:8025"   # Web UI
     restart: unless-stopped
 
   postgres:
@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: dev_password
       POSTGRES_DB: bulr_dev
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
