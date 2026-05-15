@@ -130,6 +130,22 @@ DATABASE_URL=postgresql://<user>:<pass>@<host>-pooler.ap-southeast-1.aws.neon.te
 
 ---
 
+## ローカル音声ストレージ
+
+ローカル開発で `BLOB_READ_WRITE_TOKEN` が無い場合、ファイルシステムベースのストレージに切り替えられます。
+
+```dotenv
+# .env.local
+BLOB_STORAGE_PROVIDER=local-fs
+LOCAL_BLOB_DIR=./tmp/audio
+```
+
+`apps/web/` を作業ディレクトリとして `dev` 実行するため、相対パスは `apps/web/tmp/audio/` に解決されます。`tmp/` は `.gitignore` で除外済み。
+
+Vercel Blob を使う場合は `BLOB_STORAGE_PROVIDER=vercel-blob`（または未設定）+ `BLOB_READ_WRITE_TOKEN=...` を設定。
+
+---
+
 ## 関連ドキュメント
 
 - [`docs/setup/README.md`](./README.md) — セットアップ手順インデックス

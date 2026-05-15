@@ -1,29 +1,25 @@
-import { put, del } from "@vercel/blob";
+import { getAudioStorage } from "./storage";
 
 /**
- * Uploads an audio Blob to Vercel Blob storage.
- * BLOB_READ_WRITE_TOKEN is read automatically by the @vercel/blob SDK from process.env.
+ * 音声 Blob を設定されたストレージプロバイダにアップロードする。
+ * プロバイダは `BLOB_STORAGE_PROVIDER`（`local-fs` または `vercel-blob`）で切り替える。
  *
- * @param audio - The audio Blob to upload
- * @param key   - The storage key (path) for the blob
- * @returns audioKey (the key param) and audioExpiresAt (now + 30 days)
+ * @param audio - アップロードする音声 Blob
+ * @param key   - ストレージキー（保存パス）
+ * @returns audioKey（引数 key と同値）と audioExpiresAt（現在時刻 + 30 日）
  */
 export async function uploadToBlob(
   audio: Blob,
   key: string,
 ): Promise<{ audioKey: string; audioExpiresAt: Date }> {
-  await put(key, audio, { access: "public" });
-
-  const audioExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  return { audioKey: key, audioExpiresAt };
+  return getAudioStorage().upload(audio, key);
 }
 
 /**
- * Deletes a blob from Vercel Blob storage by key.
+ * 指定キーのオブジェクトをストレージから削除する。
  *
- * @param key - The storage key (path) of the blob to delete
+ * @param key - 削除対象のストレージキー
  */
 export async function deleteBlob(key: string): Promise<void> {
-  await del(key);
+  return getAudioStorage().delete(key);
 }

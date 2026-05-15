@@ -28,3 +28,7 @@ coverage
 
 # TypeScript build info
 *.tsbuildinfo
+
+# ローカル音声ストレージ（BLOB_STORAGE_PROVIDER=local-fs 時の保存先）
+apps/web/tmp/
+tmp/
