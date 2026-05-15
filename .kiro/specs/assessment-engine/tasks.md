@@ -605,7 +605,7 @@ const effectivePatternId = (() => {
 
 ## G6. 状態 A/B UI（面接中）
 
-### G6.1 `RecordingState` Client Component を実装
+### ✅ G6.1 `RecordingState` Client Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/recording-state.tsx` を新規作成
 - `'use client';`
