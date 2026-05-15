@@ -555,7 +555,7 @@ const effectivePatternId = (() => {
 
 ## G5. 候補者情報入力 + セッション作成フロー UI
 
-### G5.1 `apps/web/lib/audio/recorder.ts` 動作確認（手動）
+### ✅ G5.1 `apps/web/lib/audio/recorder.ts` 動作確認（手動）
 
 - ブラウザで MediaRecorder API が利用可能であることを確認（Chrome / Safari / Edge）
 - `audio/webm; codecs=opus` 優先、Safari で `audio/mp4` フォールバック動作を目視確認
@@ -718,7 +718,7 @@ const effectivePatternId = (() => {
 - _Boundary: NextConfigCSP_
 - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 10.11_
 
-### G7.4 `apps/web/package.json` に依存追加
+### ✅ G7.4 `apps/web/package.json` に依存追加
 
 - `bulr-app-mvp/apps/web/package.json` の `dependencies` に追加:
   - `@vercel/blob` ^0.27.0
