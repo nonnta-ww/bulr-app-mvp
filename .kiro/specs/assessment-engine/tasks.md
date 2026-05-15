@@ -664,7 +664,7 @@ const effectivePatternId = (() => {
 - _Depends: G4.7, G4.8, G4.8.1, G4.9, G6.1, G6.2_
 - _Requirements: 5.1, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15_
 
-### G6.4 `/interviews/[sessionId]` 面接中ページを実装
+### ✅ G6.4 `/interviews/[sessionId]` 面接中ページを実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/[sessionId]/page.tsx` を新規作成
 - Server Component、`requireUser()` で認証 + `loadSessionWithTurns(sessionId, user.id)` で取得
