@@ -75,6 +75,7 @@ PostgreSQL 17 と Mailpit が同時に起動します。初回は image の pull
 | PostgreSQL 17 | 5434 | ローカル DB |
 | Mailpit SMTP | 1026 | メール送信のキャプチャ |
 | Mailpit Web UI | 8026 | 受信メールの確認（http://localhost:8026） |
+| Whisper | 9000 | 音声テキスト化（ローカル） |
 
 Magic Link など認証メールは Mailpit が自動でキャプチャします。Resend API キーはローカル開発では不要です。詳細は [`docs/setup/mailpit.md`](./mailpit.md) を参照してください。
 
@@ -143,6 +144,31 @@ LOCAL_BLOB_DIR=./tmp/audio
 `apps/web/` を作業ディレクトリとして `dev` 実行するため、相対パスは `apps/web/tmp/audio/` に解決されます。`tmp/` は `.gitignore` で除外済み。
 
 Vercel Blob を使う場合は `BLOB_STORAGE_PROVIDER=vercel-blob`（または未設定）+ `BLOB_READ_WRITE_TOKEN=...` を設定。
+
+---
+
+## ローカル Whisper（音声テキスト化）
+
+`OPENAI_API_KEY` を使わずに Docker 上の Whisper サービスへ音声テキスト化を任せられます。
+
+```dotenv
+# .env.local
+WHISPER_PROVIDER=local-docker
+WHISPER_LOCAL_ENDPOINT=http://localhost:9000
+WHISPER_MODEL=small
+```
+
+`pnpm db:up` で起動する `whisper` サービス（ポート 9000）が transcribe リクエストを受け付けます。初回ターン処理はモデルダウンロード（small で約 500MB）のため数十秒かかる場合があります。2 回目以降はキャッシュ（`whisper_models` ボリューム）から読み込みます。
+
+| モデル | サイズ | メモリ目安 | 日本語精度の目安 |
+|---|---|---|---|
+| tiny | 75MB | 1GB | 検証用途のみ |
+| base | 150MB | 1GB | 簡易デモ |
+| small | 500MB | 2-3GB | 個人開発・E2E（推奨） |
+| medium | 1.5GB | 4-6GB | 精度重視 |
+| large-v3 | 3GB | 8-10GB | 本番相当 |
+
+OpenAI API を使う場合は `WHISPER_PROVIDER=openai`（または未設定）+ `OPENAI_API_KEY=...` を設定。
 
 ---
 

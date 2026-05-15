@@ -24,5 +24,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    environment:
+      ASR_MODEL: ${WHISPER_MODEL:-small}      # tiny | base | small | medium | large-v3
+      ASR_ENGINE: faster_whisper              # CTranslate2-based、CPU で高速
+    ports:
+      - "9000:9000"
+    volumes:
+      - whisper_models:/root/.cache           # モデルキャッシュ永続化
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  whisper_models:
