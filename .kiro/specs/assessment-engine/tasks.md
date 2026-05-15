@@ -481,7 +481,7 @@ const effectivePatternId = (() => {
 - _Depends: G1.9, G2.2, G2.3, G3.4, G3.5, G3.6, G3.7, G3.9, G4.1, G4.2, G4.3_
 - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 7.14, 7.15, 7.16, 12.3, 15.3, 15.4, 15.5, 15.6, 18.3, 20.1, 24.1, 24.2, 24.3, 24.4, 24.5, 25.1, 25.2, 25.3_
 
-### G4.8.1 `/api/interview/proposal/regenerate` ルートを実装
+### ✅ G4.8.1 `/api/interview/proposal/regenerate` ルートを実装
 
 - `bulr-app-mvp/apps/web/app/api/interview/proposal/regenerate/route.ts` を新規作成
 - `export const runtime = 'nodejs';`

@@ -1,5 +1,10 @@
 import type { LlmAnalysis, LlmEvaluation, HeatmapData } from '@bulr/types/evaluation';
 import type { InterviewTurn, AssessmentPattern, PatternCoverage } from '@bulr/db/schema';
+import { analyzeTurn } from '../functions/analyze-turn';
+import { splitInterviewerCandidate } from '../functions/split-interviewer-candidate';
+import { proposeNextQuestions } from '../functions/propose-next-questions';
+import { aggregatePatternCoverage } from '../functions/aggregate-pattern-coverage';
+import { generateSessionReport } from '../functions/generate-session-report';
 
 // Requirement 7.7, 8.8: Context bound to sessionId and userId at creation time
 export interface LlmContext {
@@ -120,45 +125,27 @@ export function createLlmContext(ctx: LlmContext): LlmContextMethods {
   // by any value passed through method inputs or LLM outputs.
   const { sessionId, userId } = ctx;
 
+  const boundCtx: LlmContext = { sessionId, userId };
+
   return {
-    analyzeTurn(_input: AnalyzeTurnInput): Promise<LlmAnalysis> {
-      // sessionId and userId are bound via closure (hallucination defense)
-      void sessionId;
-      void userId;
-      // Implementation will be completed in G3.4
-      throw new Error('not yet implemented: analyzeTurn (G3.4)');
+    analyzeTurn(input: AnalyzeTurnInput): Promise<LlmAnalysis> {
+      return analyzeTurn({ ...input, ctx: boundCtx });
     },
 
-    splitInterviewerCandidate(_input: SplitInterviewerCandidateInput): Promise<SplitResult> {
-      // sessionId and userId are bound via closure (hallucination defense)
-      void sessionId;
-      void userId;
-      // Implementation will be completed in G3.5
-      throw new Error('not yet implemented: splitInterviewerCandidate (G3.5)');
+    splitInterviewerCandidate(input: SplitInterviewerCandidateInput): Promise<SplitResult> {
+      return splitInterviewerCandidate({ ...input, ctx: boundCtx });
     },
 
-    proposeNextQuestions(_input: ProposeNextQuestionsInput): Promise<ProposeNextQuestionsResult> {
-      // sessionId and userId are bound via closure (hallucination defense)
-      void sessionId;
-      void userId;
-      // Implementation will be completed in G3.6
-      throw new Error('not yet implemented: proposeNextQuestions (G3.6)');
+    proposeNextQuestions(input: ProposeNextQuestionsInput): Promise<ProposeNextQuestionsResult> {
+      return proposeNextQuestions({ ...input, ctx: boundCtx });
     },
 
-    aggregatePatternCoverage(_input: AggregatePatternCoverageInput): Promise<LlmEvaluation> {
-      // sessionId and userId are bound via closure (hallucination defense)
-      void sessionId;
-      void userId;
-      // Implementation will be completed in G3.7
-      throw new Error('not yet implemented: aggregatePatternCoverage (G3.7)');
+    aggregatePatternCoverage(input: AggregatePatternCoverageInput): Promise<LlmEvaluation> {
+      return aggregatePatternCoverage({ ...input, ctx: boundCtx });
     },
 
-    generateSessionReport(_input: GenerateSessionReportInput): Promise<GenerateSessionReportResult> {
-      // sessionId and userId are bound via closure (hallucination defense)
-      void sessionId;
-      void userId;
-      // Implementation will be completed in G3.8
-      throw new Error('not yet implemented: generateSessionReport (G3.8)');
+    generateSessionReport(input: GenerateSessionReportInput): Promise<GenerateSessionReportResult> {
+      return generateSessionReport({ ...input, ctx: boundCtx });
     },
   };
 }
