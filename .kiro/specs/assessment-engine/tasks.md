@@ -693,7 +693,7 @@ const effectivePatternId = (() => {
 - _Depends: G0.2_
 - _Requirements: 11.11_
 
-### G7.2 `/interviews/[sessionId]/report` 面接後レポートページを実装
+### ✅ G7.2 `/interviews/[sessionId]/report` 面接後レポートページを実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/[sessionId]/report/page.tsx` を新規作成
 - Server Component、`requireUser()` + session 取得 + `requireSessionOwnership`
