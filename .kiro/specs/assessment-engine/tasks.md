@@ -707,7 +707,7 @@ const effectivePatternId = (() => {
 - _Depends: G1.9, G4.9, G7.1_
 - _Requirements: 11.9, 11.10, 11.11, 11.12, 11.13, 11.14, 12.6, 20.5_
 
-### G7.3 `apps/web/next.config.ts` にセキュリティヘッダーを追加
+### ✅ G7.3 `apps/web/next.config.ts` にセキュリティヘッダーを追加
 
 - `bulr-app-mvp/apps/web/next.config.ts` を更新
 - `headers()` 関数を追加し、全 `source: '/(.*)'` に対して以下を付与:
@@ -733,7 +733,7 @@ const effectivePatternId = (() => {
 
 ## G8. smoke test ページ削除
 
-### G8.1 `/admin/_health/page.tsx` を物理削除
+### ✅ G8.1 `/admin/_health/page.tsx` を物理削除
 
 - `bulr-app-mvp/apps/web/app/admin/_health/page.tsx` を `rm` で削除
 - `bulr-app-mvp/apps/web/app/admin/_health/` ディレクトリを `rmdir` で削除
