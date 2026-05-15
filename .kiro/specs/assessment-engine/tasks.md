@@ -565,7 +565,7 @@ const effectivePatternId = (() => {
 - _Depends: G2.4_
 - _Requirements: 5.4, 5.7, 10.6_
 
-### G5.2 `CandidateForm` Client Component を実装
+### ✅ G5.2 `CandidateForm` Client Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/candidate-form.tsx` を新規作成
 - `'use client';`
@@ -587,7 +587,7 @@ const effectivePatternId = (() => {
 - _Depends: G5.2_
 - _Requirements: 3.1, 3.7_
 
-### G5.4 `/interviews` セッション一覧ページを実装
+### ✅ G5.4 `/interviews` セッション一覧ページを実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/page.tsx` を新規作成
 - Server Component、`requireUser()` で認証チェック
@@ -680,7 +680,7 @@ const effectivePatternId = (() => {
 
 ## G7. セッション再開 + 完了フロー + 面接後レポート
 
-### G7.1 `Heatmap` Server Component を実装
+### ✅ G7.1 `Heatmap` Server Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/heatmap.tsx` を新規作成
 - props: `heatmapData: HeatmapData`
