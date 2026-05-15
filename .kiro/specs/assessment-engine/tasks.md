@@ -428,7 +428,7 @@
 - _Depends: G1.9_
 - _Requirements: 6.5, 6.6_
 
-### G4.8 `/api/interview/turns/next` ルートを実装（Core/Prepare 分離 + 冪等性）
+### ✅ G4.8 `/api/interview/turns/next` ルートを実装（Core/Prepare 分離 + 冪等性）
 
 - `bulr-app-mvp/apps/web/app/api/interview/turns/next/route.ts` を新規作成
 - `export const runtime = 'nodejs';`
