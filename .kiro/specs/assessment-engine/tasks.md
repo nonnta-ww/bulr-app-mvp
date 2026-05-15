@@ -512,7 +512,7 @@ const effectivePatternId = (() => {
 - _Depends: G1.9, G3.6, G3.9, G4.1, G4.2, G4.3, G4.8_
 - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6, 23.7, 20.1_
 
-### G4.9 `/api/interview/finalize` ルートを実装
+### ✅ G4.9 `/api/interview/finalize` ルートを実装
 
 - `bulr-app-mvp/apps/web/app/api/interview/finalize/route.ts` を新規作成
 - `export const runtime = 'nodejs';`
@@ -533,7 +533,7 @@ const effectivePatternId = (() => {
 - _Depends: G1.9, G3.7, G3.8, G3.9_
 - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 20.2_
 
-### G4.10 `/api/cron/audio-purge` ルートを実装
+### ✅ G4.10 `/api/cron/audio-purge` ルートを実装
 
 - `bulr-app-mvp/apps/web/app/api/cron/audio-purge/route.ts` を新規作成
 - `export const runtime = 'nodejs';`
