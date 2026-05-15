@@ -639,7 +639,7 @@ const effectivePatternId = (() => {
 - _Depends: G4.7_
 - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
 
-### G6.3 `InterviewSessionRunner` Client Component を実装
+### ✅ G6.3 `InterviewSessionRunner` Client Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/interview-session-runner.tsx` を新規作成
 - `'use client';`
