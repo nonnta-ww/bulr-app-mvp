@@ -56,7 +56,10 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: 'audio_required', code: 'MISSING_AUDIO' }, { status: 400 });
   }
   const ALLOWED_MIMES = ['audio/webm', 'audio/mp4', 'audio/wav'];
-  if (!ALLOWED_MIMES.includes(audio.type)) {
+  // MediaRecorder は 'audio/webm;codecs=opus' のようにパラメータ付きで送ることがある。
+  // RFC 7231 に従い、セミコロン以前のベース MIME 部分のみで比較する。
+  const baseMime = audio.type.split(';')[0]!.trim().toLowerCase();
+  if (!ALLOWED_MIMES.includes(baseMime)) {
     return NextResponse.json(
       { error: 'invalid_mime', code: 'INVALID_MIME', details: audio.type },
       { status: 400 },
@@ -171,7 +174,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     // 10-12. Upload audio
     const ext =
-      audio.type === 'audio/webm' ? 'webm' : audio.type === 'audio/mp4' ? 'mp4' : 'wav';
+      baseMime === 'audio/webm' ? 'webm' : baseMime === 'audio/mp4' ? 'mp4' : 'wav';
     const audioKey = `interview-turn/${input.sessionId}/${input.turnId}.${ext}`;
     const { audioExpiresAt } = await withRetry(() => uploadToBlob(audio, audioKey), 'uploadToBlob');
 

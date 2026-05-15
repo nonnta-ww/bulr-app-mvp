@@ -21,10 +21,12 @@ export async function transcribeLocalDocker(
   audio: Blob | File,
   options?: { language?: string },
 ): Promise<string> {
-  const mimeType = audio.type;
-  if (!ALLOWED_MIME_TYPES.includes(mimeType as (typeof ALLOWED_MIME_TYPES)[number])) {
+  // MediaRecorder は 'audio/webm;codecs=opus' のようにパラメータ付きで送ることがあるため、
+  // RFC 7231 に従いベース MIME 部分のみで比較する。
+  const baseMime = audio.type.split(';')[0]!.trim().toLowerCase();
+  if (!ALLOWED_MIME_TYPES.includes(baseMime as (typeof ALLOWED_MIME_TYPES)[number])) {
     throw new Error(
-      `Unsupported MIME type: ${mimeType}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`,
+      `Unsupported MIME type: ${audio.type}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`,
     );
   }
 

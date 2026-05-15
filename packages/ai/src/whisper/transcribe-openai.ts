@@ -20,10 +20,12 @@ export async function transcribeOpenAI(
     throw new Error('OPENAI_API_KEY is not set in environment variables');
   }
 
-  const mimeType = audio.type;
-  if (!ALLOWED_MIME_TYPES.includes(mimeType as (typeof ALLOWED_MIME_TYPES)[number])) {
+  // MediaRecorder は 'audio/webm;codecs=opus' のようにパラメータ付きで送ることがあるため、
+  // RFC 7231 に従いベース MIME 部分のみで比較する。
+  const baseMime = audio.type.split(';')[0]!.trim().toLowerCase();
+  if (!ALLOWED_MIME_TYPES.includes(baseMime as (typeof ALLOWED_MIME_TYPES)[number])) {
     throw new Error(
-      `Unsupported MIME type: ${mimeType}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`,
+      `Unsupported MIME type: ${audio.type}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`,
     );
   }
 
@@ -35,7 +37,7 @@ export async function transcribeOpenAI(
 
   const client = new OpenAI({ apiKey });
 
-  const file = await toFile(audio, 'audio.webm', { type: mimeType });
+  const file = await toFile(audio, 'audio.webm', { type: baseMime });
 
   const result = await client.audio.transcriptions.create({
     file,
