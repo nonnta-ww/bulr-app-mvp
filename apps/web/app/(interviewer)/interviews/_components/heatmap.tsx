@@ -89,7 +89,7 @@ interface BarProps {
   colorClass: string;
 }
 
-function Bar({ label, value, widthPct, displayValue, colorClass }: BarProps) {
+function Bar({ label, widthPct, displayValue, colorClass }: BarProps) {
   return (
     <div className="flex items-center gap-2 py-0.5">
       <span className="w-24 shrink-0 text-right text-xs text-gray-500">

@@ -169,8 +169,6 @@ export function RecordingState({
         void r.stop();
       }
     };
-    // handleStop は useCallback で安定しているが、依存に加えておく
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---------------------------------------------------------------------------

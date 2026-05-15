@@ -747,7 +747,7 @@ const effectivePatternId = (() => {
 
 ## G9. 検証（手動 E2E）
 
-### G9.1 `pnpm typecheck` + `pnpm lint` 全 workspace で成功
+### ✅ G9.1 `pnpm typecheck` + `pnpm lint` 全 workspace で成功
 
 - `bulr-app-mvp` ルートで `pnpm typecheck` 実行、apps/web + packages/{db,types,lib,ai} すべてエラーなし
 - `pnpm lint` 全 workspace で成功
