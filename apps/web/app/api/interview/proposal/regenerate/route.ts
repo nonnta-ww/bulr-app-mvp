@@ -8,7 +8,8 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
 import { createLlmContext } from '@bulr/ai';
-import { loadCompletedPatternCodes, loadRecentTurns } from '@bulr/db/queries';
+import { loadRecentTurns } from '@bulr/db/queries';
+import { buildLlmContext } from '@/lib/queries/build-llm-context';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
 import { RateLimitError } from '@/lib/rate-limit';
 
@@ -170,22 +171,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 8. LLM call with 1 retry (Req 23.5)
-  const llm = createLlmContext({ sessionId: input.sessionId, userId: user.id });
+  // Build extended LLM context (Req 9.2, 9.4) so proposeNextQuestions sees
+  // real planned/completed/profile values via buildSystemPrompt.
+  const llm = createLlmContext(
+    await buildLlmContext({ session: session!, userId: user.id }),
+  );
   let proposalResult: Awaited<ReturnType<typeof llm.proposeNextQuestions>>;
   try {
-    const completedCodes = await loadCompletedPatternCodes(input.sessionId);
-    const allActivePatterns = await db.query.assessmentPattern.findMany({
-      where: eq(schema.assessmentPattern.is_active, true),
-    });
-    const plannedCodes: string[] = session!.planned_pattern_codes ?? [];
-    const plannedPatterns = allActivePatterns
-      .filter((p) => plannedCodes.includes(p.code))
-      .map((p) => ({ code: p.code, title: p.title, category: p.category }));
-    const completed = completedCodes.map((code) => ({
-      pattern_code: code,
-      level_reached: 0,
-      stuck_type: null as string | null,
-    }));
     const turnCount = (await loadRecentTurns(input.sessionId, 1000)).length;
 
     proposalResult = await withRetry(
@@ -195,8 +187,6 @@ export async function POST(request: Request): Promise<Response> {
             turnCount,
             elapsedMinutes: 0,
           },
-          plannedPatterns,
-          completed,
         }),
       'proposeNextQ.regenerate',
     );

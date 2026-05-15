@@ -1,9 +1,10 @@
-// Requirements 8.4, 8.5, 8.10, 8.11, 8.12, 12.7, 13.4
+// Requirements 8.4, 8.5, 8.10, 8.11, 8.12, 9.4, 12.7, 13.4, 18.2
 // _Boundary: ProposeNextQuestions_
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { claudeSonnet46 } from '../client';
+import { buildSystemPrompt } from '../prompts/system-prompt';
 import type { LlmContext } from '../lib/create-llm-context';
 import { validateAndFallback, SAFE_PROPOSAL_FALLBACK } from '../lib/validate-llm-output';
 
@@ -80,10 +81,9 @@ function buildPrompt(input: {
 }
 
 // Requirement 8.4: proposeNextQuestions 関数 — 3 候補（text + intent）を返す
+// Requirement D4: completed は ctx.completedCoverage から構築する（呼び出し側でハードコードしない）
 export async function proposeNextQuestions(input: {
   sessionState: { turnCount: number; elapsedMinutes: number };
-  plannedPatterns: Array<{ code: string; title: string; category: string }>;
-  completed: Array<{ pattern_code: string; level_reached: number; stuck_type?: string | null }>;
   ctx: LlmContext;
 }): Promise<{
   candidates: Array<{
@@ -92,23 +92,40 @@ export async function proposeNextQuestions(input: {
     pattern_id?: string;
   }>;
 }> {
+  const { ctx } = input;
+
+  // ctx から planned/completed を派生（D4: ハードコード排除）
+  const plannedPatterns = ctx.plannedPatterns.map((p) => ({
+    code: p.code,
+    title: p.title,
+    category: p.category,
+  }));
+  const completed = ctx.completedCoverage.map((c) => ({
+    pattern_code: c.pattern_code,
+    level_reached: c.level_reached,
+    stuck_type: c.evaluation?.stuck_type ?? null,
+  }));
+
   const prompt = buildPrompt({
     sessionState: input.sessionState,
-    plannedPatterns: input.plannedPatterns,
-    completed: input.completed,
+    plannedPatterns,
+    completed,
+  });
+
+  // Requirement 9.4, 18.2: buildSystemPrompt を必ず system に渡す
+  // （アドホック system 文字列は削除。採用推奨禁止 / インジェクション防御は Section 2/13 に含まれる）
+  const systemPrompt = buildSystemPrompt({
+    interviewerProfile: ctx.interviewerProfile,
+    candidateInfo: ctx.candidateInfo,
+    plannedPatterns: ctx.plannedPatterns,
+    completedCoverage: ctx.completedCoverage,
+    currentPattern: ctx.currentPattern,
   });
 
   // Requirement 8.10: generateObject + Zod で structured output
-  // システムプロンプトで「3 候補のうち 1 つは必ず next_pattern」を明示
-  const system =
-    'あなたは面接支援アシスタントです。' +
-    '面接官に対して次の質問候補を 3 つ提案してください。' +
-    '必ず 1 つは intent を "next_pattern"（未完了パターンへの移行）にしてください。' +
-    '出力は日本語で行い、採用可否の判断は含めないでください。';
-
   const { object } = await generateObject({
     model: claudeSonnet46,
-    system,
+    system: systemPrompt,
     schema: proposeOutputSchema,
     prompt,
     maxRetries: 2,

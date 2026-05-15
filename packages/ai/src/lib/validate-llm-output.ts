@@ -24,7 +24,8 @@ export function validateAndFallback<T>(
 
 // Requirement 14.4: SAFE_LLM_ANALYSIS_FALLBACK
 // All signals are 'absent', scope_signal=null, level_reached_estimate=0,
-// pattern_match_confidence='off_pattern'
+// pattern_match_confidence='off_pattern'. M3: must satisfy the full
+// analyzeTurnOutputSchema, including matched_pattern_id and stuck_signal.
 export const SAFE_LLM_ANALYSIS_FALLBACK: LlmAnalysis = {
   signals: {
     authenticity: 'absent',
@@ -35,6 +36,8 @@ export const SAFE_LLM_ANALYSIS_FALLBACK: LlmAnalysis = {
   scope_signal: null,
   level_reached_estimate: 0,
   pattern_match_confidence: 'off_pattern',
+  matched_pattern_id: null,
+  stuck_signal: null,
   notes: 'LLM 出力検証失敗、安全側フォールバック',
 };
 

@@ -119,6 +119,8 @@ export async function analyzeTurn(input: {
   history: TurnHistory[];
   ctx: LlmContext;
 }): Promise<LlmAnalysis> {
+  const { ctx } = input;
+
   // Requirement 8.11: transcript サイズ上限 enforce
   const truncatedTranscript = input.transcript.slice(0, TRANSCRIPT_LIMIT);
 
@@ -127,12 +129,15 @@ export async function analyzeTurn(input: {
 
   const prompt = buildPrompt(truncatedTranscript, input.currentPattern, truncatedHistory);
 
-  // Requirement 8.10: generateObject + Zod スキーマで structured output
+  // Requirement 8.10, 9.2: generateObject + Zod スキーマで structured output。
+  // buildSystemPrompt には ctx の実値を渡す（ダミー禁止）。
+  // ctx.currentPattern が設定されていれば優先、なければ input.currentPattern を流用する。
   const systemPrompt = buildSystemPrompt({
-    interviewerProfile: { displayName: 'Interviewer' },
-    candidateInfo: { name: 'Candidate', appliedRole: '', backgroundSummary: '' },
-    plannedPatterns: [],
-    completedCoverage: [],
+    interviewerProfile: ctx.interviewerProfile,
+    candidateInfo: ctx.candidateInfo,
+    plannedPatterns: ctx.plannedPatterns,
+    completedCoverage: ctx.completedCoverage,
+    currentPattern: ctx.currentPattern ?? input.currentPattern,
   });
 
   const { object } = await generateObject({
@@ -143,19 +148,16 @@ export async function analyzeTurn(input: {
     maxRetries: 2,
   });
 
-  // Requirement 8.12: validateAndFallback で Zod 検証、失敗時は SAFE_LLM_ANALYSIS_FALLBACK を返す
+  // Requirement 8.12: validateAndFallback で Zod 検証、失敗時は SAFE_LLM_ANALYSIS_FALLBACK を返す。
+  // SAFE_LLM_ANALYSIS_FALLBACK は M3 修正で analyzeTurnOutputSchema の全フィールドを満たすようになっている。
   const validated = validateAndFallback(
     object,
     analyzeTurnOutputSchema,
-    // SAFE_LLM_ANALYSIS_FALLBACK は LlmAnalysis 型なので、スキーマ互換の fallback を作成
-    {
-      ...SAFE_LLM_ANALYSIS_FALLBACK,
-      matched_pattern_id: null,
-      stuck_signal: null,
-    },
+    SAFE_LLM_ANALYSIS_FALLBACK,
     'analyzeTurn',
   );
 
-  // LlmAnalysis 互換の形で返す（Zod 出力は LlmAnalysis のスーパーセット）
+  // M4: LlmAnalysis 型に matched_pattern_id / stuck_signal が含まれるようになったので、
+  // Zod 出力をそのまま LlmAnalysis として返せる（不要な型キャストなし）。
   return validated;
 }

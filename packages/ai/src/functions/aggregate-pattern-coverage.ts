@@ -159,16 +159,19 @@ export async function aggregatePatternCoverage(input: {
   pattern: AssessmentPattern;
   ctx: LlmContext;
 }): Promise<LlmEvaluation> {
-  const { turns, pattern } = input;
+  const { turns, pattern, ctx } = input;
 
   const prompt = buildAggregatePrompt(turns, pattern);
 
-  // Requirement 8.10: generateObject + Zod structured output
+  // Requirement 8.10, 9.2: generateObject + Zod structured output。
+  // buildSystemPrompt には ctx の実値を渡す（ダミー禁止）。
+  // 現在集約対象のパターンを currentPattern として渡し Section 12 の精度を上げる。
   const systemPrompt = buildSystemPrompt({
-    interviewerProfile: { displayName: 'Interviewer' },
-    candidateInfo: { name: 'Candidate', appliedRole: '', backgroundSummary: '' },
-    plannedPatterns: [],
-    completedCoverage: [],
+    interviewerProfile: ctx.interviewerProfile,
+    candidateInfo: ctx.candidateInfo,
+    plannedPatterns: ctx.plannedPatterns,
+    completedCoverage: ctx.completedCoverage,
+    currentPattern: ctx.currentPattern ?? pattern,
   });
 
   const { object } = await generateObject({

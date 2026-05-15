@@ -4,6 +4,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { claudeSonnet46 } from '../client';
+import { buildSystemPrompt } from '../prompts/system-prompt';
 import type { LlmContext } from '../lib/create-llm-context';
 import { validateAndFallback, SAFE_SESSION_REPORT_FALLBACK } from '../lib/validate-llm-output';
 import type { HeatmapData } from '@bulr/types/evaluation';
@@ -116,24 +117,18 @@ free_question_count: フリー質問の件数
   return parts.join('\n\n---\n\n');
 }
 
-// Requirement 13.6: 採用推奨を含めないシステムプロンプト
-const SESSION_REPORT_SYSTEM_PROMPT = `あなたは面接評価レポートを生成する AI アシスタントです。
+// Requirement 13.6: 採用推奨禁止 / フリー質問の扱いを補足する付帯指示。
+// Section 13（採用推奨禁止）と重複するが、レポート固有のフリー質問扱いをここで明示する。
+const SESSION_REPORT_SUPPLEMENT = `# レポート生成タスク固有の指示
 
-## 重要な制約
-- 採用推奨コメントを生成しないでください
-- 「採用を推奨します」「不採用にすべきです」などの採用可否を示唆する表現は使わないでください
-- 採用の最終判断は面接官・採用担当者が行うものです
+## フリー質問の扱い
+フリー質問（pattern_id が null のターン）は、通常の評価パターンとは別セクションとして summary_text の中で総評してください。
 
 ## 出力内容
 - 候補者のスキルと経験の客観的な整理
 - 各カテゴリの評価データの集計（heatmap_data）
 - フリー質問がある場合は、別セクションとしてその内容の総評を summary_text に含める
-- 採用可否に関わらない、面接での観察事実の要約
-
-## フリー質問の扱い
-フリー質問（pattern_id が null のターン）は、通常の評価パターンとは別セクションとして summary_text の中で総評してください。
-
-すべての出力は日本語で行ってください。`;
+- 採用可否に関わらない、面接での観察事実の要約`;
 
 // Requirement 8.7: generateSessionReport 関数
 export async function generateSessionReport(input: {
@@ -141,12 +136,24 @@ export async function generateSessionReport(input: {
   freeQuestions: InterviewTurn[];
   ctx: LlmContext;
 }): Promise<{ heatmap_data: HeatmapData; summary_text: string; generated_at: string }> {
+  const { ctx } = input;
   const prompt = buildPrompt(input.allCoverage, input.freeQuestions);
+
+  // Requirement 9.4, 18.2: buildSystemPrompt を必ず system に渡す
+  // （アドホック system 文字列は削除。採用推奨禁止 / インジェクション防御は Section 2/13 に含まれる）
+  const baseSystemPrompt = buildSystemPrompt({
+    interviewerProfile: ctx.interviewerProfile,
+    candidateInfo: ctx.candidateInfo,
+    plannedPatterns: ctx.plannedPatterns,
+    completedCoverage: ctx.completedCoverage,
+    currentPattern: ctx.currentPattern,
+  });
+  const systemPrompt = `${baseSystemPrompt}\n\n---\n\n${SESSION_REPORT_SUPPLEMENT}`;
 
   // Requirement 8.10: generateObject + Zod スキーマで structured output
   const { object } = await generateObject({
     model: claudeSonnet46,
-    system: SESSION_REPORT_SYSTEM_PROMPT,
+    system: systemPrompt,
     schema: reportOutputSchema,
     prompt,
     maxRetries: 2,

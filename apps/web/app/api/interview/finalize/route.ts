@@ -10,8 +10,9 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
-import { aggregatePatternCoverage, generateSessionReport } from '@bulr/ai';
+import { createLlmContext } from '@bulr/ai';
 import type { HeatmapData } from '@bulr/types/evaluation';
+import { buildLlmContext } from '@/lib/queries/build-llm-context';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
 
 // ---------------------------------------------------------------------------
@@ -62,7 +63,11 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const ctx = { sessionId, userId: user.id };
+  // Build extended LLM context once (Req 7.7, 9.2, 9.4, 23.5).
+  // すべての LLM 呼び出しはこの ctx 経由で行う。
+  const llm = createLlmContext(
+    await buildLlmContext({ session: session!, userId: user.id }),
+  );
 
   // 4. 未完了パターンの抽出と coverage 集約 (Requirements 11.2-11.4)
   //    interview_turn からパターン ID を取得 → pattern_coverage に存在しない patternId を抽出
@@ -102,10 +107,9 @@ export async function POST(request: Request): Promise<Response> {
           if (!pattern) continue;
 
           const turns = allPatternTurns.filter((t) => t.pattern_id === patternId);
-          const llmEvaluation = await aggregatePatternCoverage({
+          const llmEvaluation = await llm.aggregatePatternCoverage({
             turns,
             pattern,
-            ctx,
           });
 
           await db
@@ -167,12 +171,15 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 6. レポート生成 (Requirement 11.5)
+  // Rebuild ctx so completedCoverage reflects the newly UPSERTed rows from Step 4.
+  const reportLlm = createLlmContext(
+    await buildLlmContext({ session: session!, userId: user.id }),
+  );
   let report: { heatmap_data: HeatmapData; summary_text: string; generated_at: string };
   try {
-    report = await generateSessionReport({
+    report = await reportLlm.generateSessionReport({
       allCoverage,
       freeQuestions,
-      ctx,
     });
   } catch (e) {
     console.error(`[finalize] generateSessionReport failed for sessionId=${sessionId}`, e);

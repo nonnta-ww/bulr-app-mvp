@@ -4,6 +4,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { claudeSonnet46 } from '../client';
+import { buildSystemPrompt } from '../prompts/system-prompt';
 import type { LlmContext } from '../lib/create-llm-context';
 
 // Requirement 8.10: splitOutputSchema を Zod で定義
@@ -45,15 +46,28 @@ export async function splitInterviewerCandidate(input: {
   questionTextHint?: string | null;
   ctx: LlmContext;
 }): Promise<{ interviewer_text: string; candidate_text: string }> {
+  const { ctx } = input;
+
   // Requirement 8.11: transcript サイズ上限 enforce
   const truncatedTranscript = input.transcript.slice(0, TRANSCRIPT_LIMIT);
 
   const prompt = buildPrompt(truncatedTranscript, input.questionTextHint);
 
+  // Requirement 9.4, 18.2: buildSystemPrompt を必ず system に渡す
+  // （Section 2 のインジェクション防御 / Section 13 の採用推奨禁止を継承）
+  const systemPrompt = buildSystemPrompt({
+    interviewerProfile: ctx.interviewerProfile,
+    candidateInfo: ctx.candidateInfo,
+    plannedPatterns: ctx.plannedPatterns,
+    completedCoverage: ctx.completedCoverage,
+    currentPattern: ctx.currentPattern,
+  });
+
   try {
     // Requirement 8.10: generateObject + Zod スキーマで structured output
     const { object } = await generateObject({
       model: claudeSonnet46,
+      system: systemPrompt,
       schema: splitOutputSchema,
       prompt,
       maxRetries: 2,

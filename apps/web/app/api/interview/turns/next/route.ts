@@ -7,9 +7,10 @@ import { and, asc, desc, eq, lt, max, sql } from 'drizzle-orm';
 
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
-import { analyzeTurn, splitInterviewerCandidate, aggregatePatternCoverage, proposeNextQuestions, transcribeAudio } from '@bulr/ai';
-import { loadRecentTurns, loadCompletedPatternCodes } from '@bulr/db/queries';
+import { createLlmContext, transcribeAudio } from '@bulr/ai';
+import { loadRecentTurns } from '@bulr/db/queries';
 import { uploadToBlob } from '@/lib/audio/blob-client';
+import { buildLlmContext } from '@/lib/queries/build-llm-context';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
 import { RateLimitError, checkRateLimit } from '@/lib/rate-limit';
 
@@ -159,19 +160,13 @@ export async function POST(request: Request): Promise<Response> {
 
   // Core phase
   let insertedTurn: typeof schema.interviewTurn.$inferSelect;
-  // We need the LlmAnalysis output which has extra fields beyond LlmAnalysis type
-  let analysisResult: Awaited<ReturnType<typeof analyzeTurn>>;
-  // Extended analysis fields from Zod schema (pattern_match_confidence, matched_pattern_id, stuck_signal, off_pattern_summary)
-  // analyzeTurn returns LlmAnalysis but runtime object contains these extra fields from analyzeTurnOutputSchema
-  let analysisExtended: {
-    pattern_match_confidence: 'exact' | 'inferred_high' | 'inferred_low' | 'off_pattern';
-    matched_pattern_id?: string | null;
-    stuck_signal?: string | null;
-    level_reached_estimate: 0 | 1 | 2 | 3 | 4;
-    off_pattern_summary?: string;
-  };
+  // analyzeTurn returns LlmAnalysis which now includes matched_pattern_id / stuck_signal
+  // directly (M4 fix), so no `as unknown as` casts are needed below.
+  let analysisResult: import('@bulr/types/evaluation').LlmAnalysis;
   let effectivePatternId: string | null = null;
-  const ctx = { sessionId: input.sessionId, userId: user.id };
+  // Hoist the LLM context binder so Prepare phases (transition coverage,
+  // completion coverage, next proposals) reuse the same bound ctx (Req 23.5).
+  let llm: ReturnType<typeof createLlmContext> | null = null;
 
   try {
     // 10-12. Upload audio
@@ -183,14 +178,30 @@ export async function POST(request: Request): Promise<Response> {
     // 13. Transcribe
     const rawTranscript = await withRetry(() => transcribeAudio(audio), 'transcribeAudio');
 
-    // 15. Speaker separation
+    // 14. Build extended LLM context once (Req 7.7, 9.2, 9.4, 23.5).
+    // currentPattern が指定されていれば取得して ctx に流し込み、Section 12 を実値で構築する。
+    const currentPattern = input.patternId
+      ? await db.query.assessmentPattern.findFirst({
+          where: eq(schema.assessmentPattern.id, input.patternId),
+        })
+      : null;
+
+    const llmLocal = createLlmContext(
+      await buildLlmContext({
+        session: session!,
+        userId: user.id,
+        currentPattern: currentPattern ?? undefined,
+      }),
+    );
+    llm = llmLocal;
+
+    // 15. Speaker separation — `llm.splitInterviewerCandidate` 経由（Req 23.5）
     const split = await withRetry(
       () =>
-        splitInterviewerCandidate({
+        llmLocal.splitInterviewerCandidate({
           transcript: rawTranscript,
           questionTextHint:
             input.questionSource === 'manual' ? null : (input.questionText ?? null),
-          ctx,
         }),
       'splitIC',
     );
@@ -200,13 +211,7 @@ export async function POST(request: Request): Promise<Response> {
       raw: rawTranscript,
     };
 
-    // 16-18. Pattern + history + analysis
-    const currentPattern = input.patternId
-      ? await db.query.assessmentPattern.findFirst({
-          where: eq(schema.assessmentPattern.id, input.patternId),
-        })
-      : null;
-
+    // 16-18. History + analysis（Req 23.5: `llm.analyzeTurn` 経由）
     const recentTurns = await loadRecentTurns(input.sessionId, 10);
     const history = recentTurns.map((t) => ({
       question: t.question_text,
@@ -215,26 +220,23 @@ export async function POST(request: Request): Promise<Response> {
 
     analysisResult = await withRetry(
       () =>
-        analyzeTurn({
+        llmLocal.analyzeTurn({
           transcript: transcript.candidate,
           currentPattern: currentPattern ?? undefined,
           history,
-          ctx,
         }),
       'analyzeTurn',
     );
-    // Cast to access extra fields from analyzeTurnOutputSchema
-    analysisExtended = analysisResult as unknown as typeof analysisExtended;
 
     // Compute effectivePatternId (Req 24.1, design.md L1300):
     // - off_pattern なら null（pattern_id をクリア）
     // - questionSource === 'manual' の場合は LLM の matched_pattern_id を採用（exact/inferred_high のみ）
     // - それ以外は入力の patternId
     effectivePatternId = (() => {
-      if (analysisExtended.pattern_match_confidence === 'off_pattern') return null;
+      if (analysisResult.pattern_match_confidence === 'off_pattern') return null;
       if (input.questionSource === 'manual') {
-        return ['exact', 'inferred_high'].includes(analysisExtended.pattern_match_confidence)
-          ? (analysisExtended.matched_pattern_id ?? null)
+        return ['exact', 'inferred_high'].includes(analysisResult.pattern_match_confidence)
+          ? (analysisResult.matched_pattern_id ?? null)
           : null;
       }
       return input.patternId ?? null;
@@ -264,8 +266,9 @@ export async function POST(request: Request): Promise<Response> {
           audio_expires_at: audioExpiresAt,
           transcript,
           llm_analysis: analysisResult,
-          pattern_match_confidence: analysisExtended.pattern_match_confidence,
-          off_pattern_summary: analysisExtended.off_pattern_summary ?? null,
+          // M4: pattern_match_confidence / off_pattern_summary は LlmAnalysis に含まれる
+          pattern_match_confidence: analysisResult.pattern_match_confidence,
+          off_pattern_summary: analysisResult.off_pattern_summary ?? null,
           duration_ms: input.durationMs,
         })
         .returning();
@@ -334,7 +337,7 @@ export async function POST(request: Request): Promise<Response> {
     });
     const transitionDetected =
       previousTurn?.pattern_id != null && previousTurn.pattern_id !== effectivePatternId;
-    if (transitionDetected && previousTurn?.pattern_id) {
+    if (transitionDetected && previousTurn?.pattern_id && llm) {
       const previousPattern = await db.query.assessmentPattern.findFirst({
         where: eq(schema.assessmentPattern.id, previousTurn.pattern_id),
       });
@@ -348,10 +351,9 @@ export async function POST(request: Request): Promise<Response> {
         });
         const llmEvaluation = await withRetry(
           () =>
-            aggregatePatternCoverage({
+            llm!.aggregatePatternCoverage({
               turns: previousPatternTurns,
               pattern: previousPattern,
-              ctx,
             }),
           'aggregateCov.transition',
         );
@@ -395,7 +397,9 @@ export async function POST(request: Request): Promise<Response> {
       : null;
     if (
       currentPatternForCoverage &&
-      (analysisExtended.level_reached_estimate === 4 || analysisExtended.stuck_signal != null)
+      llm &&
+      // M4: level_reached_estimate / stuck_signal are now on LlmAnalysis directly
+      (analysisResult.level_reached_estimate === 4 || analysisResult.stuck_signal != null)
     ) {
       const turns = await db.query.interviewTurn.findMany({
         where: and(
@@ -406,10 +410,9 @@ export async function POST(request: Request): Promise<Response> {
       });
       const llmEvaluation = await withRetry(
         () =>
-          aggregatePatternCoverage({
+          llm!.aggregatePatternCoverage({
             turns,
             pattern: currentPatternForCoverage,
-            ctx,
           }),
         'aggregateCov.completion',
       );
@@ -445,30 +448,19 @@ export async function POST(request: Request): Promise<Response> {
   // 23. Prepare-2: next question proposals
   let proposal: typeof schema.questionProposal.$inferSelect | null = null;
   try {
-    const completedCodes = await loadCompletedPatternCodes(input.sessionId);
-    const allActivePatterns = await db.query.assessmentPattern.findMany({
-      where: eq(schema.assessmentPattern.is_active, true),
-    });
-    const plannedCodes: string[] = session!.planned_pattern_codes ?? [];
-    const plannedPatterns = allActivePatterns
-      .filter((p) => plannedCodes.includes(p.code))
-      .map((p) => ({ code: p.code, title: p.title, category: p.category }));
-    const completed = completedCodes.map((code) => ({
-      pattern_code: code,
-      level_reached: 0,
-      stuck_type: null as string | null,
-    }));
+    // Rebuild llm ctx so completedCoverage reflects the just-inserted coverage rows
+    // (D4: ctx.completedCoverage is consumed by proposeNextQuestions for planning).
+    const refreshedLlm = createLlmContext(
+      await buildLlmContext({ session: session!, userId: user.id }),
+    );
     const turnCount = (await loadRecentTurns(input.sessionId, 1000)).length;
     const proposals = await withRetry(
       () =>
-        proposeNextQuestions({
+        refreshedLlm.proposeNextQuestions({
           sessionState: {
             turnCount,
             elapsedMinutes: Math.floor(input.durationMs / 60000),
           },
-          plannedPatterns,
-          completed,
-          ctx,
         }),
       'proposeNextQ',
     );

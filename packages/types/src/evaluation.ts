@@ -23,6 +23,10 @@ export interface LlmAnalysis {
   scope_signal: 1 | 2 | 3 | 4 | 5 | null;
   level_reached_estimate: 0 | 1 | 2 | 3 | 4;
   pattern_match_confidence: PatternMatchConfidence;
+  // Requirement 24.1 / M4: keep the LlmAnalysis type in sync with analyzeTurnOutputSchema
+  // so callers do not need `as unknown as` casts to read these fields.
+  matched_pattern_id: string | null;
+  stuck_signal: StuckType | null;
   nearest_patterns?: string[];
   off_pattern_summary?: string;
   notes: string;

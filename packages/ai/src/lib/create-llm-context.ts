@@ -1,4 +1,5 @@
 import type { LlmAnalysis, LlmEvaluation, HeatmapData } from '@bulr/types/evaluation';
+import type { InterviewerProfile, CandidateInfo } from '@bulr/types/profile';
 import type { InterviewTurn, AssessmentPattern, PatternCoverage } from '@bulr/db/schema';
 import { analyzeTurn } from '../functions/analyze-turn';
 import { splitInterviewerCandidate } from '../functions/split-interviewer-candidate';
@@ -6,10 +7,29 @@ import { proposeNextQuestions } from '../functions/propose-next-questions';
 import { aggregatePatternCoverage } from '../functions/aggregate-pattern-coverage';
 import { generateSessionReport } from '../functions/generate-session-report';
 
-// Requirement 7.7, 8.8: Context bound to sessionId and userId at creation time
+// Requirement 7.7, 8.8: Context bound to sessionId and userId at creation time.
+// Extended (Requirements 9.2, 9.4): carries InterviewerProfile / CandidateInfo /
+// plannedPatterns / completedCoverage so that buildSystemPrompt can be invoked
+// with concrete values from every LLM function (no dummy ctx).
+export interface CompletedCoverageEntry {
+  pattern_code: string;
+  level_reached: 0 | 1 | 2 | 3 | 4;
+  evaluation: LlmEvaluation;
+}
+
 export interface LlmContext {
   sessionId: string;
   userId: string;
+  interviewerProfile: InterviewerProfile;
+  candidateInfo: CandidateInfo;
+  plannedPatterns: AssessmentPattern[];
+  completedCoverage: CompletedCoverageEntry[];
+  /**
+   * Optional current target pattern. Used by buildSystemPrompt Section 12
+   * to render "現在のパターン" with full assessment_pattern fields
+   * (level_1_intro / level_2_focus / ... / ai_perspective / signals).
+   */
+  currentPattern?: AssessmentPattern;
 }
 
 // --- Input types for each LLM method ---
@@ -35,16 +55,6 @@ export interface ProposeNextQuestionsInput {
     turnCount: number;
     elapsedMinutes: number;
   };
-  plannedPatterns: Array<{
-    code: string;
-    title: string;
-    category: string;
-  }>;
-  completed: Array<{
-    pattern_code: string;
-    level_reached: number;
-    stuck_type?: string | null;
-  }>;
 }
 
 export interface AggregatePatternCoverageInput {
@@ -68,6 +78,7 @@ export interface ProposeNextQuestionsResult {
   candidates: Array<{
     text: string;
     intent: 'deep_dive' | 'meta_cognition' | 'next_pattern';
+    pattern_id?: string;
   }>;
 }
 
@@ -112,20 +123,20 @@ export interface LlmContextMethods {
 }
 
 /**
- * Requirement 7.7, 8.8: Factory that binds sessionId and userId into a closure.
- * All 5 LLM methods use ctx.sessionId / ctx.userId internally.
- * Even if LLM output contains a different sessionId, the bound ctx values are used exclusively
+ * Requirement 7.7, 8.8: Factory that binds the full LlmContext into a closure.
+ * All 5 LLM methods use the bound ctx internally — even if LLM output contains
+ * a different sessionId, the bound ctx values are used exclusively
  * (hallucination defense).
  *
- * @param ctx - The LLM context containing sessionId and userId to bind.
+ * The extended ctx (Requirements 9.2, 9.4) ensures buildSystemPrompt receives
+ * concrete profile / planned / completed values from every LLM function.
+ *
+ * @param ctx - The LLM context containing sessionId, userId, profile, planned, completed.
  * @returns An object exposing all 5 LLM methods with ctx pre-bound.
  */
 export function createLlmContext(ctx: LlmContext): LlmContextMethods {
-  // ctx.sessionId and ctx.userId are captured in the closure and cannot be overridden
-  // by any value passed through method inputs or LLM outputs.
-  const { sessionId, userId } = ctx;
-
-  const boundCtx: LlmContext = { sessionId, userId };
+  // Capture full ctx in closure (cannot be overridden by method inputs or LLM outputs).
+  const boundCtx: LlmContext = { ...ctx };
 
   return {
     analyzeTurn(input: AnalyzeTurnInput): Promise<LlmAnalysis> {

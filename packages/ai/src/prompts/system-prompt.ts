@@ -1,13 +1,47 @@
 import type { InterviewerProfile, CandidateInfo } from '@bulr/types/profile';
+import type { LlmEvaluation } from '@bulr/types/evaluation';
+import type { AssessmentPattern } from '@bulr/db/schema';
 
 // _Boundary: BuildSystemPrompt_
+
+/**
+ * Pattern fields used by Section 12 of the system prompt.
+ * Accepts the full AssessmentPattern (preferred) or a subset for backward compatibility
+ * with callers that only have a partial shape on hand. `category` is optional
+ * because some legacy callers (e.g. analyze-turn's input.currentPattern) omit it.
+ */
+export type SystemPromptPattern =
+  | AssessmentPattern
+  | {
+      code: string;
+      title: string;
+      description: string;
+      category?: string;
+    };
+
+/**
+ * Completed-coverage entry rendered into Section 12.
+ * Accepts an evaluation object (preferred) or a minimal { stuck_type } shape
+ * for older callers that have not been migrated yet.
+ */
+export type SystemPromptCompletedEntry =
+  | {
+      pattern_code: string;
+      level_reached: number;
+      evaluation: LlmEvaluation;
+    }
+  | {
+      pattern_code: string;
+      level_reached: number;
+      stuck_type?: string | null;
+    };
 
 export interface SystemPromptCtx {
   interviewerProfile: InterviewerProfile;
   candidateInfo: CandidateInfo;
-  plannedPatterns: Array<{ code: string; title: string; category: string }>;
-  currentPattern?: { code: string; title: string; category: string; description: string };
-  completedCoverage: Array<{ pattern_code: string; level_reached: number; stuck_type?: string | null }>;
+  plannedPatterns: Array<SystemPromptPattern>;
+  currentPattern?: SystemPromptPattern;
+  completedCoverage: Array<SystemPromptCompletedEntry>;
 }
 
 /**
@@ -243,27 +277,50 @@ AI横断軸は、すべてのカテゴリのパターンに適用される横断
 
   // Section 12: プロファイル注入（動的差し込み）
   const plannedPatternsList = ctx.plannedPatterns
-    .map((p) => `  - [${p.code}] ${p.title}（${p.category}）`)
+    .map((p) => `  - [${p.code}] ${p.title}（${p.category ?? '未分類'}）`)
     .join('\n');
 
   const completedCoverageList =
     ctx.completedCoverage.length > 0
       ? ctx.completedCoverage
           .map((c) => {
-            const stuckNote = c.stuck_type ? `（詰まり: ${c.stuck_type}）` : '';
+            // Support both shapes: { evaluation } (preferred) or { stuck_type } (legacy).
+            const stuckType =
+              'evaluation' in c
+                ? c.evaluation.stuck_type
+                : (c.stuck_type ?? null);
+            const stuckNote = stuckType ? `（詰まり: ${stuckType}）` : '';
             return `  - ${c.pattern_code}: L${c.level_reached}まで完了${stuckNote}`;
           })
           .join('\n')
       : '  （まだ完了したパターンはありません）';
 
-  const currentPatternSection =
-    ctx.currentPattern != null
-      ? `## 現在のパターン
-コード: ${ctx.currentPattern.code}
-タイトル: ${ctx.currentPattern.title}
-カテゴリ: ${ctx.currentPattern.category}
-説明: ${ctx.currentPattern.description}`
-      : '## 現在のパターン\n（パターン未選択 — 面接官の指示を待ってください）';
+  const currentPatternSection = (() => {
+    const cp = ctx.currentPattern;
+    if (cp == null) {
+      return '## 現在のパターン\n（パターン未選択 — 面接官の指示を待ってください）';
+    }
+    const base = `## 現在のパターン
+コード: ${cp.code}
+タイトル: ${cp.title}
+カテゴリ: ${cp.category ?? '未分類'}
+説明: ${cp.description}`;
+    // If a full AssessmentPattern was supplied, render the 4-stage focus and signals too.
+    if ('level_1_intro' in cp && 'ai_perspective' in cp) {
+      const signalsLine =
+        Array.isArray(cp.signals) && cp.signals.length > 0
+          ? cp.signals.join(', ')
+          : '（未設定）';
+      return `${base}
+L1（状況確認）導入: ${cp.level_1_intro}
+L2（判断理由）焦点: ${cp.level_2_focus}
+L3（結果・学び）焦点: ${cp.level_3_focus}
+L4（汎化・メタ認知）焦点: ${cp.level_4_focus}
+評価シグナル: ${signalsLine}
+AI 視点: ${cp.ai_perspective}`;
+    }
+    return base;
+  })();
 
   const section12 = `# プロファイル情報
 
