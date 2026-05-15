@@ -577,7 +577,7 @@ const effectivePatternId = (() => {
 - _Depends: G4.6_
 - _Requirements: 3.1, 3.2_
 
-### G5.3 `/interviews/new` ページを実装
+### ✅ G5.3 `/interviews/new` ページを実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/new/page.tsx` を新規作成
 - Server Component、`requireUser()` で認証チェック
