@@ -622,7 +622,7 @@ const effectivePatternId = (() => {
 - _Depends: G2.4_
 - _Requirements: 5.2, 5.3, 5.5, 5.6, 5.8, 5.9, 5.10, 5.11, 5.12_
 
-### G6.2 `ProposalChoiceState` Client Component を実装
+### ✅ G6.2 `ProposalChoiceState` Client Component を実装
 
 - `bulr-app-mvp/apps/web/app/(interviewer)/interviews/_components/proposal-choice-state.tsx` を新規作成
 - `'use client';`
