@@ -7,10 +7,10 @@
  * recording → loading → choosing のモード遷移を管理し、
  * 録音送信・質問選択・面接終了の一連のフローを制御する。
  *
- * Requirements: 5.1, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15
+ * Requirements: 5.1, 5.3, 5.6, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 
@@ -18,6 +18,7 @@ import type { InterviewSession } from '@bulr/db/schema';
 import type { InterviewTurn } from '@bulr/db/schema';
 import type { QuestionProposal } from '@bulr/db/schema';
 import type { Candidate } from '@bulr/db/schema';
+import type { AssessmentPattern } from '@bulr/db/schema';
 
 import { selectProposalChoice } from '@/lib/actions/select-proposal-choice';
 import { RecordingState } from './recording-state';
@@ -32,6 +33,7 @@ interface InterviewSessionRunnerProps {
   turns: InterviewTurn[];
   latestProposal: QuestionProposal | null;
   candidate: Candidate;
+  plannedPatterns: AssessmentPattern[];
 }
 
 type Mode = 'recording' | 'choosing' | 'loading' | 'finalizing';
@@ -43,6 +45,9 @@ interface TurnsNextResponse {
   coverage: unknown;
 }
 
+// API が受け付ける questionSource enum
+type QuestionSource = 'llm_candidate_1' | 'llm_candidate_2' | 'llm_candidate_3' | 'manual';
+
 // ---------------------------------------------------------------------------
 // InterviewSessionRunner Component
 // ---------------------------------------------------------------------------
@@ -52,6 +57,7 @@ export function InterviewSessionRunner({
   turns,
   latestProposal,
   candidate: _candidate,
+  plannedPatterns,
 }: InterviewSessionRunnerProps) {
   const router = useRouter();
 
@@ -64,7 +70,40 @@ export function InterviewSessionRunner({
   const [currentProposal, setCurrentProposal] = useState<QuestionProposal | null>(latestProposal);
   const [currentTurnId, setCurrentTurnId] = useState<string>(() => nanoid(21));
   const [regenerating, setRegenerating] = useState(false);
-  const [lastInsertedTurnId, setLastInsertedTurnId] = useState<string | null>(null);
+  // M6: 初期値を turns 末尾の id にすることでリロード後の [再試行] による
+  // /api/interview/proposal/regenerate への afterTurnId 欠落（400）を防ぐ
+  const [lastInsertedTurnId, setLastInsertedTurnId] = useState<string | null>(
+    () => turns[turns.length - 1]?.id ?? null,
+  );
+
+  // C1: 現在の質問の出所（LLM 提案の何番目か / manual）。recording→submit で API へ送信
+  const [currentQuestionSource, setCurrentQuestionSource] = useState<QuestionSource>('manual');
+  // C2: proposal / pattern の現在値（FormData に append する）
+  const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
+
+  // patternId 追跡用 index。turns に既存の最終 pattern_id があればそれを起点にする
+  const [currentPatternIndex, setCurrentPatternIndex] = useState<number>(() => {
+    if (plannedPatterns.length === 0) return 0;
+    for (let i = turns.length - 1; i >= 0; i--) {
+      const pid = turns[i]?.pattern_id;
+      if (pid != null) {
+        const idx = plannedPatterns.findIndex((p) => p.id === pid);
+        if (idx !== -1) return idx;
+      }
+    }
+    return 0;
+  });
+
+  const currentPatternId: string | null = useMemo(() => {
+    const p = plannedPatterns[currentPatternIndex];
+    return p ? p.id : null;
+  }, [plannedPatterns, currentPatternIndex]);
+
+  const currentPatternTitle: string = useMemo(() => {
+    const p = plannedPatterns[currentPatternIndex];
+    // M1: pattern が解決できない場合は「フリー質問」
+    return p ? p.title : 'フリー質問';
+  }, [plannedPatterns, currentPatternIndex]);
 
   // 最新ターンのトランスクリプトと分析メモ（初期値は props から設定）
   const [lastTurnTranscript, setLastTurnTranscript] = useState<{ candidate: string }>(() => {
@@ -75,6 +114,29 @@ export function InterviewSessionRunner({
     const last = turns.length > 0 ? turns[turns.length - 1] : undefined;
     return last?.llm_analysis?.notes ?? '';
   });
+
+  // M2: ローカル turns 状態（completed coverage 数の計算に使用）
+  const [localTurns, setLocalTurns] = useState<InterviewTurn[]>(turns);
+
+  // M2: 経過秒数（session.started_at からの差分を 1 秒ごとに更新）
+  const startedAtMs = useMemo<number | null>(() => {
+    if (!session.started_at) return null;
+    const t = new Date(session.started_at).getTime();
+    return Number.isFinite(t) ? t : null;
+  }, [session.started_at]);
+
+  const [elapsedSec, setElapsedSec] = useState<number>(() => {
+    if (startedAtMs == null) return 0;
+    return Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
+  });
+
+  useEffect(() => {
+    if (startedAtMs == null) return;
+    const timer = setInterval(() => {
+      setElapsedSec(Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000)));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [startedAtMs]);
 
   // トースト通知
   const [toast, setToast] = useState<string | null>(null);
@@ -105,8 +167,17 @@ export function InterviewSessionRunner({
       formData.append('audio', audio);
       formData.append('turnId', currentTurnId);
       formData.append('sessionId', session.id);
-      formData.append('questionSource', currentQuestion ? 'proposal' : 'manual');
+      // C1: API enum に一致する値を送信
+      formData.append('questionSource', currentQuestionSource);
+      // questionText は manual の場合は空文字、proposal 選択時は選択した候補テキスト
       formData.append('questionText', currentQuestion);
+      // C2: proposalId / patternId を append（存在する場合のみ）
+      if (currentQuestionSource !== 'manual' && currentProposalId) {
+        formData.append('proposalId', currentProposalId);
+      }
+      if (currentPatternId) {
+        formData.append('patternId', currentPatternId);
+      }
       formData.append('durationMs', String(durationMs));
 
       try {
@@ -122,6 +193,8 @@ export function InterviewSessionRunner({
           setLastTurnTranscript({ candidate: data.turn.transcript?.candidate ?? '' });
           setLastTurnAnalysisNotes(data.turn.llm_analysis?.notes ?? '');
           setCurrentProposal(data.proposal);
+          // M2: ローカル turns に追記（completed coverage 計算用）
+          setLocalTurns((prev) => [...prev, data.turn]);
           setMode('choosing');
           return;
         }
@@ -156,7 +229,15 @@ export function InterviewSessionRunner({
         setMode('recording');
       }
     },
-    [currentQuestion, currentTurnId, session.id, showToast],
+    [
+      currentQuestion,
+      currentQuestionSource,
+      currentProposalId,
+      currentPatternId,
+      currentTurnId,
+      session.id,
+      showToast,
+    ],
   );
 
   // ---------------------------------------------------------------------------
@@ -171,11 +252,39 @@ export function InterviewSessionRunner({
           selectedIndex,
         });
       }
+
+      // C1/C2/M1: 次のターンの questionSource / proposalId / patternIndex を確定
+      if (selectedIndex === null) {
+        // manual: pattern index は維持、proposalId は送信しない
+        setCurrentQuestionSource('manual');
+        setCurrentProposalId(null);
+      } else {
+        setCurrentQuestionSource(
+          selectedIndex === 1
+            ? 'llm_candidate_1'
+            : selectedIndex === 2
+              ? 'llm_candidate_2'
+              : 'llm_candidate_3',
+        );
+        setCurrentProposalId(currentProposal?.id ?? null);
+
+        // intent === 'next_pattern' なら index を進める
+        const intent =
+          selectedIndex === 1
+            ? currentProposal?.candidate_1_intent
+            : selectedIndex === 2
+              ? currentProposal?.candidate_2_intent
+              : currentProposal?.candidate_3_intent;
+        if (intent === 'next_pattern' && plannedPatterns.length > 0) {
+          setCurrentPatternIndex((prev) => (prev + 1) % plannedPatterns.length);
+        }
+      }
+
       setCurrentTurnId(nanoid(21));
       setCurrentQuestion(questionText);
       setMode('recording');
     },
-    [currentProposal],
+    [currentProposal, plannedPatterns.length],
   );
 
   // ---------------------------------------------------------------------------
@@ -233,10 +342,19 @@ export function InterviewSessionRunner({
   // Render
   // ---------------------------------------------------------------------------
 
+  // M2: 完了したパターン coverage 数（pattern_id 非 null のユニーク数）
+  const patternsDone = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of localTurns) {
+      if (t.pattern_id) ids.add(t.pattern_id);
+    }
+    return ids.size;
+  }, [localTurns]);
+
   const progress = {
-    patternsDone: 0,
+    patternsDone,
     patternsTotal: session.planned_pattern_codes.length,
-    elapsedSec: 0,
+    elapsedSec,
     totalSec: 2400,
   };
 
@@ -256,7 +374,7 @@ export function InterviewSessionRunner({
       {mode === 'recording' && (
         <RecordingState
           currentQuestion={currentQuestion}
-          patternTitle=""
+          patternTitle={currentPatternTitle}
           progress={progress}
           onSubmit={handleRecordingSubmit}
         />

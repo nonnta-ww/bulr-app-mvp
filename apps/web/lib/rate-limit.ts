@@ -80,3 +80,33 @@ export async function checkAndIncrement(
     );
   }
 }
+
+/**
+ * 指定キーのレート制限カウンタを「読み取りのみ」で取得する（インクリメントしない）。
+ *
+ * Req 7.15 に基づく事前チェック用ヘルパ。Core 処理（LLM 呼び出し等の高コスト処理）に
+ * 突入する前に呼び出し、超過していれば 429 を即返却することでコスト枯渇攻撃を防ぐ。
+ *
+ * ウィンドウが切れている（window_start + windowMs <= now()）場合は 0 を返す。
+ * これは次の checkAndIncrement 呼び出しで window がリセットされ count=1 から再開されるため。
+ *
+ * @param key       レート制限キー
+ * @param opts.limit     ウィンドウ内の最大リクエスト数（互換のため受け取るが本関数では未使用）
+ * @param opts.windowMs  ウィンドウ幅（ミリ秒）
+ * @returns 現在のカウント（ウィンドウ外 / 未登録の場合は 0）
+ */
+export async function checkRateLimit(
+  key: string,
+  opts: { limit: number; windowMs: number },
+): Promise<number> {
+  void opts.limit;
+  const result = await db.execute<{ count: number; in_window: boolean }>(sql`
+    SELECT count,
+           (window_start + (${opts.windowMs} * INTERVAL '1 millisecond') > now()) AS in_window
+    FROM rate_limit
+    WHERE key = ${key}
+  `);
+  const row = result.rows[0];
+  if (!row || !row.in_window) return 0;
+  return Number(row.count);
+}

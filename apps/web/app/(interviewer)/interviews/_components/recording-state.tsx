@@ -6,7 +6,7 @@
  * 音声録音中の状態を表示し、録音の開始・停止・送信を管理するコンポーネント。
  * createAudioRecorder を使用してマイク録音を行い、onSubmit で音声データを送信する。
  *
- * Requirements: 5.2, 5.3, 5.5, 5.6, 5.8, 5.9, 5.10, 5.11, 5.12
+ * Requirements: 5.2, 5.3, 5.5, 5.6, 5.8, 5.9, 5.10, 5.11, 5.12, 10.11
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -60,6 +60,8 @@ export function RecordingState({
   const [elapsedSec, setElapsedSec] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sizeError, setSizeError] = useState(false);
+  // H5 (Req 10.11): マイク権限拒否などの録音開始失敗時にエラーメッセージを表示
+  const [micError, setMicError] = useState<string | null>(null);
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -153,8 +155,17 @@ export function RecordingState({
             return next;
           });
         }, 1000);
-      } catch {
-        // マイクアクセス失敗などは無視（上位で処理想定）
+      } catch (err) {
+        // H5 (Req 10.11): マイクアクセス失敗を UI に表示
+        if (!mounted) return;
+        const isPermissionDenied =
+          err instanceof Error &&
+          (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+        setMicError(
+          isPermissionDenied
+            ? 'マイクへのアクセスを許可してください'
+            : 'マイクを利用できません。デバイスや権限を確認してください',
+        );
       }
     })();
 
@@ -193,6 +204,13 @@ export function RecordingState({
       {sizeError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           録音サイズが上限超過、再録音してください
+        </div>
+      )}
+
+      {/* H5 (Req 10.11): マイクアクセスエラー */}
+      {micError !== null && (
+        <div role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {micError}
         </div>
       )}
 

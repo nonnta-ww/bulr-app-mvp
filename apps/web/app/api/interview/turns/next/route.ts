@@ -11,7 +11,7 @@ import { analyzeTurn, splitInterviewerCandidate, aggregatePatternCoverage, propo
 import { loadRecentTurns, loadCompletedPatternCodes } from '@bulr/db/queries';
 import { uploadToBlob } from '@/lib/audio/blob-client';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
-import { RateLimitError } from '@/lib/rate-limit';
+import { RateLimitError, checkRateLimit } from '@/lib/rate-limit';
 
 // ---------------------------------------------------------------------------
 // withRetry helper
@@ -137,6 +137,26 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
+  // 8. Rate limit pre-check (Req 7.15)
+  // Core 処理（LLM 呼び出し等の高コスト処理）に突入する前に読み取りのみで確認し、
+  // 超過していれば 429 を即返却する（コスト枯渇攻撃防止）。
+  // Core 成功時の実カウントアップは下記の transaction 内で行う。
+  const RATE_LIMIT_CHECKS = [
+    { key: `api:${user.id}:minute`, limit: 30, windowMs: 60_000 },
+    { key: `turn:${input.sessionId}`, limit: 50, windowMs: 86_400_000 },
+    { key: `msg:${input.sessionId}`, limit: 200, windowMs: 86_400_000 },
+    { key: `llm:${input.sessionId}`, limit: 100, windowMs: 86_400_000 },
+  ];
+  for (const rl of RATE_LIMIT_CHECKS) {
+    const count = await checkRateLimit(rl.key, { limit: rl.limit, windowMs: rl.windowMs });
+    if (count >= rl.limit) {
+      return NextResponse.json(
+        { error: 'rate_limit_exceeded', limit: rl.limit, windowMs: rl.windowMs },
+        { status: 429 },
+      );
+    }
+  }
+
   // Core phase
   let insertedTurn: typeof schema.interviewTurn.$inferSelect;
   // We need the LlmAnalysis output which has extra fields beyond LlmAnalysis type
@@ -150,6 +170,7 @@ export async function POST(request: Request): Promise<Response> {
     level_reached_estimate: 0 | 1 | 2 | 3 | 4;
     off_pattern_summary?: string;
   };
+  let effectivePatternId: string | null = null;
   const ctx = { sessionId: input.sessionId, userId: user.id };
 
   try {
@@ -205,6 +226,20 @@ export async function POST(request: Request): Promise<Response> {
     // Cast to access extra fields from analyzeTurnOutputSchema
     analysisExtended = analysisResult as unknown as typeof analysisExtended;
 
+    // Compute effectivePatternId (Req 24.1, design.md L1300):
+    // - off_pattern なら null（pattern_id をクリア）
+    // - questionSource === 'manual' の場合は LLM の matched_pattern_id を採用（exact/inferred_high のみ）
+    // - それ以外は入力の patternId
+    effectivePatternId = (() => {
+      if (analysisExtended.pattern_match_confidence === 'off_pattern') return null;
+      if (input.questionSource === 'manual') {
+        return ['exact', 'inferred_high'].includes(analysisExtended.pattern_match_confidence)
+          ? (analysisExtended.matched_pattern_id ?? null)
+          : null;
+      }
+      return input.patternId ?? null;
+    })();
+
     // 19. DB transaction: insert turn + increment rate limit counters atomically (Req 7.15, 7.16)
     const [t] = await db.transaction(async (tx) => {
       // Compute next sequence_no
@@ -220,7 +255,8 @@ export async function POST(request: Request): Promise<Response> {
           id: input.turnId,
           session_id: input.sessionId,
           sequence_no: nextSeq,
-          pattern_id: input.patternId ?? null,
+          // Req 12.3, 24.1: off_pattern なら null をセット。manual の場合は LLM matched 値、それ以外は input.patternId。
+          pattern_id: effectivePatternId,
           proposal_id: input.proposalId ?? null,
           question_source: input.questionSource,
           question_text: input.questionText ?? '',
@@ -284,17 +320,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // Prepare phase (individual try/catch, failures don't abort response)
-
-  // 20. effectivePatternId
-  const effectivePatternId = (() => {
-    if (analysisExtended.pattern_match_confidence === 'off_pattern') return null;
-    if (input.questionSource === 'manual') {
-      return ['exact', 'inferred_high'].includes(analysisExtended.pattern_match_confidence)
-        ? (analysisExtended.matched_pattern_id ?? null)
-        : null;
-    }
-    return input.patternId ?? null;
-  })();
+  // 20. effectivePatternId は Core 内で算出済み（INSERT で適用済み、Req 12.3 / 24.1）
 
   // 21. Prepare-1a: transition aggregation
   let transitionCoverage: typeof schema.patternCoverage.$inferSelect | null = null;

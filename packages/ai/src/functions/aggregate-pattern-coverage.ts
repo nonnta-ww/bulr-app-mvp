@@ -187,5 +187,9 @@ export async function aggregatePatternCoverage(input: {
     'aggregatePatternCoverage',
   );
 
-  return validated;
+  // evaluated_at は LLM 出力を信用せず、サーバ側で必ず上書きする（hallucination 防御）
+  return {
+    ...validated,
+    evaluated_at: new Date().toISOString(),
+  };
 }
