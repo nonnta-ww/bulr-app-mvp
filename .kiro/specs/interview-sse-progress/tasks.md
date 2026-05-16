@@ -40,7 +40,7 @@
   - _Requirements: 2.2_
   - _Boundary: ParseSseStream_
 
-- [ ] 2.3 (P) 進捗ステップ表示 UI コンポーネントを実装する
+- [x] 2.3 (P) 進捗ステップ表示 UI コンポーネントを実装する
   - `apps/web/app/(interviewer)/interviews/_components/interview-progress-steps.tsx` を新規作成
   - Props は `{ currentStep: ProgressStep }` のみ受け取る純粋表示コンポーネント
   - 内部に 4 ステップのラベル `[{key:'upload', label:'音声のアップロード'}, ...]` を固定保持
