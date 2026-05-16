@@ -28,7 +28,7 @@
   - _Requirements: 1.5, 2.1, 2.4, 3.1, 3.2_
   - _Boundary: TurnsNextRoute_
 
-- [ ] 2.2 (P) SSE ストリームを Zod 検証付きで逐次取り出す汎用パーサを実装する
+- [x] 2.2 (P) SSE ストリームを Zod 検証付きで逐次取り出す汎用パーサを実装する
   - `apps/web/lib/interview/parse-sse-stream.ts` を新規作成
   - シグネチャ: `parseSseStream<T>(reader, schema, isTerminal): AsyncGenerator<T>` （`schema` は Zod スキーマ、`isTerminal` は terminal event を判定する述語）
   - `TextDecoder` で `Uint8Array` チャンクを UTF-8 文字列にデコード、`\n\n` 境界でフレーム分割、`data: ` プレフィックスを除去して `JSON.parse` → `schema.safeParse`
