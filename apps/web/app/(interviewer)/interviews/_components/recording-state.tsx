@@ -194,13 +194,16 @@ export function RecordingState({
   return (
     <div className="flex flex-col gap-6 rounded-2xl bg-white p-8 shadow-md">
       {/* 録音インジケーター */}
-      <div className="flex items-center gap-3">
-        <span className="relative flex h-3 w-3">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-          <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
-        </span>
-        <span className="text-sm font-semibold text-red-600">録音中</span>
-        <span className="ml-auto font-mono text-sm text-gray-500">{formatTime(elapsedSec)}</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+          </span>
+          <span className="text-sm font-semibold text-red-600">録音中</span>
+          <span className="ml-auto font-mono text-sm text-gray-500">{formatTime(elapsedSec)}</span>
+        </div>
+        <AudioVisualizer stream={mediaStream} />
       </div>
 
       {/* サイズエラー */}
@@ -241,8 +244,6 @@ export function RecordingState({
         {isSubmitting ? '送信中...' : '次の質問へ'}
       </button>
 
-      {/* 音声レベルビジュアライザー */}
-      <AudioVisualizer stream={mediaStream} />
     </div>
   );
 }

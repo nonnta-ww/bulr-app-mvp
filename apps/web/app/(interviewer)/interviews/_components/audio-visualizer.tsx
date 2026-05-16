@@ -63,8 +63,8 @@ export function AudioVisualizer({ stream }: AudioVisualizerProps) {
     <canvas
       ref={canvasRef}
       width={280}
-      height={48}
-      className="w-full rounded-lg bg-gray-50"
+      height={28}
+      className="w-full rounded"
       aria-hidden="true"
     />
   );
