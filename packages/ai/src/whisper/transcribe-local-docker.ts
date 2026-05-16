@@ -60,8 +60,8 @@ export async function transcribeLocalDocker(
   }
 
   const data = (await response.json()) as WhisperLocalResponse;
-  if (!data.text) {
-    throw new Error('[Whisper local-docker] empty text in response');
+  if (data.text === undefined || data.text === null) {
+    throw new Error('[Whisper local-docker] missing text field in response');
   }
   return data.text;
 }
