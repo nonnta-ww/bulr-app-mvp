@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { createAudioRecorder } from '@/lib/audio/recorder';
 import type { AudioRecorder } from '@/lib/audio/recorder';
+import { AudioVisualizer } from './audio-visualizer';
 
 // ---------------------------------------------------------------------------
 // 定数
@@ -62,6 +63,7 @@ export function RecordingState({
   const [sizeError, setSizeError] = useState(false);
   // H5 (Req 10.11): マイク権限拒否などの録音開始失敗時にエラーメッセージを表示
   const [micError, setMicError] = useState<string | null>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
   const recorderRef = useRef<AudioRecorder | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -143,6 +145,7 @@ export function RecordingState({
         }
 
         startTimeRef.current = Date.now();
+        setMediaStream(recorder.stream);
 
         // 経過時間タイマー
         intervalRef.current = setInterval(() => {
@@ -237,6 +240,9 @@ export function RecordingState({
       >
         {isSubmitting ? '送信中...' : '次の質問へ'}
       </button>
+
+      {/* 音声レベルビジュアライザー */}
+      <AudioVisualizer stream={mediaStream} />
     </div>
   );
 }

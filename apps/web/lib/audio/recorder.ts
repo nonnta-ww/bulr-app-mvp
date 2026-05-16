@@ -6,6 +6,7 @@ export interface AudioRecorder {
   start(): Promise<void>;
   stop(): Promise<Blob>;
   readonly state: RecorderState;
+  readonly stream: MediaStream | null;
   onAutoStop?: () => void;
 }
 
@@ -39,6 +40,10 @@ export function createAudioRecorder(): AudioRecorder {
   const recorder: AudioRecorder = {
     get state(): RecorderState {
       return _state;
+    },
+
+    get stream(): MediaStream | null {
+      return _stream;
     },
 
     onAutoStop: undefined,
