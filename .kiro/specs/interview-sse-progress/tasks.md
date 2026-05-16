@@ -11,9 +11,9 @@
   - 完了条件: `pnpm typecheck` が通り、`z.infer<typeof CompleteEvent>['turn']` が `InterviewTurn` として型推論される
   - _Requirements: 1.5, 3.1_
 
-- [ ] 2. Core: 独立コンポーネントの並列実装
+- [x] 2. Core: 独立コンポーネントの並列実装
 
-- [ ] 2.1 (P) 既存ルートを SSE ストリーミング応答に変換する
+- [x] 2.1 (P) 既存ルートを SSE ストリーミング応答に変換する
   - `apps/web/app/api/interview/turns/next/route.ts` を修正
   - Auth / Zod / Session ownership / Rate Limit pre-check の 4xx 応答は従来通り `NextResponse.json` でストリーム開始前に返却
   - `new Response(stream, { headers: text/event-stream })` を返し、ストリーム内で全処理を実行（`await` を return 前に置かない）
