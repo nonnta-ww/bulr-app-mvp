@@ -10,9 +10,14 @@
  * Requirements: 5.1, 5.3, 5.6, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
+
+import { parseSseStream, StreamEndedWithoutTerminalEvent } from '@/lib/interview/parse-sse-stream';
+import { TurnsNextEvent } from '@/lib/interview/turns-next-events';
+import type { ProgressStep } from '@/lib/interview/turns-next-events';
+import { InterviewProgressSteps } from './interview-progress-steps';
 
 import type { InterviewSession } from '@bulr/db/schema';
 import type { InterviewTurn } from '@bulr/db/schema';
@@ -37,13 +42,6 @@ interface InterviewSessionRunnerProps {
 }
 
 type Mode = 'recording' | 'choosing' | 'loading' | 'finalizing';
-
-// API レスポンス型 (turns/next)
-interface TurnsNextResponse {
-  turn: InterviewTurn;
-  proposal: QuestionProposal | null;
-  coverage: unknown;
-}
 
 // API が受け付ける questionSource enum
 type QuestionSource = 'llm_candidate_1' | 'llm_candidate_2' | 'llm_candidate_3' | 'manual';
@@ -138,6 +136,12 @@ export function InterviewSessionRunner({
     return () => clearInterval(timer);
   }, [startedAtMs]);
 
+  // SSE 進捗ステップ
+  const [progressStep, setProgressStep] = useState<ProgressStep>('upload');
+
+  // AbortController — unmount 時の fetch クリーンアップ用
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // トースト通知
   const [toast, setToast] = useState<string | null>(null);
 
@@ -155,6 +159,13 @@ export function InterviewSessionRunner({
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // AbortController クリーンアップ（unmount 時に in-flight fetch を解放）
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   // ---------------------------------------------------------------------------
   // State A: recording → onSubmit ハンドラ
   // ---------------------------------------------------------------------------
@@ -162,6 +173,7 @@ export function InterviewSessionRunner({
   const handleRecordingSubmit = useCallback(
     async (audio: Blob, durationMs: number) => {
       setMode('loading');
+      setProgressStep('upload'); // 進捗ステップをリセット
 
       const formData = new FormData();
       formData.append('audio', audio);
@@ -180,51 +192,71 @@ export function InterviewSessionRunner({
       }
       formData.append('durationMs', String(durationMs));
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         const res = await fetch('/api/interview/turns/next', {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
         });
 
-        if (res.ok) {
-          const data = (await res.json()) as TurnsNextResponse;
-          setLastInsertedTurnId(data.turn.id);
-          // 最新ターンのデータを更新
-          setLastTurnTranscript({ candidate: data.turn.transcript?.candidate ?? '' });
-          setLastTurnAnalysisNotes(data.turn.llm_analysis?.notes ?? '');
-          setCurrentProposal(data.proposal);
-          // M2: ローカル turns に追記（completed coverage 計算用）
-          setLocalTurns((prev) => [...prev, data.turn]);
-          setMode('choosing');
+        // ストリーム開始前の HTTP エラーハンドラ（4xx）
+        if (!res.ok) {
+          if (res.status === 429) {
+            showToast('レート制限超過');
+            setMode('recording');
+            return;
+          }
+          // その他の HTTP エラー
+          showToast('エラーが発生しました');
+          setMode('recording');
           return;
         }
 
-        // エラーレスポンスの処理
-        if (res.status === 503) {
-          let body: { code?: string } = {};
-          try {
-            body = (await res.json()) as { code?: string };
-          } catch {
-            // JSON パース失敗は無視
-          }
-          if (body.code === 'core_phase_failed') {
+        if (!res.body) {
+          showToast('エラーが発生しました');
+          setMode('recording');
+          return;
+        }
+
+        // SSE ストリームを逐次消費
+        const reader = res.body.getReader();
+
+        for await (const event of parseSseStream(
+          reader,
+          TurnsNextEvent,
+          (e) => e.type !== 'progress',
+        )) {
+          if (event.type === 'progress') {
+            setProgressStep(event.step);
+          } else if (event.type === 'complete') {
+            setLastInsertedTurnId(event.turn.id);
+            // 最新ターンのデータを更新
+            setLastTurnTranscript({ candidate: event.turn.transcript?.candidate ?? '' });
+            setLastTurnAnalysisNotes(event.turn.llm_analysis?.notes ?? '');
+            setCurrentProposal(event.proposal);
+            // M2: ローカル turns に追記（completed coverage 計算用）
+            setLocalTurns((prev) => [...prev, event.turn]);
+            setMode('choosing');
+          } else if (event.type === 'error') {
             showToast('処理に失敗しました。同じ録音で再試行できます');
             setMode('recording');
             // 同じ turnId を保持（冪等性のため）
             return;
           }
         }
-
-        if (res.status === 429) {
-          showToast('レート制限超過');
-          setMode('choosing');
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          // unmount クリーンアップによる中断 — state 更新しない
           return;
         }
-
-        // その他のエラー
-        showToast('エラーが発生しました');
-        setMode('recording');
-      } catch {
+        if (e instanceof StreamEndedWithoutTerminalEvent) {
+          showToast('処理に失敗しました。同じ録音で再試行できます');
+          setMode('recording');
+          return;
+        }
         showToast('エラーが発生しました');
         setMode('recording');
       }
@@ -392,7 +424,11 @@ export function InterviewSessionRunner({
         />
       )}
 
-      {(mode === 'loading' || mode === 'finalizing') && (
+      {mode === 'loading' && (
+        <InterviewProgressSteps currentStep={progressStep} />
+      )}
+
+      {mode === 'finalizing' && (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-12 shadow-md">
           <svg
             className="h-8 w-8 animate-spin text-blue-600"

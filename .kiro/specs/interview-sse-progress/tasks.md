@@ -50,9 +50,9 @@
   - _Requirements: 1.1, 1.3_
   - _Boundary: InterviewProgressSteps_
 
-- [ ] 3. Integration: クライアントオーケストレーターの統合
+- [x] 3. Integration: クライアントオーケストレーターの統合
 
-- [ ] 3.1 InterviewSessionRunner をストリーム読み取り型に書き換える
+- [x] 3.1 InterviewSessionRunner をストリーム読み取り型に書き換える
   - `apps/web/app/(interviewer)/interviews/_components/interview-session-runner.tsx` の `handleRecordingSubmit` 内の fetch ハンドラ（L184 周辺）を修正
   - `progressStep: ProgressStep` state を追加（初期値 `'upload'`）
   - fetch 後 `response.body.getReader()` を取得して `parseSseStream(reader, TurnsNextEvent, e => e.type !== 'progress')` で逐次消費
