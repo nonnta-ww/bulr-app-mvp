@@ -54,20 +54,22 @@ export function SessionAgendaSidebar({
   }, [isDragging, setWidth]);
 
   const grouped = useMemo(() => {
-    const groups: Array<{ patternId: string | null; patternTitle: string; items: AgendaItem[] }> = [];
+    // patternId ごとに 1 グループにまとめる（agenda 内の出現順を保持）
+    const map = new Map<string | null, { patternTitle: string; items: AgendaItem[] }>();
     for (const item of agenda) {
-      const last = groups[groups.length - 1];
-      if (last && last.patternId === item.patternId) {
-        last.items.push(item);
+      const key = item.patternId;
+      const existing = map.get(key);
+      if (existing) {
+        existing.items.push(item);
       } else {
-        groups.push({
-          patternId: item.patternId,
-          patternTitle: item.patternTitle,
-          items: [item],
-        });
+        map.set(key, { patternTitle: item.patternTitle, items: [item] });
       }
     }
-    return groups;
+    return Array.from(map.entries()).map(([patternId, val]) => ({
+      patternId,
+      patternTitle: val.patternTitle,
+      items: val.items,
+    }));
   }, [agenda]);
 
   if (collapsed) {

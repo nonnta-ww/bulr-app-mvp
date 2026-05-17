@@ -17,7 +17,7 @@ import { sessionRunnerReducer } from './agenda/session-runner-reducer';
 import type { SessionState } from './agenda/session-runner-reducer';
 import type { AgendaItem, AnalysisTask, NextQuestionDraft } from './agenda/types';
 import { useAnalysisTasks } from './agenda/use-analysis-tasks';
-import { NextQuestionPicker } from './agenda/next-question-picker';
+import { NextQuestionPicker, buildDraftFromCandidate } from './agenda/next-question-picker';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 
@@ -66,16 +66,7 @@ function pickNextDraft(
   if (latest && latest.candidates && latest.candidates.length > 0) {
     const c = latest.candidates[0];
     if (c) {
-      return {
-        questionText: c.text,
-        source:
-          c.intent === 'deep_dive' ? { kind: 'deep_dive', parentTurnId: latest.turnId }
-          : c.intent === 'meta_cognition' ? { kind: 'meta_cognition', parentTurnId: latest.turnId }
-          : c.patternId ? { kind: 'pattern_intro', patternId: c.patternId }
-          : { kind: 'manual', parentTurnId: latest.turnId },
-        patternId: c.patternId,
-        fromAnalysisTaskId: latest.turnId,
-      };
+      return buildDraftFromCandidate(c, latest);
     }
   }
   // (b) 未着手パターンの先頭の level_1_intro
@@ -501,16 +492,7 @@ export function InterviewSessionRunner({
               if (!c) return;
               dispatch({
                 type: 'SET_NEXT_DRAFT',
-                draft: {
-                  questionText: c.text,
-                  source:
-                    c.intent === 'deep_dive' ? { kind: 'deep_dive', parentTurnId: t.turnId }
-                    : c.intent === 'meta_cognition' ? { kind: 'meta_cognition', parentTurnId: t.turnId }
-                    : c.patternId ? { kind: 'pattern_intro', patternId: c.patternId }
-                    : { kind: 'manual', parentTurnId: t.turnId },
-                  patternId: c.patternId,
-                  fromAnalysisTaskId: t.turnId,
-                },
+                draft: buildDraftFromCandidate(c, t),
               });
             }}
           />

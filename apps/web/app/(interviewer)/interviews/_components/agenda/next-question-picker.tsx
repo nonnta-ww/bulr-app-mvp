@@ -52,12 +52,7 @@ export function NextQuestionPicker({
             candidate={c}
             selected={draft.questionText === c.text}
             onClick={() =>
-              onDraftChange({
-                questionText: c.text,
-                source: candidateSource(c, latestCompletedTask.turnId),
-                patternId: c.patternId,
-                fromAnalysisTaskId: latestCompletedTask.turnId,
-              })
+              onDraftChange(buildDraftFromCandidate(c, latestCompletedTask))
             }
           />
         ))}
@@ -203,4 +198,23 @@ function candidateSource(c: AnalysisCandidate, parentTurnId: string) {
   if (c.intent === 'meta_cognition') return { kind: 'meta_cognition' as const, parentTurnId };
   if (c.patternId) return { kind: 'pattern_intro' as const, patternId: c.patternId };
   return { kind: 'manual' as const, parentTurnId };
+}
+
+/**
+ * 候補からNextQuestionDraftを構築するヘルパー。
+ * deep_dive / meta_cognition は候補側に patternId が無いため、親タスクの patternId を継承する。
+ */
+export function buildDraftFromCandidate(
+  c: AnalysisCandidate,
+  task: AnalysisTask,
+): NextQuestionDraft {
+  // deep_dive / meta_cognition は親パターンを継承（候補側に patternId が無いため）
+  const inheritedPatternId =
+    c.intent === 'deep_dive' || c.intent === 'meta_cognition' ? task.patternId : c.patternId;
+  return {
+    questionText: c.text,
+    source: candidateSource(c, task.turnId),
+    patternId: inheritedPatternId,
+    fromAnalysisTaskId: task.turnId,
+  };
 }

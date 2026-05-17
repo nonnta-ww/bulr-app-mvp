@@ -24,26 +24,34 @@ export type SessionAction =
 export function sessionRunnerReducer(state: SessionState, action: SessionAction): SessionState {
   switch (action.type) {
     case 'START_RECORDING': {
-      const idx = state.agenda.findIndex((a) => a.id === action.itemId);
-      const updated =
-        idx >= 0
-          ? state.agenda.map((a, i) =>
-              i === idx ? { ...a, status: 'recording' as const, startedAt: action.startedAt } : a,
-            )
-          : [
-              ...state.agenda,
-              {
-                id: action.itemId,
-                patternId: state.nextDraft.patternId,
-                patternTitle: '',
-                questionText: state.nextDraft.questionText,
-                source: state.nextDraft.source,
-                status: 'recording' as const,
-                startedAt: action.startedAt,
-                endedAt: null,
-                analysisTaskId: null,
-              },
-            ];
+      // pattern_intro の場合は対応する draft-${patternId} を置換、それ以外は末尾に追加
+      const draftId =
+        state.nextDraft.source.kind === 'pattern_intro'
+          ? `draft-${state.nextDraft.source.patternId}`
+          : null;
+      const draftIdx = draftId ? state.agenda.findIndex((a) => a.id === draftId) : -1;
+      const existingPatternTitle =
+        draftIdx >= 0 ? state.agenda[draftIdx]?.patternTitle ?? '' : '';
+
+      const newItem: AgendaItem = {
+        id: action.itemId,
+        patternId: state.nextDraft.patternId,
+        patternTitle: existingPatternTitle,
+        questionText: state.nextDraft.questionText,
+        source: state.nextDraft.source,
+        status: 'recording',
+        startedAt: action.startedAt,
+        endedAt: null,
+        analysisTaskId: null,
+      };
+
+      const updated = [...state.agenda];
+      if (draftIdx >= 0) {
+        updated.splice(draftIdx, 1, newItem); // pattern_intro: 置換
+      } else {
+        updated.push(newItem); // deep_dive / meta_cognition / manual: 末尾追加
+      }
+
       return {
         ...state,
         agenda: updated,
