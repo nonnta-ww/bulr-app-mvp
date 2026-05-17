@@ -32,3 +32,6 @@ coverage
 # ローカル音声ストレージ（BLOB_STORAGE_PROVIDER=local-fs 時の保存先）
 apps/web/tmp/
 tmp/
+
+# Superpowers brainstorming session files (mockups, state)
+.superpowers/
