@@ -8,6 +8,7 @@ export interface AgendaPatternRowProps {
   taskStatuses: Record<string, { status: 'streaming' | 'completed' | 'errored'; step: string }>;
   onItemClick: (item: AgendaItem) => void;
   onItemAnalysisClick?: (turnId: string) => void;
+  onItemRetry?: (turnId: string) => void;
 }
 
 export function AgendaPatternRow({
@@ -16,6 +17,7 @@ export function AgendaPatternRow({
   taskStatuses,
   onItemClick,
   onItemAnalysisClick,
+  onItemRetry,
 }: AgendaPatternRowProps) {
   const hasRecording = items.some((i) => i.status === 'recording');
   const hasFuture = items.every((i) => i.status === 'future');
@@ -54,7 +56,7 @@ export function AgendaPatternRow({
               .join(' ')}
           >
             <span className="flex-1 truncate">{sourceLabel(item.source.kind)}</span>
-            {renderBadge(item, taskStatus, onItemAnalysisClick)}
+            {renderBadge(item, taskStatus, onItemAnalysisClick, onItemRetry)}
           </button>
         );
       })}
@@ -65,7 +67,7 @@ export function AgendaPatternRow({
 function sourceLabel(kind: AgendaItem['source']['kind']): string {
   switch (kind) {
     case 'pattern_intro':
-      return 'level_1_intro';
+      return '導入質問';
     case 'deep_dive':
       return '深掘り';
     case 'meta_cognition':
@@ -79,6 +81,7 @@ function renderBadge(
   item: AgendaItem,
   taskStatus: { status: 'streaming' | 'completed' | 'errored'; step: string } | null,
   onAnalysisClick?: (turnId: string) => void,
+  onRetry?: (turnId: string) => void,
 ) {
   if (item.status === 'recording') {
     return <span className="ml-auto rounded bg-gray-100 px-1 text-[9px]">録音中</span>;
@@ -112,7 +115,18 @@ function renderBadge(
     );
   }
   if (taskStatus?.status === 'errored') {
-    return <span className="ml-auto rounded bg-red-100 px-1 text-[9px] text-red-800">⚠</span>;
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (item.analysisTaskId && onRetry) onRetry(item.analysisTaskId);
+        }}
+        className="ml-auto rounded bg-red-100 px-1 text-[9px] text-red-800"
+      >
+        ⚠ 再試行
+      </button>
+    );
   }
   if (item.status === 'completed') {
     return <span className="ml-auto rounded bg-green-100 px-1 text-[9px] text-green-800">完了</span>;

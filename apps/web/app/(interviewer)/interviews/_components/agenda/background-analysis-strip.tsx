@@ -8,6 +8,7 @@ export interface BackgroundAnalysisStripProps {
   totalSec: number;
   patternTitleById: (id: string | null) => string;
   onChipClick: (turnId: string) => void;
+  onRetry?: (turnId: string) => void;
 }
 
 export function BackgroundAnalysisStrip({
@@ -16,6 +17,7 @@ export function BackgroundAnalysisStrip({
   totalSec,
   patternTitleById,
   onChipClick,
+  onRetry,
 }: BackgroundAnalysisStripProps) {
   return (
     <div
@@ -44,6 +46,17 @@ export function BackgroundAnalysisStrip({
           {task.status === 'errored' && '⚠'}
           <span>
             {patternTitleById(task.patternId)} {labelForStatus(task)}
+            {task.status === 'errored' && onRetry && (
+              <span
+                className="ml-1 cursor-pointer underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRetry(task.turnId);
+                }}
+              >
+                [再試行]
+              </span>
+            )}
           </span>
         </button>
       ))}

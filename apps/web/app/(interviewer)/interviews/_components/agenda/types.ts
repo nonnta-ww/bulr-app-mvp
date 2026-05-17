@@ -54,6 +54,8 @@ export interface AnalysisTask {
   error: string | null;
   abortController: AbortController;
   startedAt: number;
+  /** Retry payload — last spawn input, used by retry() */
+  retryFormData: FormData;
 }
 
 // ---- ピッカードラフト ----

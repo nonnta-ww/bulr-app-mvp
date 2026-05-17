@@ -114,7 +114,7 @@ export function InterviewSessionRunner({
   // State
   // ---------------------------------------------------------------------------
 
-  const [mode, setMode] = useState<Mode>('recording');
+  const [mode, setMode] = useState<Mode>('choosing');
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [currentTurnId, setCurrentTurnId] = useState<string>(() => nanoid(21));
 
@@ -221,7 +221,7 @@ export function InterviewSessionRunner({
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
+  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks, retry: retryAnalysisTask } = useAnalysisTasks({
     onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
     // `extras` (transcript/analysisNotes/proposalId) は省略。
     // useAnalysisTasks 内で AnalysisTask に格納済みなので analysisTasks.get(turnId) で参照可
@@ -230,6 +230,10 @@ export function InterviewSessionRunner({
       const item = sessionState.agenda.find((a) => a.id === turnId);
       const title = patternTitleByIdRef.current(item?.patternId ?? null);
       showToast(`${title} の分析が完了`);
+      // §6.3: openDrawerTaskId が null なら設定（自動で待機ドロワーを開く）
+      if (sessionState.openDrawerTaskId === null) {
+        dispatch({ type: 'OPEN_DRAWER', turnId });
+      }
     },
     onErrored: (turnId, error) => {
       dispatch({ type: 'TASK_ERRORED', turnId });
@@ -430,6 +434,7 @@ export function InterviewSessionRunner({
         taskStatuses={sessionState.taskStatuses}
         patternsDone={patternsDone}
         patternsTotal={plannedPatterns.length}
+        onItemRetry={retryAnalysisTask}
         onItemClick={(item) => {
           if (item.status === 'future' || item.status === 'queued') {
             dispatch({
@@ -457,6 +462,7 @@ export function InterviewSessionRunner({
               totalSec={2400}
               patternTitleById={patternTitleById}
               onChipClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
+              onRetry={retryAnalysisTask}
             />
           </div>
           <button

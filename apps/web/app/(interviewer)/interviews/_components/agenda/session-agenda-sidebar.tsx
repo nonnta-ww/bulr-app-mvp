@@ -12,6 +12,7 @@ export interface SessionAgendaSidebarProps {
   patternsTotal: number;
   onItemClick: (item: AgendaItem) => void;
   onAnalysisClick: (turnId: string) => void;
+  onItemRetry?: (turnId: string) => void;
 }
 
 export function SessionAgendaSidebar({
@@ -21,6 +22,7 @@ export function SessionAgendaSidebar({
   patternsTotal,
   onItemClick,
   onAnalysisClick,
+  onItemRetry,
 }: SessionAgendaSidebarProps) {
   const { width, collapsed, setWidth, setCollapsed, MIN_WIDTH, MAX_WIDTH } = useSidebarPrefs();
   const [isDragging, setIsDragging] = useState(false);
@@ -119,6 +121,7 @@ export function SessionAgendaSidebar({
             taskStatuses={taskStatuses}
             onItemClick={onItemClick}
             onItemAnalysisClick={onAnalysisClick}
+            onItemRetry={onItemRetry}
           />
         ))}
       </div>

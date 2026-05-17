@@ -61,6 +61,7 @@ export function useAnalysisTasks(callbacks: UseAnalysisTasksCallbacks) {
         error: null,
         abortController,
         startedAt: Date.now(),
+        retryFormData: formData,
       };
 
       setTasks((prev) => {
@@ -78,7 +79,18 @@ export function useAnalysisTasks(callbacks: UseAnalysisTasksCallbacks) {
     tasksRef.current.forEach((task) => task.abortController.abort());
   }, []);
 
-  return { tasks, spawn, abortAll };
+  const retry = useCallback(
+    (turnId: string) => {
+      const existing = tasksRef.current.get(turnId);
+      if (!existing) return;
+      // Abort previous (if still running) and spawn again with same params
+      existing.abortController.abort();
+      spawn({ turnId, patternId: existing.patternId, formData: existing.retryFormData });
+    },
+    [spawn],
+  );
+
+  return { tasks, spawn, abortAll, retry };
 }
 
 async function runAnalysis(
