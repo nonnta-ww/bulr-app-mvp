@@ -255,9 +255,10 @@ export function InterviewSessionRunner({
 
   const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
     onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
+    // `extras` (transcript/analysisNotes/proposalId) は省略。
+    // useAnalysisTasks 内で AnalysisTask に格納済みなので analysisTasks.get(turnId) で参照可
     onCompleted: (turnId, candidates) => {
       dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
-      // Find patternId from sessionState.agenda for title lookup
       const item = sessionState.agenda.find((a) => a.id === turnId);
       const title = patternTitleByIdRef.current(item?.patternId ?? null);
       showToast(`${title} の分析が完了`);
