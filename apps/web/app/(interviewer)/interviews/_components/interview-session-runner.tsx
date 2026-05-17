@@ -32,6 +32,7 @@ import { RecordingState } from './recording-state';
 import { SessionAgendaSidebar } from './agenda/session-agenda-sidebar';
 import { BackgroundAnalysisStrip } from './agenda/background-analysis-strip';
 import { AnalysisResultDrawer } from './agenda/analysis-result-drawer';
+import { FinalizeDialog } from './agenda/finalize-dialog';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -46,6 +47,8 @@ interface InterviewSessionRunnerProps {
 }
 
 type Mode = 'recording' | 'choosing' | 'finalizing';
+
+type FinalizeStep = 'idle' | 'confirm' | 'waiting';
 
 // API が受け付ける questionSource enum
 type QuestionSource = 'llm_candidate_1' | 'llm_candidate_2' | 'llm_candidate_3' | 'manual';
@@ -106,6 +109,7 @@ export function InterviewSessionRunner({
   // ---------------------------------------------------------------------------
 
   const [mode, setMode] = useState<Mode>('choosing');
+  const [finalizeStep, setFinalizeStep] = useState<FinalizeStep>('idle');
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [currentTurnId, setCurrentTurnId] = useState<string>(() => nanoid(21));
 
@@ -383,6 +387,19 @@ export function InterviewSessionRunner({
   }, [patternTitleById]);
 
   const taskList = useMemo(() => Array.from(analysisTasks.values()), [analysisTasks]);
+
+  const pendingTasks = useMemo(
+    () => taskList.filter((t) => t.status === 'streaming'),
+    [taskList],
+  );
+
+  // 待機モード中に全タスクが完了/エラーになったら自動ファイナライズ
+  useEffect(() => {
+    if (finalizeStep === 'waiting' && pendingTasks.length === 0) {
+      void handleFinalize();
+    }
+  }, [finalizeStep, pendingTasks.length, handleFinalize]);
+
   const drawerTask = sessionState.openDrawerTaskId
     ? analysisTasks.get(sessionState.openDrawerTaskId) ?? null
     : null;
@@ -458,9 +475,7 @@ export function InterviewSessionRunner({
           </div>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm('面接を終了しますか？')) void handleFinalize();
-            }}
+            onClick={() => setFinalizeStep('confirm')}
             className="rounded border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
           >
             面接終了
@@ -533,6 +548,19 @@ export function InterviewSessionRunner({
           onClose={() => dispatch({ type: 'OPEN_DRAWER', turnId: null })}
         />
       )}
+
+      <FinalizeDialog
+        open={finalizeStep === 'confirm' || finalizeStep === 'waiting'}
+        mode={finalizeStep === 'waiting' ? 'waiting' : 'confirm'}
+        pendingTasks={pendingTasks}
+        patternTitleById={patternTitleById}
+        onWait={() => setFinalizeStep('waiting')}
+        onForceClose={() => {
+          setFinalizeStep('idle');
+          void handleFinalize();
+        }}
+        onCancel={() => setFinalizeStep('idle')}
+      />
     </div>
   );
 }
