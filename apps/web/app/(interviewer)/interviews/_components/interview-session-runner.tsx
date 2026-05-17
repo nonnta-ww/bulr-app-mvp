@@ -33,6 +33,7 @@ import { SessionAgendaSidebar } from './agenda/session-agenda-sidebar';
 import { BackgroundAnalysisStrip } from './agenda/background-analysis-strip';
 import { AnalysisResultDrawer } from './agenda/analysis-result-drawer';
 import { FinalizeDialog } from './agenda/finalize-dialog';
+import { loadNextDraft, saveNextDraft, clearNextDraft } from './agenda/next-draft-storage';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -150,6 +151,26 @@ export function InterviewSessionRunner({
   );
 
   const initialDraft = useMemo<NextQuestionDraft>(() => {
+    // (1) localStorage に保存された前回のドラフトがあれば優先（リロード復元）。
+    //     pattern_intro の場合は、agenda 上で当該パターンが既に completed になっていれば
+    //     stale とみなして破棄。それ以外は plannedPatterns 内に patternId が存在することのみ確認。
+    const persisted = loadNextDraft(session.id);
+    if (persisted) {
+      const patternIdValid =
+        persisted.patternId === null ||
+        plannedPatterns.some((p) => p.id === persisted.patternId);
+      let isStalePatternIntro = false;
+      if (persisted.source.kind === 'pattern_intro') {
+        const introPatternId = persisted.source.patternId;
+        isStalePatternIntro = initialAgenda.some(
+          (a) => a.patternId === introPatternId && a.status === 'completed',
+        );
+      }
+      if (patternIdValid && !isStalePatternIntro) {
+        return persisted;
+      }
+    }
+    // (2) フォールバック: 未着手パターンの先頭の level_1_intro
     const firstFuture = initialAgenda.find((a) => a.status === 'future');
     if (firstFuture) {
       return {
@@ -159,13 +180,14 @@ export function InterviewSessionRunner({
         fromAnalysisTaskId: null,
       };
     }
+    // (3) 全パターン消化済み: 手動入力強制
     return {
       questionText: '',
       source: { kind: 'manual', parentTurnId: null },
       patternId: null,
       fromAnalysisTaskId: null,
     };
-  }, [initialAgenda]);
+  }, [initialAgenda, session.id, plannedPatterns]);
 
   const [sessionState, dispatch] = useReducer(sessionRunnerReducer, {
     agenda: initialAgenda,
@@ -195,6 +217,11 @@ export function InterviewSessionRunner({
     }, 1000);
     return () => clearInterval(timer);
   }, [startedAtMs]);
+
+  // nextDraft を localStorage に永続化（リロード復元用）
+  useEffect(() => {
+    saveNextDraft(session.id, sessionState.nextDraft);
+  }, [session.id, sessionState.nextDraft]);
 
   // patternTitleById を ref に保持（useAnalysisTasks callbacks で参照できるように）
   const patternTitleByIdRef = useRef<(id: string | null) => string>(() => 'フリー質問');
@@ -342,6 +369,8 @@ export function InterviewSessionRunner({
       });
 
       if (res.ok) {
+        // 面接終了時に永続化された draft をクリア（次回のセッションに紛れ込まないように）
+        clearNextDraft(session.id);
         router.push('/interviews/' + session.id + '/report');
       } else {
         showToast('エラーが発生しました');
