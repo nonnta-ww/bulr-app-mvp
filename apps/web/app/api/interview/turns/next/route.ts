@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { and, asc, desc, eq, lt, max, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, max, or, sql } from 'drizzle-orm';
 
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
@@ -269,16 +269,29 @@ export async function POST(request: Request): Promise<Response> {
 
         // Compute effectivePatternId (Req 24.1, design.md L1300):
         // - off_pattern なら null（pattern_id をクリア）
-        // - questionSource === 'manual' の場合は LLM の matched_pattern_id を採用（exact/inferred_high のみ）
-        // - それ以外は入力の patternId
-        effectivePatternId = (() => {
+        // - input.patternId が提供されていればそれを優先（agenda pick / 候補選択など、クライアントが
+        //   既知パターンを指定している場合は信頼）
+        // - input.patternId が null かつ questionSource === 'manual' の場合のみ LLM の
+        //   matched_pattern_id を採用（exact/inferred_high のみ）。LLM が code（例 "D-01"）と
+        //   id を混同するケースに備え、id と code 両方で照合して正規の id に解決する
+        effectivePatternId = await (async (): Promise<string | null> => {
           if (analysisResult.pattern_match_confidence === 'off_pattern') return null;
-          if (input.questionSource === 'manual') {
-            return ['exact', 'inferred_high'].includes(analysisResult.pattern_match_confidence)
-              ? (analysisResult.matched_pattern_id ?? null)
-              : null;
-          }
-          return input.patternId ?? null;
+          if (input.patternId) return input.patternId;
+          if (input.questionSource !== 'manual') return null;
+          const llmMatched = ['exact', 'inferred_high'].includes(
+            analysisResult.pattern_match_confidence,
+          )
+            ? (analysisResult.matched_pattern_id ?? null)
+            : null;
+          if (!llmMatched) return null;
+          // LLM 値を id または code として DB 上の正規 id に解決
+          const row = await db.query.assessmentPattern.findFirst({
+            where: or(
+              eq(schema.assessmentPattern.id, llmMatched),
+              eq(schema.assessmentPattern.code, llmMatched),
+            ),
+          });
+          return row?.id ?? null;
         })();
 
         // 19. DB transaction: insert turn + increment rate limit counters atomically (Req 7.15, 7.16)
