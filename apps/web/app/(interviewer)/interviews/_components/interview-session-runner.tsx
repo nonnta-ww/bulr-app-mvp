@@ -226,6 +226,9 @@ export function InterviewSessionRunner({
   // AbortController — unmount 時の fetch クリーンアップ用
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // patternTitleById を ref に保持（useAnalysisTasks callbacks で参照できるように）
+  const patternTitleByIdRef = useRef<(id: string | null) => string>(() => 'フリー質問');
+
   // トースト通知
   const [toast, setToast] = useState<string | null>(null);
 
@@ -254,11 +257,15 @@ export function InterviewSessionRunner({
     onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
     onCompleted: (turnId, candidates) => {
       dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
-      showToast('分析が完了しました');
+      // Find patternId from sessionState.agenda for title lookup
+      const item = sessionState.agenda.find((a) => a.id === turnId);
+      const title = patternTitleByIdRef.current(item?.patternId ?? null);
+      showToast(`${title} の分析が完了`);
     },
     onErrored: (turnId, error) => {
       dispatch({ type: 'TASK_ERRORED', turnId });
-      showToast('分析失敗: ' + error);
+      void error;
+      showToast('分析失敗。再試行できます');
     },
   });
 
@@ -483,6 +490,11 @@ export function InterviewSessionRunner({
     },
     [plannedPatterns],
   );
+
+  // Update ref for useAnalysisTasks callbacks
+  useEffect(() => {
+    patternTitleByIdRef.current = patternTitleById;
+  }, [patternTitleById]);
 
   const taskList = useMemo(() => Array.from(analysisTasks.values()), [analysisTasks]);
   const drawerTask = sessionState.openDrawerTaskId
