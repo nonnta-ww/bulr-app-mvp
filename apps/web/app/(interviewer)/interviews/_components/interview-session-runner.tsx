@@ -33,6 +33,9 @@ import type { AssessmentPattern } from '@bulr/db/schema';
 import { selectProposalChoice } from '@/lib/actions/select-proposal-choice';
 import { RecordingState } from './recording-state';
 import { ProposalChoiceState } from './proposal-choice-state';
+import { SessionAgendaSidebar } from './agenda/session-agenda-sidebar';
+import { BackgroundAnalysisStrip } from './agenda/background-analysis-strip';
+import { AnalysisResultDrawer } from './agenda/analysis-result-drawer';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -154,8 +157,8 @@ export function InterviewSessionRunner({
     },
   });
 
-  // Used in Tasks 12-14
-  void sessionState; void dispatch; void analysisTasks; void spawnAnalysisTask; void abortAllAnalysisTasks;
+  // spawnAnalysisTask / abortAllAnalysisTasks are wired in Task 14
+  void spawnAnalysisTask; void abortAllAnalysisTasks;
 
   // 最新ターンのトランスクリプトと分析メモ（初期値は props から設定）
   const [lastTurnTranscript, setLastTurnTranscript] = useState<{ candidate: string }>(() => {
@@ -444,8 +447,21 @@ export function InterviewSessionRunner({
     totalSec: 2400,
   };
 
+  const patternTitleById = useCallback(
+    (id: string | null) => {
+      if (!id) return 'フリー質問';
+      return plannedPatterns.find((p) => p.id === id)?.title ?? '不明';
+    },
+    [plannedPatterns],
+  );
+
+  const taskList = useMemo(() => Array.from(analysisTasks.values()), [analysisTasks]);
+  const drawerTask = sessionState.openDrawerTaskId
+    ? analysisTasks.get(sessionState.openDrawerTaskId) ?? null
+    : null;
+
   return (
-    <div className="relative">
+    <div className="relative flex h-[calc(100vh-3rem)]">
       {/* トースト通知 */}
       {toast !== null && (
         <div
@@ -456,57 +472,96 @@ export function InterviewSessionRunner({
         </div>
       )}
 
-      {/* モード別レンダリング */}
-      {mode === 'recording' && (
-        <RecordingState
-          currentQuestion={currentQuestion}
-          patternTitle={currentPatternTitle}
-          progress={progress}
-          onSubmit={handleRecordingSubmit}
+      <SessionAgendaSidebar
+        agenda={sessionState.agenda}
+        taskStatuses={sessionState.taskStatuses}
+        patternsDone={patternsDone}
+        patternsTotal={plannedPatterns.length}
+        onItemClick={(item) => {
+          if (item.status === 'future' || item.status === 'queued') {
+            dispatch({
+              type: 'SET_NEXT_DRAFT',
+              draft: {
+                questionText: item.questionText,
+                source: item.source,
+                patternId: item.patternId,
+                fromAnalysisTaskId: null,
+              },
+            });
+          } else if (item.analysisTaskId) {
+            dispatch({ type: 'OPEN_DRAWER', turnId: item.analysisTaskId });
+          }
+        }}
+        onAnalysisClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
+      />
+
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+        <BackgroundAnalysisStrip
+          tasks={taskList}
+          elapsedSec={elapsedSec}
+          totalSec={2400}
+          patternTitleById={patternTitleById}
+          onChipClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
         />
-      )}
 
-      {mode === 'choosing' && (
-        <ProposalChoiceState
-          lastTurnTranscript={lastTurnTranscript}
-          lastTurnAnalysisNotes={lastTurnAnalysisNotes}
-          proposal={currentProposal}
-          regenerating={regenerating}
-          onChoice={handleChoice}
-          onRegenerate={handleRegenerate}
-          onFinalize={handleFinalize}
+        {/* モード別レンダリング */}
+        {mode === 'recording' && (
+          <RecordingState
+            currentQuestion={currentQuestion}
+            patternTitle={currentPatternTitle}
+            progress={progress}
+            onSubmit={handleRecordingSubmit}
+          />
+        )}
+
+        {mode === 'choosing' && (
+          <ProposalChoiceState
+            lastTurnTranscript={lastTurnTranscript}
+            lastTurnAnalysisNotes={lastTurnAnalysisNotes}
+            proposal={currentProposal}
+            regenerating={regenerating}
+            onChoice={handleChoice}
+            onRegenerate={handleRegenerate}
+            onFinalize={handleFinalize}
+          />
+        )}
+
+        {mode === 'loading' && <InterviewProgressSteps currentStep={progressStep} />}
+
+        {mode === 'finalizing' && (
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-12 shadow-md">
+            <svg
+              className="h-8 w-8 animate-spin text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+            <p className="text-sm text-gray-600">処理中...</p>
+          </div>
+        )}
+      </div>
+
+      {drawerTask && (
+        <AnalysisResultDrawer
+          task={drawerTask}
+          patternTitleById={patternTitleById}
+          onClose={() => dispatch({ type: 'OPEN_DRAWER', turnId: null })}
         />
-      )}
-
-      {mode === 'loading' && (
-        <InterviewProgressSteps currentStep={progressStep} />
-      )}
-
-      {mode === 'finalizing' && (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-12 shadow-md">
-          <svg
-            className="h-8 w-8 animate-spin text-blue-600"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
-          <p className="text-sm text-gray-600">処理中...</p>
-        </div>
       )}
     </div>
   );
