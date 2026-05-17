@@ -10,7 +10,12 @@
  * Requirements: 5.1, 5.3, 5.6, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useReducer } from 'react';
+import { buildInitialAgenda } from './agenda/build-initial-agenda';
+import { sessionRunnerReducer } from './agenda/session-runner-reducer';
+import type { SessionState } from './agenda/session-runner-reducer';
+import type { NextQuestionDraft } from './agenda/types';
+import { useAnalysisTasks } from './agenda/use-analysis-tasks';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 
@@ -102,6 +107,55 @@ export function InterviewSessionRunner({
     // M1: pattern が解決できない場合は「フリー質問」
     return p ? p.title : 'フリー質問';
   }, [plannedPatterns, currentPatternIndex]);
+
+  // ---- 新状態モデル（Task 11: 並走、まだUI未使用） ----
+  // mount 時の初期値のみ使用。props 変化に追従しない（reducer が以後の状態を管理）
+  const initialAgenda = useMemo(
+    () => buildInitialAgenda(plannedPatterns, turns),
+    [plannedPatterns, turns],
+  );
+
+  const initialDraft = useMemo<NextQuestionDraft>(() => {
+    const firstFuture = initialAgenda.find((a) => a.status === 'future');
+    if (firstFuture) {
+      return {
+        questionText: firstFuture.questionText,
+        source: firstFuture.source,
+        patternId: firstFuture.patternId,
+        fromAnalysisTaskId: null,
+      };
+    }
+    return {
+      questionText: '',
+      source: { kind: 'manual', parentTurnId: null },
+      patternId: null,
+      fromAnalysisTaskId: null,
+    };
+  }, [initialAgenda]);
+
+  const [sessionState, dispatch] = useReducer(sessionRunnerReducer, {
+    agenda: initialAgenda,
+    phase: 'picking',
+    currentItemId: null,
+    nextDraft: initialDraft,
+    openDrawerTaskId: null,
+    taskStatuses: {},
+  } satisfies SessionState);
+
+  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
+    onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
+    onCompleted: (turnId, candidates) => {
+      dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
+    },
+    onErrored: (turnId, error) => {
+      dispatch({ type: 'TASK_ERRORED', turnId });
+      // Toast 表示は後続タスクで結合
+      void error;
+    },
+  });
+
+  // Used in Tasks 12-14
+  void sessionState; void dispatch; void analysisTasks; void spawnAnalysisTask; void abortAllAnalysisTasks;
 
   // 最新ターンのトランスクリプトと分析メモ（初期値は props から設定）
   const [lastTurnTranscript, setLastTurnTranscript] = useState<{ candidate: string }>(() => {
