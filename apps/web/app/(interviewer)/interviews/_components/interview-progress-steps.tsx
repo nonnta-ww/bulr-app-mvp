@@ -32,13 +32,16 @@ const STEP_ORDER: ProgressStep[] = ['upload', 'transcribe', 'analyze', 'prepare'
 export interface InterviewProgressStepsProps {
   /** サーバーから最後に受信した progress.step */
   currentStep: ProgressStep;
+  /** Compact layout for use in drawers/sidebars (styling applied in next task) */
+  compact?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // InterviewProgressSteps Component
 // ---------------------------------------------------------------------------
 
-export function InterviewProgressSteps({ currentStep }: InterviewProgressStepsProps) {
+export function InterviewProgressSteps({ currentStep, compact = false }: InterviewProgressStepsProps) {
+  const _useCompactInTask10 = compact;
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   return (
