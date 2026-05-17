@@ -148,9 +148,20 @@ export async function POST(request: Request): Promise<Response> {
 
   const stream = new ReadableStream({
     async start(controller) {
+      // クライアント切断（unmount / abort / retry）で controller が closed の状態でも
+      // バックグラウンド処理が enqueue を試みると ERR_INVALID_STATE を投げるため、
+      // closed フラグで防御する。closed 後の enqueue は黙って no-op。
+      let closed = false;
       function enqueue(event: TurnsNextEvent) {
+        if (closed) return;
         const validated = TurnsNextEvent.parse(event);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(validated)}\n\n`));
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(validated)}\n\n`));
+        } catch (err) {
+          // Controller already closed — typically client disconnect mid-stream
+          closed = true;
+          console.warn('[turns/next] enqueue after close — ignored', err);
+        }
       }
 
       // 7. Idempotency check (inside stream)
@@ -190,7 +201,10 @@ export async function POST(request: Request): Promise<Response> {
           transitionCoverage: null,
           proposal: existingProposal ?? null,
         });
-        controller.close();
+        if (!closed) {
+          closed = true;
+          try { controller.close(); } catch { /* already closed */ }
+        }
         return;
       }
 
@@ -371,7 +385,10 @@ export async function POST(request: Request): Promise<Response> {
         // Cannot return HTTP 429 from inside a stream; send error event instead.
         console.error('[turns/next] Core phase failed', e);
         enqueue({ type: 'error', code: 'core_phase_failed', retryable: true });
-        controller.close();
+        if (!closed) {
+          closed = true;
+          try { controller.close(); } catch { /* already closed */ }
+        }
         return;
       }
 
@@ -538,7 +555,10 @@ export async function POST(request: Request): Promise<Response> {
 
       // Complete event: includes full payload (turn, coverage, transitionCoverage, proposal)
       enqueue({ type: 'complete', turn: insertedTurn, coverage, transitionCoverage, proposal });
-      controller.close();
+      if (!closed) {
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
+      }
     },
   });
 
