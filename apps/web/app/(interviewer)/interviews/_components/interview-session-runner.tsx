@@ -14,8 +14,9 @@ import { useState, useEffect, useCallback, useMemo, useRef, useReducer } from 'r
 import { buildInitialAgenda } from './agenda/build-initial-agenda';
 import { sessionRunnerReducer } from './agenda/session-runner-reducer';
 import type { SessionState } from './agenda/session-runner-reducer';
-import type { NextQuestionDraft } from './agenda/types';
+import type { AnalysisTask, NextQuestionDraft } from './agenda/types';
 import { useAnalysisTasks } from './agenda/use-analysis-tasks';
+import { NextQuestionPicker } from './agenda/next-question-picker';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 
@@ -32,7 +33,7 @@ import type { AssessmentPattern } from '@bulr/db/schema';
 
 import { selectProposalChoice } from '@/lib/actions/select-proposal-choice';
 import { RecordingState } from './recording-state';
-import { ProposalChoiceState } from './proposal-choice-state';
+import { ProposalChoiceState as _ProposalChoiceState } from './proposal-choice-state';
 import { SessionAgendaSidebar } from './agenda/session-agenda-sidebar';
 import { BackgroundAnalysisStrip } from './agenda/background-analysis-strip';
 import { AnalysisResultDrawer } from './agenda/analysis-result-drawer';
@@ -330,6 +331,39 @@ export function InterviewSessionRunner({
   );
 
   // ---------------------------------------------------------------------------
+  // State B': NextQuestionPicker → handleStartRecording
+  // ---------------------------------------------------------------------------
+
+  const handleStartRecording = useCallback(() => {
+    const itemId = nanoid(21);
+    dispatch({ type: 'START_RECORDING', itemId, startedAt: Date.now() });
+    setCurrentTurnId(itemId);
+    setCurrentQuestion(sessionState.nextDraft.questionText);
+
+    // 候補配列のインデックスから 'llm_candidate_1/2/3' を決定。マッチしなければ 'manual'
+    const fromTaskId = sessionState.nextDraft.fromAnalysisTaskId;
+    const fromTask = fromTaskId ? analysisTasks.get(fromTaskId) : null;
+    const candidateIdx = fromTask?.candidates
+      ? fromTask.candidates.findIndex((c) => c.text === sessionState.nextDraft.questionText)
+      : -1;
+    const nextSource: QuestionSource =
+      candidateIdx === 0 ? 'llm_candidate_1'
+      : candidateIdx === 1 ? 'llm_candidate_2'
+      : candidateIdx === 2 ? 'llm_candidate_3'
+      : 'manual';
+    setCurrentQuestionSource(nextSource);
+    setCurrentProposalId(fromTask?.proposalId ?? null);
+
+    // patternId 追跡（FormData の patternId 送信用に既存 index 整合）
+    if (sessionState.nextDraft.patternId) {
+      const idx = plannedPatterns.findIndex((p) => p.id === sessionState.nextDraft.patternId);
+      if (idx >= 0) setCurrentPatternIndex(idx);
+    }
+
+    setMode('recording');
+  }, [sessionState.nextDraft, analysisTasks, plannedPatterns]);
+
+  // ---------------------------------------------------------------------------
   // State B: choosing → onChoice ハンドラ
   // ---------------------------------------------------------------------------
 
@@ -402,6 +436,10 @@ export function InterviewSessionRunner({
     }
   }, [session.id, lastInsertedTurnId, showToast]);
 
+  // handleChoice / handleRegenerate / legacy state vars are removed in Task 15
+  void handleChoice; void handleRegenerate; void regenerating; void currentProposal; void setCurrentProposal;
+  void lastTurnTranscript; void lastTurnAnalysisNotes;
+
   // ---------------------------------------------------------------------------
   // State B: choosing → onFinalize ハンドラ
   // ---------------------------------------------------------------------------
@@ -426,6 +464,7 @@ export function InterviewSessionRunner({
       setMode('choosing');
     }
   }, [session.id, router, showToast]);
+  void handleFinalize;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -459,6 +498,27 @@ export function InterviewSessionRunner({
   const drawerTask = sessionState.openDrawerTaskId
     ? analysisTasks.get(sessionState.openDrawerTaskId) ?? null
     : null;
+
+  const latestCompletedTask = useMemo<AnalysisTask | null>(() => {
+    let latest: AnalysisTask | null = null;
+    for (const t of analysisTasks.values()) {
+      if (t.status === 'completed' && (!latest || t.startedAt > latest.startedAt)) {
+        latest = t;
+      }
+    }
+    return latest;
+  }, [analysisTasks]);
+
+  const futureItems = useMemo(
+    () => sessionState.agenda.filter((a) => a.status === 'future'),
+    [sessionState.agenda],
+  );
+
+  const newCandidatesAvailable = useMemo<{ taskId: string } | null>(() => {
+    if (!latestCompletedTask) return null;
+    if (sessionState.nextDraft.fromAnalysisTaskId === latestCompletedTask.turnId) return null;
+    return { taskId: latestCompletedTask.turnId };
+  }, [latestCompletedTask, sessionState.nextDraft.fromAnalysisTaskId]);
 
   return (
     <div className="relative flex h-[calc(100vh-3rem)]">
@@ -515,14 +575,32 @@ export function InterviewSessionRunner({
         )}
 
         {mode === 'choosing' && (
-          <ProposalChoiceState
-            lastTurnTranscript={lastTurnTranscript}
-            lastTurnAnalysisNotes={lastTurnAnalysisNotes}
-            proposal={currentProposal}
-            regenerating={regenerating}
-            onChoice={handleChoice}
-            onRegenerate={handleRegenerate}
-            onFinalize={handleFinalize}
+          <NextQuestionPicker
+            draft={sessionState.nextDraft}
+            latestCompletedTask={latestCompletedTask}
+            futureItems={futureItems}
+            onDraftChange={(draft) => dispatch({ type: 'SET_NEXT_DRAFT', draft })}
+            onStartRecording={handleStartRecording}
+            newCandidatesAvailable={newCandidatesAvailable}
+            onSwitchToNewerCandidates={(taskId) => {
+              const t = analysisTasks.get(taskId);
+              if (!t || !t.candidates) return;
+              const c = t.candidates[0];
+              if (!c) return;
+              dispatch({
+                type: 'SET_NEXT_DRAFT',
+                draft: {
+                  questionText: c.text,
+                  source:
+                    c.intent === 'deep_dive' ? { kind: 'deep_dive', parentTurnId: t.turnId }
+                    : c.intent === 'meta_cognition' ? { kind: 'meta_cognition', parentTurnId: t.turnId }
+                    : c.patternId ? { kind: 'pattern_intro', patternId: c.patternId }
+                    : { kind: 'manual', parentTurnId: t.turnId },
+                  patternId: c.patternId,
+                  fromAnalysisTaskId: t.turnId,
+                },
+              });
+            }}
           />
         )}
 
