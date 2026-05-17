@@ -40,12 +40,19 @@ export function AgendaPatternRow({
       {items.map((item) => {
         const taskStatus = item.analysisTaskId ? (taskStatuses[item.analysisTaskId] ?? null) : null;
         return (
-          <button
+          <div
             key={item.id}
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={() => onItemClick(item)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onItemClick(item);
+              }
+            }}
             className={[
-              'flex w-full items-start gap-1 rounded px-1 py-0.5 pl-4 text-left text-[11px] leading-tight',
+              'flex w-full cursor-pointer items-start gap-1 rounded px-1 py-0.5 pl-4 text-left text-[11px] leading-tight focus:outline-none focus:ring-1 focus:ring-blue-400',
               item.status === 'recording' && 'bg-red-50 text-red-700 font-semibold',
               item.status === 'queued' && 'bg-blue-50 text-blue-700',
               item.status === 'asked' && 'text-blue-700',
@@ -57,7 +64,7 @@ export function AgendaPatternRow({
           >
             <span className="flex-1 truncate">{sourceLabel(item.source.kind)}</span>
             {renderBadge(item, taskStatus, onItemAnalysisClick, onItemRetry)}
-          </button>
+          </div>
         );
       })}
     </div>
