@@ -4,8 +4,9 @@
  * InterviewSessionRunner Client Component
  *
  * ライブ面接セッションのメインオーケストレーターコンポーネント。
- * recording → loading → choosing のモード遷移を管理し、
+ * recording → choosing のモード遷移を管理し、
  * 録音送信・質問選択・面接終了の一連のフローを制御する。
+ * Model B: 分析はバックグラウンドで並走し、UI は即座に picker へ遷移する。
  *
  * Requirements: 5.1, 5.3, 5.6, 6.1, 6.9, 7.12, 7.13, 7.14, 7.15
  */
@@ -14,16 +15,12 @@ import { useState, useEffect, useCallback, useMemo, useRef, useReducer } from 'r
 import { buildInitialAgenda } from './agenda/build-initial-agenda';
 import { sessionRunnerReducer } from './agenda/session-runner-reducer';
 import type { SessionState } from './agenda/session-runner-reducer';
-import type { AnalysisTask, NextQuestionDraft } from './agenda/types';
+import type { AgendaItem, AnalysisTask, NextQuestionDraft } from './agenda/types';
 import { useAnalysisTasks } from './agenda/use-analysis-tasks';
 import { NextQuestionPicker } from './agenda/next-question-picker';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 
-import { parseSseStream, StreamEndedWithoutTerminalEvent } from '@/lib/interview/parse-sse-stream';
-import { TurnsNextEvent } from '@/lib/interview/turns-next-events';
-import type { ProgressStep } from '@/lib/interview/turns-next-events';
-import { InterviewProgressSteps } from './interview-progress-steps';
 
 import type { InterviewSession } from '@bulr/db/schema';
 import type { InterviewTurn } from '@bulr/db/schema';
@@ -50,10 +47,57 @@ interface InterviewSessionRunnerProps {
   plannedPatterns: AssessmentPattern[];
 }
 
-type Mode = 'recording' | 'choosing' | 'loading' | 'finalizing';
+type Mode = 'recording' | 'choosing' | 'finalizing';
 
 // API が受け付ける questionSource enum
 type QuestionSource = 'llm_candidate_1' | 'llm_candidate_2' | 'llm_candidate_3' | 'manual';
+
+// ---------------------------------------------------------------------------
+// pickNextDraft ヘルパー（spec §6.2 step 4 の優先順位で次の質問 draft を決定）
+// ---------------------------------------------------------------------------
+
+function pickNextDraft(
+  agenda: AgendaItem[],
+  tasks: Map<string, AnalysisTask>,
+): NextQuestionDraft {
+  // (a) 完了済み AnalysisTask の最新があれば第1候補
+  let latest: AnalysisTask | null = null;
+  for (const t of tasks.values()) {
+    if (t.status === 'completed' && (!latest || t.startedAt > latest.startedAt)) latest = t;
+  }
+  if (latest && latest.candidates && latest.candidates.length > 0) {
+    const c = latest.candidates[0];
+    if (c) {
+      return {
+        questionText: c.text,
+        source:
+          c.intent === 'deep_dive' ? { kind: 'deep_dive', parentTurnId: latest.turnId }
+          : c.intent === 'meta_cognition' ? { kind: 'meta_cognition', parentTurnId: latest.turnId }
+          : c.patternId ? { kind: 'pattern_intro', patternId: c.patternId }
+          : { kind: 'manual', parentTurnId: latest.turnId },
+        patternId: c.patternId,
+        fromAnalysisTaskId: latest.turnId,
+      };
+    }
+  }
+  // (b) 未着手パターンの先頭の level_1_intro
+  const firstFuture = agenda.find((a) => a.status === 'future');
+  if (firstFuture) {
+    return {
+      questionText: firstFuture.questionText,
+      source: firstFuture.source,
+      patternId: firstFuture.patternId,
+      fromAnalysisTaskId: null,
+    };
+  }
+  // (c) 手動入力強制
+  return {
+    questionText: '',
+    source: { kind: 'manual', parentTurnId: null },
+    patternId: null,
+    fromAnalysisTaskId: null,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // InterviewSessionRunner Component
@@ -146,21 +190,6 @@ export function InterviewSessionRunner({
     taskStatuses: {},
   } satisfies SessionState);
 
-  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
-    onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
-    onCompleted: (turnId, candidates) => {
-      dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
-    },
-    onErrored: (turnId, error) => {
-      dispatch({ type: 'TASK_ERRORED', turnId });
-      // Toast 表示は後続タスクで結合
-      void error;
-    },
-  });
-
-  // spawnAnalysisTask / abortAllAnalysisTasks are wired in Task 14
-  void spawnAnalysisTask; void abortAllAnalysisTasks;
-
   // 最新ターンのトランスクリプトと分析メモ（初期値は props から設定）
   const [lastTurnTranscript, setLastTurnTranscript] = useState<{ candidate: string }>(() => {
     const last = turns.length > 0 ? turns[turns.length - 1] : undefined;
@@ -194,9 +223,6 @@ export function InterviewSessionRunner({
     return () => clearInterval(timer);
   }, [startedAtMs]);
 
-  // SSE 進捗ステップ
-  const [progressStep, setProgressStep] = useState<ProgressStep>('upload');
-
   // AbortController — unmount 時の fetch クリーンアップ用
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -224,24 +250,33 @@ export function InterviewSessionRunner({
     };
   }, []);
 
+  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
+    onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
+    onCompleted: (turnId, candidates) => {
+      dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
+      showToast('分析が完了しました');
+    },
+    onErrored: (turnId, error) => {
+      dispatch({ type: 'TASK_ERRORED', turnId });
+      showToast('分析失敗: ' + error);
+    },
+  });
+
   // ---------------------------------------------------------------------------
   // State A: recording → onSubmit ハンドラ
   // ---------------------------------------------------------------------------
 
   const handleRecordingSubmit = useCallback(
     async (audio: Blob, durationMs: number) => {
-      setMode('loading');
-      setProgressStep('upload'); // 進捗ステップをリセット
+      const turnId = currentTurnId;
 
+      // FormData 構築（既存と同じスキーマ）
       const formData = new FormData();
       formData.append('audio', audio);
-      formData.append('turnId', currentTurnId);
+      formData.append('turnId', turnId);
       formData.append('sessionId', session.id);
-      // C1: API enum に一致する値を送信
       formData.append('questionSource', currentQuestionSource);
-      // questionText は manual の場合は空文字、proposal 選択時は選択した候補テキスト
       formData.append('questionText', currentQuestion);
-      // C2: proposalId / patternId を append（存在する場合のみ）
       if (currentQuestionSource !== 'manual' && currentProposalId) {
         formData.append('proposalId', currentProposalId);
       }
@@ -250,83 +285,36 @@ export function InterviewSessionRunner({
       }
       formData.append('durationMs', String(durationMs));
 
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
+      // 次の draft を決定 (spec §6.2 step 4)
+      const nextDraft = pickNextDraft(sessionState.agenda, analysisTasks);
 
-      try {
-        const res = await fetch('/api/interview/turns/next', {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal,
-        });
+      // 1. 状態遷移: 現 item を asked、taskStatuses に streaming を記録、phase='picking'
+      dispatch({
+        type: 'SUBMIT_RECORDING',
+        itemId: turnId,
+        endedAt: Date.now(),
+        nextDraft,
+      });
 
-        // ストリーム開始前の HTTP エラーハンドラ（4xx）
-        if (!res.ok) {
-          if (res.status === 429) {
-            showToast('レート制限超過');
-            setMode('recording');
-            return;
-          }
-          // その他の HTTP エラー
-          showToast('エラーが発生しました');
-          setMode('recording');
-          return;
-        }
+      // 2. 分析タスクを spawn（背景で SSE 受信）
+      spawnAnalysisTask({ turnId, patternId: currentPatternId, formData });
 
-        if (!res.body) {
-          showToast('エラーが発生しました');
-          setMode('recording');
-          return;
-        }
+      // 3. UI を即 picker に（loading をスキップ）
+      setMode('choosing');
 
-        // SSE ストリームを逐次消費
-        const reader = res.body.getReader();
-
-        for await (const event of parseSseStream(
-          reader,
-          TurnsNextEvent,
-          (e) => e.type !== 'progress',
-        )) {
-          if (event.type === 'progress') {
-            setProgressStep(event.step);
-          } else if (event.type === 'complete') {
-            setLastInsertedTurnId(event.turn.id);
-            // 最新ターンのデータを更新
-            setLastTurnTranscript({ candidate: event.turn.transcript?.candidate ?? '' });
-            setLastTurnAnalysisNotes(event.turn.llm_analysis?.notes ?? '');
-            setCurrentProposal(event.proposal);
-            // M2: ローカル turns に追記（completed coverage 計算用）
-            setLocalTurns((prev) => [...prev, event.turn]);
-            setMode('choosing');
-          } else if (event.type === 'error') {
-            showToast('処理に失敗しました。同じ録音で再試行できます');
-            setMode('recording');
-            // 同じ turnId を保持（冪等性のため）
-            return;
-          }
-        }
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') {
-          // unmount クリーンアップによる中断 — state 更新しない
-          return;
-        }
-        if (e instanceof StreamEndedWithoutTerminalEvent) {
-          showToast('処理に失敗しました。同じ録音で再試行できます');
-          setMode('recording');
-          return;
-        }
-        showToast('エラーが発生しました');
-        setMode('recording');
-      }
+      // 4. 次ターン用の turnId を準備
+      setCurrentTurnId(nanoid(21));
     },
     [
-      currentQuestion,
+      currentTurnId,
       currentQuestionSource,
+      currentQuestion,
       currentProposalId,
       currentPatternId,
-      currentTurnId,
       session.id,
-      showToast,
+      sessionState.agenda,
+      analysisTasks,
+      spawnAnalysisTask,
     ],
   );
 
@@ -439,13 +427,16 @@ export function InterviewSessionRunner({
   // handleChoice / handleRegenerate / legacy state vars are removed in Task 15
   void handleChoice; void handleRegenerate; void regenerating; void currentProposal; void setCurrentProposal;
   void lastTurnTranscript; void lastTurnAnalysisNotes;
+  void setLastInsertedTurnId; void setLastTurnTranscript; void setLastTurnAnalysisNotes; void setLocalTurns;
 
   // ---------------------------------------------------------------------------
   // State B: choosing → onFinalize ハンドラ
   // ---------------------------------------------------------------------------
 
   const handleFinalize = useCallback(async () => {
+    abortAllAnalysisTasks();
     setMode('finalizing');
+    dispatch({ type: 'START_FINALIZING' });
     try {
       const res = await fetch('/api/interview/finalize', {
         method: 'POST',
@@ -463,8 +454,7 @@ export function InterviewSessionRunner({
       showToast('エラーが発生しました');
       setMode('choosing');
     }
-  }, [session.id, router, showToast]);
-  void handleFinalize;
+  }, [abortAllAnalysisTasks, session.id, router, showToast]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -556,13 +546,26 @@ export function InterviewSessionRunner({
       />
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-        <BackgroundAnalysisStrip
-          tasks={taskList}
-          elapsedSec={elapsedSec}
-          totalSec={2400}
-          patternTitleById={patternTitleById}
-          onChipClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
-        />
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <BackgroundAnalysisStrip
+              tasks={taskList}
+              elapsedSec={elapsedSec}
+              totalSec={2400}
+              patternTitleById={patternTitleById}
+              onChipClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('面接を終了しますか？')) void handleFinalize();
+            }}
+            className="rounded border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+          >
+            面接終了
+          </button>
+        </div>
 
         {/* モード別レンダリング */}
         {mode === 'recording' && (
@@ -603,8 +606,6 @@ export function InterviewSessionRunner({
             }}
           />
         )}
-
-        {mode === 'loading' && <InterviewProgressSteps currentStep={progressStep} />}
 
         {mode === 'finalizing' && (
           <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-12 shadow-md">
