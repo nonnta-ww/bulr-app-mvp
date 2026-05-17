@@ -150,27 +150,9 @@ export function InterviewSessionRunner({
     [plannedPatterns, turns],
   );
 
+  // SSR/CSR 一致のため初期値は決定論的（localStorage は使わない）。
+  // localStorage からの復元は mount 後の useEffect で SET_NEXT_DRAFT 経由で行う。
   const initialDraft = useMemo<NextQuestionDraft>(() => {
-    // (1) localStorage に保存された前回のドラフトがあれば優先（リロード復元）。
-    //     pattern_intro の場合は、agenda 上で当該パターンが既に completed になっていれば
-    //     stale とみなして破棄。それ以外は plannedPatterns 内に patternId が存在することのみ確認。
-    const persisted = loadNextDraft(session.id);
-    if (persisted) {
-      const patternIdValid =
-        persisted.patternId === null ||
-        plannedPatterns.some((p) => p.id === persisted.patternId);
-      let isStalePatternIntro = false;
-      if (persisted.source.kind === 'pattern_intro') {
-        const introPatternId = persisted.source.patternId;
-        isStalePatternIntro = initialAgenda.some(
-          (a) => a.patternId === introPatternId && a.status === 'completed',
-        );
-      }
-      if (patternIdValid && !isStalePatternIntro) {
-        return persisted;
-      }
-    }
-    // (2) フォールバック: 未着手パターンの先頭の level_1_intro
     const firstFuture = initialAgenda.find((a) => a.status === 'future');
     if (firstFuture) {
       return {
@@ -180,14 +162,13 @@ export function InterviewSessionRunner({
         fromAnalysisTaskId: null,
       };
     }
-    // (3) 全パターン消化済み: 手動入力強制
     return {
       questionText: '',
       source: { kind: 'manual', parentTurnId: null },
       patternId: null,
       fromAnalysisTaskId: null,
     };
-  }, [initialAgenda, session.id, plannedPatterns]);
+  }, [initialAgenda]);
 
   const [sessionState, dispatch] = useReducer(sessionRunnerReducer, {
     agenda: initialAgenda,
@@ -218,8 +199,34 @@ export function InterviewSessionRunner({
     return () => clearInterval(timer);
   }, [startedAtMs]);
 
-  // nextDraft を localStorage に永続化（リロード復元用）
+  // nextDraft の localStorage 永続化 + リロード復元。
+  // mount 直後に localStorage を読んで dispatch（hydration mismatch を避けるため初期 state では読まない）。
+  // 初回 mount で default 値を save しないように hydratedRef でガード。
+  const hydratedRef = useRef(false);
   useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    const persisted = loadNextDraft(session.id);
+    if (!persisted) return;
+    const patternIdValid =
+      persisted.patternId === null ||
+      plannedPatterns.some((p) => p.id === persisted.patternId);
+    let isStalePatternIntro = false;
+    if (persisted.source.kind === 'pattern_intro') {
+      const introPatternId = persisted.source.patternId;
+      isStalePatternIntro = sessionState.agenda.some(
+        (a) => a.patternId === introPatternId && a.status === 'completed',
+      );
+    }
+    if (patternIdValid && !isStalePatternIntro) {
+      dispatch({ type: 'SET_NEXT_DRAFT', draft: persisted });
+    }
+    // mount only — dependencies intentionally empty
+  }, []);
+
+  useEffect(() => {
+    // 初回 mount は load より先に走るのでスキップ。2 回目以降の変化時のみ保存。
+    if (!hydratedRef.current) return;
     saveNextDraft(session.id, sessionState.nextDraft);
   }, [session.id, sessionState.nextDraft]);
 
