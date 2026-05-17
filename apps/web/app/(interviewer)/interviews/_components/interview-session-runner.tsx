@@ -28,9 +28,7 @@ import type { QuestionProposal } from '@bulr/db/schema';
 import type { Candidate } from '@bulr/db/schema';
 import type { AssessmentPattern } from '@bulr/db/schema';
 
-import { selectProposalChoice } from '@/lib/actions/select-proposal-choice';
 import { RecordingState } from './recording-state';
-import { ProposalChoiceState as _ProposalChoiceState } from './proposal-choice-state';
 import { SessionAgendaSidebar } from './agenda/session-agenda-sidebar';
 import { BackgroundAnalysisStrip } from './agenda/background-analysis-strip';
 import { AnalysisResultDrawer } from './agenda/analysis-result-drawer';
@@ -106,7 +104,7 @@ function pickNextDraft(
 export function InterviewSessionRunner({
   session,
   turns,
-  latestProposal,
+  latestProposal: _latestProposal,
   candidate: _candidate,
   plannedPatterns,
 }: InterviewSessionRunnerProps) {
@@ -118,14 +116,7 @@ export function InterviewSessionRunner({
 
   const [mode, setMode] = useState<Mode>('recording');
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
-  const [currentProposal, setCurrentProposal] = useState<QuestionProposal | null>(latestProposal);
   const [currentTurnId, setCurrentTurnId] = useState<string>(() => nanoid(21));
-  const [regenerating, setRegenerating] = useState(false);
-  // M6: 初期値を turns 末尾の id にすることでリロード後の [再試行] による
-  // /api/interview/proposal/regenerate への afterTurnId 欠落（400）を防ぐ
-  const [lastInsertedTurnId, setLastInsertedTurnId] = useState<string | null>(
-    () => turns[turns.length - 1]?.id ?? null,
-  );
 
   // C1: 現在の質問の出所（LLM 提案の何番目か / manual）。recording→submit で API へ送信
   const [currentQuestionSource, setCurrentQuestionSource] = useState<QuestionSource>('manual');
@@ -190,19 +181,6 @@ export function InterviewSessionRunner({
     taskStatuses: {},
   } satisfies SessionState);
 
-  // 最新ターンのトランスクリプトと分析メモ（初期値は props から設定）
-  const [lastTurnTranscript, setLastTurnTranscript] = useState<{ candidate: string }>(() => {
-    const last = turns.length > 0 ? turns[turns.length - 1] : undefined;
-    return { candidate: last?.transcript.candidate ?? '' };
-  });
-  const [lastTurnAnalysisNotes, setLastTurnAnalysisNotes] = useState<string>(() => {
-    const last = turns.length > 0 ? turns[turns.length - 1] : undefined;
-    return last?.llm_analysis?.notes ?? '';
-  });
-
-  // M2: ローカル turns 状態（completed coverage 数の計算に使用）
-  const [localTurns, setLocalTurns] = useState<InterviewTurn[]>(turns);
-
   // M2: 経過秒数（session.started_at からの差分を 1 秒ごとに更新）
   const startedAtMs = useMemo<number | null>(() => {
     if (!session.started_at) return null;
@@ -223,9 +201,6 @@ export function InterviewSessionRunner({
     return () => clearInterval(timer);
   }, [startedAtMs]);
 
-  // AbortController — unmount 時の fetch クリーンアップ用
-  const abortControllerRef = useRef<AbortController | null>(null);
-
   // patternTitleById を ref に保持（useAnalysisTasks callbacks で参照できるように）
   const patternTitleByIdRef = useRef<(id: string | null) => string>(() => 'フリー質問');
 
@@ -245,13 +220,6 @@ export function InterviewSessionRunner({
     const timer = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(timer);
   }, [toast]);
-
-  // AbortController クリーンアップ（unmount 時に in-flight fetch を解放）
-  useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, []);
 
   const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks } = useAnalysisTasks({
     onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
@@ -360,84 +328,6 @@ export function InterviewSessionRunner({
   }, [sessionState.nextDraft, analysisTasks, plannedPatterns]);
 
   // ---------------------------------------------------------------------------
-  // State B: choosing → onChoice ハンドラ
-  // ---------------------------------------------------------------------------
-
-  const handleChoice = useCallback(
-    async (selectedIndex: 1 | 2 | 3 | null, questionText: string) => {
-      if (currentProposal?.id) {
-        await selectProposalChoice({
-          proposalId: currentProposal.id,
-          selectedIndex,
-        });
-      }
-
-      // C1/C2/M1: 次のターンの questionSource / proposalId / patternIndex を確定
-      if (selectedIndex === null) {
-        // manual: pattern index は維持、proposalId は送信しない
-        setCurrentQuestionSource('manual');
-        setCurrentProposalId(null);
-      } else {
-        setCurrentQuestionSource(
-          selectedIndex === 1
-            ? 'llm_candidate_1'
-            : selectedIndex === 2
-              ? 'llm_candidate_2'
-              : 'llm_candidate_3',
-        );
-        setCurrentProposalId(currentProposal?.id ?? null);
-
-        // intent === 'next_pattern' なら index を進める
-        const intent =
-          selectedIndex === 1
-            ? currentProposal?.candidate_1_intent
-            : selectedIndex === 2
-              ? currentProposal?.candidate_2_intent
-              : currentProposal?.candidate_3_intent;
-        if (intent === 'next_pattern' && plannedPatterns.length > 0) {
-          setCurrentPatternIndex((prev) => (prev + 1) % plannedPatterns.length);
-        }
-      }
-
-      setCurrentTurnId(nanoid(21));
-      setCurrentQuestion(questionText);
-      setMode('recording');
-    },
-    [currentProposal, plannedPatterns.length],
-  );
-
-  // ---------------------------------------------------------------------------
-  // State B: choosing → onRegenerate ハンドラ
-  // ---------------------------------------------------------------------------
-
-  const handleRegenerate = useCallback(async () => {
-    setRegenerating(true);
-    try {
-      const res = await fetch('/api/interview/proposal/regenerate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: session.id, afterTurnId: lastInsertedTurnId }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { proposal: QuestionProposal };
-        setCurrentProposal(data.proposal);
-      } else {
-        showToast('再試行してください');
-      }
-    } catch {
-      showToast('再試行してください');
-    } finally {
-      setRegenerating(false);
-    }
-  }, [session.id, lastInsertedTurnId, showToast]);
-
-  // handleChoice / handleRegenerate / legacy state vars are removed in Task 15
-  void handleChoice; void handleRegenerate; void regenerating; void currentProposal; void setCurrentProposal;
-  void lastTurnTranscript; void lastTurnAnalysisNotes;
-  void setLastInsertedTurnId; void setLastTurnTranscript; void setLastTurnAnalysisNotes; void setLocalTurns;
-
-  // ---------------------------------------------------------------------------
   // State B: choosing → onFinalize ハンドラ
   // ---------------------------------------------------------------------------
 
@@ -468,14 +358,14 @@ export function InterviewSessionRunner({
   // Render
   // ---------------------------------------------------------------------------
 
-  // M2: 完了したパターン coverage 数（pattern_id 非 null のユニーク数）
+  // 完了したパターン coverage 数（sessionState.agenda の completed item から算出）
   const patternsDone = useMemo(() => {
     const ids = new Set<string>();
-    for (const t of localTurns) {
-      if (t.pattern_id) ids.add(t.pattern_id);
+    for (const a of sessionState.agenda) {
+      if (a.status === 'completed' && a.patternId) ids.add(a.patternId);
     }
     return ids.size;
-  }, [localTurns]);
+  }, [sessionState.agenda]);
 
   const progress = {
     patternsDone,
