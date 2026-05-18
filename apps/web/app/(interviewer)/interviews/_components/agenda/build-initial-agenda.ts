@@ -34,7 +34,7 @@ export function buildInitialAgenda(
       status: 'completed',
       startedAt: turn.created_at ? new Date(turn.created_at).getTime() : null,
       endedAt: turn.created_at ? new Date(turn.created_at).getTime() : null,
-      analysisTaskId: null,
+      analysisTaskId: turn.id,
     });
   }
 

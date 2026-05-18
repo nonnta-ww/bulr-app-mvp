@@ -45,7 +45,7 @@ export default async function InterviewSessionPage({ params }: Props) {
     notFound();
   }
 
-  const { session, candidate, turns, latestProposal } = data;
+  const { session, candidate, turns, latestProposal, proposals } = data;
 
   // 完了済みの場合はレポートページへリダイレクト
   if (session.status === 'completed') {
@@ -74,6 +74,7 @@ export default async function InterviewSessionPage({ params }: Props) {
       latestProposal={latestProposal}
       candidate={candidate}
       plannedPatterns={plannedPatterns}
+      proposals={proposals}
     />
   );
 }

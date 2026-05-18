@@ -13,8 +13,10 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, useReducer } from 'react';
 import { buildInitialAgenda } from './agenda/build-initial-agenda';
+import { buildInitialAnalysisTasks } from './agenda/build-initial-analysis-tasks';
 import { sessionRunnerReducer } from './agenda/session-runner-reducer';
 import type { SessionState } from './agenda/session-runner-reducer';
+import type { ProgressStep } from '@/lib/interview/turns-next-events';
 import type { AgendaItem, AnalysisTask, NextQuestionDraft } from './agenda/types';
 import { useAnalysisTasks } from './agenda/use-analysis-tasks';
 import { NextQuestionPicker, buildDraftFromCandidate } from './agenda/next-question-picker';
@@ -45,6 +47,7 @@ interface InterviewSessionRunnerProps {
   latestProposal: QuestionProposal | null;
   candidate: Candidate;
   plannedPatterns: AssessmentPattern[];
+  proposals: QuestionProposal[];
 }
 
 type Mode = 'recording' | 'choosing' | 'finalizing';
@@ -102,6 +105,7 @@ export function InterviewSessionRunner({
   latestProposal: _latestProposal,
   candidate: _candidate,
   plannedPatterns,
+  proposals,
 }: InterviewSessionRunnerProps) {
   const router = useRouter();
 
@@ -170,13 +174,32 @@ export function InterviewSessionRunner({
     };
   }, [initialAgenda]);
 
+  // リロード後 Drawer 復元用: 過去ターンの AnalysisTask を DB データから再構築。
+  // props は変化しないため useRef で初回計算を保持する（useState initializer と同様）
+  const initialAnalysisTasksRef = useRef<Map<string, AnalysisTask> | null>(null);
+  if (initialAnalysisTasksRef.current === null) {
+    initialAnalysisTasksRef.current = buildInitialAnalysisTasks(turns, proposals);
+  }
+  const initialAnalysisTasks = initialAnalysisTasksRef.current;
+
+  // reducer の taskStatuses 初期値: 過去ターンはすべて completed。同様に ref で保持
+  const initialTaskStatusesRef = useRef<Record<string, { status: 'streaming' | 'completed' | 'errored'; step: ProgressStep }> | null>(null);
+  if (initialTaskStatusesRef.current === null) {
+    const out: Record<string, { status: 'streaming' | 'completed' | 'errored'; step: ProgressStep }> = {};
+    for (const turn of turns) {
+      out[turn.id] = { status: 'completed', step: 'prepare' };
+    }
+    initialTaskStatusesRef.current = out;
+  }
+  const initialTaskStatuses = initialTaskStatusesRef.current;
+
   const [sessionState, dispatch] = useReducer(sessionRunnerReducer, {
     agenda: initialAgenda,
     phase: 'picking',
     currentItemId: null,
     nextDraft: initialDraft,
     openDrawerTaskId: null,
-    taskStatuses: {},
+    taskStatuses: initialTaskStatuses,
   } satisfies SessionState);
 
   // M2: 経過秒数（session.started_at からの差分を 1 秒ごとに更新）
@@ -250,26 +273,29 @@ export function InterviewSessionRunner({
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks, retry: retryAnalysisTask } = useAnalysisTasks({
-    onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
-    // `extras` (transcript/analysisNotes/proposalId) は省略。
-    // useAnalysisTasks 内で AnalysisTask に格納済みなので analysisTasks.get(turnId) で参照可
-    onCompleted: (turnId, candidates) => {
-      dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
-      const item = sessionState.agenda.find((a) => a.id === turnId);
-      const title = patternTitleByIdRef.current(item?.patternId ?? null);
-      showToast(`${title} の分析が完了`);
-      // §6.3: openDrawerTaskId が null なら設定（自動で待機ドロワーを開く）
-      if (sessionState.openDrawerTaskId === null) {
-        dispatch({ type: 'OPEN_DRAWER', turnId });
-      }
+  const { tasks: analysisTasks, spawn: spawnAnalysisTask, abortAll: abortAllAnalysisTasks, retry: retryAnalysisTask } = useAnalysisTasks(
+    {
+      onProgress: (turnId, step) => dispatch({ type: 'TASK_PROGRESS', turnId, step }),
+      // `extras` (transcript/analysisNotes/proposalId) は省略。
+      // useAnalysisTasks 内で AnalysisTask に格納済みなので analysisTasks.get(turnId) で参照可
+      onCompleted: (turnId, candidates) => {
+        dispatch({ type: 'TASK_COMPLETED', turnId, candidates });
+        const item = sessionState.agenda.find((a) => a.id === turnId);
+        const title = patternTitleByIdRef.current(item?.patternId ?? null);
+        showToast(`${title} の分析が完了`);
+        // §6.3: openDrawerTaskId が null なら設定（自動で待機ドロワーを開く）
+        if (sessionState.openDrawerTaskId === null) {
+          dispatch({ type: 'OPEN_DRAWER', turnId });
+        }
+      },
+      onErrored: (turnId, error) => {
+        dispatch({ type: 'TASK_ERRORED', turnId });
+        void error;
+        showToast('分析失敗。再試行できます');
+      },
     },
-    onErrored: (turnId, error) => {
-      dispatch({ type: 'TASK_ERRORED', turnId });
-      void error;
-      showToast('分析失敗。再試行できます');
-    },
-  });
+    initialAnalysisTasks,
+  );
 
   // ---------------------------------------------------------------------------
   // State A: recording → onSubmit ハンドラ

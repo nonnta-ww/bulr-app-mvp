@@ -22,8 +22,13 @@ export interface SpawnInput {
   formData: FormData;
 }
 
-export function useAnalysisTasks(callbacks: UseAnalysisTasksCallbacks) {
-  const [tasks, setTasks] = useState<Map<string, AnalysisTask>>(() => new Map());
+export function useAnalysisTasks(
+  callbacks: UseAnalysisTasksCallbacks,
+  initialTasks?: Map<string, AnalysisTask>,
+) {
+  const [tasks, setTasks] = useState<Map<string, AnalysisTask>>(
+    () => initialTasks ?? new Map(),
+  );
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
 

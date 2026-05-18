@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '../../client';
 import { candidate } from '../../schema/candidate';
@@ -15,6 +15,7 @@ export type SessionWithTurns = {
   candidate: Candidate;
   turns: InterviewTurn[];
   latestProposal: QuestionProposal | null;
+  proposals: QuestionProposal[]; // 全 proposal（リロード後の Drawer 復元用）
 };
 
 export async function loadSessionWithTurns(
@@ -38,7 +39,6 @@ export async function loadSessionWithTurns(
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const sessionRow = sessionRows[0]!;
   const session = sessionRow.interview_session;
   const candidateRow = sessionRow.candidate;
@@ -50,20 +50,27 @@ export async function loadSessionWithTurns(
     .where(eq(interviewTurn.session_id, sessionId))
     .orderBy(asc(interviewTurn.sequence_no));
 
-  // Fetch latest proposal (by generated_at desc, limit 1)
-  const latestProposalRows = await db
+  // 全 proposal を prepared_for_turn_no asc で取得（Drawer 復元用）
+  const proposals = await db
     .select()
     .from(questionProposal)
     .where(eq(questionProposal.session_id, sessionId))
-    .orderBy(desc(questionProposal.generated_at))
-    .limit(1);
+    .orderBy(asc(questionProposal.prepared_for_turn_no));
 
-  const latestProposal = latestProposalRows.length > 0 ? (latestProposalRows[0] ?? null) : null;
+  // 後方互換: 最新の proposal（generated_at desc の先頭）
+  const latestProposal =
+    proposals.length > 0
+      ? [...proposals].sort(
+          (a, b) =>
+            new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime(),
+        )[0] ?? null
+      : null;
 
   return {
     session,
     candidate: candidateRow,
     turns,
     latestProposal,
+    proposals,
   };
 }
