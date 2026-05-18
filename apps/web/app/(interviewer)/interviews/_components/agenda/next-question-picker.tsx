@@ -5,17 +5,19 @@ import type { AgendaItem, AnalysisCandidate, AnalysisTask, NextQuestionDraft } f
 
 export interface NextQuestionPickerProps {
   draft: NextQuestionDraft;
-  latestCompletedTask: AnalysisTask | null;
+  /** 候補3つを表示するタスク（通常 draft.fromAnalysisTaskId の指すタスク） */
+  displayedTask: AnalysisTask | null;
   futureItems: AgendaItem[];
   onDraftChange: (draft: NextQuestionDraft) => void;
   onStartRecording: () => void;
   onSwitchToNewerCandidates?: (taskId: string) => void;
+  /** displayedTask より新しい完了タスクが存在する場合に設定される。[切替] リンクの表示制御 */
   newCandidatesAvailable: { taskId: string } | null;
 }
 
 export function NextQuestionPicker({
   draft,
-  latestCompletedTask,
+  displayedTask,
   futureItems,
   onDraftChange,
   onStartRecording,
@@ -32,9 +34,9 @@ export function NextQuestionPicker({
       <section className="rounded-lg border border-gray-200 bg-white p-3">
         <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
           分析が出した次の候補
-          {latestCompletedTask && ` (${latestCompletedTask.turnId.slice(0, 6)} 由来)`}
+          {displayedTask && ` (${displayedTask.turnId.slice(0, 6)} 由来)`}
         </h4>
-        {newCandidatesAvailable && newCandidatesAvailable.taskId !== draft.fromAnalysisTaskId && (
+        {newCandidatesAvailable && (
           <button
             type="button"
             onClick={() => onSwitchToNewerCandidates?.(newCandidatesAvailable.taskId)}
@@ -43,17 +45,15 @@ export function NextQuestionPicker({
             ✨ 新しい候補が届きました [切替]
           </button>
         )}
-        {!latestCompletedTask?.candidates && (
+        {!displayedTask?.candidates && (
           <p className="text-xs text-gray-400">直前の分析を待機中、または分析履歴がありません。</p>
         )}
-        {latestCompletedTask?.candidates?.map((c, idx) => (
+        {displayedTask?.candidates?.map((c, idx) => (
           <CandidateRow
             key={idx}
             candidate={c}
             selected={draft.questionText === c.text}
-            onClick={() =>
-              onDraftChange(buildDraftFromCandidate(c, latestCompletedTask))
-            }
+            onClick={() => onDraftChange(buildDraftFromCandidate(c, displayedTask))}
           />
         ))}
       </section>

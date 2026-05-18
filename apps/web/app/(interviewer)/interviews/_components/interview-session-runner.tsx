@@ -478,16 +478,32 @@ export function InterviewSessionRunner({
     return latest;
   }, [analysisTasks]);
 
+  // 候補表示用のタスク: draft.fromAnalysisTaskId が指す task を優先（spec §6.3 "自動上書きしない"）。
+  // draft.fromAnalysisTaskId が無い場合は latestCompletedTask へフォールバック。
+  const displayedTask = useMemo<AnalysisTask | null>(() => {
+    const taskId = sessionState.nextDraft.fromAnalysisTaskId;
+    if (taskId) {
+      const t = analysisTasks.get(taskId);
+      if (t && t.candidates && t.candidates.length > 0) return t;
+    }
+    return latestCompletedTask;
+  }, [sessionState.nextDraft.fromAnalysisTaskId, analysisTasks, latestCompletedTask]);
+
   const futureItems = useMemo(
     () => sessionState.agenda.filter((a) => a.status === 'future'),
     [sessionState.agenda],
   );
 
+  // displayedTask より新しい完了タスクがあれば [切替] リンクを出す
   const newCandidatesAvailable = useMemo<{ taskId: string } | null>(() => {
     if (!latestCompletedTask) return null;
-    if (sessionState.nextDraft.fromAnalysisTaskId === latestCompletedTask.turnId) return null;
+    if (!displayedTask) {
+      // まだ表示中タスクが無い場合（初期状態など）は、最新があれば即提示
+      return { taskId: latestCompletedTask.turnId };
+    }
+    if (displayedTask.turnId === latestCompletedTask.turnId) return null;
     return { taskId: latestCompletedTask.turnId };
-  }, [latestCompletedTask, sessionState.nextDraft.fromAnalysisTaskId]);
+  }, [latestCompletedTask, displayedTask]);
 
   return (
     <div className="relative flex h-[calc(100vh-3rem)]">
@@ -559,7 +575,7 @@ export function InterviewSessionRunner({
         {mode === 'choosing' && (
           <NextQuestionPicker
             draft={sessionState.nextDraft}
-            latestCompletedTask={latestCompletedTask}
+            displayedTask={displayedTask}
             futureItems={futureItems}
             onDraftChange={(draft) => dispatch({ type: 'SET_NEXT_DRAFT', draft })}
             onStartRecording={handleStartRecording}
