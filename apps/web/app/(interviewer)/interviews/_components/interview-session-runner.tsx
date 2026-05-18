@@ -146,7 +146,7 @@ export function InterviewSessionRunner({
   const currentPatternTitle: string = useMemo(() => {
     const p = plannedPatterns[currentPatternIndex];
     // M1: pattern が解決できない場合は「フリー質問」
-    return p ? p.title : 'フリー質問';
+    return p ? `${p.code} ${p.title}` : 'フリー質問';
   }, [plannedPatterns, currentPatternIndex]);
 
   // ---- 新状態モデル（Task 11: 並走、まだUI未使用） ----
@@ -441,7 +441,8 @@ export function InterviewSessionRunner({
   const patternTitleById = useCallback(
     (id: string | null) => {
       if (!id) return 'フリー質問';
-      return plannedPatterns.find((p) => p.id === id)?.title ?? '不明';
+      const p = plannedPatterns.find((p) => p.id === id);
+      return p ? `${p.code} ${p.title}` : '不明';
     },
     [plannedPatterns],
   );
