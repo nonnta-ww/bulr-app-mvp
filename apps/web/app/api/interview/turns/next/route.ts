@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { and, asc, desc, eq, lt, max, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, lt, max, or, sql } from 'drizzle-orm';
 
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
@@ -340,6 +340,19 @@ export async function POST(request: Request): Promise<Response> {
               duration_ms: input.durationMs,
             })
             .returning();
+
+          // 初回ターン送信時にセッションを開始状態にする（経過時間表示の起点）。
+          // started_at が NULL の場合のみ NOW() をセットし、status も 'in_progress' へ遷移。
+          // 2回目以降は何もしない（idempotent）。
+          await tx
+            .update(schema.interviewSession)
+            .set({ started_at: sql`NOW()`, status: 'in_progress', updated_at: new Date() })
+            .where(
+              and(
+                eq(schema.interviewSession.id, input.sessionId),
+                isNull(schema.interviewSession.started_at),
+              ),
+            );
 
           // Increment rate limit counters inside the same transaction so that
           // the turn INSERT and counter increments succeed or fail atomically (Req 7.15, 7.16).
