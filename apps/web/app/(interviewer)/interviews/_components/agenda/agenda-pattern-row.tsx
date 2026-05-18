@@ -32,8 +32,8 @@ export function AgendaPatternRow({
     : 'text-gray-900 font-semibold';
 
   return (
-    <div className="mb-2">
-      <div className={`px-1 py-0.5 text-xs ${titleColor}`}>
+    <div className="mb-3">
+      <div className={`px-1 py-1 text-sm ${titleColor}`}>
         {allCompleted ? '✓ ' : hasRecording ? '▶ ' : ''}
         {patternTitle}
       </div>
@@ -52,7 +52,7 @@ export function AgendaPatternRow({
               }
             }}
             className={[
-              'flex w-full cursor-pointer items-start gap-1 rounded px-1 py-0.5 pl-4 text-left text-[11px] leading-tight focus:outline-none focus:ring-1 focus:ring-blue-400',
+              'flex w-full cursor-pointer items-start gap-1 rounded px-1 py-1 pl-5 text-left text-xs leading-snug focus:outline-none focus:ring-1 focus:ring-blue-400',
               item.status === 'recording' && 'bg-red-50 text-red-700 font-semibold',
               item.status === 'queued' && 'bg-blue-50 text-blue-700',
               item.status === 'asked' && 'text-blue-700',
@@ -91,7 +91,7 @@ function renderBadge(
   onRetry?: (turnId: string) => void,
 ) {
   if (item.status === 'recording') {
-    return <span className="ml-auto rounded bg-gray-100 px-1 text-[9px]">録音中</span>;
+    return <span className="ml-auto rounded bg-gray-100 px-1 text-[10px]">録音中</span>;
   }
   if (taskStatus?.status === 'streaming') {
     return (
@@ -101,7 +101,7 @@ function renderBadge(
           e.stopPropagation();
           if (item.analysisTaskId && onAnalysisClick) onAnalysisClick(item.analysisTaskId);
         }}
-        className="ml-auto rounded bg-amber-100 px-1 text-[9px] text-amber-800"
+        className="ml-auto rounded bg-amber-100 px-1 text-[10px] text-amber-800"
       >
         分析 {stepIndex(taskStatus.step)}/4
       </button>
@@ -115,7 +115,7 @@ function renderBadge(
           e.stopPropagation();
           if (item.analysisTaskId && onAnalysisClick) onAnalysisClick(item.analysisTaskId);
         }}
-        className="ml-auto rounded bg-green-100 px-1 text-[9px] text-green-800"
+        className="ml-auto rounded bg-green-100 px-1 text-[10px] text-green-800"
       >
         完了
       </button>
@@ -129,18 +129,18 @@ function renderBadge(
           e.stopPropagation();
           if (item.analysisTaskId && onRetry) onRetry(item.analysisTaskId);
         }}
-        className="ml-auto rounded bg-red-100 px-1 text-[9px] text-red-800"
+        className="ml-auto rounded bg-red-100 px-1 text-[10px] text-red-800"
       >
         ⚠ 再試行
       </button>
     );
   }
   if (item.status === 'completed') {
-    return <span className="ml-auto rounded bg-green-100 px-1 text-[9px] text-green-800">完了</span>;
+    return <span className="ml-auto rounded bg-green-100 px-1 text-[10px] text-green-800">完了</span>;
   }
   // spec §7: リロード後の "asked だが taskStatus なし" は分析未完了表示
   if (item.status === 'asked' && !taskStatus) {
-    return <span className="ml-auto rounded bg-gray-200 px-1 text-[9px] text-gray-700">未分析</span>;
+    return <span className="ml-auto rounded bg-gray-200 px-1 text-[10px] text-gray-700">未分析</span>;
   }
   return null;
 }

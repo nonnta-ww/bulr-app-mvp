@@ -34,8 +34,8 @@ export function NextQuestionPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <section className="rounded-lg border border-gray-200 bg-white p-3">
-        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
           分析が出した次の候補
           {displayedTask && ` (${patternTitleById(displayedTask.patternId)} 由来)`}
         </h4>
@@ -43,13 +43,13 @@ export function NextQuestionPicker({
           <button
             type="button"
             onClick={() => onSwitchToNewerCandidates?.(newCandidatesAvailable.taskId)}
-            className="mb-2 text-xs text-blue-600 underline"
+            className="mb-2 text-sm text-blue-600 underline"
           >
             ✨ 新しい候補が届きました [切替]
           </button>
         )}
         {!displayedTask?.candidates && (
-          <p className="text-xs text-gray-400">直前の分析を待機中、または分析履歴がありません。</p>
+          <p className="text-sm text-gray-400">直前の分析を待機中、または分析履歴がありません。</p>
         )}
         {displayedTask?.candidates?.map((c, idx) => (
           <CandidateRow
@@ -61,11 +61,11 @@ export function NextQuestionPicker({
         ))}
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-3">
-        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
           または agenda から直接
         </h4>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {futureItems.map((item) => (
             <button
               key={item.id}
@@ -79,7 +79,7 @@ export function NextQuestionPicker({
                 })
               }
               className={[
-                'rounded border px-2 py-0.5 text-[11px]',
+                'rounded border px-3 py-1 text-sm',
                 draft.questionText === item.questionText
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100',
@@ -91,7 +91,7 @@ export function NextQuestionPicker({
           <button
             type="button"
             onClick={() => setManualOpen(true)}
-            className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] text-gray-700 hover:bg-gray-100"
+            className="rounded border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
           >
             + 自分で入力
           </button>
@@ -101,7 +101,7 @@ export function NextQuestionPicker({
             type="button"
             onClick={onStartRecording}
             disabled={draft.questionText.trim() === ''}
-            className="rounded bg-gray-900 px-3 py-1.5 text-xs font-medium text-white disabled:bg-gray-300"
+            className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:bg-gray-300"
           >
             この質問で録音開始
           </button>
@@ -119,19 +119,19 @@ export function NextQuestionPicker({
             className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-2 text-sm font-semibold">手動で質問を入力</h3>
+            <h3 className="mb-2 text-base font-semibold">手動で質問を入力</h3>
             <textarea
               value={manualText}
               onChange={(e) => setManualText(e.target.value)}
               rows={4}
-              className="w-full rounded border border-gray-200 p-2 text-sm"
+              className="w-full rounded border border-gray-200 p-2 text-base leading-relaxed"
               placeholder="質問を入力..."
             />
             <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setManualOpen(false)}
-                className="rounded border border-gray-200 px-3 py-1.5 text-xs"
+                className="rounded border border-gray-200 px-3 py-1.5 text-sm"
               >
                 キャンセル
               </button>
@@ -147,7 +147,7 @@ export function NextQuestionPicker({
                   });
                   setManualOpen(false);
                 }}
-                className="rounded bg-gray-900 px-3 py-1.5 text-xs text-white disabled:bg-gray-300"
+                className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:bg-gray-300"
               >
                 確定
               </button>
@@ -184,11 +184,11 @@ function CandidateRow({
       type="button"
       onClick={onClick}
       className={[
-        'mb-1 block w-full rounded border p-2 text-left text-xs',
+        'mb-2 block w-full rounded border p-3 text-left text-sm leading-relaxed',
         selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50',
       ].join(' ')}
     >
-      <span className={`mb-1 inline-block rounded-full px-2 py-0.5 text-[9px] ${intentBadge}`}>
+      <span className={`mb-1 inline-block rounded-full px-2 py-0.5 text-xs ${intentBadge}`}>
         {intentLabel}
       </span>
       <div>{candidate.text}</div>

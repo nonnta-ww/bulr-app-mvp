@@ -18,9 +18,9 @@ export function AnalysisResultDrawer({
   if (!task) return null;
 
   return (
-    <aside className="flex w-[360px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-white p-3 text-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-base font-semibold">
+    <aside className="flex w-[360px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-white p-3 text-base">
+      <div className="mb-3 flex items-center justify-between">
+        <h4 className="text-lg font-semibold">
           {patternTitleById(task.patternId)} 分析結果
         </h4>
         <button
@@ -34,21 +34,21 @@ export function AnalysisResultDrawer({
       </div>
 
       {task.status === 'streaming' && (
-        <div className="mb-2">
+        <div className="mb-3">
           <InterviewProgressSteps currentStep={task.step} compact />
         </div>
       )}
 
       {task.status === 'errored' && (
-        <div className="mb-2 rounded bg-red-50 p-2 text-red-800">
+        <div className="mb-3 rounded bg-red-50 p-3 text-red-800">
           ⚠ 分析失敗: {task.error ?? 'unknown'}
         </div>
       )}
 
       {task.questionText && (
-        <div className="mb-2">
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-500">質問</div>
-          <div className="whitespace-pre-wrap break-words rounded bg-blue-50 p-2 text-gray-900">
+        <div className="mb-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">質問</div>
+          <div className="whitespace-pre-wrap break-words rounded bg-blue-50 p-3 text-base leading-relaxed text-gray-900">
             {task.questionText}
           </div>
         </div>
@@ -73,15 +73,15 @@ export function AnalysisResultDrawer({
 
       {task.candidates && task.candidates.length > 0 && (
         <>
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-500">
+          <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">
             提案候補（再確認）
           </div>
           {task.candidates.map((c, idx) => (
             <div
               key={idx}
-              className="mb-1 rounded border border-gray-200 bg-white p-2 text-xs"
+              className="mb-2 rounded border border-gray-200 bg-white p-3 text-sm leading-relaxed"
             >
-              <span className="mb-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px]">
+              <span className="mb-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs">
                 {c.intent === 'deep_dive'
                   ? '深掘り'
                   : c.intent === 'meta_cognition'
@@ -105,20 +105,20 @@ export function AnalysisResultDrawer({
 function CollapsibleText({ label, content }: { label: string; content: string }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div className="mb-2">
+    <div className="mb-3">
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-wide text-gray-500">{label}</span>
+        <span className="text-xs uppercase tracking-wide text-gray-500">{label}</span>
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-blue-600 hover:text-blue-800"
+          className="text-sm text-blue-600 hover:text-blue-800"
         >
           {expanded ? '▲ 閉じる' : '▼ 全文を見る'}
         </button>
       </div>
       <div
         className={[
-          'whitespace-pre-wrap break-words rounded bg-gray-50 p-2 text-gray-700',
+          'whitespace-pre-wrap break-words rounded bg-gray-50 p-3 text-base leading-relaxed text-gray-700',
           expanded ? 'max-h-[60vh] overflow-y-auto' : 'line-clamp-6 cursor-pointer',
         ].join(' ')}
         // 閉じている状態のテキストエリアをクリックでも展開できるように

@@ -39,9 +39,9 @@ export function BackgroundAnalysisStrip({
     <div
       role="status"
       aria-live="polite"
-      className="rounded-md border border-gray-200 bg-white text-xs"
+      className="rounded-md border border-gray-200 bg-white text-sm"
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-1.5">
+      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
         <span className="font-semibold text-gray-600">
           背景タスク{tasks.length > 0 && ` (${tasks.length}件)`}
         </span>
@@ -85,7 +85,7 @@ export function BackgroundAnalysisStrip({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="w-full border-t border-gray-100 px-3 py-1.5 text-left text-[10px] text-gray-500 hover:bg-gray-50"
+                className="w-full border-t border-gray-100 px-3 py-2 text-left text-xs text-gray-500 hover:bg-gray-50"
               >
                 ▼ もっと見る ({hiddenCount} 件)
               </button>
@@ -96,7 +96,7 @@ export function BackgroundAnalysisStrip({
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                className="w-full border-t border-gray-100 px-3 py-1.5 text-left text-[10px] text-gray-500 hover:bg-gray-50"
+                className="w-full border-t border-gray-100 px-3 py-2 text-left text-xs text-gray-500 hover:bg-gray-50"
               >
                 ▲ 折りたたむ
               </button>
@@ -144,11 +144,11 @@ function TaskRow({
           onClick();
         }
       }}
-      className={`flex cursor-pointer items-center gap-2 border-t border-gray-100 px-3 py-1.5 first:border-t-0 focus:outline-none focus:ring-1 focus:ring-blue-400 ${colorClass}`}
+      className={`flex cursor-pointer items-center gap-2 border-t border-gray-100 px-3 py-2 first:border-t-0 focus:outline-none focus:ring-1 focus:ring-blue-400 ${colorClass}`}
     >
       <span className="w-4 text-center">{icon}</span>
       <span className="flex-1 truncate">{patternTitleById(task.patternId)}</span>
-      <span className="text-[10px]">{label}</span>
+      <span className="text-xs">{label}</span>
       {task.status === 'errored' && onRetry && (
         <button
           type="button"
@@ -156,7 +156,7 @@ function TaskRow({
             e.stopPropagation();
             onRetry(task.turnId);
           }}
-          className="ml-1 cursor-pointer text-[10px] text-red-700 underline hover:text-red-900"
+          className="ml-1 cursor-pointer text-xs text-red-700 underline hover:text-red-900"
         >
           [再試行]
         </button>

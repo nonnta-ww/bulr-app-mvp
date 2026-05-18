@@ -98,8 +98,8 @@ export function SessionAgendaSidebar({
       className="relative flex shrink-0 flex-col border-r border-gray-200 bg-white"
       style={{ width: `${width}px` }}
     >
-      <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 text-xs text-gray-500">
-        <span>📋 質問一覧</span>
+      <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 text-sm text-gray-600">
+        <span className="font-semibold">📋 質問一覧</span>
         <div className="flex items-center gap-2">
           <span>
             {patternsDone}/{patternsTotal}
