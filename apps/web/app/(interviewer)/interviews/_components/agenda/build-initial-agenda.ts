@@ -30,7 +30,7 @@ export function buildInitialAgenda(
     items.push({
       id: turn.id,
       patternId: pattern?.id ?? null,
-      patternTitle: pattern ? `${pattern.code} ${pattern.title}` : 'フリー質問',
+      patternTitle: pattern ? `[${pattern.code}] ${pattern.title}` : 'フリー質問',
       questionText: turn.question_text ?? '',
       source,
       status: 'completed',
@@ -45,7 +45,7 @@ export function buildInitialAgenda(
     items.push({
       id: `draft-${pattern.id}`,
       patternId: pattern.id,
-      patternTitle: `${pattern.code} ${pattern.title}`,
+      patternTitle: `[${pattern.code}] ${pattern.title}`,
       questionText: pattern.level_1_intro,
       source: { kind: 'pattern_intro', patternId: pattern.id },
       status: 'future',
