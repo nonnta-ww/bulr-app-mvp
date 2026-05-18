@@ -498,7 +498,7 @@ export function InterviewSessionRunner({
       />
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <div className="flex-1">
             <BackgroundAnalysisStrip
               tasks={taskList}
@@ -512,7 +512,7 @@ export function InterviewSessionRunner({
           <button
             type="button"
             onClick={() => setFinalizeStep('confirm')}
-            className="rounded border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+            className="shrink-0 rounded border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
           >
             面接終了
           </button>
