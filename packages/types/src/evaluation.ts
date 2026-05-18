@@ -67,4 +67,35 @@ export interface HeatmapData {
   scope_distribution: Record<1 | 2 | 3 | 4 | 5, number>;
   ai_literacy_distribution: Record<0 | 1 | 2 | 3, number>;
   free_question_count: number;
+
+  // --- v2 追加 (2026-05-18 redesign) ---
+  overall: {
+    avg_authenticity: number;
+    avg_judgment: number;
+    avg_scope: number;
+    avg_meta_cognition: number;
+    avg_ai_literacy: number;
+    // 4つは互いに排他で合算するとセッション内の全カバレッジ件数になる
+    reached_count: number;         // stuck_type IS NULL かつ level_reached >= 2
+    stuck_count: number;           // stuck_type IN ('shallow','single_option','rigid')
+    not_experienced_count: number; // stuck_type = 'not_experienced'
+    undeveloped_count: number;     // stuck_type IS NULL かつ level_reached <= 1
+  };
+  patterns: Array<{
+    pattern_id: string;
+    pattern_code: string;            // 例: 'D-03'
+    pattern_title: string;
+    category: PatternCategory;
+    level_reached: 0 | 1 | 2 | 3 | 4;
+    stuck_type: StuckType | null;
+    scores: {
+      authenticity: number;
+      judgment: number;
+      scope: number;
+      meta_cognition: number;
+      ai_literacy: number;
+    };
+    notes: string;
+    turn_count: number;
+  }>;
 }

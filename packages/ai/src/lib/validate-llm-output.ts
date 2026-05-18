@@ -100,6 +100,18 @@ const _safeHeatmapData: HeatmapData = {
   scope_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
   ai_literacy_distribution: { 0: 0, 1: 0, 2: 0, 3: 0 },
   free_question_count: 0,
+  overall: {
+    avg_authenticity: 0,
+    avg_judgment: 0,
+    avg_scope: 0,
+    avg_meta_cognition: 0,
+    avg_ai_literacy: 0,
+    reached_count: 0,
+    stuck_count: 0,
+    not_experienced_count: 0,
+    undeveloped_count: 0,
+  },
+  patterns: [],
 };
 
 export const SAFE_SESSION_REPORT_FALLBACK: {
