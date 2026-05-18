@@ -110,7 +110,7 @@ function CollapsibleText({ label, content }: { label: string; content: string })
       <div
         className={[
           'whitespace-pre-wrap break-words rounded bg-gray-50 p-2 text-gray-700',
-          expanded ? 'max-h-[60vh] overflow-y-auto' : 'line-clamp-2 cursor-pointer',
+          expanded ? 'max-h-[60vh] overflow-y-auto' : 'line-clamp-6 cursor-pointer',
         ].join(' ')}
         // 閉じている状態のテキストエリアをクリックでも展開できるように
         onClick={!expanded ? () => setExpanded(true) : undefined}
