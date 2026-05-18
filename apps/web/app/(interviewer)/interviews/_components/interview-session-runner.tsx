@@ -201,6 +201,7 @@ export function InterviewSessionRunner({
     currentItemId: null,
     nextDraft: initialDraft,
     openDrawerTaskId: null,
+    pickerDisplayedTaskId: null,
     taskStatuses: initialTaskStatuses,
   } satisfies SessionState);
 
@@ -478,16 +479,28 @@ export function InterviewSessionRunner({
     return latest;
   }, [analysisTasks]);
 
-  // 候補表示用のタスク: draft.fromAnalysisTaskId が指す task を優先（spec §6.3 "自動上書きしない"）。
-  // draft.fromAnalysisTaskId が無い場合は latestCompletedTask へフォールバック。
+  // 候補表示用のタスク。優先度:
+  //   (1) pickerDisplayedTaskId — チップ/履歴クリックで明示的に指定された task
+  //   (2) draft.fromAnalysisTaskId — ピッカーで選択中の draft の出所 task
+  //   (3) latestCompletedTask — 上記が無ければ最新完了
   const displayedTask = useMemo<AnalysisTask | null>(() => {
-    const taskId = sessionState.nextDraft.fromAnalysisTaskId;
-    if (taskId) {
-      const t = analysisTasks.get(taskId);
+    const explicitId = sessionState.pickerDisplayedTaskId;
+    if (explicitId) {
+      const t = analysisTasks.get(explicitId);
+      if (t && t.candidates && t.candidates.length > 0) return t;
+    }
+    const draftId = sessionState.nextDraft.fromAnalysisTaskId;
+    if (draftId) {
+      const t = analysisTasks.get(draftId);
       if (t && t.candidates && t.candidates.length > 0) return t;
     }
     return latestCompletedTask;
-  }, [sessionState.nextDraft.fromAnalysisTaskId, analysisTasks, latestCompletedTask]);
+  }, [
+    sessionState.pickerDisplayedTaskId,
+    sessionState.nextDraft.fromAnalysisTaskId,
+    analysisTasks,
+    latestCompletedTask,
+  ]);
 
   const futureItems = useMemo(
     () => sessionState.agenda.filter((a) => a.status === 'future'),
@@ -536,9 +549,13 @@ export function InterviewSessionRunner({
             });
           } else if (item.analysisTaskId) {
             dispatch({ type: 'OPEN_DRAWER', turnId: item.analysisTaskId });
+            dispatch({ type: 'SET_PICKER_DISPLAYED_TASK', turnId: item.analysisTaskId });
           }
         }}
-        onAnalysisClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
+        onAnalysisClick={(turnId) => {
+          dispatch({ type: 'OPEN_DRAWER', turnId });
+          dispatch({ type: 'SET_PICKER_DISPLAYED_TASK', turnId });
+        }}
       />
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -549,7 +566,10 @@ export function InterviewSessionRunner({
               elapsedSec={elapsedSec}
               totalSec={2400}
               patternTitleById={patternTitleById}
-              onChipClick={(turnId) => dispatch({ type: 'OPEN_DRAWER', turnId })}
+              onChipClick={(turnId) => {
+                dispatch({ type: 'OPEN_DRAWER', turnId });
+                dispatch({ type: 'SET_PICKER_DISPLAYED_TASK', turnId });
+              }}
               onRetry={retryAnalysisTask}
             />
           </div>

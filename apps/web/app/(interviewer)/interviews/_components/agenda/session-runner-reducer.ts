@@ -7,6 +7,9 @@ export interface SessionState {
   currentItemId: string | null;
   nextDraft: NextQuestionDraft;
   openDrawerTaskId: string | null;
+  // ピッカーで候補3つを表示するタスク ID。null のときは nextDraft.fromAnalysisTaskId にフォールバック。
+  // 背景タスクチップやサイドバー履歴クリックで「過去の分析候補をピッカーで見たい」操作を可能にする。
+  pickerDisplayedTaskId: string | null;
   // analysisTasks 本体は別 hook で管理。Reducer は status のみ追跡
   taskStatuses: Record<string, { status: 'streaming' | 'completed' | 'errored'; step: ProgressStep }>;
 }
@@ -19,6 +22,7 @@ export type SessionAction =
   | { type: 'TASK_COMPLETED'; turnId: string; candidates: AnalysisCandidate[] }
   | { type: 'TASK_ERRORED'; turnId: string }
   | { type: 'OPEN_DRAWER'; turnId: string | null }
+  | { type: 'SET_PICKER_DISPLAYED_TASK'; turnId: string | null }
   | { type: 'START_FINALIZING' };
 
 export function sessionRunnerReducer(state: SessionState, action: SessionAction): SessionState {
@@ -71,6 +75,7 @@ export function sessionRunnerReducer(state: SessionState, action: SessionAction)
         phase: 'picking',
         currentItemId: null,
         nextDraft: action.nextDraft,
+        pickerDisplayedTaskId: null,
         taskStatuses: {
           ...state.taskStatuses,
           [action.itemId]: { status: 'streaming', step: 'upload' },
@@ -79,7 +84,11 @@ export function sessionRunnerReducer(state: SessionState, action: SessionAction)
     }
 
     case 'SET_NEXT_DRAFT':
-      return { ...state, nextDraft: action.draft };
+      // 候補をピックしたら表示も draft 基準に戻す（明示ピック後の display ロックは不要）
+      return { ...state, nextDraft: action.draft, pickerDisplayedTaskId: null };
+
+    case 'SET_PICKER_DISPLAYED_TASK':
+      return { ...state, pickerDisplayedTaskId: action.turnId };
 
     case 'TASK_PROGRESS':
       return {
