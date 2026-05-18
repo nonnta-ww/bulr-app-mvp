@@ -42,3 +42,6 @@ export {
 
 // Model client
 export { claudeSonnet46 } from './client';
+
+// Deterministic aggregation
+export { aggregateHeatmap } from './lib/aggregate-heatmap';
