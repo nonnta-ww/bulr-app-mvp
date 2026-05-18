@@ -24,16 +24,6 @@ const ALL_CATEGORIES: CategoryKey[] = [
   'ai',
 ];
 
-function emptyCategoryStats(): HeatmapData['by_category'][CategoryKey] {
-  return {
-    avg_authenticity: 0,
-    avg_judgment: 0,
-    avg_scope: 0,
-    avg_meta_cognition: 0,
-    avg_ai_literacy: 0,
-    pattern_count: 0,
-  };
-}
 
 function average(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -87,20 +77,18 @@ export function aggregateHeatmap(input: {
 
   // ----- by_category 集計 -----
   const by_category = Object.fromEntries(
-    ALL_CATEGORIES.map((cat) => [cat, emptyCategoryStats()]),
+    ALL_CATEGORIES.map((cat) => {
+      const inCat = patterns.filter((p) => p.category === cat);
+      return [cat, {
+        avg_authenticity: average(inCat.map((p) => p.scores.authenticity)),
+        avg_judgment: average(inCat.map((p) => p.scores.judgment)),
+        avg_scope: average(inCat.map((p) => p.scores.scope)),
+        avg_meta_cognition: average(inCat.map((p) => p.scores.meta_cognition)),
+        avg_ai_literacy: average(inCat.map((p) => p.scores.ai_literacy)),
+        pattern_count: inCat.length,
+      }];
+    }),
   ) as HeatmapData['by_category'];
-
-  for (const cat of ALL_CATEGORIES) {
-    const inCat = patterns.filter((p) => p.category === cat);
-    by_category[cat] = {
-      avg_authenticity: average(inCat.map((p) => p.scores.authenticity)),
-      avg_judgment: average(inCat.map((p) => p.scores.judgment)),
-      avg_scope: average(inCat.map((p) => p.scores.scope)),
-      avg_meta_cognition: average(inCat.map((p) => p.scores.meta_cognition)),
-      avg_ai_literacy: average(inCat.map((p) => p.scores.ai_literacy)),
-      pattern_count: inCat.length,
-    };
-  }
 
   // ----- scope_distribution -----
   const scope_distribution: HeatmapData['scope_distribution'] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
