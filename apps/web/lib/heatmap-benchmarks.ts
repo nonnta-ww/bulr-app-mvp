@@ -4,6 +4,8 @@
  * 設計ドキュメント: docs/superpowers/specs/2026-05-18-heatmap-redesign-design.md §4
  */
 
+import type { PatternCategory } from '@bulr/types';
+
 export const BENCHMARKS = {
   authenticity: 2.0,
   judgment: 2.0,
@@ -61,4 +63,4 @@ export const CATEGORY_LABEL = {
   security: 'セキュリティ',
   organization: '組織・マネジメント',
   ai: 'AI活用',
-} as const;
+} as const satisfies Record<PatternCategory, string>;
