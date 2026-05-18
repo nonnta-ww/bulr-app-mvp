@@ -1,0 +1,2 @@
+ALTER TABLE "interview_turn" ADD COLUMN "asked_pattern_id" text;--> statement-breakpoint
+ALTER TABLE "interview_turn" ADD CONSTRAINT "interview_turn_asked_pattern_id_assessment_pattern_id_fk" FOREIGN KEY ("asked_pattern_id") REFERENCES "public"."assessment_pattern"("id") ON DELETE no action ON UPDATE no action;

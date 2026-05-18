@@ -49,7 +49,7 @@ export function buildInitialAnalysisTasks(
         : '';
     map.set(turn.id, {
       turnId: turn.id,
-      patternId: turn.pattern_id ?? null,
+      patternId: turn.asked_pattern_id ?? turn.pattern_id ?? null,
       status: 'completed',
       step: 'prepare',
       transcript,

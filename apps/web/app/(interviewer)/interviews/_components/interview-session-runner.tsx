@@ -123,11 +123,13 @@ export function InterviewSessionRunner({
   // C2: proposal / pattern の現在値（FormData に append する）
   const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
 
-  // patternId 追跡用 index。turns に既存の最終 pattern_id があればそれを起点にする
+  // patternId 追跡用 index。turns に既存の最終 asked_pattern_id（なければ pattern_id）があればそれを起点にする
   const [currentPatternIndex, setCurrentPatternIndex] = useState<number>(() => {
     if (plannedPatterns.length === 0) return 0;
     for (let i = turns.length - 1; i >= 0; i--) {
-      const pid = turns[i]?.pattern_id;
+      const t = turns[i];
+      if (!t) continue;
+      const pid = t.asked_pattern_id ?? t.pattern_id;
       if (pid != null) {
         const idx = plannedPatterns.findIndex((p) => p.id === pid);
         if (idx !== -1) return idx;

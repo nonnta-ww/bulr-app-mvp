@@ -325,6 +325,8 @@ export async function POST(request: Request): Promise<Response> {
               sequence_no: nextSeq,
               // Req 12.3, 24.1: off_pattern なら null をセット。manual の場合は LLM matched 値、それ以外は input.patternId。
               pattern_id: effectivePatternId,
+              // インタビュアーの意図（input.patternId）を常に保存する。off_pattern 時も保持。
+              asked_pattern_id: input.patternId ?? null,
               proposal_id: input.proposalId ?? null,
               question_source: input.questionSource,
               question_text: input.questionText ?? '',

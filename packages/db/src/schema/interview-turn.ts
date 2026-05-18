@@ -31,6 +31,7 @@ export const interviewTurn = pgTable('interview_turn', {
     .references(() => interviewSession.id),
   sequence_no: integer('sequence_no').notNull(),
   pattern_id: text('pattern_id').references(() => assessmentPattern.id),
+  asked_pattern_id: text('asked_pattern_id').references(() => assessmentPattern.id),
   proposal_id: text('proposal_id').references(() => questionProposal.id),
   question_source: questionSource('question_source').notNull(),
   question_text: text('question_text').notNull(),

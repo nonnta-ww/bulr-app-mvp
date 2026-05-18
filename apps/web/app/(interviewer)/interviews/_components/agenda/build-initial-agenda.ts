@@ -17,8 +17,10 @@ export function buildInitialAgenda(
 
   for (const turn of turns) {
     const source = restoreSource(turn);
-    const pattern = turn.pattern_id
-      ? plannedPatterns.find((p) => p.id === turn.pattern_id) ?? null
+    // Prefer asked_pattern_id (interviewer's intent), fall back to pattern_id (analysis-derived) for legacy turns
+    const askedId = turn.asked_pattern_id ?? turn.pattern_id;
+    const pattern = askedId
+      ? plannedPatterns.find((p) => p.id === askedId) ?? null
       : null;
 
     if (pattern && source.kind === 'pattern_intro') {
@@ -61,8 +63,9 @@ function restoreSource(turn: InterviewTurn): AgendaItemSource {
   if (qs === 'llm_candidate_1' || qs === 'llm_candidate_2' || qs === 'llm_candidate_3') {
     return { kind: 'deep_dive', parentTurnId: turn.id };
   }
-  if (turn.pattern_id) {
-    return { kind: 'pattern_intro', patternId: turn.pattern_id };
+  const askedId = turn.asked_pattern_id ?? turn.pattern_id;
+  if (askedId) {
+    return { kind: 'pattern_intro', patternId: askedId };
   }
   return { kind: 'manual', parentTurnId: null };
 }

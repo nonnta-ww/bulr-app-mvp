@@ -22,6 +22,13 @@
       "when": 1778773915628,
       "tag": "0002_green_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779080290058,
+      "tag": "0003_shocking_the_spike",
+      "breakpoints": true
     }
   ]
 }
