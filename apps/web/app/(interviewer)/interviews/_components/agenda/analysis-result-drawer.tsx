@@ -48,7 +48,7 @@ export function AnalysisResultDrawer({
       {task.questionText && (
         <div className="mb-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">質問</div>
-          <div className="whitespace-pre-wrap break-words rounded bg-blue-50 p-3 text-base leading-relaxed text-gray-900">
+          <div className="whitespace-pre-wrap break-words rounded bg-blue-50 p-3 text-sm leading-relaxed text-gray-900">
             {task.questionText}
           </div>
         </div>
@@ -118,7 +118,7 @@ function CollapsibleText({ label, content }: { label: string; content: string })
       </div>
       <div
         className={[
-          'whitespace-pre-wrap break-words rounded bg-gray-50 p-3 text-base leading-relaxed text-gray-700',
+          'whitespace-pre-wrap break-words rounded bg-gray-50 p-3 text-sm leading-relaxed text-gray-700',
           expanded ? 'max-h-[60vh] overflow-y-auto' : 'line-clamp-6 cursor-pointer',
         ].join(' ')}
         // 閉じている状態のテキストエリアをクリックでも展開できるように
