@@ -18,9 +18,9 @@ export function AnalysisResultDrawer({
   if (!task) return null;
 
   return (
-    <aside className="flex w-[280px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-white p-3 text-xs">
+    <aside className="flex w-[360px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-white p-3 text-sm">
       <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold">
+        <h4 className="text-base font-semibold">
           {patternTitleById(task.patternId)} 分析結果
         </h4>
         <button
@@ -64,15 +64,15 @@ export function AnalysisResultDrawer({
 
       {task.candidates && task.candidates.length > 0 && (
         <>
-          <div className="mb-1 text-[9px] uppercase tracking-wide text-gray-500">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-500">
             提案候補（再確認）
           </div>
           {task.candidates.map((c, idx) => (
             <div
               key={idx}
-              className="mb-1 rounded border border-gray-200 bg-white p-2 text-[11px]"
+              className="mb-1 rounded border border-gray-200 bg-white p-2 text-xs"
             >
-              <span className="mb-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[9px]">
+              <span className="mb-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px]">
                 {c.intent === 'deep_dive'
                   ? '深掘り'
                   : c.intent === 'meta_cognition'
@@ -98,11 +98,11 @@ function CollapsibleText({ label, content }: { label: string; content: string })
   return (
     <div className="mb-2">
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[9px] uppercase tracking-wide text-gray-500">{label}</span>
+        <span className="text-[10px] uppercase tracking-wide text-gray-500">{label}</span>
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-[10px] text-blue-600 hover:text-blue-800"
+          className="text-xs text-blue-600 hover:text-blue-800"
         >
           {expanded ? '▲ 閉じる' : '▼ 全文を見る'}
         </button>
