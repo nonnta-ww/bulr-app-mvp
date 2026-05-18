@@ -29,7 +29,10 @@ export function VerdictSummary({ heatmapData }: Props) {
   ] as const;
 
   return (
-    <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <div
+      data-report-sticky
+      className="sticky top-0 z-10 -mx-4 mb-4 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+    >
       <h3 className="mb-2 text-sm font-bold text-gray-900">
         {overall.reached_count} パターン到達 / {totalPatterns - overall.reached_count} パターン詰まり・未到達
       </h3>

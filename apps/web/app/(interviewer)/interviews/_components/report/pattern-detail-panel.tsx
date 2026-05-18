@@ -38,11 +38,13 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
     <>
       {/* 背景クリックで閉じる */}
       <div
+        data-report-detail-backdrop
         className="fixed inset-0 z-40 bg-black/10"
         onClick={onClose}
         aria-hidden="true"
       />
       <aside
+        data-report-detail-panel
         role="dialog"
         aria-modal="false"
         aria-label={`${pattern.pattern_code} ${pattern.pattern_title}`}

@@ -7,6 +7,8 @@
  * 設計: docs/superpowers/specs/2026-05-18-heatmap-redesign-design.md §3, §12
  */
 
+import './report-print.css';
+
 import { useMemo, useState } from 'react';
 import type { HeatmapData } from '@bulr/types/evaluation';
 import type { AssessmentPattern, InterviewTurn } from '@bulr/db/schema';
@@ -47,7 +49,7 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <VerdictSummary heatmapData={heatmapData} />
 
-      <div className="mt-3 flex border-b border-gray-200 text-sm">
+      <div data-report-tabs className="mt-3 flex border-b border-gray-200 text-sm">
         <TabButton active={tab === 'observation'} onClick={() => setTab('observation')}>
           観察
         </TabButton>
@@ -57,18 +59,25 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
       </div>
 
       <div className="pt-4">
-        {tab === 'observation' ? (
+        <div
+          data-report-tab-body="observation"
+          style={{ display: tab === 'observation' ? 'block' : 'none' }}
+        >
           <ObservationTab
             patterns={heatmapData.patterns}
             onSelectPattern={setOpenPatternId}
           />
-        ) : (
+        </div>
+        <div
+          data-report-tab-body="coverage"
+          style={{ display: tab === 'coverage' ? 'block' : 'none' }}
+        >
           <CoverageTab
             patterns={heatmapData.patterns}
             allPatterns={allPatterns}
             onSelectPattern={setOpenPatternId}
           />
-        )}
+        </div>
       </div>
 
       <PatternDetailPanel

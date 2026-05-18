@@ -1,0 +1,31 @@
+/* 印刷時の表示調整 */
+@media print {
+  /* スティッキー解除 */
+  [data-report-sticky] {
+    position: static !important;
+    backdrop-filter: none !important;
+    background-color: white !important;
+    border-bottom-width: 1px !important;
+  }
+
+  /* タブの両方を展開表示 */
+  [data-report-tab-body='observation'],
+  [data-report-tab-body='coverage'] {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+  [data-report-tab-body='coverage'] {
+    margin-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+  }
+
+  /* タブバー・ドリルダウン非表示 */
+  [data-report-tabs] {
+    display: none !important;
+  }
+  [data-report-detail-panel],
+  [data-report-detail-backdrop] {
+    display: none !important;
+  }
+}
