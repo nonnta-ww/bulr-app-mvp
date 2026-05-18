@@ -50,6 +50,7 @@ export function buildInitialAnalysisTasks(
     map.set(turn.id, {
       turnId: turn.id,
       patternId: turn.asked_pattern_id ?? turn.pattern_id ?? null,
+      questionText: turn.question_text ?? null,
       status: 'completed',
       step: 'prepare',
       transcript,

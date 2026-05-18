@@ -45,6 +45,8 @@ export interface AnalysisCandidate {
 export interface AnalysisTask {
   turnId: string;
   patternId: string | null;
+  /** インタビュアーが実際に質問した内容（Drawer で全文表示するため AnalysisTask に保持） */
+  questionText: string | null;
   status: AnalysisStatus;
   step: ProgressStep;
   transcript: string | null;

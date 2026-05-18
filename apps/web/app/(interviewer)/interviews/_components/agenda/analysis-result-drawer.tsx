@@ -45,6 +45,15 @@ export function AnalysisResultDrawer({
         </div>
       )}
 
+      {task.questionText && (
+        <div className="mb-2">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-500">質問</div>
+          <div className="whitespace-pre-wrap break-words rounded bg-blue-50 p-2 text-gray-900">
+            {task.questionText}
+          </div>
+        </div>
+      )}
+
       {task.transcript && (
         <CollapsibleText
           label="トランスクリプト"

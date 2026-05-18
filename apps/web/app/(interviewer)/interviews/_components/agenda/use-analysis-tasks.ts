@@ -54,9 +54,11 @@ export function useAnalysisTasks(
   const spawn = useCallback(
     ({ turnId, patternId, formData }: SpawnInput) => {
       const abortController = new AbortController();
+      const questionTextField = formData.get('questionText');
       const task: AnalysisTask = {
         turnId,
         patternId,
+        questionText: typeof questionTextField === 'string' ? questionTextField : null,
         status: 'streaming',
         step: 'upload',
         transcript: null,
