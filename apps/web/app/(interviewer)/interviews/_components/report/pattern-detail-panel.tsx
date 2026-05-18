@@ -5,7 +5,7 @@
  * 設計: docs/superpowers/specs/2026-05-18-heatmap-redesign-design.md §7
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { HeatmapData } from '@bulr/types/evaluation';
 import type { InterviewTurn } from '@bulr/db/schema';
 import { DIMENSION_LABEL, DIMENSION_ORDER } from '@/lib/heatmap-benchmarks';
@@ -20,9 +20,13 @@ interface Props {
 }
 
 export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
-  // Esc で閉じる
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Esc で閉じる & パネルが開いたら閉じるボタンにフォーカス
   useEffect(() => {
     if (!pattern) return;
+    // Move focus to close button when panel opens
+    closeRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -56,6 +60,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
             <h3 className="text-sm font-bold text-gray-900">{pattern.pattern_title}</h3>
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label="閉じる"

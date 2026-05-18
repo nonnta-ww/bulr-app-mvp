@@ -49,11 +49,11 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <VerdictSummary heatmapData={heatmapData} />
 
-      <div data-report-tabs className="mt-3 flex border-b border-gray-200 text-sm">
-        <TabButton active={tab === 'observation'} onClick={() => setTab('observation')}>
+      <div data-report-tabs role="tablist" aria-label="レポートビュー" className="mt-3 flex border-b border-gray-200 text-sm">
+        <TabButton id="tab-observation" controls="tabpanel-observation" active={tab === 'observation'} onClick={() => setTab('observation')}>
           観察
         </TabButton>
-        <TabButton active={tab === 'coverage'} onClick={() => setTab('coverage')}>
+        <TabButton id="tab-coverage" controls="tabpanel-coverage" active={tab === 'coverage'} onClick={() => setTab('coverage')}>
           カバレッジ
         </TabButton>
       </div>
@@ -61,6 +61,10 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
       <div className="pt-4">
         <div
           data-report-tab-body="observation"
+          role="tabpanel"
+          id="tabpanel-observation"
+          aria-labelledby="tab-observation"
+          tabIndex={0}
           style={{ display: tab === 'observation' ? 'block' : 'none' }}
         >
           <ObservationTab
@@ -70,6 +74,10 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
         </div>
         <div
           data-report-tab-body="coverage"
+          role="tabpanel"
+          id="tabpanel-coverage"
+          aria-labelledby="tab-coverage"
+          tabIndex={0}
           style={{ display: tab === 'coverage' ? 'block' : 'none' }}
         >
           <CoverageTab
@@ -90,10 +98,14 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
 }
 
 function TabButton({
+  id,
+  controls,
   active,
   onClick,
   children,
 }: {
+  id: string;
+  controls: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
@@ -102,7 +114,10 @@ function TabButton({
     <button
       type="button"
       role="tab"
+      id={id}
+      aria-controls={controls}
       aria-selected={active}
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
       className={`-mb-px border-b-2 px-4 py-2 transition ${
         active
