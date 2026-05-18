@@ -10,8 +10,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
-import { createLlmContext } from '@bulr/ai';
-import type { HeatmapData } from '@bulr/types/evaluation';
+import { aggregateHeatmap, createLlmContext } from '@bulr/ai';
 import { buildLlmContext } from '@/lib/queries/build-llm-context';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
 
@@ -152,8 +151,10 @@ export async function POST(request: Request): Promise<Response> {
   //    (Requirements 11.5-11.6)
   let allCoverage: typeof schema.patternCoverage.$inferSelect[];
   let freeQuestions: typeof schema.interviewTurn.$inferSelect[];
+  let allPatterns: typeof schema.assessmentPattern.$inferSelect[];
+  let allTurns: typeof schema.interviewTurn.$inferSelect[];
   try {
-    [allCoverage, freeQuestions] = await Promise.all([
+    [allCoverage, freeQuestions, allPatterns, allTurns] = await Promise.all([
       db.query.patternCoverage.findMany({
         where: eq(schema.patternCoverage.session_id, sessionId),
       }),
@@ -164,20 +165,31 @@ export async function POST(request: Request): Promise<Response> {
         ),
         orderBy: [asc(schema.interviewTurn.sequence_no)],
       }),
+      db.query.assessmentPattern.findMany(),
+      db.query.interviewTurn.findMany({
+        where: eq(schema.interviewTurn.session_id, sessionId),
+      }),
     ]);
   } catch (e) {
-    console.error(`[finalize] failed to load coverage/freeQuestions for sessionId=${sessionId}`, e);
+    console.error(`[finalize] failed to load coverage/freeQuestions/patterns/turns for sessionId=${sessionId}`, e);
     return NextResponse.json({ error: 'data_load_failed', retryable: true }, { status: 503 });
   }
 
   // 6. レポート生成 (Requirement 11.5)
-  // Rebuild ctx so completedCoverage reflects the newly UPSERTed rows from Step 4.
+  // v2: heatmap_data はコード側で決定論的に算出、LLM は summary_text のみ
+  const heatmap_data = aggregateHeatmap({
+    allCoverage,
+    freeQuestions,
+    allPatterns,
+    allTurns,
+  });
+
   const reportLlm = createLlmContext(
     await buildLlmContext({ session: session!, userId: user.id }),
   );
-  let report: { heatmap_data: HeatmapData; summary_text: string; generated_at: string };
+  let summary: { summary_text: string };
   try {
-    report = await reportLlm.generateSessionReport({
+    summary = await reportLlm.generateSessionReport({
       allCoverage,
       freeQuestions,
     });
@@ -185,6 +197,11 @@ export async function POST(request: Request): Promise<Response> {
     console.error(`[finalize] generateSessionReport failed for sessionId=${sessionId}`, e);
     return NextResponse.json({ error: 'report_generation_failed', retryable: true }, { status: 503 });
   }
+  const report = {
+    heatmap_data,
+    summary_text: summary.summary_text,
+    generated_at: new Date().toISOString(),
+  };
 
   // 7. session_report UPSERT + interview_session status 更新 (Requirements 11.7-11.8)
   try {

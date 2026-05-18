@@ -1,4 +1,4 @@
-import type { LlmAnalysis, LlmEvaluation, HeatmapData } from '@bulr/types/evaluation';
+import type { LlmAnalysis, LlmEvaluation } from '@bulr/types/evaluation';
 import type { InterviewerProfile, CandidateInfo } from '@bulr/types/profile';
 import type { InterviewTurn, AssessmentPattern, PatternCoverage } from '@bulr/db/schema';
 import { analyzeTurn } from '../functions/analyze-turn';
@@ -83,9 +83,7 @@ export interface ProposeNextQuestionsResult {
 }
 
 export interface GenerateSessionReportResult {
-  heatmap_data: HeatmapData;
   summary_text: string;
-  generated_at: string;
 }
 
 // --- Return interface for createLlmContext ---
@@ -116,7 +114,8 @@ export interface LlmContextMethods {
   aggregatePatternCoverage(input: AggregatePatternCoverageInput): Promise<LlmEvaluation>;
 
   /**
-   * Generates the final session report including heatmap and summary.
+   * Generates the final session report summary text.
+   * heatmap_data is computed deterministically by aggregateHeatmap (not LLM).
    * Internally uses ctx.sessionId — never trusts LLM-provided sessionId.
    */
   generateSessionReport(input: GenerateSessionReportInput): Promise<GenerateSessionReportResult>;

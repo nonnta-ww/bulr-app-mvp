@@ -17,7 +17,7 @@ export {
 } from './functions/aggregate-pattern-coverage';
 export {
   generateSessionReport,
-  reportOutputSchema,
+  summaryOutputSchema,
 } from './functions/generate-session-report';
 
 // Audio transcription
