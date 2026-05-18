@@ -6,6 +6,15 @@
 import type { HeatmapData } from '@bulr/types/evaluation';
 import { PatternRow } from './pattern-row';
 
+type Pattern = HeatmapData['patterns'][number];
+
+function byReachedThenAuthenticity(a: Pattern, b: Pattern): number {
+  return (
+    b.level_reached - a.level_reached ||
+    b.scores.authenticity - a.scores.authenticity
+  );
+}
+
 interface Props {
   patterns: HeatmapData['patterns'];
   onSelectPattern: (patternId: string) => void;
@@ -14,18 +23,10 @@ interface Props {
 export function ObservationTab({ patterns, onSelectPattern }: Props) {
   const reached = patterns
     .filter((p) => p.stuck_type === null && p.level_reached >= 2)
-    .sort(
-      (a, b) =>
-        b.level_reached - a.level_reached ||
-        b.scores.authenticity - a.scores.authenticity,
-    );
+    .sort(byReachedThenAuthenticity);
   const stuck = patterns
     .filter((p) => !(p.stuck_type === null && p.level_reached >= 2))
-    .sort(
-      (a, b) =>
-        b.level_reached - a.level_reached ||
-        b.scores.authenticity - a.scores.authenticity,
-    );
+    .sort(byReachedThenAuthenticity);
 
   return (
     <div className="grid grid-cols-2 gap-3">

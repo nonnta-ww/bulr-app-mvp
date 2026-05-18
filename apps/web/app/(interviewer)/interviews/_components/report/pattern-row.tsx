@@ -5,7 +5,7 @@
  */
 
 import type { HeatmapData } from '@bulr/types/evaluation';
-import { scoreLevel03, scoreLevelScope } from '@/lib/heatmap-benchmarks';
+import { scoreLevel03, scoreLevelScope, BAR_COLOR_CLASS } from '@/lib/heatmap-benchmarks';
 import { STUCK_TYPE_LABEL } from '@/lib/stuck-type-label';
 
 type Pattern = HeatmapData['patterns'][number];
@@ -42,12 +42,6 @@ export function PatternRow({ pattern, variant, onSelect }: Props) {
   );
 }
 
-const DOT_COLOR: Record<'high' | 'mid' | 'low', string> = {
-  high: 'bg-emerald-500',
-  mid: 'bg-amber-400',
-  low: 'bg-red-500',
-};
-
 function MiniDots({ pattern }: { pattern: Pattern }) {
   const s = pattern.scores;
   const items = [
@@ -60,7 +54,7 @@ function MiniDots({ pattern }: { pattern: Pattern }) {
   return (
     <span className="flex gap-1">
       {items.map((lv, i) => (
-        <span key={i} className={`h-1.5 w-1.5 rounded-full ${DOT_COLOR[lv]}`} />
+        <span key={i} className={`h-1.5 w-1.5 rounded-full ${BAR_COLOR_CLASS[lv]}`} />
       ))}
     </span>
   );
