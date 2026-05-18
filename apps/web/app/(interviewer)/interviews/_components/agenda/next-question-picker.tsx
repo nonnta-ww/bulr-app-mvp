@@ -13,6 +13,8 @@ export interface NextQuestionPickerProps {
   onSwitchToNewerCandidates?: (taskId: string) => void;
   /** displayedTask より新しい完了タスクが存在する場合に設定される。[切替] リンクの表示制御 */
   newCandidatesAvailable: { taskId: string } | null;
+  /** タスクの patternId からユーザー向け表示名（例 "[P-02] クエリ性能最適化"）を取得 */
+  patternTitleById: (id: string | null) => string;
 }
 
 export function NextQuestionPicker({
@@ -23,6 +25,7 @@ export function NextQuestionPicker({
   onStartRecording,
   onSwitchToNewerCandidates,
   newCandidatesAvailable,
+  patternTitleById,
 }: NextQuestionPickerProps) {
   const [manualOpen, setManualOpen] = useState(false);
   const [manualText, setManualText] = useState(
@@ -34,7 +37,7 @@ export function NextQuestionPicker({
       <section className="rounded-lg border border-gray-200 bg-white p-3">
         <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
           分析が出した次の候補
-          {displayedTask && ` (${displayedTask.turnId.slice(0, 6)} 由来)`}
+          {displayedTask && ` (${patternTitleById(displayedTask.patternId)} 由来)`}
         </h4>
         {newCandidatesAvailable && (
           <button

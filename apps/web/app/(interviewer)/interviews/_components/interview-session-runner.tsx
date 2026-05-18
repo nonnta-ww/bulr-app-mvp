@@ -598,6 +598,7 @@ export function InterviewSessionRunner({
             draft={sessionState.nextDraft}
             displayedTask={displayedTask}
             futureItems={futureItems}
+            patternTitleById={patternTitleById}
             onDraftChange={(draft) => dispatch({ type: 'SET_NEXT_DRAFT', draft })}
             onStartRecording={handleStartRecording}
             newCandidatesAvailable={newCandidatesAvailable}
