@@ -36,7 +36,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
 
   if (!pattern) return null;
 
-  const isStuck = pattern.stuck_type !== null;
+  const stuckType = pattern.stuck_type;
 
   return (
     <>
@@ -77,9 +77,9 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
               <span>到達段階</span>
               <span className="font-bold">L{pattern.level_reached}</span>
             </div>
-            {isStuck && (
+            {stuckType && (
               <div className="mb-2 rounded bg-white px-2 py-1 text-center text-[11px] font-semibold text-gray-700">
-                詰まり: {STUCK_TYPE_LABEL[pattern.stuck_type!]}
+                詰まり: {STUCK_TYPE_LABEL[stuckType]}
               </div>
             )}
             {DIMENSION_ORDER.map((dim) => (
