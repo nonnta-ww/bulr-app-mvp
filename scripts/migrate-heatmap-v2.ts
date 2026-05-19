@@ -3,8 +3,10 @@
  * v1 では LLM が heatmap_data を生成しており overall / patterns が無いので、
  * pattern_coverage + assessment_pattern + interview_turn から再算出する。
  *
- * 実行: pnpm exec tsx scripts/migrate-heatmap-v2.ts
+ * 空セッション（coverage も freeQuestion も無い）も v2 形（全 0 / patterns: []）で
+ * 上書きする。skip すると v1 シェイプが残り、画面アクセス時に TypeError 化するため。
  *
+ * 実行: pnpm exec tsx scripts/migrate-heatmap-v2.ts
  * このスクリプトは冪等。何度実行しても同じ結果になる。
  */
 
@@ -20,7 +22,6 @@ async function main() {
   console.log(`[migrate] loaded ${allPatterns.length} patterns`);
 
   let updated = 0;
-  let skipped = 0;
   for (const report of reports) {
     const sessionId = report.session_id;
 
@@ -38,12 +39,6 @@ async function main() {
         where: eq(schema.interviewTurn.session_id, sessionId),
       }),
     ]);
-
-    if (allCoverage.length === 0 && freeQuestions.length === 0) {
-      console.log(`[migrate] sessionId=${sessionId}: no coverage/freeQ, skipping`);
-      skipped++;
-      continue;
-    }
 
     const newHeatmap = aggregateHeatmap({
       allCoverage,
@@ -63,7 +58,7 @@ async function main() {
     updated++;
   }
 
-  console.log(`[migrate] done. updated=${updated}, skipped=${skipped}`);
+  console.log(`[migrate] done. updated=${updated}`);
   process.exit(0);
 }
 
