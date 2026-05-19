@@ -168,7 +168,7 @@ Stage 1 ではルーブリック定義に基づく固定値:
 
 ### 構造
 
-カテゴリごとに行を持つ。各行は **カテゴリ名 + 進捗バー + 到達数バッジ** のヘッダーと、**そのカテゴリの全パターン**（最大 10 程度）をセルで並べたグリッドからなる。
+カテゴリごとに行を持つ。各行は **カテゴリ名 + 進捗バー + 到達数バッジ** のヘッダーと、**そのカテゴリの全パターン**（実データではカテゴリにより 6〜15 個）をセルで並べたグリッドからなる。**グリッドは 12 列固定**で、12 を超えるカテゴリ（design=15, trouble=12 等）は 2 段目に折り返す。
 
 ```
 システム設計       ▓▓▓▓▓░░░░░ 5/10 到達
@@ -293,17 +293,19 @@ export interface HeatmapData {
     level_reached: 0 | 1 | 2 | 3 | 4;
     stuck_type: StuckType | null;
     scores: {
-      authenticity: number | null;  // null は未深掘り（詰まり等）
-      judgment: number | null;
-      scope: number | null;
-      meta_cognition: number | null;
-      ai_literacy: number | null;
+      authenticity: number;
+      judgment: number;
+      scope: number;
+      meta_cognition: number;
+      ai_literacy: number;
     };
-    notes: string | null;
+    notes: string;
     turn_count: number;
   }>;
 }
 ```
+
+注: `pattern_coverage.llm_evaluation` は NOT NULL かつ `SAFE_LLM_EVALUATION_FALLBACK` が全 0 を保証するため、`scores.*` と `notes` は非 null で十分。`not_experienced` パターンも `authenticity=0` 等の 0 値で記録されるため、null は構造的に発生しない。
 
 `generateSessionReport` 関数（`packages/ai/src/functions/generate-session-report.ts`）の出力スキーマ（Zod）も同様に拡張する。
 
@@ -407,7 +409,6 @@ apps/web/app/(interviewer)/interviews/_components/
 
 ## 14. オープン論点（実装中に判断する細部）
 
-- カバレッジタブの列数: パターンの最大値（カテゴリごとに 8–10 個程度）を見て確定。`packages/db/src/seeds/patterns/*` を集計してデフォルト幅を決める。
 - スティッキー判定とタブバーの間のシャドウ / ボーダーの強さ（スクロール感の演出）。
 - ベンチマーク線の凡例位置（スティッキー内 vs ツールチップ）。
 - 詰まり種別のソート順（経験なし → 浅い → 選択肢が単一 → 固執 の順か、データ準拠か）。
