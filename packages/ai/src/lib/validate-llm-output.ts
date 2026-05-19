@@ -1,5 +1,5 @@
 // Requirements 14.1–14.8, 8.12
-import type { LlmAnalysis, LlmEvaluation, HeatmapData } from '@bulr/types/evaluation';
+import type { LlmAnalysis, LlmEvaluation } from '@bulr/types/evaluation';
 import { z } from 'zod';
 
 // Requirement 14.1: validateAndFallback generic helper
@@ -76,50 +76,4 @@ export const SAFE_PROPOSAL_FALLBACK: {
       intent: 'next_pattern',
     },
   ],
-};
-
-// Requirement 14.7: SAFE_SESSION_REPORT_FALLBACK
-const _zeroCategory = {
-  avg_authenticity: 0,
-  avg_judgment: 0,
-  avg_scope: 0,
-  avg_meta_cognition: 0,
-  avg_ai_literacy: 0,
-  pattern_count: 0,
-};
-
-const _safeHeatmapData: HeatmapData = {
-  by_category: {
-    design: { ..._zeroCategory },
-    trouble: { ..._zeroCategory },
-    performance: { ..._zeroCategory },
-    security: { ..._zeroCategory },
-    organization: { ..._zeroCategory },
-    ai: { ..._zeroCategory },
-  },
-  scope_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-  ai_literacy_distribution: { 0: 0, 1: 0, 2: 0, 3: 0 },
-  free_question_count: 0,
-  overall: {
-    avg_authenticity: 0,
-    avg_judgment: 0,
-    avg_scope: 0,
-    avg_meta_cognition: 0,
-    avg_ai_literacy: 0,
-    reached_count: 0,
-    stuck_count: 0,
-    not_experienced_count: 0,
-    undeveloped_count: 0,
-  },
-  patterns: [],
-};
-
-export const SAFE_SESSION_REPORT_FALLBACK: {
-  heatmap_data: HeatmapData;
-  summary_text: string;
-  generated_at: string;
-} = {
-  heatmap_data: _safeHeatmapData,
-  summary_text: 'レポート生成失敗、面接官は管理画面で原データを確認してください',
-  generated_at: new Date().toISOString(),
 };

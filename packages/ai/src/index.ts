@@ -37,7 +37,6 @@ export {
   SAFE_LLM_ANALYSIS_FALLBACK,
   SAFE_LLM_EVALUATION_FALLBACK,
   SAFE_PROPOSAL_FALLBACK,
-  SAFE_SESSION_REPORT_FALLBACK,
 } from './lib/validate-llm-output';
 
 // Model client
