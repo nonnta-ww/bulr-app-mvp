@@ -83,7 +83,7 @@ export default async function ReportPage({ params }: Props) {
 
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-800">AIサマリー</h2>
-          <div className="prose prose-sm max-w-none text-gray-700">
+          <div className="prose prose-sm max-w-none text-gray-700 prose-headings:text-gray-900 prose-h2:mt-6 prose-h2:mb-2 prose-h3:mt-4 prose-h3:mb-1 prose-ul:my-2 prose-li:my-0.5">
             <ReactMarkdown>{report.summary_text}</ReactMarkdown>
           </div>
         </section>
