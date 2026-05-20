@@ -57,7 +57,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
         <header className="flex items-start justify-between border-b border-gray-100 px-4 py-3">
           <div>
             <p className="font-mono text-xs font-bold text-cyan-700">{pattern.pattern_code}</p>
-            <h3 className="text-sm font-bold text-gray-900">{pattern.pattern_title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{pattern.pattern_title}</h3>
           </div>
           <button
             ref={closeRef}
@@ -70,7 +70,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
           </button>
         </header>
 
-        <div className="flex-1 p-4 text-xs">
+        <div className="flex-1 p-4 text-sm leading-relaxed">
           {/* スコア */}
           <section className="mb-4 rounded bg-sky-50 p-3 text-sky-900">
             <div className="mb-1 flex justify-between">
@@ -78,7 +78,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
               <span className="font-bold">L{pattern.level_reached}</span>
             </div>
             {stuckType && (
-              <div className="mb-2 rounded bg-white px-2 py-1 text-center text-[11px] font-semibold text-gray-700">
+              <div className="mb-2 rounded bg-white px-2 py-1 text-center text-xs font-semibold text-gray-700">
                 詰まり: {STUCK_TYPE_LABEL[stuckType]}
               </div>
             )}
@@ -92,7 +92,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
 
           {/* 関連ターン */}
           <section className="mb-4">
-            <h4 className="mb-2 text-[10px] uppercase tracking-wide text-gray-400">
+            <h4 className="mb-2 text-xs uppercase tracking-wide text-gray-500">
               関連ターン ({relatedTurns.length}件)
             </h4>
             {relatedTurns.length === 0 ? (
@@ -101,7 +101,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
               <div className="space-y-1">
                 {relatedTurns.map((t) => (
                   <div key={t.id} className="rounded bg-gray-50 px-2 py-1">
-                    <p className="text-[10px] text-gray-500">Q{t.sequence_no}</p>
+                    <p className="text-xs text-gray-500">Q{t.sequence_no}</p>
                     <p className="text-gray-700">{t.question_text}</p>
                   </div>
                 ))}
@@ -111,7 +111,7 @@ export function PatternDetailPanel({ pattern, relatedTurns, onClose }: Props) {
 
           {/* notes */}
           <section>
-            <h4 className="mb-2 text-[10px] uppercase tracking-wide text-gray-400">
+            <h4 className="mb-2 text-xs uppercase tracking-wide text-gray-500">
               評価メモ
             </h4>
             <div className="rounded bg-gray-50 p-2 text-gray-700 whitespace-pre-wrap">
