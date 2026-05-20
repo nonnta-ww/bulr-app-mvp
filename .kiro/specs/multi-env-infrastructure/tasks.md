@@ -373,6 +373,8 @@
 ## Manual Setup: Owner 手動実施項目（本スペック完了の最終確認）
 
 > 5.x は Owner（プロジェクトオーナー）が `docs/setup/` の手順通りに実施する手動セットアップ項目。本スペックの最終完了条件として、これらが完了していることを Owner がチェックリストで確認する。実施には外部サービス（Vercel / Neon / Resend / OpenAI / Anthropic）のアカウント作成と API キー発行を伴うため、本スペックではコードや自動化を提供しない。
+>
+> **5.1〜5.6 は production 投入時に deferred (2026-05-21)**: Stage 1 の検証段階ではローカル Docker Postgres と Vercel Preview のみで進行可能なため、production cloud setup（Neon production branch / Vercel production / 本番環境変数）は production rollout 直前に Owner が一括実施する。assessment-pattern-seed 9.5 (production seed) と本セクション 5.1-5.6 は同じタイミングで実施。
 
 - [ ] 5. Owner 手動セットアップ実施
 - [ ] 5.1 Neon プロジェクト作成 + dev / production ブランチ作成（Owner 手動）
@@ -433,7 +435,7 @@
   - _Boundary: VercelSetupDoc / VercelJsonConfig 手順実施_
   - _Depends: 5.5_
 
-- [ ] 5.7 ローカル開発環境セットアップ（開発者個人実施、参考タスク）
+- [x] 5.7 ローカル開発環境セットアップ（開発者個人実施、参考タスク）
   - `cp apps/web/.env.local.example apps/web/.env.local`
   - `.env.local` の各変数に値を埋める（DATABASE_URL は Neon dev branch、API キーは 5.2 で取得した値、CRON_SECRET は 5.4 で生成した値、BLOB_READ_WRITE_TOKEN は Vercel Storage タブから取得）
   - `pnpm dev` で apps/web (port 3000) が起動することを確認

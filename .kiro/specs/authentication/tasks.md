@@ -13,7 +13,7 @@
 
 > 1.x はパッケージ依存追加と DB スキーマ定義。1.1 と 1.2 は別パッケージへの追加で並列実行可能。1.3-1.5 はスキーマファイル作成、相互参照あり（1.4 が 1.3 の user テーブルに FK）。
 
-- [ ] 1. パッケージ依存追加と DB スキーマ定義
+- [x] 1. パッケージ依存追加と DB スキーマ定義
 
 - [x] 1.1 (P) `apps/web/package.json` に better-auth と resend を追加
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/package.json` の `dependencies` に以下を追加:
@@ -98,7 +98,7 @@
 
 > 2.x は apps/web/lib 配下のユーティリティ層。互いに独立しているため並列実行可能。
 
-- [ ] 2. メール送信ユーティリティ・レート制限・Zod スキーマ集約
+- [x] 2. メール送信ユーティリティ・レート制限・Zod スキーマ集約
 
 - [x] 2.1 (P) `apps/web/lib/email/resend.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/email/resend.ts` を新規作成
@@ -150,7 +150,7 @@
 
 > 3.x は Better Auth の core。3.1 が中核（Magic Link plugin + databaseHooks + sendMagicLink）、3.2 がクライアント、3.3 が Next.js API ルートで 3.1 に依存。
 
-- [ ] 3. Better Auth サーバー / クライアント / API ルート
+- [x] 3. Better Auth サーバー / クライアント / API ルート
 
 - [x] 3.1 `apps/web/lib/auth/server.ts` を作成（Better Auth サーバー設定）
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/auth/server.ts` を新規作成
@@ -198,7 +198,7 @@
 
 > 4.x は guards と safe-action を順次。4.1 が core、4.2 が 4.1 に依存。
 
-- [ ] 4. 認証ヘルパーと Server Action ラッパー
+- [x] 4. 認証ヘルパーと Server Action ラッパー
 
 - [x] 4.1 `apps/web/lib/guards.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/lib/guards.ts` を新規作成
@@ -230,7 +230,7 @@
 
 > 5.x は proxy.ts 単独。
 
-- [ ] 5. proxy.ts (UX リダイレクト + Basic 認証 + CVE-2025-29927 教訓)
+- [x] 5. proxy.ts (UX リダイレクト + Basic 認証 + CVE-2025-29927 教訓)
 
 - [x] 5.1 `apps/web/proxy.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/proxy.ts` を新規作成
@@ -261,7 +261,7 @@
 
 > 6.x は UI ページ群。各 page.tsx は独立して作れるが、すべて 4.1 (guards) と 3.2 (auth client) に依存。6.1-6.3 は互いに独立で並列実行可能。
 
-- [ ] 6. サインイン / 管理画面ログイン / smoke test UI
+- [x] 6. サインイン / 管理画面ログイン / smoke test UI
 
 - [x] 6.1 (P) `apps/web/app/(interviewer)/sign-in/page.tsx` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/(interviewer)/sign-in/page.tsx` を新規作成
