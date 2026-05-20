@@ -14,11 +14,15 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function AppShell({ email: _email, initialCollapsed, children }: Props) {
+export function AppShell({ email, initialCollapsed, children }: Props) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+        email={email}
+      />
       <div className="flex-1 overflow-y-auto">{children}</div>
     </div>
   );

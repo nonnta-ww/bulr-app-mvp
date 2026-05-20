@@ -7,9 +7,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { UserMenu } from './user-menu';
+
 type Props = {
   collapsed: boolean;
   onToggle: () => void;
+  email: string;
 };
 
 const NAV_ITEMS = [
@@ -17,7 +20,7 @@ const NAV_ITEMS = [
   { href: '/settings', label: '設定', match: /^\/settings(\/|$)/, icon: GearIcon },
 ] as const;
 
-export function Sidebar({ collapsed, onToggle }: Props) {
+export function Sidebar({ collapsed, onToggle, email }: Props) {
   const pathname = usePathname();
   return (
     <aside
@@ -71,6 +74,8 @@ export function Sidebar({ collapsed, onToggle }: Props) {
           );
         })}
       </nav>
+
+      <UserMenu email={email} collapsed={collapsed} />
     </aside>
   );
 }
