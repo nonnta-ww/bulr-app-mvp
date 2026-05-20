@@ -53,7 +53,7 @@ export default async function ReportPage({ params }: Props) {
 
   if (!report) {
     return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8">
+      <main className="bg-gray-50 px-4 py-8">
         <div className="mx-auto max-w-3xl">
           <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
             <p className="text-gray-600">
@@ -66,7 +66,7 @@ export default async function ReportPage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
+    <main className="bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">面接レポート</h1>
