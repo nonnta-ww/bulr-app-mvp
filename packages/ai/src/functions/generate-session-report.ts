@@ -54,10 +54,10 @@ function buildPrompt(allCoverage: PatternCoverage[], freeQuestions: InterviewTur
     parts.push(`## フリー質問\n（フリー質問なし）`);
   }
 
-  const freeQuestionsSectionInstruction =
+  const freeQuestionsSkeleton =
     freeQuestions.length > 0
-      ? '`## フリー質問総評` セクションを必ず含め、観察された傾向を箇条書きまたは短い段落で記述してください。'
-      : '`## フリー質問総評` セクションは省略してください（フリー質問が無いため）。';
+      ? `\n\n## フリー質問総評\n\n- （観察された事実 / 全体の傾向）`
+      : '';
 
   parts.push(`## タスク
 候補者の面接観察事実を簡潔にまとめた summary_text（10000 文字以内）を **Markdown 形式** で生成し、JSON で返してください。
@@ -87,14 +87,8 @@ function buildPrompt(allCoverage: PatternCoverage[], freeQuestions: InterviewTur
 ## カテゴリ別カバレッジ
 
 - **{カテゴリ名}**: （観察された到達状況・詰まり状況）
-- **{カテゴリ名}**: ...
-
-## フリー質問総評
-
-- （観察された事実 / 全体の傾向）
+- **{カテゴリ名}**: ...${freeQuestionsSkeleton}
 \`\`\`
-
-${freeQuestionsSectionInstruction}
 
 ### 内容要件
 - 5 次元別所感は、数値の単純引用ではなくターンから観察された具体的な事実を記述する。
