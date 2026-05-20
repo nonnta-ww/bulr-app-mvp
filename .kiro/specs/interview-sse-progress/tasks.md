@@ -67,9 +67,9 @@
   - _Requirements: 1.2, 1.4, 2.1, 2.3_
   - _Boundary: InterviewSessionRunner_
 
-- [ ] 4. Validation: 動作確認とテスト
+- [x] 4. Validation: 動作確認とテスト
 
-- [ ] 4.1 E2E 動作確認シナリオを実施する
+- [x] 4.1 E2E 動作確認シナリオを実施する
   - dev server を起動し、インタビュー画面で実際に録音 → 「次へ」押下 → 4 ステップが順番にチェックマーク付きに変化 → 候補選択画面に遷移することを目視確認
   - DevTools Network タブで `/api/interview/turns/next` のレスポンスが `text/event-stream` 形式となり、`data: {"type":"progress",...}` フレームが期待通り順次配信されることを確認
   - Whisper サービスを意図的に停止した状態で「次へ」押下 → 進捗 UI 表示 → エラー Toast 表示 → 録音画面に戻ること、同じ録音で再度「次へ」を押下できることを目視確認
