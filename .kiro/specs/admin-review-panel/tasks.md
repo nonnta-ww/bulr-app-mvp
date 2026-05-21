@@ -241,7 +241,7 @@
 
 ## G8. 検証（手動 smoke test）
 
-- [ ] 8.1 _Smoke_ 認証 + 一覧ページ動作確認
+- [x] 8.1 _Smoke_ 認証 + 一覧ページ動作確認
   - `pnpm dev` 起動
   - 許可メールでサインインして `/admin/sessions` に到達できることを確認（ST-1）
   - `/admin/sessions` で全セッションが一覧表示されること（候補者名 / 面接官 email / status / 開始時刻 / ターン数 / 平均スコア / レビューステータスが正しい）（ST-3）
@@ -249,7 +249,7 @@
   - _Requirements: 1.1-1.7, 2.7, 10.1, 14.2_
   - _Depends: 2.4_
 
-- [ ] 8.2 _Smoke_ フィルタ + ソート + URL 直接アクセス動作確認
+- [x] 8.2 _Smoke_ フィルタ + ソート + URL 直接アクセス動作確認
   - レビューステータス + status を変更すると URL が変わり一覧が再描画されること（ST-4）
   - 各ソートキー + 順序で一覧が並び替わること（ST-5）
   - `?reviewStatus=invalid&sortBy=invalid` でアクセスしてもデフォルト値で表示されること（ST-6）
@@ -257,7 +257,7 @@
   - _Requirements: 2.1-2.7, 3.1-3.7, 14.2_
   - _Depends: 2.4_
 
-- [ ] 8.3 _Smoke_ 詳細ページ + 手動評価入力 + 並列比較 + レビューステータス遷移
+- [x] 8.3 _Smoke_ 詳細ページ + 手動評価入力 + 並列比較 + レビューステータス遷移
   - 一覧で 1 セッションをクリックして `/admin/sessions/[id]` に遷移できること、各セクションが表示されること（候補者情報 / 面接官情報 / セッションメタ / interview_turn 時系列 / pattern_coverage カード）（ST-7）
   - 1 つの pattern_coverage に 5 次元 + notes を入力して保存できること、`manual_evaluation` JSONB に reviewer = admin email + reviewed_at が記録されること（DB 直接確認）（ST-8）
   - 値域外（authenticity=4 等）入力でボタン無効化、エラー表示（ST-9）
@@ -269,7 +269,7 @@
   - _Requirements: 4.1-4.11, 5.1-5.12, 6.1-6.11, 7.1-7.8, 14.2_
   - _Depends: 5.3, 8.1_
 
-- [ ] 8.4 _Smoke_ CSV/JSON エクスポート動作確認
+- [x] 8.4 _Smoke_ CSV/JSON エクスポート動作確認
   - `/admin/sessions/[id]/export?format=csv` で CSV ダウンロードでき、Excel で開いて文字化けしないこと、ヘッダー + 各 coverage 1 行が正しいこと（ST-13）
   - `/admin/sessions/[id]/export?format=json` で JSON ダウンロードでき、構造が `{ session, candidate, interviewer, coverages: [...] }` であること（ST-14）
   - CSV / JSON のいずれにも採用推奨列がないこと（ST-15）
@@ -280,13 +280,13 @@
   - _Requirements: 8.1-8.17, 10.3, 13.5, 14.2, 15.4_
   - _Depends: 6.3, 8.1_
 
-- [ ] 8.5 _Smoke_ smoke test ページ削除確認
+- [x] 8.5 _Smoke_ smoke test ページ削除確認
   - `/admin/_health` にアクセスして 404 が返ることを確認（ST-20）
   - 完了状態: ブラウザで 404 ページ表示
   - _Requirements: 12.1-12.4, 14.2_
   - _Depends: 7.1, 8.1_
 
-- [ ] 8.6 _Boundary check_ コンポーネント配置と Stage 2 移行容易性の検証
+- [x] 8.6 _Boundary check_ コンポーネント配置と Stage 2 移行容易性の検証
   - admin 専用コンポーネント / Server Action / lib ヘルパーが `apps/web/app/admin/_components/`、`_actions/`、`_lib/` 配下にあることを `find apps/web/app/admin -type d` で確認
   - apps/web の他ルート（`/interviews/*` 等）から `_components/` を import していないこと（grep で検索）
   - `import { sessionListQuery } from '@bulr/db/queries/admin'` と `import { sessionListQuery } from '@bulr/db'` の両方で解決することを TypeScript で確認
