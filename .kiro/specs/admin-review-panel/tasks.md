@@ -206,7 +206,7 @@
   - _Requirements: 8.5-8.9, 8.16, 8.17, 13.5_
   - _Boundary: CsvExport_
 
-- [ ] 6.2 (P) _Lib_ JSON 整形純関数を実装する `apps/web/app/admin/_lib/json-export.ts`
+- [x] 6.2 (P) _Lib_ JSON 整形純関数を実装する `apps/web/app/admin/_lib/json-export.ts`
   - `buildJsonFromSession(detail: SessionDetail): SessionExportJson` 純関数
   - 出力構造: `{ session: { id, status, started_at, completed_at, planned_pattern_codes, consent_obtained_at, consent_version, ... }, candidate: { name, applied_role, background_summary, email? }, interviewer: { email, display_name, role_in_org }, coverages: [ { pattern_code, pattern_category, level_reached, stuck_type, llm_evaluation, manual_evaluation? }, ... ] }`
   - 未評価の manual_evaluation は null
