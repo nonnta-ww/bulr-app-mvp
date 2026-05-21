@@ -73,7 +73,7 @@
   - _Requirements: 1.3, 1.4, 1.5, 1.6, 1.7_
   - _Boundary: SessionListTable_
 
-- [ ] 2.3 (P) _UI_ フィルタ + ソート Client Component を実装する `apps/web/app/admin/_components/session-list-filters.tsx`
+- [x] 2.3 (P) _UI_ フィルタ + ソート Client Component を実装する `apps/web/app/admin/_components/session-list-filters.tsx`
   - `'use client'` 指定
   - props: `{ current: ListQueryParams }`
   - レビューステータス select（全件 / 未レビュー / 一部レビュー / レビュー済み）+ status select（全件 / in_progress / completed / abandoned）
