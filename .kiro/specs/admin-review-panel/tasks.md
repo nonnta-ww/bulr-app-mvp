@@ -215,7 +215,7 @@
   - _Requirements: 8.10, 8.15_
   - _Boundary: JsonExport_
 
-- [ ] 6.3 _Route_ CSV/JSON エクスポート Route Handler を実装する `apps/web/app/admin/sessions/[id]/export/route.ts`
+- [x] 6.3 _Route_ CSV/JSON エクスポート Route Handler を実装する `apps/web/app/admin/sessions/[id]/export/route.ts`
   - `runtime: 'nodejs'` を明示
   - `GET` ハンドラ
   - `await requireAdmin()` を最初に呼ぶ（Layer 2 多層防御、URL 直接アクセス禁止）
