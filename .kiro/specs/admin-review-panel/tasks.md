@@ -197,7 +197,7 @@
 
 ## G6. CSV / JSON エクスポート endpoint
 
-- [ ] 6.1 (P) _Lib_ CSV 整形純関数を実装する `apps/web/app/admin/_lib/csv-export.ts`
+- [x] 6.1 (P) _Lib_ CSV 整形純関数を実装する `apps/web/app/admin/_lib/csv-export.ts`
   - `escapeCsvField(value: string | number | null | undefined): string` 純関数（RFC 4180 準拠、ダブルクォート / カンマ / 改行を含む値はダブルクォート囲み + 内部のダブルクォートを `""` にエスケープ、null/undefined は空文字）
   - `buildCsvFromCoverages(detail: SessionDetail): string` 純関数：ヘッダー行 + 各 coverage 1 行を CRLF で join、先頭に UTF-8 BOM (`﻿`) 付与
   - 列定義: session_id, candidate_name, candidate_applied_role, interviewer_email, pattern_code, pattern_category, level_reached, stuck_type, llm_authenticity, llm_judgment, llm_scope, llm_meta_cognition, llm_ai_literacy, llm_notes, llm_evaluated_at, manual_authenticity, manual_judgment, manual_scope, manual_meta_cognition, manual_ai_literacy, manual_notes, reviewer, reviewed_at
