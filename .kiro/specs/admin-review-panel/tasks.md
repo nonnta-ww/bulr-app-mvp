@@ -4,7 +4,7 @@
 
 ## G1. 集約クエリの実装と 3 階層バレルチェーン構築（packages/db）
 
-- [ ] 1.1 _Lib_ 共通レビューステータス判定純関数を実装する `apps/web/app/admin/_lib/review-status.ts`
+- [x] 1.1 _Lib_ 共通レビューステータス判定純関数を実装する `apps/web/app/admin/_lib/review-status.ts`
   - `computeReviewStatus(pendingCount: number, totalCount: number): 'pending' | 'partial' | 'reviewed'` 純関数
   - `totalCount === 0 || pendingCount === totalCount` → `'pending'`、`0 < pendingCount && pendingCount < totalCount` → `'partial'`、`pendingCount === 0 && totalCount > 0` → `'reviewed'`
   - 完了状態: ファイルが存在し、TypeScript で型エラーなし
