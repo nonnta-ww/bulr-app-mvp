@@ -110,7 +110,7 @@
   - _Requirements: 4.4, 11.5_
   - _Boundary: InterviewerDisplay_
 
-- [ ] 3.3 (P) _UI_ interview_turn 時系列表示 Server Component を実装する `apps/web/app/admin/_components/chat-message-timeline.tsx`
+- [x] 3.3 (P) _UI_ interview_turn 時系列表示 Server Component を実装する `apps/web/app/admin/_components/chat-message-timeline.tsx`
   - props: `{ turns: InterviewTurn[] }`（sequence_no 昇順を期待）
   - 各ターンで question_text / question_source / candidate transcript / pattern_match_confidence / off_pattern_summary（off_pattern の場合のみ）/ pattern_id（紐づく場合は assessment_pattern.code も併記）/ duration_ms / created_at を表示
   - 完了状態: テスト用 mock データで描画
