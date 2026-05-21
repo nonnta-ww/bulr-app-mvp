@@ -22,7 +22,7 @@
   - _Depends: 1.1_
   - _Boundary: SessionListQuery_
 
-- [ ] 1.3 (P) _Query_ セッション詳細集約クエリ `packages/db/src/queries/admin/session-detail-query.ts` を実装する
+- [x] 1.3 (P) _Query_ セッション詳細集約クエリ `packages/db/src/queries/admin/session-detail-query.ts` を実装する
   - 引数 `sessionId: string`、Drizzle ORM のみ
   - `interview_session` + `candidate` + `user`（面接官）+ `user_profile` + `interview_turn[]`（sequence_no 昇順）+ `pattern_coverage[]`（pattern_code 昇順）+ 関連 `assessment_pattern` を 1-3 クエリに集約
   - session が存在しなければ `null` を返す
