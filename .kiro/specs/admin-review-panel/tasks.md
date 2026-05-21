@@ -147,7 +147,7 @@
   - _Depends: 4.1_
   - _Boundary: UpdateManualEvaluationAction_
 
-- [ ] 4.3 _UI_ 手動評価入力フォーム Client Component を実装する `apps/web/app/admin/_components/manual-eval-form.tsx`
+- [x] 4.3 _UI_ 手動評価入力フォーム Client Component を実装する `apps/web/app/admin/_components/manual-eval-form.tsx`
   - `'use client'` 指定
   - props: `{ patternCoverageId: string, initial?: ManualEvaluation, llmEvaluation: LlmEvaluation }`
   - フィールド: authenticity / judgment / scope / meta_cognition / ai_literacy（数値 input、初期値は initial があればそれ、なければ llmEvaluation 値）+ notes（textarea、最大 5000 文字、文字数カウンタ）
@@ -301,3 +301,4 @@
 - **review-status.ts のパッケージ境界 (タスク 1.1, 1.2)**: `computeReviewStatus` 関数は `apps/web/app/admin/_lib/review-status.ts` に配置（task 1.1）。design.md の Component Specifications では `SessionListQuery → ReviewStatus` 依存が示されているが、packages/db から apps/web への import は依存方向逆になるため、`packages/db/src/queries/admin/session-list-query.ts` (task 1.2) では同等のロジックを Drizzle の `sql<...>` 式 + `CASE WHEN` で SQL レベルにインライン化する：`CASE WHEN total = 0 OR pending = total THEN 'pending' WHEN pending = 0 THEN 'reviewed' ELSE 'partial' END as review_status`。フィルタの WHERE 句も同じ CASE 式を使う（HAVING 句または derived subquery）。判定ロジックが将来変わる場合は `review-status.ts` と session-list-query.ts 両方を同期更新すること。
 - **バレルチェーン整備 (タスク 1.4-1.6)**: 既存の `packages/db/src/queries/index.ts` は flat な直接ファイル export（`export * from './interview/load-session-with-turns'` 等）だったため、`interview/index.ts` を新規作成して subdir-barrel パターンに移行。最終構造: `admin/index.ts` + `interview/index.ts` → `queries/index.ts` (subdir barrel) → `db/index.ts` (`export * from './queries/index'` を新規追加)。これで `@bulr/db/queries/admin` と `@bulr/db` の両方から `sessionListQuery` 等が解決する。trivial な barrel 系（1.4-1.6）はメインコンテキストで直接実装し typecheck で確認した（subagent ラウンドトリップを省略）。
 - **typetest ファイルは作らない (タスク 3.1 で発生)**: Stage 1 は requirements 14.1 でテストフレームワーク（Vitest/Playwright 等）導入を明示的に禁じている。subagent が TDD プロトコルに従って `__typetest__/*.typetest.tsx` ファイルを作成した場合は境界違反として削除する。検証は `pnpm typecheck` / `pnpm lint` + 手動 smoke のみ。後続タスクの implementer prompt にも明記すること。
+- **adminAction の 2 段 envelope (タスク 4.2, 4.3)**: `adminAction(schema, handler)` の戻り値は `{ ok: true, data: R } | { ok: false, error: { code, message } }`。ここで `R` は handler の戻り値型。`updateManualEvaluation` handler は `{ ok: true } | { ok: false, error: 'NOT_FOUND' }` を返すため、クライアント側では 3 ケース判定が必要: (1) `result.ok && result.data.ok` → 成功、(2) `result.ok && !result.data.ok` → 業務エラー（NOT_FOUND 等、`result.data.error` を表示）、(3) `!result.ok` → wrapper レイヤエラー（認証 / Zod、`result.error.message` を表示）。outer の `result.ok` だけ見て成功判定すると業務エラーを見落とす（タスク 4.3 round 1 で発生したバグ）。
