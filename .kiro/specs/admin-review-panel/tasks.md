@@ -163,7 +163,7 @@
 
 ## G5. LLM vs 手動 並列表示 + 差分ハイライト
 
-- [ ] 5.1 _UI_ LLM vs 手動 並列比較表 Server Component を実装する `apps/web/app/admin/_components/eval-comparison.tsx`
+- [x] 5.1 _UI_ LLM vs 手動 並列比較表 Server Component を実装する `apps/web/app/admin/_components/eval-comparison.tsx`
   - props: `{ llm: LlmEvaluation, manual?: ManualEvaluation | null }`
   - 5 次元（authenticity / judgment / scope / meta_cognition / ai_literacy）を行とし、列に「LLM」「手動」「差分」
   - 手動 == null なら「-」表示
