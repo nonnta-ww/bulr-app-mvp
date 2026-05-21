@@ -184,7 +184,7 @@
   - _Depends: 4.3, 5.1_
   - _Boundary: AnswerCard_
 
-- [ ] 5.3 _Page_ セッション詳細ページを実装する `apps/web/app/admin/sessions/[id]/page.tsx`
+- [x] 5.3 _Page_ セッション詳細ページを実装する `apps/web/app/admin/sessions/[id]/page.tsx`
   - `await requireAdmin()` を最初に呼ぶ（多層認証 Layer 2）
   - params の `id` を Zod 検証（不正なら `notFound()`）
   - `sessionDetailQuery(id)` 結果が null なら `notFound()`
