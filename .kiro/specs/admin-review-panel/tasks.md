@@ -54,7 +54,7 @@
 
 ## G2. セッション一覧ページ + フィルタ + ソート
 
-- [ ] 2.1 (P) _Lib_ 一覧ページの URL クエリパラメータ Zod スキーマと parser を実装する `apps/web/app/admin/_lib/list-query-params.ts`
+- [x] 2.1 (P) _Lib_ 一覧ページの URL クエリパラメータ Zod スキーマと parser を実装する `apps/web/app/admin/_lib/list-query-params.ts`
   - `listQueryParamsSchema = z.object({ reviewStatus: z.enum([...]).default('all'), status: z.enum([...]).default('all'), sortBy: z.enum(['started_at', 'candidate_name', 'avg_score']).default('started_at'), sortOrder: z.enum(['asc', 'desc']).default('desc') })`
   - `parseListQueryParams(searchParams)` 関数: 配列値を最初の要素に正規化 → `safeParse` → 失敗時はデフォルト値で返却（fail secure）
   - `export type ListQueryParams = z.infer<typeof listQueryParamsSchema>`
