@@ -126,7 +126,7 @@
 
 ## G4. 手動評価フォーム + Server Action
 
-- [ ] 4.1 _Lib_ 手動評価入力 Zod スキーマを実装する `apps/web/app/admin/_lib/manual-evaluation-schema.ts`
+- [x] 4.1 _Lib_ 手動評価入力 Zod スキーマを実装する `apps/web/app/admin/_lib/manual-evaluation-schema.ts`
   - `manualEvaluationSchema` 構造（`patternCoverageId`、5 次元整数値域、level_reached、stuck_type、notes 5000 文字）を定義
   - authenticity/judgment/meta_cognition/ai_literacy: 0-3、scope: 1-5、level_reached: 0-4、stuck_type: enum or null、notes: max 5000 chars
   - `export type ManualEvaluationInput = z.infer<typeof manualEvaluationSchema>`
