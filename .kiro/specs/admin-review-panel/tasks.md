@@ -11,7 +11,7 @@
   - _Requirements: 1.3, 2.7_
   - _Boundary: ReviewStatus_
 
-- [ ] 1.2 (P) _Query_ セッション一覧集約クエリ `packages/db/src/queries/admin/session-list-query.ts` を実装する
+- [x] 1.2 (P) _Query_ セッション一覧集約クエリ `packages/db/src/queries/admin/session-list-query.ts` を実装する
   - 引数 `{ reviewStatus, status, sortBy, sortOrder }` を受け、Drizzle ORM のみで `interview_session` を起点に `candidate`、`user`、`pattern_coverage`（COUNT total / COUNT manual_evaluation IS NULL = pending / AVG llm_evaluation 5 次元の平均）、`interview_turn`（COUNT total）を JOIN または `with` 句で集約
   - `status = 'draft'` のセッションは除外
   - `computeReviewStatus(pending, total)` でレビューステータス算出
@@ -295,3 +295,7 @@
   - 完了状態: grep / find / typecheck で確認
   - _Requirements: 11.1-11.6, 14.2_
   - _Depends: 5.3, 6.3_
+
+## Implementation Notes
+
+- **review-status.ts のパッケージ境界 (タスク 1.1, 1.2)**: `computeReviewStatus` 関数は `apps/web/app/admin/_lib/review-status.ts` に配置（task 1.1）。design.md の Component Specifications では `SessionListQuery → ReviewStatus` 依存が示されているが、packages/db から apps/web への import は依存方向逆になるため、`packages/db/src/queries/admin/session-list-query.ts` (task 1.2) では同等のロジックを Drizzle の `sql<...>` 式 + `CASE WHEN` で SQL レベルにインライン化する：`CASE WHEN total = 0 OR pending = total THEN 'pending' WHEN pending = 0 THEN 'reviewed' ELSE 'partial' END as review_status`。フィルタの WHERE 句も同じ CASE 式を使う（HAVING 句または derived subquery）。判定ロジックが将来変わる場合は `review-status.ts` と session-list-query.ts 両方を同期更新すること。
