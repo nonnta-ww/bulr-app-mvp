@@ -134,7 +134,7 @@
   - _Requirements: 5.6, 6.3, 6.11_
   - _Boundary: ManualEvaluationSchema_
 
-- [ ] 4.2 _Action_ 手動評価保存 Server Action を実装する `apps/web/app/admin/_actions/update-manual-evaluation.ts`
+- [x] 4.2 _Action_ 手動評価保存 Server Action を実装する `apps/web/app/admin/_actions/update-manual-evaluation.ts`
   - ファイル先頭に `'use server'` 指定
   - `adminAction(manualEvaluationSchema, async (input, { email, userId }) => { ... })` でラップ（authentication spec の adminAction ctx は flat shape）
   - `reviewer = email` をサーバー側で固定（フォーム入力からは取得しない、信頼境界、ctx から直接）
