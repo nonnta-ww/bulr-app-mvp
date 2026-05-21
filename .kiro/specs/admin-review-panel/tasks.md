@@ -117,7 +117,7 @@
   - _Requirements: 4.5, 4.6_
   - _Boundary: ChatMessageTimeline_
 
-- [ ] 3.4 (P) _UI_ 面接官向けレポートへのリンク Server Component を実装する `apps/web/app/admin/_components/report-link.tsx`
+- [x] 3.4 (P) _UI_ 面接官向けレポートへのリンク Server Component を実装する `apps/web/app/admin/_components/report-link.tsx`
   - props: `{ sessionId: string }`
   - `<a href={`/interviews/${sessionId}/report`} target="_blank" rel="noopener noreferrer">` で別タブ遷移
   - 完了状態: テスト用 mock で描画、リンク先 URL が正しい
