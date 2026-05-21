@@ -84,7 +84,7 @@
   - _Depends: 2.1_
   - _Boundary: SessionListFilters_
 
-- [ ] 2.4 _Page_ セッション一覧ページを実装する `apps/web/app/admin/sessions/page.tsx`
+- [x] 2.4 _Page_ セッション一覧ページを実装する `apps/web/app/admin/sessions/page.tsx`
   - `await requireAdmin()` を最初に呼ぶ（多層認証 Layer 2）
   - `searchParams` を `parseListQueryParams` で Zod 検証 + デフォルト値適用
   - `sessionListQuery(params)` を呼び結果を取得
