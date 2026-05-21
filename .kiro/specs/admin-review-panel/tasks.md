@@ -96,7 +96,7 @@
 
 ## G3. セッション詳細ページ（候補者 + 面接官 + chat timeline + answer cards）
 
-- [ ] 3.1 (P) _UI_ 候補者情報表示 Server Component を実装する `apps/web/app/admin/_components/profile-display.tsx`
+- [x] 3.1 (P) _UI_ 候補者情報表示 Server Component を実装する `apps/web/app/admin/_components/profile-display.tsx`
   - props: `{ candidate: CandidateInfo }`（`@bulr/types/profile` から import）
   - name / applied_role / background_summary を表示、email がある場合のみ追加表示
   - 完了状態: テスト用 mock データで描画、TypeScript 型エラーなし
@@ -300,3 +300,4 @@
 
 - **review-status.ts のパッケージ境界 (タスク 1.1, 1.2)**: `computeReviewStatus` 関数は `apps/web/app/admin/_lib/review-status.ts` に配置（task 1.1）。design.md の Component Specifications では `SessionListQuery → ReviewStatus` 依存が示されているが、packages/db から apps/web への import は依存方向逆になるため、`packages/db/src/queries/admin/session-list-query.ts` (task 1.2) では同等のロジックを Drizzle の `sql<...>` 式 + `CASE WHEN` で SQL レベルにインライン化する：`CASE WHEN total = 0 OR pending = total THEN 'pending' WHEN pending = 0 THEN 'reviewed' ELSE 'partial' END as review_status`。フィルタの WHERE 句も同じ CASE 式を使う（HAVING 句または derived subquery）。判定ロジックが将来変わる場合は `review-status.ts` と session-list-query.ts 両方を同期更新すること。
 - **バレルチェーン整備 (タスク 1.4-1.6)**: 既存の `packages/db/src/queries/index.ts` は flat な直接ファイル export（`export * from './interview/load-session-with-turns'` 等）だったため、`interview/index.ts` を新規作成して subdir-barrel パターンに移行。最終構造: `admin/index.ts` + `interview/index.ts` → `queries/index.ts` (subdir barrel) → `db/index.ts` (`export * from './queries/index'` を新規追加)。これで `@bulr/db/queries/admin` と `@bulr/db` の両方から `sessionListQuery` 等が解決する。trivial な barrel 系（1.4-1.6）はメインコンテキストで直接実装し typecheck で確認した（subagent ラウンドトリップを省略）。
+- **typetest ファイルは作らない (タスク 3.1 で発生)**: Stage 1 は requirements 14.1 でテストフレームワーク（Vitest/Playwright 等）導入を明示的に禁じている。subagent が TDD プロトコルに従って `__typetest__/*.typetest.tsx` ファイルを作成した場合は境界違反として削除する。検証は `pnpm typecheck` / `pnpm lint` + 手動 smoke のみ。後続タスクの implementer prompt にも明記すること。
