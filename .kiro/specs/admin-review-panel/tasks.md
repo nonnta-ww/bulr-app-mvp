@@ -103,7 +103,7 @@
   - _Requirements: 4.3, 11.5_
   - _Boundary: ProfileDisplay_
 
-- [ ] 3.2 (P) _UI_ 面接官情報表示 Server Component を実装する `apps/web/app/admin/_components/interviewer-display.tsx`
+- [x] 3.2 (P) _UI_ 面接官情報表示 Server Component を実装する `apps/web/app/admin/_components/interviewer-display.tsx`
   - props: `{ interviewer: { email: string; display_name: string; role_in_org?: string } }`（`InterviewerProfile` 型を `@bulr/types/profile` から import）
   - display_name / role_in_org / email を表示
   - 完了状態: テスト用 mock データで描画
