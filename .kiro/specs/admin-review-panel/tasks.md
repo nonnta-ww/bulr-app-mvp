@@ -62,7 +62,7 @@
   - _Requirements: 2.5, 2.6, 3.5, 3.6_
   - _Boundary: ListQueryParams_
 
-- [ ] 2.2 (P) _UI_ セッション一覧テーブル Server Component を実装する `apps/web/app/admin/_components/session-list-table.tsx`
+- [x] 2.2 (P) _UI_ セッション一覧テーブル Server Component を実装する `apps/web/app/admin/_components/session-list-table.tsx`
   - props: `{ items: SessionListItem[] }`
   - 列: 候補者名 / 面接官 email / status / 開始時刻 / 終了時刻 / ターン数 / 平均スコア / レビューステータス
   - `started_at` / `completed_at` は ISO 文字列を読みやすい形式（YYYY-MM-DD HH:mm）に整形
