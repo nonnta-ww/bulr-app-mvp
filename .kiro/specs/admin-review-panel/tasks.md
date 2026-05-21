@@ -31,21 +31,21 @@
   - _Requirements: 4.5, 4.6, 4.7, 4.9, 9.4, 9.6, 9.7_
   - _Boundary: SessionDetailQuery_
 
-- [ ] 1.4 _Barrel_ admin queries サブディレクトリのバレルを作成する `packages/db/src/queries/admin/index.ts`
+- [x] 1.4 _Barrel_ admin queries サブディレクトリのバレルを作成する `packages/db/src/queries/admin/index.ts`
   - `export * from './session-list-query';` `export * from './session-detail-query';`
   - 完了状態: ファイルが存在し、import からの参照が解決する
   - _Requirements: 9.1, 9.5_
   - _Depends: 1.2, 1.3_
   - _Boundary: AdminBarrel_
 
-- [ ] 1.5 _Barrel_ queries バレルに admin サブディレクトリを追加する `packages/db/src/queries/index.ts`
+- [x] 1.5 _Barrel_ queries バレルに admin サブディレクトリを追加する `packages/db/src/queries/index.ts`
   - 既存の `export * from './interview/index';` を保ったまま、`export * from './admin/index';` を追加
   - 完了状態: `import { sessionListQuery } from '@bulr/db/queries/admin'` と `import { sessionListQuery } from '@bulr/db'`（ルートバレル経由）の両方で解決する
   - _Requirements: 9.5_
   - _Depends: 1.4_
   - _Boundary: QueriesBarrel_
 
-- [ ] 1.6 _Barrel_ db ルートバレルに queries を含めることを確認 `packages/db/src/index.ts`（冪等処理）
+- [x] 1.6 _Barrel_ db ルートバレルに queries を含めることを確認 `packages/db/src/index.ts`（冪等処理）
   - `export * from './queries/index';` が既に存在する場合は変更なし、なければ追加
   - 完了状態: `import { sessionListQuery } from '@bulr/db'` が解決する
   - _Requirements: 9.5_
@@ -299,3 +299,4 @@
 ## Implementation Notes
 
 - **review-status.ts のパッケージ境界 (タスク 1.1, 1.2)**: `computeReviewStatus` 関数は `apps/web/app/admin/_lib/review-status.ts` に配置（task 1.1）。design.md の Component Specifications では `SessionListQuery → ReviewStatus` 依存が示されているが、packages/db から apps/web への import は依存方向逆になるため、`packages/db/src/queries/admin/session-list-query.ts` (task 1.2) では同等のロジックを Drizzle の `sql<...>` 式 + `CASE WHEN` で SQL レベルにインライン化する：`CASE WHEN total = 0 OR pending = total THEN 'pending' WHEN pending = 0 THEN 'reviewed' ELSE 'partial' END as review_status`。フィルタの WHERE 句も同じ CASE 式を使う（HAVING 句または derived subquery）。判定ロジックが将来変わる場合は `review-status.ts` と session-list-query.ts 両方を同期更新すること。
+- **バレルチェーン整備 (タスク 1.4-1.6)**: 既存の `packages/db/src/queries/index.ts` は flat な直接ファイル export（`export * from './interview/load-session-with-turns'` 等）だったため、`interview/index.ts` を新規作成して subdir-barrel パターンに移行。最終構造: `admin/index.ts` + `interview/index.ts` → `queries/index.ts` (subdir barrel) → `db/index.ts` (`export * from './queries/index'` を新規追加)。これで `@bulr/db/queries/admin` と `@bulr/db` の両方から `sessionListQuery` 等が解決する。trivial な barrel 系（1.4-1.6）はメインコンテキストで直接実装し typecheck で確認した（subagent ラウンドトリップを省略）。

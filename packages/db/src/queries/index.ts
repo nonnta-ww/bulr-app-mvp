@@ -1,4 +1,3 @@
-// Queries are added by downstream specs
-export * from './interview/load-session-with-turns';
-export * from './interview/load-completed-pattern-codes';
-export * from './interview/load-recent-turns';
+// Queries are organized by domain. Each subdirectory has its own index.ts barrel.
+export * from './interview/index';
+export * from './admin/index';
