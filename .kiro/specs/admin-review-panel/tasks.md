@@ -174,7 +174,7 @@
   - _Requirements: 7.1-7.8_
   - _Boundary: EvalComparison_
 
-- [ ] 5.2 _UI_ pattern_coverage カード Server Component を実装する `apps/web/app/admin/_components/answer-card.tsx`
+- [x] 5.2 _UI_ pattern_coverage カード Server Component を実装する `apps/web/app/admin/_components/answer-card.tsx`
   - props: `{ coverage: { pattern: AssessmentPattern, levelReached, stuckType, llmEvaluation, manualEvaluation, ... } }`（Drizzle inference 由来の camelCase プロパティ）
   - パターンコード / levelReached / stuckType（NULL なら「詰まりなし」）を表示
   - `<EvalComparison llm={coverage.llmEvaluation} manual={coverage.manualEvaluation} />`
