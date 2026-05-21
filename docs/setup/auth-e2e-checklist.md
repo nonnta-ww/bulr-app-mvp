@@ -18,7 +18,6 @@ pnpm --filter @bulr/web dev
 - `BETTER_AUTH_URL=http://localhost:3020`
 - `NEXT_PUBLIC_APP_URL=http://localhost:3020`
 - `RESEND_API_KEY` — テストドメイン用
-- `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` — 管理画面用
 - `ADMIN_ALLOWED_EMAILS` — 自分のメールアドレスを含むカンマ区切り
 
 ---
@@ -67,12 +66,9 @@ pnpm --filter @bulr/web dev
 
 ---
 
-## 7.4 proxy.ts UX リダイレクト + Basic 認証
+## 7.4 proxy.ts UX リダイレクト
 
 - [ ] サインアウト状態（Cookie クリア）で `http://localhost:3020/interviews/foo` を訪問 → `/sign-in` リダイレクト
-- [ ] `http://localhost:3020/admin/_health` を訪問 → ブラウザに Basic 認証ダイアログが表示される
-- [ ] 不正なユーザー名/パスワードでキャンセル → 401 エラーページ（DevTools Network で `WWW-Authenticate` ヘッダー確認）
-- [ ] 正しい credentials（`.env.local` の `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`）で pass through → 次のページが表示される
 
 ---
 
@@ -80,7 +76,7 @@ pnpm --filter @bulr/web dev
 
 `.env.local` の `ADMIN_ALLOWED_EMAILS` に自分のメールが含まれることを確認。
 
-- [ ] **(a)** Basic 認証通過 + 未サインイン状態で `/admin/_health` → `/sign-in` リダイレクト
+- [ ] **(a)** 未サインイン状態で `/admin/_health` → `/sign-in` リダイレクト
 - [ ] **(b)** 一度 `ADMIN_ALLOWED_EMAILS` に**含まれない**別メールでサインイン → `/admin/_health` 訪問で「FORBIDDEN」表示
 
   > 代替: 環境変数を一時的に `ADMIN_ALLOWED_EMAILS=other@example.com` のように変更し dev server 再起動 → 自分のメールでサインイン → `/admin/_health` 訪問

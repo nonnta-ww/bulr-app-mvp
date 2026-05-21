@@ -1,10 +1,10 @@
 # Implementation Plan — authentication
 
-> 本スペックは bulr Stage 1 の認証基盤（Better Auth 1.6.x + Magic Link + Resend + Basic 認証 + DB ベースレート制限）を確立する。すべての作業は `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/` 配下で行う。
+> 本スペックは bulr Stage 1 の認証基盤（Better Auth 1.6.x + Magic Link + Resend + DB ベースレート制限）を確立する。すべての作業は `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/` 配下で行う。
 >
 > 完了の最終条件:
 > (a) `pnpm dev` で `/sign-in` フォームが表示され、メール送信 → Resend で受信 → クリック → `/interviews` リダイレクト + DB に `user` / `session` / `user_profile` が作成される、
-> (b) `/admin/_health` で Basic 認証 + Magic Link サインイン済み + ADMIN_ALLOWED_EMAILS 一致の 3 条件すべて通過時のみ「OK: admin authenticated」が表示される、
+> (b) `/admin/_health` で Magic Link サインイン済み + ADMIN_ALLOWED_EMAILS 一致の 2 条件すべて通過時のみ「OK: admin authenticated」が表示される、
 > (c) 同じメールに 4 回連続 Magic Link 送信を試みると 4 回目が拒否される、
 > (d) `pnpm --filter @bulr/db push` で Neon dev branch に 6 テーブル（user / session / account / verification / user_profile / rate_limit）が作成される、
 > (e) `pnpm typecheck` / `pnpm lint` がエラーなく通る。
@@ -226,35 +226,30 @@
   - _Boundary: SafeAction_
   - _Depends: 4.1_
 
-## Proxy: UX リダイレクトと Basic 認証
+## Proxy: UX リダイレクト
 
 > 5.x は proxy.ts 単独。
 
-- [x] 5. proxy.ts (UX リダイレクト + Basic 認証 + CVE-2025-29927 教訓)
+- [x] 5. proxy.ts (UX リダイレクト + CVE-2025-29927 教訓)
 
 - [x] 5.1 `apps/web/proxy.ts` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/proxy.ts` を新規作成
   - ファイル冒頭の JSDoc コメントで以下を必ず明記:
-    - 「このファイルは UX リダイレクトと管理画面 Basic 認証チェックのみを担当する」
+    - 「このファイルは UX リダイレクトのみを担当する」
     - 「CVE-2025-29927 (2025 年に発覚した Next.js middleware bypass 攻撃) の教訓により、認可は本ファイルに依存してはならない」
     - 「各 Server Component / Server Action / API Route で requireUser() / requireAdmin() を独立に呼び出すこと」
-    - 「やること: /interviews/_ の Cookie 存在チェック → /sign-in リダイレクト、/admin/_ の Basic 認証チェック」
-    - 「やらないこと: Better Auth セッション validation、ADMIN_ALLOWED_EMAILS 検査、Server Action / API Route の認可」
+    - 「やること: /interviews/_ の Cookie 存在チェック → /sign-in リダイレクト」
+    - 「やらないこと: Better Auth セッション validation、/admin/_ の認可、Server Action / API Route の認可」
   - `proxy(request: NextRequest)` を export（Next.js 16 の rename に従う、仮に最終仕様で `middleware` のままなら export 名を `middleware` に戻して `middleware.ts` ファイル名にする）
-  - `/admin/*` 処理:
-    - `Authorization` header を取得、`Basic ` プレフィックスをチェック
-    - base64 デコード → `user:password` を split
-    - `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD` と比較（Stage 1 は `===`、Stage 2 で timing-safe）
-    - 失敗時に `new NextResponse('Authentication required', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="bulr admin"' } })` を返す
   - `/interviews/*` 処理:
     - Better Auth の session cookie 名（`better-auth.session_token` 等、Better Auth デフォルト）の存在を `request.cookies.get(...)` で確認
     - 無ければ `NextResponse.redirect(new URL('/sign-in', request.url))`
-  - `export const config = { matcher: ['/interviews/:path*', '/admin/:path*'] }`
+  - `export const config = { matcher: ['/interviews/:path*'] }`
   - 観測可能な完了状態:
-    - `pnpm dev` 起動中にブラウザで `/admin/_health` 訪問 → Basic 認証ダイアログ表示
     - 未認証で `/interviews/foo` 訪問 → `/sign-in` リダイレクト
     - `/api/auth/*` や `/sign-in` は matcher 対象外で素通り
-  - _Requirements: 3.7, 4.1, 4.2, 4.6, 6.1-6.9, 9.2_
+    - `/admin/*` は proxy 対象外で素通り（認可は Server Component の `requireAdmin()` が独立に行う）
+  - _Requirements: 3.7, 6.1-6.3_
   - _Boundary: Proxy_
 
 ## UI: サインインページ・管理画面ログイン・smoke test
@@ -282,9 +277,9 @@
 - [x] 6.2 (P) `apps/web/app/admin/login/page.tsx` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/apps/web/app/admin/login/page.tsx` を新規作成
   - Server Component で `getCurrentUser()` を呼び、null でなく email が ADMIN_ALLOWED_EMAILS に含まれていれば `/admin/_health` へ redirect
-  - そうでなければ「Basic 認証通過 OK。次に管理者メールアドレスで Magic Link サインインしてください」のメッセージと、`/sign-in?redirect=/admin/_health` へのリンクを表示
+  - そうでなければ「管理者メールアドレスで Magic Link サインインしてください」のメッセージと、`/sign-in?redirect=/admin/_health` へのリンクを表示
   - Tailwind CSS で簡易スタイリング
-  - 観測可能な完了状態: Basic 認証通過後 `/admin/login` 訪問 → 案内文と `/sign-in` へのリンクが表示される
+  - 観測可能な完了状態: `/admin/login` 訪問 → 案内文と `/sign-in` へのリンクが表示される
   - _Requirements: 4.5, 11.5, 11.6, 11.7_
   - _Boundary: AdminLoginPage_
   - _Depends: 4.1_
@@ -298,7 +293,7 @@
       - `e instanceof AuthError && e.code === 'UNAUTHORIZED'` → `redirect('/sign-in')`
       - `e instanceof AuthError && e.code === 'FORBIDDEN'` → `<main><h1>FORBIDDEN</h1><p>あなたのメールアドレスは管理者として登録されていません。</p></main>` を return
       - その他は throw
-  - 観測可能な完了状態: Basic 認証 + サインイン + 許可メールの 3 条件で「OK: admin authenticated」表示、未サインインなら /sign-in、非許可メールなら FORBIDDEN 表示
+  - 観測可能な完了状態: サインイン + 許可メールの 2 条件で「OK: admin authenticated」表示、未サインインなら /sign-in、非許可メールなら FORBIDDEN 表示
   - _Requirements: 4.8, 10.1-10.8_
   - _Boundary: AdminHealthPage_
   - _Depends: 4.1_
@@ -309,7 +304,7 @@
 
 - [ ] 7. 統合動作確認
 
-- [ ] 7.1 ローカルで Magic Link サインインの End-to-End 検証
+- [x] 7.1 ローカルで Magic Link サインインの End-to-End 検証
   - `.env.local` に Resend テストドメイン用の RESEND_API_KEY、Neon dev branch の DATABASE_URL、BETTER_AUTH_SECRET（`openssl rand -base64 32`）、BETTER_AUTH_URL=`http://localhost:3000`、NEXT_PUBLIC_APP_URL=`http://localhost:3000` を設定
   - `pnpm dev` 起動
   - ブラウザで `/sign-in` 訪問 → 自分のメールアドレスを入力して送信
@@ -334,26 +329,25 @@
   - _Requirements: 8.1, 8.2, 8.8_
   - _Depends: 7.1_
 
-- [ ] 7.4 proxy.ts による UX リダイレクトと Basic 認証の検証
+- [x] 7.4 proxy.ts による UX リダイレクトの検証
   - サインアウト状態（Cookie クリア）で `/interviews/foo` を訪問 → `/sign-in` にリダイレクトされる
-  - `/admin/_health` を訪問 → Basic 認証ダイアログが表示される、不正な credentials で 401（WWW-Authenticate ヘッダーあり）、正しい credentials で pass through
-  - 観測可能な完了状態: 2 つのリダイレクト / 401 挙動がブラウザで再現できる
-  - _Requirements: 3.7, 4.1, 4.2, 6.1-6.7_
-  - _Depends: 5.1, 6.3_
+  - 観測可能な完了状態: リダイレクト挙動がブラウザで再現できる
+  - _Requirements: 3.7, 6.1-6.3_
+  - _Depends: 5.1_
 
-- [ ] 7.5 `/admin/_health` の 3 ケース検証
+- [ ] 7.5 `/admin/_health` の 2 ケース検証
   - 環境変数 `ADMIN_ALLOWED_EMAILS=tanno@example.com,owner@example.com`（自分のメールを含める）を設定
-  - (a) Basic 認証通過 + 未サインイン状態 → `/admin/_health` 訪問で `/sign-in` リダイレクト
-  - (b) Basic 認証通過 + ADMIN_ALLOWED_EMAILS に含まれないメールでサインイン → `/admin/_health` 訪問で「FORBIDDEN」表示
-  - (c) Basic 認証通過 + ADMIN_ALLOWED_EMAILS に含まれるメールでサインイン → `/admin/_health` 訪問で「OK: admin authenticated」+ 該当 email 表示
+  - (a) 未サインイン状態 → `/admin/_health` 訪問で `/sign-in` リダイレクト
+  - (b) ADMIN_ALLOWED_EMAILS に含まれないメールでサインイン → `/admin/_health` 訪問で「FORBIDDEN」表示
+  - (c) ADMIN_ALLOWED_EMAILS に含まれるメールでサインイン → `/admin/_health` 訪問で「OK: admin authenticated」+ 該当 email 表示
   - 観測可能な完了状態: 3 ケースすべてが期待通りに動作する
   - _Requirements: 4.3, 4.4, 4.7, 4.8, 10.1-10.8_
-  - _Depends: 6.3, 5.1, 7.1_
+  - _Depends: 6.3, 7.1_
 
 - [ ] 7.6 多層防御（CVE-2025-29927 シミュレーション）の検証
   - `apps/web/proxy.ts` を一時的に修正して `config.matcher = []`（または `matcher` を空配列）にし、proxy.ts を実質無効化
   - `pnpm dev` を再起動
-  - 未サインイン状態で `/admin/_health` を訪問 → proxy.ts の Basic 認証は飛ばされるが、Server Component の `requireAdmin()` が `AuthError('UNAUTHORIZED')` を throw → `/sign-in` リダイレクトが起きる
+  - 未サインイン状態で `/admin/_health` を訪問 → proxy.ts が無効化されていても、Server Component の `requireAdmin()` が `AuthError('UNAUTHORIZED')` を throw → `/sign-in` リダイレクトが起きる
   - 検証後、`apps/web/proxy.ts` を元の matcher に戻す
   - 観測可能な完了状態: proxy.ts を無効化しても Server Component の独立 requireAdmin で防御が効くことを確認
   - _Requirements: 3.8, 4.4, 6.8_

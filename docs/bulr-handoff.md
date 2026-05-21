@@ -313,7 +313,7 @@ Stage 1〜2 の段階で人材紹介を始めること。理由は3つ：
 - **DB**：Neon Postgres + Drizzle ORM
 - **認証**：Better Auth（マジックリンクのみ、面接官向け）+ Resend
 - **デプロイ**：Vercel Hobby（個人アカウント、1プロジェクト）
-- **管理画面**：apps/web 内の `/admin` ルート + Basic 認証
+- **管理画面**：apps/web 内の `/admin` ルート + ADMIN_ALLOWED_EMAILS 許可メール検査
 
 ### Stage 1 で導入しないもの
 

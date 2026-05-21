@@ -22,7 +22,7 @@ bulr-app-mvp/
 │       │   │   │   ├── [sessionId]/page.tsx      # 面接中（状態A 録音中 / 状態B 候補選択）
 │       │   │   │   └── [sessionId]/report/page.tsx  # 面接後レポート（面接官向け）
 │       │   │   └── sign-in/page.tsx        # マジックリンクサインイン
-│       │   ├── admin/                      # 管理画面（Basic 認証 + 許可メール二重チェック）
+│       │   ├── admin/                      # 管理画面（`requireAdmin()` 許可メール検査）
 │       │   │   ├── sessions/page.tsx       # 全セッション一覧
 │       │   │   ├── sessions/[id]/page.tsx  # セッション詳細（手動評価入力 + CSV/JSON）
 │       │   │   ├── sessions/[id]/export/route.ts  # CSV/JSON エクスポート
@@ -109,7 +109,7 @@ bulr-app-mvp/
 ## ルートグループのパターン
 
 - `(interviewer)/` — 面接官向けメインフロー。Magic Link 認証必須
-- `admin/` — 創業者向け管理画面。Basic 認証 + `ADMIN_ALLOWED_EMAILS` の二重チェック
+- `admin/` — 創業者向け管理画面。`ADMIN_ALLOWED_EMAILS` の許可メール検査（`requireAdmin()`）
 
 ## App Router のコード分離原則
 
@@ -161,7 +161,7 @@ import { formatDuration } from './utils';
   /interviews/[sessionId]        面接中（状態A 録音中 / 状態B 候補選択）
   /interviews/[sessionId]/report 面接後レポート（ヒートマップ + サマリー）
 
-管理画面（Basic 認証 + 許可メール二重チェック）:
+管理画面（ADMIN_ALLOWED_EMAILS 許可メール検査）:
   /admin/sessions                全受験セッション一覧
   /admin/sessions/[id]           セッション詳細（手動評価入力）
   /admin/sessions/[id]/export    CSV/JSON エクスポート

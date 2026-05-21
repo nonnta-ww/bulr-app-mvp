@@ -20,7 +20,7 @@
 
 対象外（Stage 1 では実装しない）：
 
-- 管理画面 `/admin/*` — admin 側は Basic 認証 + 別ナビ要件があるため、将来 admin-review-panel スペックを進めるタイミングで別途設計
+- 管理画面 `/admin/*` — admin 側は別ナビ要件があるため、将来 admin-review-panel スペックを進めるタイミングで別途設計
 - ランディング `/`、サインイン `/sign-in`
 
 ## 構成方針

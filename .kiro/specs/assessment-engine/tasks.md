@@ -738,7 +738,7 @@ const effectivePatternId = (() => {
 - `bulr-app-mvp/apps/web/app/admin/_health/page.tsx` を `rm` で削除
 - `bulr-app-mvp/apps/web/app/admin/_health/` ディレクトリを `rmdir` で削除
 - `pnpm dev` 後 `/admin/_health/` にアクセスして 404 を確認
-- `proxy.ts` の `/admin/*` Basic 認証ロジックには触らない（admin-review-panel spec が `/admin/sessions/*` で利用するため維持）
+- `proxy.ts` の matcher 設定には触らない（`/admin/*` は proxy.ts の対象外、認可は Server Component の `requireAdmin()` が独立に行う）
 - 完了時の観察可能状態: `ls bulr-app-mvp/apps/web/app/admin/_health/` がエラー、`/admin/_health/` が 404
 - _Boundary: AdminHealthDelete_
 - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_

@@ -38,7 +38,7 @@
 │    /api/interview/finalize     セッション終了        │
 │    /api/auth/*                 Better Auth           │
 │  - 面接官向け UI (/interviews)                       │
-│  - 創業者向け管理画面 (/admin) ※Basic 認証 + 二重チェック │
+│  - 創業者向け管理画面 (/admin) ※ADMIN_ALLOWED_EMAILS 検査 │
 └────┬───────────────┬───────────────┬────────────────┘
      │               │               │
      ▼               ▼               ▼
@@ -112,9 +112,9 @@
 | Auth     | Better Auth (1.6.x)               | OSS認証ライブラリ            |
 | Method   | Magic Link のみ                   | パスワードレス（面接官向け） |
 | Email    | Resend                            | マジックリンク配信           |
-| 管理画面 | Basic 認証 + ADMIN_ALLOWED_EMAILS | 二重チェック                 |
+| 管理画面 | ADMIN_ALLOWED_EMAILS              | 許可メール検査（`requireAdmin()`） |
 
-**Stage 1 で導入しないもの**：Google OAuth、SSO、ワークスペース別認証。Stage 1 の認証要件は「面接官を識別する」だけなので、マジックリンクで十分。創業者の管理画面は Basic 認証 + 許可メールリストの二重チェック。
+**Stage 1 で導入しないもの**：Google OAuth、SSO、ワークスペース別認証。Stage 1 の認証要件は「面接官を識別する」だけなので、マジックリンクで十分。創業者の管理画面は `ADMIN_ALLOWED_EMAILS` 許可メールリスト検査のみ。
 
 候補者は bulr に直接ログインしない（v2 哲学）。候補者情報は面接官が新規セッション作成時に入力。
 
@@ -152,7 +152,7 @@ bulr/
 │       │   │   │   ├── [sessionId]/      # 面接中（状態A/B）
 │       │   │   │   └── [sessionId]/report/  # 面接後レポート（面接官向け）
 │       │   │   └── sign-in/        # マジックリンクサインイン
-│       │   ├── admin/              # 管理画面（Basic 認証）
+│       │   ├── admin/              # 管理画面（ADMIN_ALLOWED_EMAILS 許可メール検査）
 │       │   │   ├── sessions/       # 全セッション一覧
 │       │   │   ├── sessions/[id]/  # セッション詳細・手動評価
 │       │   │   └── login/          # 管理者ログイン
@@ -214,7 +214,7 @@ bulr/
   /interviews/[sessionId]        面接中（状態A 録音中 / 状態B 候補選択）
   /interviews/[sessionId]/report 面接後レポート（ヒートマップ + サマリー）
 
-管理画面（Basic 認証 + 許可メールチェック）:
+管理画面（ADMIN_ALLOWED_EMAILS 許可メール検査）:
   /admin/sessions                全受験セッション一覧
   /admin/sessions/[id]           セッション詳細（手動評価入力 + CSV/JSON エクスポート）
   /admin/login                   管理者ログイン
@@ -473,7 +473,7 @@ session_report                 # 面接終了時に生成
 
 - HttpOnly + Secure + SameSite=Lax cookies
 - Magic Link は使い切り、有効期限15分
-- 管理画面は Basic 認証 + 許可メールリスト二重チェック（環境変数 `ADMIN_ALLOWED_EMAILS`）
+- 管理画面は `ADMIN_ALLOWED_EMAILS` 許可メールリスト検査（`requireAdmin()` を Server Component で独立に呼ぶ）
 
 ### データ
 
@@ -538,8 +538,6 @@ CRON_SECRET=                      # Vercel Cron 認証用
 
 # 管理画面
 ADMIN_ALLOWED_EMAILS=             # 管理者メール許可リスト (CSV)
-ADMIN_BASIC_AUTH_USER=            # Basic 認証ユーザー名
-ADMIN_BASIC_AUTH_PASSWORD=        # Basic 認証パスワード
 ```
 
 **Stage 2 で追加される環境変数**

@@ -63,8 +63,8 @@
 - 7.1 ローカル Magic Link サインイン E2E
 - 7.2 Magic Link 期限切れ・使い切り
 - 7.3 Magic Link レート制限
-- 7.4 proxy.ts UX リダイレクト + Basic 認証
-- 7.5 `/admin/_health` 3 ケース
+- 7.4 proxy.ts UX リダイレクト
+- 7.5 `/admin/_health` 2 ケース（許可メール検査）
 - 7.6 多層防御（CVE-2025-29927 シミュレーション）
 
 ### `multi-env-infrastructure` 5.1〜5.6 — production cloud setup（deferred）

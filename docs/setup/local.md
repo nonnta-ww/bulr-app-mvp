@@ -43,7 +43,6 @@ DATABASE_URL=postgresql://bulr:dev_password@localhost:5434/bulr_dev
 | `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com) → API Keys |
 | `OPENAI_API_KEY` | [OpenAI Platform](https://platform.openai.com) → API Keys |
 | `CRON_SECRET` | `openssl rand -base64 32` で生成 |
-| `ADMIN_BASIC_AUTH_PASSWORD` | 任意のパスワード |
 
 `BLOB_READ_WRITE_TOKEN` は Vercel Blob ストア作成後に自動付与されるため、ローカル開発では空のままで OK（Blob を使う機能をテストする場合のみ設定）。
 

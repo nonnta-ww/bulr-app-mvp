@@ -15,15 +15,15 @@
 - [x] 1. 環境変数規約と設定ファイルの整備
 - [x] 1.1 (P) ルート `.env.example` を作成
   - `/Users/takaaki.tanno/Documents/workspace/github/bulr-app-mvp/.env.example` を新規作成
-  - 12 変数を以下の順序・グループでプレースホルダ + コメント付きで記載:
+  - 10 変数を以下の順序・グループでプレースホルダ + コメント付きで記載:
     - **共通**: `DATABASE_URL`（Neon Postgres、サーバー専用、Production = production branch URL / Preview = dev branch URL）、`BETTER_AUTH_SECRET`（Auth 暗号化キー、サーバー専用、Production / Preview 両方）、`BETTER_AUTH_URL`（認証コールバック URL、サーバー専用、Production / Preview 別）、`RESEND_API_KEY`（Magic Link 配信、サーバー専用、Production / Preview 両方）、`NEXT_PUBLIC_APP_URL`（アプリのベース URL、クライアント露出可、Production / Preview 別）
     - **LLM**: `ANTHROPIC_API_KEY`（Claude API、サーバー専用、Production / Preview 両方）、`OPENAI_API_KEY`（Whisper API、サーバー専用、Production / Preview 両方）
     - **ストレージ**: `BLOB_READ_WRITE_TOKEN`（Vercel Blob、サーバー専用、Vercel Blob ストア作成時に自動付与、手動設定不要）
     - **Cron**: `CRON_SECRET`（Vercel Cron 認証、サーバー専用、Production / Preview 両方）
-    - **管理画面**: `ADMIN_ALLOWED_EMAILS`（管理者メール許可リスト CSV、サーバー専用、Production / Preview 両方）、`ADMIN_BASIC_AUTH_USER`（Basic 認証ユーザー名、サーバー専用、Production / Preview 両方）、`ADMIN_BASIC_AUTH_PASSWORD`（Basic 認証パスワード、サーバー専用、Production / Preview 両方）
+    - **管理画面**: `ADMIN_ALLOWED_EMAILS`（管理者メール許可リスト CSV、サーバー専用、Production / Preview 両方）
   - 各変数の値はプレースホルダ（例: `postgresql://user:password@host/dbname?sslmode=require`、`your-32-byte-base64-secret-here`、`re_xxxxxxxxxxxxxxxx`、`sk-ant-xxxxxxxxxxxxxxxx`、`sk-xxxxxxxxxxxxxxxx`、`vercel_blob_rw_xxxxxxxx`、`admin@example.com,owner@example.com` 等）で記載し、実シークレットを含めない
   - ファイル冒頭にコメントで「このファイルは git にコミットされます。実値を絶対に書かないこと」「Vercel 環境変数登録の参考とし、ローカルでは `cp .env.example .env.local` でコピー後に値を埋めること」を明記
-  - 観測可能な完了状態: `.env.example` が存在し、12 変数すべてがプレースホルダ + コメントで網羅されている
+  - 観測可能な完了状態: `.env.example` が存在し、10 変数すべてがプレースホルダ + コメントで網羅されている
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.8, 9.3, 10.2, 10.7_
   - _Boundary: EnvExampleConfig_
 
@@ -323,10 +323,10 @@
 
 - [x] 4. 設定ファイルとドキュメントの統合検証
 - [x] 4.1 `.env.example` 完整性の確認
-  - ルート `.env.example` を読み、12 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）が含まれていることを目視確認
+  - ルート `.env.example` を読み、10 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS）が含まれていることを目視確認
   - 各変数にコメントが付与され、Vercel 登録先（Production / Preview / 両方）が明示されていることを確認
   - 実シークレット値が含まれていないことを目視確認
-  - 観測可能な完了状態: 12 変数 × コメント × プレースホルダの 3 条件をすべて満たす
+  - 観測可能な完了状態: 10 変数 × コメント × プレースホルダの 3 条件をすべて満たす
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.8, 10.2, 10.7_
   - _Depends: 1.1_
 
@@ -415,11 +415,11 @@
 
 - [ ] 5.5 Vercel 環境変数登録（Owner 手動）
   - `docs/setup/env-vars.md` の総合リファレンスに従い、Vercel Project Settings → Environment Variables で以下を登録:
-    - **Production**: `DATABASE_URL`（production branch URL）、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`（本番ドメイン）、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`（本番ドメイン）、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`、`ADMIN_BASIC_AUTH_USER`、`ADMIN_BASIC_AUTH_PASSWORD`
-    - **Preview**: `DATABASE_URL`（dev branch URL）、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`（Preview ドメイン or プレースホルダ）、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`（Preview ドメイン or プレースホルダ）、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`、`ADMIN_BASIC_AUTH_USER`、`ADMIN_BASIC_AUTH_PASSWORD`
+    - **Production**: `DATABASE_URL`（production branch URL）、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`（本番ドメイン）、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`（本番ドメイン）、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`
+    - **Preview**: `DATABASE_URL`（dev branch URL）、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`（Preview ドメイン or プレースホルダ）、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`（Preview ドメイン or プレースホルダ）、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`
     - `BLOB_READ_WRITE_TOKEN` は 5.4 で Vercel が自動付与済み（Production / Preview 両方）
   - 「Production には production branch DATABASE_URL のみ、Preview には dev branch DATABASE_URL のみ」の規約に従って登録（取り違え禁止）
-  - 観測可能な完了状態: Vercel Project Settings → Environment Variables で 12 変数すべてが Production / Preview 両方（または該当環境）に登録されている
+  - 観測可能な完了状態: Vercel Project Settings → Environment Variables で 10 変数すべてが Production / Preview 両方（または該当環境）に登録されている
   - _Requirements: 2.3, 4.5, 4.7, 5.6, 5.7, 9.3, 9.4, 9.6_
   - _Boundary: EnvVarsDoc 手順実施_
   - _Depends: 5.1, 5.2, 5.3, 5.4_

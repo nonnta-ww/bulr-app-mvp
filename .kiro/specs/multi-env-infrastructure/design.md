@@ -10,7 +10,7 @@
 
 ### Goals
 
-- ルート `.env.example` に Stage 1 環境変数 12 個（`DATABASE_URL` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `NEXT_PUBLIC_APP_URL` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET` / `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD`）をプレースホルダ + コメント付きで網羅
+- ルート `.env.example` に Stage 1 環境変数 10 個（`DATABASE_URL` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `NEXT_PUBLIC_APP_URL` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET` / `ADMIN_ALLOWED_EMAILS`）をプレースホルダ + コメント付きで網羅
 - `apps/web/.env.local.example` をローカル開発者向けコピー元として整備
 - `apps/web/vercel.json` に Vercel Cron 定義（`/api/cron/audio-purge` を `0 18 * * *` UTC = 03:00 JST 毎日）を作成
 - `.github/workflows/ci.yml` で `pnpm install --frozen-lockfile` → `pnpm typecheck` → `pnpm lint` → `pnpm audit --audit-level=moderate` を PR / main push で自動実行
@@ -24,7 +24,7 @@
 - DB テーブル実体定義 → `assessment-pattern-seed` および `assessment-engine` spec
 - LLM 関数本体（5 関数）、システムプロンプト、Whisper クライアント実装、Vercel Blob アップロード関数 → `assessment-engine` spec
 - 音声削除 Cron の **ロジック実装**（`/api/cron/audio-purge/route.ts` 中身）→ `assessment-engine` spec（本スペックでは vercel.json のスケジュール定義のみ）
-- 管理画面 UI、Basic 認証ロジック、`requireAdmin` ヘルパー → `admin-review-panel` spec
+- 管理画面 UI、`requireAdmin` ヘルパー → `authentication` spec / `admin-review-panel` spec
 - セキュリティヘッダー（CSP / HSTS / Permissions-Policy）の `next.config.ts` 設定 → 後続 spec（`assessment-engine` でマイク CSP、`authentication` で HSTS / X-Frame-Options 等）
 - 監視スタック（PostHog / Sentry / Helicone / BetterStack）→ Stage 2
 - Cloudflare R2 への移行 → Stage 2
@@ -335,12 +335,12 @@ bulr-app-mvp/
 **Responsibilities & Constraints**
 
 - ルート直下 `.env.example` を所有
-- 12 変数を以下の順序・グループでコメント付きで記載:
+- 10 変数を以下の順序・グループでコメント付きで記載:
   - **共通**: `DATABASE_URL` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `RESEND_API_KEY` / `NEXT_PUBLIC_APP_URL`
   - **LLM**: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`
   - **ストレージ**: `BLOB_READ_WRITE_TOKEN`
   - **Cron**: `CRON_SECRET`
-  - **管理画面**: `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD`
+  - **管理画面**: `ADMIN_ALLOWED_EMAILS`
 - 各変数の直前または同行コメントで以下を明示:
   - 用途（一行）
   - Vercel 登録先（Production / Preview / 両方）
@@ -683,7 +683,7 @@ bulr-app-mvp/
 ### Manual Smoke Test Items
 
 1. **`.env.example` 完整性**
-   - ルート `.env.example` を開き、12 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）が含まれていること、コメントが記載されていること、実シークレットを含まないことを目視確認
+   - ルート `.env.example` を開き、10 変数すべて（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS）が含まれていること、コメントが記載されていること、実シークレットを含まないことを目視確認
    - 検証要件: 1.1, 1.2, 1.3, 1.4, 1.8, 10.2, 10.7
 
 2. **ローカル `.env.local` 経由で `pnpm dev` 起動**

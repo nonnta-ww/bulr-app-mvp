@@ -1,9 +1,8 @@
 /**
  * 管理画面ログイン案内ページ（/admin/login）
  *
- * Server Component。Basic 認証ダイアログはブラウザと proxy.ts が担当する。
- * このページは Basic 認証通過後に表示され、管理者メールアドレスで
- * Magic Link サインインを案内する。
+ * Server Component。管理者メールアドレスでの Magic Link サインインを案内する。
+ * 認可判定（許可メール検査）は /admin/* 配下の各 Server Component の requireAdmin() が独立に行う。
  *
  * Requirements: 4.5, 11.5, 11.6, 11.7
  * Boundary: AdminLoginPage
@@ -36,14 +35,8 @@ export default async function AdminLoginPage() {
         <h1 className="mb-2 text-2xl font-bold text-gray-900">bulr 管理者サインイン</h1>
         <p className="mb-6 text-sm text-gray-500">Admin Sign-in</p>
 
-        <div className="mb-6 rounded-md border border-green-200 bg-green-50 px-4 py-3">
-          <p className="text-sm font-medium text-green-800">
-            ✓ Basic 認証通過 OK
-          </p>
-        </div>
-
         <p className="mb-4 text-gray-700">
-          次に、管理者メールアドレスで Magic Link サインインしてください。
+          管理者メールアドレスで Magic Link サインインしてください。
         </p>
         <p className="mb-6 text-sm text-gray-500">
           Please sign in with your admin email address via Magic Link.

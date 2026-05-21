@@ -18,7 +18,7 @@
   - Anthropic アカウント作成 + API キー取得手順の文書化、`ANTHROPIC_API_KEY` 登録（Claude API 利用）
   - Vercel Blob ストア `bulr-audio` の作成手順の文書化、`BLOB_READ_WRITE_TOKEN` の自動登録確認
   - Vercel Cron 認証用 `CRON_SECRET` の生成と Vercel 環境変数登録
-  - ルート `.env.example` に Stage 1 環境変数リスト全 12 項目を文書化（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS / ADMIN_BASIC_AUTH_USER / ADMIN_BASIC_AUTH_PASSWORD）
+  - ルート `.env.example` に Stage 1 環境変数リスト全 10 項目を文書化（DATABASE_URL / BETTER_AUTH_SECRET / BETTER_AUTH_URL / RESEND_API_KEY / NEXT_PUBLIC_APP_URL / ANTHROPIC_API_KEY / OPENAI_API_KEY / BLOB_READ_WRITE_TOKEN / CRON_SECRET / ADMIN_ALLOWED_EMAILS）
   - `apps/web/.env.local.example` 作成（ローカル開発者向けコピー元）
   - `packages/db/drizzle.config.ts` の `dbCredentials.url` を `process.env.DATABASE_URL` から読み取る形に整える（`monorepo-foundation` の空設定を有効化）
   - `packages/db/src/client.ts` で `DATABASE_URL` 未設定時に fail fast する挙動の確認（`monorepo-foundation` 既設）
@@ -35,7 +35,7 @@
   - Whisper クライアント実装（`transcribeAudio` ラッパー）→ `assessment-engine` spec
   - Vercel Blob アップロード関数（`uploadToBlob`）→ `assessment-engine` spec
   - 音声削除 Cron の **ロジック実装**（`/api/cron/audio-purge/route.ts` の中身、`audio_expires_at <= now()` 検索 + Blob 削除 + `audio_key` null クリア）→ `assessment-engine` spec（本スペックでは vercel.json のスケジュール定義のみ）
-  - 管理画面 UI、Basic 認証ロジック、`requireAdmin` ヘルパー → `admin-review-panel` spec
+  - 管理画面 UI、`requireAdmin` ヘルパー → `authentication` spec / `admin-review-panel` spec
   - 監視スタック（PostHog / Sentry / Helicone / BetterStack）→ Stage 2
   - Cloudflare R2 への移行 → Stage 2
   - カスタムドメイン（bulr.net 等）の SSL 設定・DNS 設定 → Stage 1 末で必要なら追加
@@ -48,7 +48,7 @@
 - **Adjacent expectations**:
   - 本スペックは `monorepo-foundation` で作成済みの `apps/web` / `packages/db` / `packages/ai` / `vercel.json` 配置場所の構造（`apps/web/vercel.json`）に従う
   - 後続 spec が必要とする全環境変数を `.env.example` に予約（実装は後続でも、変数名は本スペックで確定）
-  - 後続 `authentication` spec は `RESEND_API_KEY` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` を、`assessment-engine` spec は `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET` / `DATABASE_URL` を、`admin-review-panel` spec は `ADMIN_ALLOWED_EMAILS` / `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD` を利用する
+  - 後続 `authentication` spec は `RESEND_API_KEY` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` / `ADMIN_ALLOWED_EMAILS` を、`assessment-engine` spec は `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET` / `DATABASE_URL` を、`admin-review-panel` spec は `ADMIN_ALLOWED_EMAILS` を利用する
   - `vercel.json` の Cron 定義（`/api/cron/audio-purge` を `0 18 * * *` UTC）は `assessment-engine` spec で実装される route handler との共有契約。本スペックでは route handler ファイルは作成しない
   - Neon の `dev` ブランチには `pnpm drizzle-kit push` でスキーマを反映、`production` ブランチには `pnpm drizzle-kit migrate` で履歴を残して反映、という運用ルールを文書化（実 push / migrate の実行は `assessment-pattern-seed` および `assessment-engine` spec で初回実施）
 
@@ -61,10 +61,10 @@
 #### Acceptance Criteria
 
 1. The リポジトリ shall ルート直下に `.env.example` を含む。
-2. The `.env.example` shall 以下 12 個の変数を、各々用途を説明するコメントと共に列挙する: `DATABASE_URL`、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`、`ADMIN_BASIC_AUTH_USER`、`ADMIN_BASIC_AUTH_PASSWORD`。
+2. The `.env.example` shall 以下 10 個の変数を、各々用途を説明するコメントと共に列挙する: `DATABASE_URL`、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`RESEND_API_KEY`、`NEXT_PUBLIC_APP_URL`、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`。
 3. The `.env.example` shall すべての変数値を実値ではなくプレースホルダ（例: `postgresql://user:pass@host/db`、`your-secret-here`）で記載する。
 4. The `.env.example` shall `NEXT_PUBLIC_` プレフィックスがついた変数はクライアント側に露出する旨を明示し、それ以外はサーバー専用である旨を明示する。
-5. The リポジトリ shall `apps/web/.env.local.example` を含み、ローカル開発者がコピーして利用できる形で同等の変数（最低限 `DATABASE_URL`、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`NEXT_PUBLIC_APP_URL`、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`RESEND_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`、`ADMIN_BASIC_AUTH_USER`、`ADMIN_BASIC_AUTH_PASSWORD`）を含む。
+5. The リポジトリ shall `apps/web/.env.local.example` を含み、ローカル開発者がコピーして利用できる形で同等の変数（最低限 `DATABASE_URL`、`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`NEXT_PUBLIC_APP_URL`、`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`RESEND_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`ADMIN_ALLOWED_EMAILS`）を含む。
 6. The `.gitignore` shall `.env`、`.env.local`、`.env*.local` を除外対象に含めている（`monorepo-foundation` で設定済みの確認）。
 7. When 開発者が `.env.example` を `.env.local` にコピーして値を埋めた場合、the apps/web shall `pnpm dev` 起動時にすべての必須環境変数を読み取れる。
 8. The `.env.example` shall ファイル冒頭または各変数の直前のコメントで、該当変数を Vercel のどの環境（Production / Preview / 両方）に登録すべきかを明示する。
@@ -191,7 +191,7 @@
 
 1. The リポジトリ shall `.gitignore` で `.env`、`.env.local`、`.env.*.local` を除外している（`monorepo-foundation` で設定済みの確認）。
 2. The `.env.example` および `apps/web/.env.local.example` shall 実シークレット値を含まず、すべてプレースホルダで構成される。
-3. The シークレット管理規約 shall `NEXT_PUBLIC_` プレフィックスの付いた変数のみクライアントに露出することを明示し、それ以外（`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`DATABASE_URL`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`ADMIN_BASIC_AUTH_PASSWORD`）はサーバー専用である旨を明示する（`security.md` L203-209 準拠）。
+3. The シークレット管理規約 shall `NEXT_PUBLIC_` プレフィックスの付いた変数のみクライアントに露出することを明示し、それ以外（`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`BLOB_READ_WRITE_TOKEN`、`CRON_SECRET`、`DATABASE_URL`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`ADMIN_ALLOWED_EMAILS`）はサーバー専用である旨を明示する（`security.md` L203-209 準拠）。
 4. The CI workflow shall `pnpm audit --audit-level=moderate` を実行し、moderate 以上の脆弱性で fail する（`security.md` L213 準拠）。
 5. The Vercel 環境変数登録規約 shall シークレット変数を Vercel ダッシュボードからのみ登録し、リポジトリ内のいかなるファイル（`.env.example` 含む）にも実値を書かないことを明示する。
 6. The `CRON_SECRET` 生成手順 shall 推測困難なランダム値（最低 32 バイト、`openssl rand -base64 32` 等）を生成して登録することを明示する。

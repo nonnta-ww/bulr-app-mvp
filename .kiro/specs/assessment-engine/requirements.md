@@ -438,7 +438,7 @@ v2 移行に伴い、v1 仕様の「候補者直接対話型」（useChat + stre
 1. The apps/web shall `apps/web/app/admin/_health/page.tsx` を物理削除する。
 2. The apps/web shall `apps/web/app/admin/_health/` ディレクトリを空にして削除する。
 3. When `/admin/_health/` にアクセスしたとき、the apps/web shall 404 Not Found を返す。
-4. The smoke test 削除 shall `proxy.ts` の Basic 認証チェックロジックに影響を与えない（`/admin/*` 全般の保護は維持）。
+4. The smoke test 削除 shall `proxy.ts` の matcher 設定に影響を与えない。
 5. The smoke test 削除 shall `admin-review-panel` spec の `/admin/sessions/*` 実装と独立して、本スペックで完了する。
 
 ### Requirement 20: 認証統合（requireUser + authedAction + requireSessionOwnership）
