@@ -1,11 +1,11 @@
 {
-  "name": "@bulr/web",
+  "name": "@bulr/business",
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev": "next dev --turbopack -p 3020",
+    "dev": "next dev --turbopack -p 3001",
     "build": "next build",
-    "start": "next start -p 3020",
+    "start": "next start -p 3001",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

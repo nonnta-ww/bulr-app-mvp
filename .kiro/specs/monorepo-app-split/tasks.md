@@ -74,7 +74,7 @@
   - _Requirements: 1.2, 2.1, 2.2_
   - _Depends: 1.4, 2.3_
 
-- [ ] 3.2 apps/business の package.json と dev ポート更新
+- [x] 3.2 apps/business の package.json と dev ポート更新
   - `apps/business/package.json` の `name` を `@bulr/web` → `@bulr/business` に変更
   - dev script のポートを `-p 3020` → `-p 3001` に変更
   - `pnpm install` で workspace 整合性を再構築
