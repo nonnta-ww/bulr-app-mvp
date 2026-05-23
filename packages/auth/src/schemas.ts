@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// Better Auth が管理する user / session テーブルから推論される行型を、
+// `@bulr/auth` の公開シンボル（design.md セクション 7「Service Interface」）として
+// 再エクスポートする。実体は `packages/db/schema/auth.ts`。
+export type { User, Session } from "@bulr/db/schema";
+
 // メールアドレス検証スキーマ (Requirement 9.1)
 export const emailSchema = z.string().email().trim().max(254);
 

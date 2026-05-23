@@ -35,7 +35,7 @@
   - **観測可能**: `packages/auth/src/{guards,safe-action,errors}.ts` が存在し、`pnpm --filter @bulr/auth typecheck` が通る
   - _Requirements: 5.4, 5.5_
 
-- [ ] 1.4 packages/auth 公開 API の整備と build 通過
+- [x] 1.4 packages/auth 公開 API の整備と build 通過
   - `packages/auth/src/index.ts` で `{ auth, authClient, requireUser, requireAdmin, requireSessionOwnership, authedAction, adminAction, AuthError, User, Session }` を再エクスポート（`design.md` セクション 6 の Service Interface に従う）
   - Better Auth サーバインスタンスの baseURL を env (`BETTER_AUTH_URL`) から読む構造になっていることを確認
   - **観測可能**: `pnpm --filter @bulr/auth build` と `typecheck` が成功、`packages/auth/src/index.ts` が指定の名前を全て export している
