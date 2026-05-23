@@ -155,9 +155,9 @@
 
 - [ ] 6. モノレポ設定の更新と環境変数整理
 
-- [ ] 6.1 tsconfig.base.json のパスエイリアス追加
-  - `tsconfig.base.json` の `paths` に `"@bulr/auth": ["./packages/auth/src/index.ts"]` と `"@bulr/ui": ["./packages/ui/src/index.ts"]` を追加（既存 `@bulr/db` 等のパターンに合わせる）
-  - **観測可能**: 3アプリすべてが `import { foo } from '@bulr/auth'` と `import { Button } from '@bulr/ui'` を解決でき、`pnpm typecheck` が全体で通る
+- [x] 6.1 tsconfig.base.json のパスエイリアス追加（実態確認のみ）
+  - **Amendment (Task 6.1 実装中に確認)**: 設計当初は `tsconfig.base.json` の `paths` に `@bulr/auth` / `@bulr/ui` を追加する想定だったが、(1) 既存 `@bulr/db` 等にも paths は元から存在せず pnpm workspace の `package.json exports` で解決されている、(2) `baseUrl: "."` + `paths` を base に追加すると apps の `tsconfig.json` が継承して既存の `@/*: ["./*"]` がモノレポルート相対に変わり全 apps の typecheck が壊れる、という2点から **paths は追加せず**、pnpm workspace exports に依存する現状を採用。
+  - **観測可能**: 3アプリすべてが `@bulr/auth` / `@bulr/ui` を解決でき、`pnpm typecheck`（root, 9 tasks）が PASS（実機確認済み）
   - _Requirements: 7.6_
 
 - [ ] 6.2 .env.example の3アプリ対応化
