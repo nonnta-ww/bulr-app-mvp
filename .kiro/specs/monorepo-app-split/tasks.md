@@ -96,7 +96,7 @@
 
 - [ ] 4. apps/admin の新設と既存検証パネルの flat URL 移設
 
-- [ ] 4.1 apps/admin スケルトン作成
+- [x] 4.1 apps/admin スケルトン作成
   - `apps/admin/` と Next.js 16 最小構成（`next.config.ts`・`tsconfig.json`・`tailwind.config.ts`・`postcss.config.mjs`・`app/layout.tsx`・`app/page.tsx`・`public/`）を新規作成
   - `package.json`: `name: @bulr/admin`、dev port `3002`、dependencies は `@bulr/auth`・`@bulr/ui`・`@bulr/db`・`@bulr/types`・`@bulr/lib`・next・react
   - `tailwind.config.ts` に `presets: [bulrTailwindPreset]` と content に `'../../packages/ui/src/**/*.{ts,tsx}'` を含める
