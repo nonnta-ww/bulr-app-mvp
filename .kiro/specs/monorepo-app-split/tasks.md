@@ -43,7 +43,7 @@
 
 - [ ] 2. packages/ui の新設と最小 UI プリミティブの導入
 
-- [ ] 2.1 (P) packages/ui スケルトンと共有 Tailwind preset
+- [x] 2.1 (P) packages/ui スケルトンと共有 Tailwind preset
   - `packages/ui/` ディレクトリと `package.json`（`name: @bulr/ui`, dependencies: react, react-dom, class-variance-authority, tailwind-merge, clsx, lucide-react）を作成
   - `tsconfig.json`（`extends: ../../tsconfig.base.json`）
   - `src/lib/utils.ts` に `cn` を実装（clsx + tailwind-merge の標準パターン）
