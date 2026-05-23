@@ -128,7 +128,7 @@
 
 - [ ] 5. apps/candidate の新設（Task 4 と並列実行可）
 
-- [ ] 5.1 (P) apps/candidate スケルトン作成
+- [x] 5.1 (P) apps/candidate スケルトン作成
   - `apps/candidate/` と Next.js 16 最小構成（4.1 と同じ骨格）を新規作成
   - `package.json`: `name: @bulr/candidate`、dev port `3000`、dependencies は `@bulr/auth`・`@bulr/ui`・`@bulr/db`・`@bulr/types`・`@bulr/lib`・next・react
   - `tailwind.config.ts` に `presets: [bulrTailwindPreset]` と content に `'../../packages/ui/src/**/*.{ts,tsx}'` を含める
