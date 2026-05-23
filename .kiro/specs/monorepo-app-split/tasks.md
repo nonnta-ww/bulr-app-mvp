@@ -146,7 +146,7 @@
   - **観測可能**: `:3000/sign-in` でメール入力 → Magic Link 受信 → リンククリックで `:3000/` のプレースホルダ画面に到達できる
   - _Requirements: 4.2, 4.3, 4.4, 4.5, 4.7, 6.4_
 
-- [ ] 5.3 apps/candidate の build/typecheck/lint 通過
+- [x] 5.3 apps/candidate の build/typecheck/lint 通過
   - `pnpm --filter @bulr/candidate build` `typecheck` `lint` を順に実行
   - **観測可能**: 3 コマンドすべてが成功する
   - _Requirements: 4.6_
