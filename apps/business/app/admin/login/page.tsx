@@ -12,7 +12,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@bulr/auth';
+import { getCurrentUser } from '@bulr/auth/server';
 
 export default async function AdminLoginPage() {
   const user = await getCurrentUser();

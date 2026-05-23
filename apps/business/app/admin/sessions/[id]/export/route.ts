@@ -12,7 +12,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { sessionDetailQuery } from '@bulr/db/queries/admin';
-import { AuthError, requireAdmin } from '@bulr/auth';
+import { AuthError, requireAdmin } from '@bulr/auth/server';
 import { buildCsvFromCoverages } from '../../../_lib/csv-export';
 import { buildJsonFromSession } from '../../../_lib/json-export';
 

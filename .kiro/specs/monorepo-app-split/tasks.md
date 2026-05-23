@@ -88,10 +88,11 @@
   - **観測可能**: `grep -rn '@/lib/auth\|@/lib/guards\|@/lib/safe-action' apps/business/` が空、`pnpm --filter @bulr/business typecheck` が通る
   - _Requirements: 2.6, 2.7, 5.6, 6.3, 8.1_
 
-- [ ] 3.4 apps/business の build/typecheck/lint 通過
+- [x] 3.4 apps/business の build/typecheck/lint 通過（@bulr/auth の server/client subpath 分離も含む）
   - `pnpm --filter @bulr/business build` `typecheck` `lint` を順に実行
   - **観測可能**: 3 コマンドすべてが成功し、`.next` ビルド成果物が生成される
   - _Requirements: 2.6_
+  - **Amendment (Task 3.4 実装中に発見)**: 初版バレル単一エントリのままだと Client Component (`sign-in-form.tsx`) が `signIn` を import した時点で `packages/auth/src/server.ts`（`next/headers`・`pg`・`nodemailer`）が Client バンドルに巻き込まれ、Next.js ビルドが `Module not found: tls/fs/net` で失敗。本タスクで `@bulr/auth` を subpath exports（`./server` / `./client`）に分離し、メインバレルは isomorphic 専用（zod スキーマ・`AuthError`・型）に絞った。`server.ts` / `guards.ts` / `safe-action.ts` の冒頭に `import 'server-only';` を追加。apps/business 内の全 import 経路を `@bulr/auth/server` または `@bulr/auth/client` に切替。
 
 - [ ] 4. apps/admin の新設と既存検証パネルの flat URL 移設
 

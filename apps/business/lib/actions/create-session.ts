@@ -16,7 +16,7 @@ import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
 
 import { checkAndIncrement } from '@bulr/lib';
-import { authedAction } from '@bulr/auth';
+import { authedAction } from '@bulr/auth/server';
 import { selectPlannedPatterns } from '@/lib/queries/select-planned-patterns';
 
 // ---------------------------------------------------------------------------

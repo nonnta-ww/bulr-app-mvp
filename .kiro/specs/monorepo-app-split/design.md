@@ -404,12 +404,22 @@ bulr-app-mvp/
 
 ##### Service Interface
 
+> **Amendment (Task 3.4 実装中に発見)**: 初版 design はバレル単一エントリ（`@bulr/auth`）の前提だったが、`server.ts`（`next/headers`・`pg`・`nodemailer` 依存）と `client.ts` を同一エントリから export すると Client Component が `signIn` を import した時点で server-only 依存が Client バンドルに巻き込まれ、Next.js ビルドが `Module not found: Can't resolve 'tls'/'fs'/'net'/...` で失敗する。Subpath exports（`@bulr/auth/server` と `@bulr/auth/client`）に分離し、メインバレル（`@bulr/auth`）は isomorphic（zod スキーマ・`AuthError`・型）のみを公開する。`server.ts` / `guards.ts` / `safe-action.ts` の冒頭には `import 'server-only';` を追加し、Client から誤って引き込まれた場合に明示的エラーで止める。
+
 ```typescript
-// packages/auth/src/index.ts（バレル、説明用シグネチャ）
+// packages/auth/src/index.ts（メインバレル: isomorphic 公開シンボルのみ）
+export { AuthError } from './errors';
+export type { AuthErrorCode } from './errors';
+export type { User, Session } from './schemas';
+export { emailSchema, interviewerProfileSchema } from './schemas';
+export type { InterviewerProfileInput } from './schemas';
+
+// packages/auth/src/server-entry.ts（"./server" subpath、Server / Route Handler / Server Action 用）
 
 // Better Auth サーバインスタンス（各アプリの /api/auth/[...all] でマウント）
 export { auth } from './server';
-// クライアント側ヘルパー（React コンポーネントから利用）
+// クライアント側ヘルパー（React Client Component から利用）。
+// "./client" subpath（packages/auth/src/client-entry.ts）から export。
 export { authClient } from './client';
 
 // 認証ガード（Server Component / Server Action / Route Handler の先頭で呼ぶ）

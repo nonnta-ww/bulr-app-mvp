@@ -8,6 +8,8 @@
  * Requirements: 5.6-5.10, 9.6
  */
 
+import 'server-only';
+
 import { ZodError, ZodType } from 'zod';
 
 import { AuthError } from './errors';

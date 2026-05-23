@@ -6,7 +6,7 @@
 
 import { redirect } from 'next/navigation';
 
-import { requireUser } from '@bulr/auth';
+import { requireUser } from '@bulr/auth/server';
 
 export default async function SettingsPage() {
   try {

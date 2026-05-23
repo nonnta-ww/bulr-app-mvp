@@ -11,7 +11,7 @@ import { db } from '@bulr/db';
 import { assessmentPattern } from '@bulr/db/schema';
 import type { AssessmentPattern } from '@bulr/db/schema';
 import { loadSessionWithTurns } from '@bulr/db/queries';
-import { requireUser } from '@bulr/auth';
+import { requireUser } from '@bulr/auth/server';
 
 import { InterviewSessionRunner } from '../_components/interview-session-runner';
 

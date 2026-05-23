@@ -10,6 +10,8 @@
  * Requirements: 3.8, 4.3, 4.7, 5.1-5.5, 6.8, 10.7, 10.8
  */
 
+import 'server-only';
+
 import { headers } from 'next/headers';
 
 import { auth } from './server';

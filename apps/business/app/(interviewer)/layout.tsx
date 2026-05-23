@@ -10,7 +10,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/components/app-shell/app-shell';
-import { getCurrentUser } from '@bulr/auth';
+import { getCurrentUser } from '@bulr/auth/server';
 
 export default async function InterviewerLayout({
   children,

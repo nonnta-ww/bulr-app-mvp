@@ -1,8 +1,14 @@
 /**
  * Better Auth サーバー設定
  *
+ * `import 'server-only'` により Client バンドルへの誤った巻き込みを防ぐ。
+ * Client Component から本ファイル経由で auth を参照しようとした場合、
+ * Next.js のビルドが明示的なエラーで失敗する。
+ *
  * Requirements: 1.1, 1.3-1.10, 2.7, 3.1-3.5, 7.5, 7.6, 7.9, 8.1, 8.3, 8.8
  */
+
+import 'server-only';
 
 import { db } from '@bulr/db';
 import { account, session, user, verification } from '@bulr/db/schema';
