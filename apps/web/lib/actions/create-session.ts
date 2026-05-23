@@ -15,7 +15,7 @@ import { z } from 'zod';
 import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
 
-import { checkAndIncrement } from '@/lib/rate-limit';
+import { checkAndIncrement } from '@bulr/lib';
 import { authedAction } from '@/lib/safe-action';
 import { selectPlannedPatterns } from '@/lib/queries/select-planned-patterns';
 

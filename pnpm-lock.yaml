@@ -146,16 +146,31 @@ importers:
       '@bulr/db':
         specifier: workspace:*
         version: link:../db
+      '@bulr/lib':
+        specifier: workspace:*
+        version: link:../lib
       better-auth:
         specifier: ^1.6.0
         version: 1.6.11(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.28.17)(pg@8.20.0))(next@16.2.6(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(pg@8.20.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      nodemailer:
+        specifier: ^6.10.0
+        version: 6.10.1
       react:
         specifier: ^19.0.0
         version: 19.2.6
+      resend:
+        specifier: ^4.0.0
+        version: 4.8.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       zod:
         specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: ^22
+        version: 22.19.19
+      '@types/nodemailer':
+        specifier: ^6.4.0
+        version: 6.4.23
       '@types/react':
         specifier: ^19
         version: 19.2.14
@@ -193,9 +208,15 @@ importers:
 
   packages/lib:
     dependencies:
+      '@bulr/db':
+        specifier: workspace:*
+        version: link:../db
       '@bulr/types':
         specifier: workspace:*
         version: link:../types
+      drizzle-orm:
+        specifier: ^0.45.0
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.28.17)(pg@8.20.0)
       zod:
         specifier: ^4.0.0
         version: 4.4.3

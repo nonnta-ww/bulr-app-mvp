@@ -12,10 +12,15 @@
   },
   "dependencies": {
     "@bulr/db": "workspace:*",
+    "@bulr/lib": "workspace:*",
     "better-auth": "^1.6.0",
+    "nodemailer": "^6.10.0",
+    "resend": "^4.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22",
+    "@types/nodemailer": "^6.4.0",
     "@types/react": "^19",
     "typescript": "^5.4"
   },

@@ -33,11 +33,15 @@
 - `apps/candidate` と `apps/admin` の新規アプリスケルトン／シェル作成。
 - 現行 `apps/web/app/admin/**` の `apps/admin/app/**`（URL flat 化）への移設。
 - `packages/auth` 新規作成と `apps/web/lib/auth/*`・`lib/guards.ts`・`lib/safe-action.ts` の集約。
+- **`apps/web/lib/email/`（`resend.ts` + `templates/magic-link.ts`）を `packages/auth/src/email/` へ移管**（Magic Link 配信は auth-bound、現状他で未使用）。
+- **`apps/web/lib/rate-limit.ts` を `packages/lib/src/rate-limit.ts` へ移管**（auth と business API（interview turns/proposal/create-session）で共有されるため共通ユーティリティ層が妥当）。
 - `packages/ui` 新規作成と3アプリで使う最小プリミティブ（Button / Input / Label / Form / Card）の導入＋ Tailwind preset の共有。
 - `tsconfig.base.json` の `paths` 追加（`@bulr/auth`・`@bulr/ui`）。
 - `pnpm-workspace.yaml`・`turbo.json` の3アプリ対応化（必要範囲のみ）。
 - `.env.example` の3アプリ対応化（アプリ別 URL 変数の整理）。
 - `vercel.json` の `apps/business/vercel.json` への移動。
+
+> **Amendment (2026-05-23, Task 1.2 実装中に発見)**: 初版 design は `packages/auth/src/server.ts` が `apps/web/lib/email/*` と `apps/web/lib/rate-limit.ts` に依存することを見落としていた。`packages/auth → apps/web` 逆参照を避けるため email/ は packages/auth へ、rate-limit.ts は packages/lib へ移管する形に拡張。Allowed Dependencies は `packages/auth → packages/db` に加え、Magic Link 配信のため Resend SDK と React Email（ある場合）への外部依存を許容。
 
 ### Out of Boundary
 
@@ -217,6 +221,9 @@ bulr-app-mvp/
 │   │   │   ├── guards.ts                   # 旧 apps/web/lib/guards.ts
 │   │   │   ├── safe-action.ts              # 旧 apps/web/lib/safe-action.ts
 │   │   │   ├── errors.ts                   # AuthError 型（既存定義を集約）
+│   │   │   ├── email/                      # ★Amendment：Magic Link 配信
+│   │   │   │   ├── resend.ts               # 旧 apps/web/lib/email/resend.ts
+│   │   │   │   └── templates/magic-link.ts # 旧 apps/web/lib/email/templates/magic-link.ts
 │   │   │   └── index.ts                    # バレル
 │   │   ├── package.json                    # name: @bulr/auth
 │   │   └── tsconfig.json
@@ -237,7 +244,10 @@ bulr-app-mvp/
 │   │   └── tsconfig.json
 │   ├── db/                                 # 既存（無変更）
 │   ├── types/                              # 既存（無変更）
-│   ├── lib/                                # 既存（無変更）
+│   ├── lib/                                # 既存 ＋ ★Amendment
+│   │   └── src/
+│   │       ├── rate-limit.ts               # 旧 apps/web/lib/rate-limit.ts（auth + business API 共有）
+│   │       └── index.ts                    # rate-limit を re-export
 │   └── ai/                                 # 既存（無変更）
 ├── scripts/                                # 既存（無変更）
 ├── docker/                                 # 既存（無変更）
@@ -258,7 +268,11 @@ bulr-app-mvp/
 - `apps/business/app/admin/` — 削除（apps/admin/ へ移設）。
 - `apps/business/lib/auth/` — 削除（packages/auth へ集約）。
 - `apps/business/lib/guards.ts`・`safe-action.ts` — 削除（packages/auth へ集約）。
+- **`apps/business/lib/email/` — 削除（packages/auth/src/email/ へ集約、Amendment）**。
+- **`apps/business/lib/rate-limit.ts` — 削除（packages/lib/src/rate-limit.ts へ集約、Amendment）**。
 - `apps/business/` 配下の全 `import` を `@/lib/auth/*`・`@/lib/guards`・`@/lib/safe-action` から `@bulr/auth` に置換。
+- **`apps/business/` 配下の `@/lib/rate-limit` import を `@bulr/lib` に置換**（対象: `app/api/interview/turns/next/route.ts`・`app/api/interview/proposal/regenerate/route.ts`・`lib/actions/create-session.ts`）。
+- **`apps/business/` 配下の `@/lib/email/*` import を `@bulr/auth` に置換**（Magic Link テンプレ等の参照、もしあれば。実態としては auth 配下の server.ts からの内部 import のみ）。
 - `apps/admin/app/sessions/**` — 旧 `apps/web/app/admin/sessions/**` を flat 化（`apps/admin/app/admin/` ではなく `apps/admin/app/sessions/` 直下）。
 - `apps/admin/app/sign-in/page.tsx` — 旧 `apps/web/app/admin/login/page.tsx` の置き換え（命名統一）。
 - `tsconfig.base.json` — `paths` に `"@bulr/auth": ["./packages/auth/src/index.ts"]` と `"@bulr/ui": ["./packages/ui/src/index.ts"]` を追加。

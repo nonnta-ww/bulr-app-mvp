@@ -10,9 +10,9 @@ import { userProfile } from '@bulr/db/schema';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink } from 'better-auth/plugins';
-import { sendEmail } from '../email/resend';
-import { renderMagicLinkEmail } from '../email/templates/magic-link';
-import { checkAndIncrement } from '../rate-limit';
+import { checkAndIncrement } from '@bulr/lib';
+import { sendEmail } from './email/resend';
+import { renderMagicLinkEmail } from './email/templates/magic-link';
 
 // 起動時の必須環境変数チェック
 if (!process.env.BETTER_AUTH_SECRET) {

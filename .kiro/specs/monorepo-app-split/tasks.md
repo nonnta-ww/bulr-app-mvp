@@ -13,10 +13,18 @@
   - **観測可能**: `pnpm install` 後に `pnpm --filter @bulr/auth typecheck` がエラーなく完了する
   - _Requirements: 5.1_
 
-- [ ] 1.2 Better Auth 設定の packages/auth への移管
+- [x] 1.2 Better Auth 設定と関連ユーティリティの packages/auth ＋ packages/lib への移管
   - `apps/web/lib/auth/{server,client,schemas}.ts` を `packages/auth/src/` に物理移動
-  - 移動後の内部相対 import を整理（外部依存はそのまま、内部参照は新階層に合わせる）
-  - **観測可能**: `packages/auth/src/{server,client,schemas}.ts` が存在し、`pnpm --filter @bulr/auth typecheck` が通る（`apps/web` 側の import は次タスクで切り替えるため一時的に壊れている可能性あり）
+  - **`apps/web/lib/email/` 一式（`resend.ts` ＋ `templates/magic-link.ts`）を `packages/auth/src/email/` に物理移動**（Amendment: auth-bound、design.md `Boundary > This Spec Owns` 参照）
+  - **`apps/web/lib/rate-limit.ts` を `packages/lib/src/rate-limit.ts` に物理移動**（Amendment: auth + business API で共有のため共通ユーティリティ層へ）
+  - `packages/auth/src/server.ts` の内部相対 import を新階層に合わせる（`../email/resend` → `./email/resend` 等）
+  - `packages/lib/src/index.ts` から `rate-limit` を re-export し、`@bulr/lib` の公開 API に追加
+  - `packages/lib/package.json` に必要な依存（`@bulr/db` 等、rate-limit.ts の実態に応じて）を追加
+  - **`apps/web` 配下の `@/lib/rate-limit` import を `@bulr/lib` に置換**（対象: `app/api/interview/turns/next/route.ts`・`app/api/interview/proposal/regenerate/route.ts`・`lib/actions/create-session.ts`）
+  - **観測可能**:
+    - `pnpm --filter @bulr/auth typecheck` が PASS
+    - `pnpm --filter @bulr/lib typecheck` が PASS
+    - `pnpm --filter @bulr/web typecheck` で残るのは `@/lib/auth/*`・`@/lib/guards`・`@/lib/safe-action` 関連エラーのみ（rate-limit と email 関連は解消、Task 3.3 で auth 系も解消予定）
   - _Requirements: 5.2, 5.3_
 
 - [ ] 1.3 認証ガードと safe-action の packages/auth への集約

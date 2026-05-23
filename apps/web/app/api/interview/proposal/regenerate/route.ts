@@ -11,7 +11,7 @@ import { createLlmContext } from '@bulr/ai';
 import { loadRecentTurns } from '@bulr/db/queries';
 import { buildLlmContext } from '@/lib/queries/build-llm-context';
 import { requireUser, requireSessionOwnership } from '@/lib/guards';
-import { RateLimitError } from '@/lib/rate-limit';
+import { RateLimitError } from '@bulr/lib';
 
 // ---------------------------------------------------------------------------
 // withRetry helper
