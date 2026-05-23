@@ -12,7 +12,7 @@ import { db } from '@bulr/db';
 import { interviewSession } from '@bulr/db/schema';
 import ReactMarkdown from 'react-markdown';
 
-import { requireUser } from '@/lib/guards';
+import { requireUser } from '@bulr/auth';
 import { getReportData } from '@/lib/queries/get-report-data';
 import { ReportView } from '../../_components/report/report-view';
 

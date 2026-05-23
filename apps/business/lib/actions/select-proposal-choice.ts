@@ -15,8 +15,8 @@ import { z } from 'zod';
 import { db } from '@bulr/db';
 import { interviewSession, questionProposal } from '@bulr/db/schema';
 
-import { requireSessionOwnership } from '@/lib/guards';
-import { authedAction } from '@/lib/safe-action';
+import { requireSessionOwnership } from '@bulr/auth';
+import { authedAction } from '@bulr/auth';
 
 const schema = z.object({
   proposalId: z.string(),

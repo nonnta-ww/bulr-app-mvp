@@ -9,7 +9,7 @@ import { redirect } from 'next/navigation';
 import { desc, eq, count } from 'drizzle-orm';
 import { db } from '@bulr/db';
 import { interviewSession, interviewTurn, candidate } from '@bulr/db/schema';
-import { requireUser } from '@/lib/guards';
+import { requireUser } from '@bulr/auth';
 
 // ---------------------------------------------------------------------------
 // ステータスラベルマッピング

@@ -39,6 +39,9 @@ importers:
       '@bulr/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@bulr/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@bulr/db':
         specifier: workspace:*
         version: link:../../packages/db

@@ -81,7 +81,7 @@
   - **観測可能**: `pnpm --filter @bulr/business --version` で `@bulr/business` が確認でき、`pnpm --filter @bulr/business dev` が `:3001` でリッスンする
   - _Requirements: 1.4, 1.6, 2.7_
 
-- [ ] 3.3 認証関連 import の @bulr/auth への一括置換
+- [x] 3.3 認証関連 import の @bulr/auth への一括置換
   - `apps/business/` 配下の全 `.ts`/`.tsx` で `@/lib/auth/*`・`@/lib/guards`・`@/lib/safe-action` の import を `@bulr/auth` に一括置換
   - 移管済みの旧ファイル（`apps/business/lib/auth/`・`lib/guards.ts`・`lib/safe-action.ts`）を削除
   - apps/business 内に shadcn プリミティブの重複実装がないことを確認（必要になったら `@bulr/ui` から import する方針を確立）

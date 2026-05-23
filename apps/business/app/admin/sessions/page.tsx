@@ -16,7 +16,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SessionListFilters } from '@/app/admin/_components/session-list-filters';
 import { SessionListTable } from '@/app/admin/_components/session-list-table';
 import { parseListQueryParams } from '@/app/admin/_lib/list-query-params';
-import { AuthError, requireAdmin } from '@/lib/guards';
+import { AuthError, requireAdmin } from '@bulr/auth';
 import { sessionListQuery } from '@bulr/db/queries/admin';
 
 // ---------------------------------------------------------------------------

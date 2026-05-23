@@ -9,7 +9,7 @@
 
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/lib/guards';
+import { getCurrentUser } from '@bulr/auth';
 import { SignInForm } from './sign-in-form';
 
 export default async function SignInPage() {

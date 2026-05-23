@@ -12,7 +12,7 @@ import { db } from '@bulr/db';
 import { schema } from '@bulr/db';
 import { aggregateHeatmap, createLlmContext } from '@bulr/ai';
 import { buildLlmContext } from '@/lib/queries/build-llm-context';
-import { requireUser, requireSessionOwnership } from '@/lib/guards';
+import { requireUser, requireSessionOwnership } from '@bulr/auth';
 
 // ---------------------------------------------------------------------------
 // POST /api/interview/finalize

@@ -10,7 +10,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { signOut } from '@/lib/auth/client';
+import { signOut } from '@bulr/auth';
 
 type Props = {
   email: string;

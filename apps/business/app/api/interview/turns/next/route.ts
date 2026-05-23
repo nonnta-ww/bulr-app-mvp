@@ -12,7 +12,7 @@ import { createLlmContext, transcribeAudio } from '@bulr/ai';
 import { loadRecentTurns } from '@bulr/db/queries';
 import { uploadToBlob } from '@/lib/audio/blob-client';
 import { buildLlmContext } from '@/lib/queries/build-llm-context';
-import { requireUser, requireSessionOwnership } from '@/lib/guards';
+import { requireUser, requireSessionOwnership } from '@bulr/auth';
 import { RateLimitError, checkRateLimit } from '@bulr/lib';
 import { TurnsNextEvent } from '@/lib/interview/turns-next-events';
 

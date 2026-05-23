@@ -9,7 +9,7 @@
  * Requirements: 6.1-6.11, 10.4, 13.4
  */
 
-import { adminAction } from '@/lib/safe-action';
+import { adminAction } from '@bulr/auth';
 import { manualEvaluationSchema } from '../_lib/manual-evaluation-schema';
 import { db } from '@bulr/db';
 import { patternCoverage } from '@bulr/db/schema/pattern-coverage';

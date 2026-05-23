@@ -6,7 +6,7 @@
 
 import { redirect } from 'next/navigation';
 
-import { requireUser } from '@/lib/guards';
+import { requireUser } from '@bulr/auth';
 
 export default async function SettingsPage() {
   try {

@@ -14,8 +14,8 @@
 
 import { useState } from 'react';
 
-import { signIn } from '@/lib/auth/client';
-import { emailSchema } from '@/lib/auth/schemas';
+import { signIn } from '@bulr/auth';
+import { emailSchema } from '@bulr/auth';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 

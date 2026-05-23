@@ -6,7 +6,7 @@
 
 import { redirect } from 'next/navigation';
 
-import { requireUser } from '@/lib/guards';
+import { requireUser } from '@bulr/auth';
 import { CandidateForm } from '@/app/(interviewer)/interviews/_components/candidate-form';
 
 // ---------------------------------------------------------------------------

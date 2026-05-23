@@ -18,7 +18,7 @@ import { ChatMessageTimeline } from '@/app/admin/_components/chat-message-timeli
 import { InterviewerDisplay } from '@/app/admin/_components/interviewer-display';
 import { ProfileDisplay } from '@/app/admin/_components/profile-display';
 import { ReportLink } from '@/app/admin/_components/report-link';
-import { AuthError, requireAdmin } from '@/lib/guards';
+import { AuthError, requireAdmin } from '@bulr/auth';
 import { sessionDetailQuery } from '@bulr/db/queries/admin';
 
 // ---------------------------------------------------------------------------
