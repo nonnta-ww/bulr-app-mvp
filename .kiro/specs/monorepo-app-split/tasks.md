@@ -138,7 +138,7 @@
   - _Boundary: apps/candidate_
   - _Depends: 1.4, 2.3, 3.4_
 
-- [ ] 5.2 apps/candidate の認証配線とサインイン後フロー
+- [x] 5.2 apps/candidate の認証配線とサインイン後フロー
   - `apps/candidate/app/api/auth/[...all]/route.ts` に `@bulr/auth` の Better Auth handler をマウント
   - `apps/candidate/app/sign-in/page.tsx` に Magic Link サインイン UI（`@bulr/ui` 使用）
   - `apps/candidate/app/page.tsx` にサインイン後のプレースホルダ画面（「Wave 2 で機能拡張予定」相当）
