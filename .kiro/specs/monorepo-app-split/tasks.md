@@ -105,7 +105,7 @@
   - _Requirements: 3.1, 1.4, 1.6, 3.10, 6.4, 8.2, 10.2_
   - _Depends: 1.4, 2.3, 3.4_
 
-- [ ] 4.2 apps/admin の認証配線（Better Auth handler とサインインページ）
+- [x] 4.2 apps/admin の認証配線（Better Auth handler とサインインページ）
   - `apps/admin/app/api/auth/[...all]/route.ts` に `@bulr/auth` の Better Auth handler をマウント
   - `apps/admin/app/sign-in/page.tsx` に Magic Link サインイン UI（`@bulr/ui` の Form / Input / Button / Label を使用）
   - 必要に応じて `apps/admin/app/layout.tsx` で provider を設定
