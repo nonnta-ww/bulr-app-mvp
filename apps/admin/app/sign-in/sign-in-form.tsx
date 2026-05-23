@@ -10,7 +10,7 @@
  *
  * apps/business の同名 Form と機能等価。違いは UI primitives を
  * `@bulr/ui` から import している点（Requirement 6.4）と、
- * サインイン後の callbackURL が admin top（`/`）である点。
+ * サインイン後の callbackURL が `/sessions`（既存検証パネル）である点。
  *
  * Requirements: 3.2, 3.9, 6.4
  */
@@ -53,9 +53,9 @@ export function SignInForm() {
     try {
       const result = await signIn.magicLink({
         email: values.email,
-        // 本タスクでは保護ルートが未配置のため admin top（プレースホルダ）に戻す。
-        // Task 4.3 で /sessions が移設された後はそちらに切り替える。
-        callbackURL: '/',
+        // Task 4.3 で検証パネルを apps/admin の flat URL /sessions に移設したため、
+        // サインイン後は /sessions に直接遷移する。
+        callbackURL: '/sessions',
       });
 
       if (result?.error) {

@@ -45,7 +45,7 @@ export const updateManualEvaluation = adminAction(
       return { ok: false as const, error: 'NOT_FOUND' as const };
     }
 
-    revalidatePath(`/admin/sessions/${first.sessionId}`);
+    revalidatePath(`/sessions/${first.sessionId}`);
     return { ok: true as const };
   },
 );

@@ -113,7 +113,7 @@
   - **観測可能**: `:3002/sign-in` がブラウザで表示でき、許可外メールでサインインを試みると `requireAdmin` ガードで拒否される
   - _Requirements: 3.2, 3.3, 3.9, 6.4_
 
-- [ ] 4.3 既存検証パネルの apps/admin への flat URL 移設
+- [x] 4.3 既存検証パネルの apps/admin への flat URL 移設
   - `apps/business/app/admin/sessions/**`（`_components/`・`_actions/`・`_lib/` 含む）を `apps/admin/app/sessions/**` に物理移動
   - `apps/business/app/admin/login/` を削除（`apps/admin/app/sign-in/` で置き換え済み）
   - 移動後の相対 import が壊れていないか確認、`@/lib/*` 等のパスエイリアスは `apps/admin` のエイリアスに沿って必要に応じて調整

@@ -11,7 +11,7 @@
 
 import { useRouter } from 'next/navigation';
 
-import type { ListQueryParams } from '@/app/admin/_lib/list-query-params';
+import type { ListQueryParams } from '@/app/_lib/list-query-params';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -36,7 +36,7 @@ export function SessionListFilters({ current }: Props) {
       sortBy: next.sortBy,
       sortOrder: next.sortOrder,
     });
-    router.push('/admin/sessions?' + params.toString());
+    router.push('/sessions?' + params.toString());
   }
 
   return (

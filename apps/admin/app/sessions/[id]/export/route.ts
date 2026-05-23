@@ -2,7 +2,10 @@ import 'server-only';
 export const runtime = 'nodejs';
 
 /**
- * GET /admin/sessions/[id]/export?format=csv|json
+ * GET /sessions/[id]/export?format=csv|json
+ *
+ * apps/admin の Route Handler。monorepo-app-split Task 4.3 で apps/business から flat URL に移設。
+ * 旧パス: apps/business/app/admin/sessions/[id]/export/route.ts（旧 URL: /admin/sessions/[id]/export）。
  *
  * Requirements: 8.1-8.16, 10.3, 13.5
  * _Boundary: ExportRoute_
@@ -13,8 +16,8 @@ import { z } from 'zod';
 
 import { sessionDetailQuery } from '@bulr/db/queries/admin';
 import { AuthError, requireAdmin } from '@bulr/auth/server';
-import { buildCsvFromCoverages } from '../../../_lib/csv-export';
-import { buildJsonFromSession } from '../../../_lib/json-export';
+import { buildCsvFromCoverages } from '@/app/_lib/csv-export';
+import { buildJsonFromSession } from '@/app/_lib/json-export';
 
 // ---------------------------------------------------------------------------
 // バリデーションスキーマ
@@ -24,7 +27,7 @@ const ID_SCHEMA = z.string().min(1);
 const FORMAT_SCHEMA = z.enum(['csv', 'json']);
 
 // ---------------------------------------------------------------------------
-// GET /admin/sessions/[id]/export?format=csv|json
+// GET /sessions/[id]/export?format=csv|json
 // ---------------------------------------------------------------------------
 
 export async function GET(

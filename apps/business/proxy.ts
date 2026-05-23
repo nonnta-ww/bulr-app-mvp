@@ -12,7 +12,7 @@
  *
  * やらないこと:
  *   - Better Auth セッション validation（Cookie の存在確認のみ、セッションの有効性は Server Component で requireUser() が行う）
- *   - /admin/* の認可（許可メール検査は Server Component で requireAdmin() が独立に行う）
+ *   - /admin/* の認可（monorepo-app-split Task 4.3 で /admin/* は apps/admin に移設されたため、本アプリには存在しない）
  *   - Server Action / API Route の認可
  */
 

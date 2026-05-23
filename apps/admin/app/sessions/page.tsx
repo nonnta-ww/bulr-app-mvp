@@ -1,9 +1,12 @@
 /**
- * 管理画面 セッション一覧ページ（/admin/sessions）
+ * 管理画面 セッション一覧ページ（apps/admin: /sessions）
  *
  * Server Component。Layer 2 多層防御として requireAdmin() を先頭で呼び出す。
  * フィルタ・ソート条件を searchParams から取得し、sessionListQuery でデータを取得して
  * SessionListFilters / SessionListTable に渡す。
+ *
+ * monorepo-app-split Task 4.3 で apps/business から flat URL（/sessions）に移設。
+ * 旧パス: apps/business/app/admin/sessions/page.tsx（/admin/sessions）。
  *
  * Requirements: 1.1, 1.2, 1.7, 2.3, 2.4, 3.4, 10.1, 13.1, 13.2
  * Boundary: SessionListPage (this file only)
@@ -13,9 +16,9 @@
 
 import { notFound, redirect } from 'next/navigation';
 
-import { SessionListFilters } from '@/app/admin/_components/session-list-filters';
-import { SessionListTable } from '@/app/admin/_components/session-list-table';
-import { parseListQueryParams } from '@/app/admin/_lib/list-query-params';
+import { SessionListFilters } from '@/app/_components/session-list-filters';
+import { SessionListTable } from '@/app/_components/session-list-table';
+import { parseListQueryParams } from '@/app/_lib/list-query-params';
 import { AuthError, requireAdmin } from '@bulr/auth/server';
 import { sessionListQuery } from '@bulr/db/queries/admin';
 

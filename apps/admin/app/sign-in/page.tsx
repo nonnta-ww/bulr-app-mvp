@@ -7,9 +7,8 @@
  * `requireAdmin()` が独立に行う。本ページ自体は `requireAdmin` の対象外で、
  * 未認証ユーザでも到達できる。
  *
- * Task 4.3 で `/sessions` 配下が移設された後、サインイン済みかつ許可メールの
- * ユーザは `/sessions` に進める。本タスクでは保護ルートが未配置のため、
- * サインイン後の遷移先は単に `/`（プレースホルダ）に向ける。
+ * Task 4.3 で `/sessions` 配下を移設済み。サインイン済みかつ許可メールのユーザは
+ * `/sessions` に進める。本ページ自体は requireAdmin の対象外で、未認証ユーザも到達可能。
  *
  * Requirements: 3.2, 3.3, 3.9, 6.4
  */
@@ -22,8 +21,9 @@ import { SignInForm } from './sign-in-form';
 export default async function SignInPage() {
   const user = await getCurrentUser();
   if (user !== null) {
-    // 既にサインイン済みなら admin top（Task 4.3 で /sessions に置き換え予定）
-    redirect('/');
+    // 既にサインイン済みなら検証パネル（/sessions）へ。
+    // 許可メール検査（ADMIN_ALLOWED_EMAILS）は /sessions 側の requireAdmin() が行う。
+    redirect('/sessions');
   }
 
   return (

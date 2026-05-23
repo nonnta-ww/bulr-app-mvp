@@ -143,7 +143,7 @@ export function SessionListTable({ items }: Props) {
             >
               <td className="px-4 py-3 font-medium text-gray-900">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {item.candidate_name}
@@ -151,7 +151,7 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {item.interviewer_email}
@@ -159,7 +159,7 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {statusLabel(item.status)}
@@ -167,7 +167,7 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {formatDatetime(item.started_at)}
@@ -175,7 +175,7 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {formatDatetime(item.completed_at)}
@@ -183,7 +183,7 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-right text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {item.turn_count}
@@ -191,14 +191,14 @@ export function SessionListTable({ items }: Props) {
               </td>
               <td className="px-4 py-3 text-right text-gray-700">
                 <Link
-                  href={`/admin/sessions/${item.id}`}
+                  href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
                   {item.avg_score !== null ? item.avg_score.toFixed(2) : '-'}
                 </Link>
               </td>
               <td className="px-4 py-3">
-                <Link href={`/admin/sessions/${item.id}`}>
+                <Link href={`/sessions/${item.id}`}>
                   <ReviewBadge status={item.review_status} />
                 </Link>
               </td>

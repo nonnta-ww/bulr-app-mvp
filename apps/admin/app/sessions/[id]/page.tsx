@@ -1,8 +1,11 @@
 /**
- * 管理画面 セッション詳細ページ（/admin/sessions/[id]）
+ * 管理画面 セッション詳細ページ（apps/admin: /sessions/[id]）
  *
  * Server Component。Layer 2 多層防御として requireAdmin() を先頭で呼び出す。
  * sessionDetailQuery でデータを取得し、各サブコンポーネントに渡して描画する。
+ *
+ * monorepo-app-split Task 4.3 で apps/business から flat URL（/sessions/[id]）に移設。
+ * 旧パス: apps/business/app/admin/sessions/[id]/page.tsx。
  *
  * Requirements: 4.1, 4.2, 4.5, 4.8, 4.9, 4.10, 4.11, 10.2, 13.1, 13.2
  * Boundary: SessionDetailPage (this file only)
@@ -13,11 +16,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { z } from 'zod';
 
-import { AnswerCard } from '@/app/admin/_components/answer-card';
-import { ChatMessageTimeline } from '@/app/admin/_components/chat-message-timeline';
-import { InterviewerDisplay } from '@/app/admin/_components/interviewer-display';
-import { ProfileDisplay } from '@/app/admin/_components/profile-display';
-import { ReportLink } from '@/app/admin/_components/report-link';
+import { AnswerCard } from '@/app/_components/answer-card';
+import { ChatMessageTimeline } from '@/app/_components/chat-message-timeline';
+import { InterviewerDisplay } from '@/app/_components/interviewer-display';
+import { ProfileDisplay } from '@/app/_components/profile-display';
+import { ReportLink } from '@/app/_components/report-link';
 import { AuthError, requireAdmin } from '@bulr/auth/server';
 import { sessionDetailQuery } from '@bulr/db/queries/admin';
 
