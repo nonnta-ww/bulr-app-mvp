@@ -121,7 +121,7 @@
   - **観測可能**: `apps/business/app/admin/` が存在しない、`apps/admin` で `/sessions`・`/sessions/[id]`・`/sessions/[id]/export` の各ルートが動作する
   - _Requirements: 3.4, 3.5, 3.6, 3.7, 3.8, 3.11, 3.12, 2.4_
 
-- [ ] 4.4 apps/admin の build/typecheck/lint 通過
+- [x] 4.4 apps/admin の build/typecheck/lint 通過
   - `pnpm --filter @bulr/admin build` `typecheck` `lint` を順に実行
   - **観測可能**: 3 コマンドすべてが成功する
   - _Requirements: 3.10_
