@@ -6,7 +6,7 @@
 
 - [ ] 1. packages/auth の新設と既存認証設定の集約
 
-- [ ] 1.1 packages/auth スケルトン作成
+- [x] 1.1 packages/auth スケルトン作成
   - `packages/auth/` ディレクトリと `package.json`（`name: @bulr/auth`, dependencies: better-auth, zod, peer: react など既存 `apps/web` と同じバージョン）を作成
   - `tsconfig.json` を `packages/db` と同じパターンで作成（`extends: ../../tsconfig.base.json`）
   - `src/index.ts` を空バレルとして作成（後続タスクで埋める）

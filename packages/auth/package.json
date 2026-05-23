@@ -1,0 +1,25 @@
+{
+  "name": "@bulr/auth",
+  "private": true,
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@bulr/db": "workspace:*",
+    "better-auth": "^1.6.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5.4"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
