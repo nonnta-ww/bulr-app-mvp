@@ -10,7 +10,8 @@
 
 import { ZodError, ZodType } from 'zod';
 
-import { AuthError, requireAdmin, requireUser } from '@/lib/guards';
+import { AuthError } from './errors';
+import { requireAdmin, requireUser } from './guards';
 
 // ---------------------------------------------------------------------------
 // Result 型

@@ -12,21 +12,13 @@
 
 import { headers } from 'next/headers';
 
-import { auth } from '@/lib/auth/server';
+import { auth } from './server';
+import { AuthError } from './errors';
 
-// ---------------------------------------------------------------------------
-// AuthError
-// ---------------------------------------------------------------------------
-
-export class AuthError extends Error {
-  constructor(
-    public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND',
-    message?: string,
-  ) {
-    super(message ?? code);
-    this.name = 'AuthError';
-  }
-}
+// AuthError は ./errors に集約済み。後方互換のため re-export する
+// （既存 `apps/web` 側 `import { AuthError } from '@/lib/guards'` への配慮）。
+export { AuthError };
+export type { AuthErrorCode } from './errors';
 
 // ---------------------------------------------------------------------------
 // getCurrentUser — throw しない、null を返す

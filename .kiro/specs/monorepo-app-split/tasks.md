@@ -27,7 +27,7 @@
     - `pnpm --filter @bulr/web typecheck` で残るのは `@/lib/auth/*`・`@/lib/guards`・`@/lib/safe-action` 関連エラーのみ（rate-limit と email 関連は解消、Task 3.3 で auth 系も解消予定）
   - _Requirements: 5.2, 5.3_
 
-- [ ] 1.3 認証ガードと safe-action の packages/auth への集約
+- [x] 1.3 認証ガードと safe-action の packages/auth への集約
   - `apps/web/lib/guards.ts` を `packages/auth/src/guards.ts` に物理移動
   - `apps/web/lib/safe-action.ts` を `packages/auth/src/safe-action.ts` に物理移動
   - `AuthError` 型を `packages/auth/src/errors.ts` として既存定義から集約（`UNAUTHORIZED` / `FORBIDDEN` / `SESSION_EXPIRED` の判別共用体）
