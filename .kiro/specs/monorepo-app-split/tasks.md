@@ -53,7 +53,7 @@
   - _Requirements: 6.1, 6.5_
   - _Boundary: packages/ui_
 
-- [ ] 2.2 最小 shadcn プリミティブの導入
+- [x] 2.2 最小 shadcn プリミティブの導入
   - `packages/ui/src/components/` に `Button` / `Input` / `Label` / `Form` / `Card` を追加（shadcn CLI を `packages/ui` スコープで実行、または手書きで shadcn 標準ファイルを配置）
   - 必要な依存（`@radix-ui/react-label`・`@radix-ui/react-slot`・`react-hook-form` など）を `packages/ui/package.json` に追加
   - **観測可能**: `packages/ui/src/components/{button,input,label,form,card}.tsx` が存在し、`pnpm --filter @bulr/ui typecheck` が通る
