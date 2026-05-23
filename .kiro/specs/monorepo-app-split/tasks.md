@@ -68,7 +68,7 @@
 
 - [ ] 3. apps/web を apps/business にリネームと認証 import の切り替え
 
-- [ ] 3.1 apps/web を apps/business にリネーム
+- [x] 3.1 apps/web を apps/business にリネーム
   - `git mv apps/web apps/business`（履歴保持）
   - **観測可能**: `apps/web/` が存在せず、`apps/business/` が同内容を持ち、`git status` でリネームが検出される
   - _Requirements: 1.2, 2.1, 2.2_

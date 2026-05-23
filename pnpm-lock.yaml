@@ -34,7 +34,7 @@ importers:
         specifier: ^8.59
         version: 8.59.3(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
 
-  apps/web:
+  apps/business:
     dependencies:
       '@bulr/ai':
         specifier: workspace:*
