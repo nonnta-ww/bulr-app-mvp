@@ -59,7 +59,7 @@
   - **観測可能**: `packages/ui/src/components/{button,input,label,form,card}.tsx` が存在し、`pnpm --filter @bulr/ui typecheck` が通る
   - _Requirements: 6.2_
 
-- [ ] 2.3 packages/ui 公開 API の整備と build 通過
+- [x] 2.3 packages/ui 公開 API の整備と build 通過
   - `packages/ui/src/index.ts` で `{ Button, Input, Label, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Card, CardHeader, CardTitle, CardContent, CardFooter, cn, bulrTailwindPreset }` を再エクスポート
   - **観測可能**: `pnpm --filter @bulr/ui build` と `typecheck` が成功し、外部から `import { Button } from '@bulr/ui'` が解決できる
   - _Requirements: 6.6, 6.7_
