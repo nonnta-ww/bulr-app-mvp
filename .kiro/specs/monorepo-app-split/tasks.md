@@ -175,7 +175,7 @@
 
 - [ ] 7. 統合検証
 
-- [ ] 7.1 ルート pnpm install / build / typecheck / lint の全体通過
+- [x] 7.1 ルート pnpm install / build / typecheck / lint の全体通過
   - `rm -rf node_modules` でクリーン状態にして `pnpm install` から実行
   - ルートで `pnpm install` → `pnpm build` → `pnpm typecheck` → `pnpm lint` を順に実行
   - Turbo の依存グラフで `packages/*` が `apps/*` より先にビルドされること
@@ -184,7 +184,7 @@
   - **観測可能**: 4 コマンドすべてが成功し、3アプリ＋全 packages の build 成果物が生成される
   - _Requirements: 7.3, 7.4, 7.5, 7.7, 8.4, 8.5, 10.3, 10.4, 11.1_
 
-- [ ] 7.2 3アプリの dev 起動と各ポート到達確認
+- [x] 7.2 3アプリの dev 起動と各ポート到達確認
   - `pnpm --filter @bulr/candidate dev` で `:3000` が開ける
   - `pnpm --filter @bulr/business dev` で `:3001` が開ける
   - `pnpm --filter @bulr/admin dev` で `:3002` が開ける
