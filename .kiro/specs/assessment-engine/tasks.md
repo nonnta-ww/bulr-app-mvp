@@ -755,7 +755,7 @@ const effectivePatternId = (() => {
 - _Depends: G0.3, G1.9, G3.9, G4.4, G4.6, G4.7, G4.8, G4.9, G4.10, G5.4, G6.4, G7.2, G7.3, G7.4_
 - _Requirements: 22.1（フレームワーク非導入の確認）_
 
-### G9.2 自己面接 1 件完走（手動 E2E、最重要）
+### ✅ G9.2 自己面接 1 件完走（手動 E2E、最重要）
 
 - `pnpm dev` で apps/web 起動
 - Magic Link サインイン → `/interviews` → 「新規セッション作成」→ `/interviews/new`
