@@ -160,13 +160,13 @@
   - **観測可能**: 3アプリすべてが `@bulr/auth` / `@bulr/ui` を解決でき、`pnpm typecheck`（root, 9 tasks）が PASS（実機確認済み）
   - _Requirements: 7.6_
 
-- [ ] 6.2 .env.example の3アプリ対応化
+- [x] 6.2 .env.example の3アプリ対応化
   - 共有変数（`DATABASE_URL`・`BETTER_AUTH_SECRET`・`RESEND_API_KEY`・`ANTHROPIC_API_KEY`・`OPENAI_API_KEY`・Whisper provider 設定・`BLOB_READ_WRITE_TOKEN`・`CRON_SECRET`・`ADMIN_ALLOWED_EMAILS`）を整理
   - アプリ別 URL 変数（`NEXT_PUBLIC_APP_URL`・`BETTER_AUTH_URL`）の例値とコメントを3アプリ別に明示（各アプリの dev script で env を上書きする運用例も注記）
   - **観測可能**: `.env.example` を `.env.local` にコピーして3アプリすべてが dev 起動でき、各アプリの Better Auth コールバック URL が正しいポート（`:3000` / `:3001` / `:3002`）に向く
   - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [ ] 6.3 vercel.json を apps/business 配下に移動
+- [x] 6.3 vercel.json を apps/business 配下に移動（Task 3.1 のリネームで実体達成済み）
   - ルートの `vercel.json` を `apps/business/vercel.json` に物理移動（内容は Cron `audio-purge` 定義のまま無変更）
   - **観測可能**: ルートに `vercel.json` がない、`apps/business/vercel.json` に同じ Cron 定義が存在する
   - _Requirements: 9.5, 10.5_
