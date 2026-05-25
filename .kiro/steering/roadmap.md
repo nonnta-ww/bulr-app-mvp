@@ -23,7 +23,7 @@ bulr は2フェーズで進行する。
 
 ### Wave 2 — 候補者プロダクト基盤
 
-- [ ] candidate-auth-onboarding — 候補者 Magic Link、`candidate_profile` テーブル、招待リンク受け取り動線。Dependencies: monorepo-app-split
+- [ ] candidate-auth-onboarding — 候補者 Magic Link、`candidate_profile` テーブル、招待リンク受け取り動線。**追加スコープ (2026-05-25)**: `packages/auth` を singleton から factory (`createAuth({ sendMagicLink })`) に refactor し、Magic Link メールテンプレートをアプリごとに分離（candidate / business / admin がそれぞれ自分の `lib/magic-link-template.ts` を所有）。背景: Wave 1 monorepo-app-split 完了時点で 3アプリすべてが共有 template を使っており、候補者にも business 向けコピー「bulr — AI 面接アシスタント」が届く。Dependencies: monorepo-app-split
 - [ ] resume-registration — `resume_document` テーブル、履歴書・職務経歴書・CV・レジュメのアップロード・管理（Vercel Blob）。Dependencies: candidate-auth-onboarding
 - [ ] skill-survey — `skill_survey` マスタ（職種別・`docs/backend-skills.csv` をシード素材に）＋`skill_survey_response`＋静的構造化フォーム UI＋L1 棚卸し結果表示。Dependencies: candidate-auth-onboarding
 

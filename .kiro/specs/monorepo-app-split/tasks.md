@@ -2,6 +2,14 @@
 
 > 本 spec は Stage 2 再設計 Wave 1 の最初のスペック。`design.md` の 10 phase migration sequence を 7 major task / 24 sub-task に分解。`(P)` 並列実行可能マーカー付き。各 sub-task は 1〜3 時間目安。
 
+## Amendment (2026-05-24): ローカル dev ポート再番号付け 3000/3001/3002 → 3020/3021/3022
+
+`requirements.md 1.6` と `design.md` セクション 9 / 10 は dev ポートを `:3000`（candidate）/ `:3001`（business）/ `:3002`（admin）と規定するが、ローカル開発機で 3000 番台前半（特に 3000/3001/3002）が他プロセスに恒常的に占有されているため、本リポジトリでは `3020`（candidate）/ `3021`（business）/ `3022`（admin）に renumber する。
+
+- 影響: Task 3.2（business `-p 3001` → `-p 3021`）/ Task 4.1（admin `-p 3002` → `-p 3022`）/ Task 5.1（candidate `-p 3000` → `-p 3020`）の実装値。各 `apps/*/package.json` の `dev` / `start` script の inline env と `-p` フラグを更新。`.env.example` の fallback 例値とコメントブロックも 3020 系に追従。
+- 本質要件（「3アプリが独立ポートで起動」「Better Auth コールバック URL が正しいポートに向く」）は変わらないため、requirements / design 本体は更新せず、本 Amendment で履歴を保持。
+- 本番（Vercel）では各アプリ別プロジェクトの環境変数で URL を独立設定するため、ローカルポート選択の影響は dev のみ。
+
 ## Foundation phase（共有 packages の整備）
 
 - [ ] 1. packages/auth の新設と既存認証設定の集約
@@ -97,6 +105,7 @@
 - [ ] 4. apps/admin の新設と既存検証パネルの flat URL 移設
 
 - [x] 4.1 apps/admin スケルトン作成
+  - **Amendment (2026-05-25, smoke test 7.4 中追加)**: 最小 logout UI を追加。`apps/admin/app/_components/header.tsx`（Server Component, `getCurrentUser()` で未認証時は null）と `sign-out-button.tsx`（Client Component, Better Auth の `signOut()` → `/sign-in` redirect）を新設し、`apps/admin/app/layout.tsx` の body に `<Header title="bulr admin" />` を挿入。business 側の sidebar + popover 構成より軽量（Header inline）で、/sign-in ページでは Header 自体が null を返すため非表示。Wave 1 機能等価性（要件 2.5）に該当する補完。
   - `apps/admin/` と Next.js 16 最小構成（`next.config.ts`・`tsconfig.json`・`tailwind.config.ts`・`postcss.config.mjs`・`app/layout.tsx`・`app/page.tsx`・`public/`）を新規作成
   - `package.json`: `name: @bulr/admin`、dev port `3002`、dependencies は `@bulr/auth`・`@bulr/ui`・`@bulr/db`・`@bulr/types`・`@bulr/lib`・next・react
   - `tailwind.config.ts` に `presets: [bulrTailwindPreset]` と content に `'../../packages/ui/src/**/*.{ts,tsx}'` を含める
@@ -114,6 +123,7 @@
   - _Requirements: 3.2, 3.3, 3.9, 6.4_
 
 - [x] 4.3 既存検証パネルの apps/admin への flat URL 移設
+  - **Amendment (2026-05-25, smoke test 7.4 中に発見)**: `apps/admin/app/_components/report-link.tsx` が相対 path `/interviews/${sessionId}/report` を書いていたため、admin (`:3022`) から開くと自分自身に飛んで 404 になっていた（分割前 apps/web 時代の名残）。`BUSINESS_BASE_URL` env を導入して prepend する形に修正。ローカルは `http://localhost:3021`、本番は admin プロジェクト側で `https://bz.bulr.net` 等を設定する想定。未設定時は相対 path にフォールバック。`.env.local` / `.env.example` に変数定義とドキュメントを追加。
   - `apps/business/app/admin/sessions/**`（`_components/`・`_actions/`・`_lib/` 含む）を `apps/admin/app/sessions/**` に物理移動
   - `apps/business/app/admin/login/` を削除（`apps/admin/app/sign-in/` で置き換え済み）
   - 移動後の相対 import が壊れていないか確認、`@/lib/*` 等のパスエイリアスは `apps/admin` のエイリアスに沿って必要に応じて調整
@@ -129,6 +139,7 @@
 - [ ] 5. apps/candidate の新設（Task 4 と並列実行可）
 
 - [x] 5.1 (P) apps/candidate スケルトン作成
+  - **Amendment (2026-05-25, smoke test 7.4 中追加)**: 最小 logout UI を追加。`apps/candidate/app/_components/header.tsx` と `sign-out-button.tsx` を admin と同型で新設し、`apps/candidate/app/layout.tsx` の body に `<Header title="bulr" />` を挿入。理由・構造は Task 4.1 Amendment と同じ。
   - `apps/candidate/` と Next.js 16 最小構成（4.1 と同じ骨格）を新規作成
   - `package.json`: `name: @bulr/candidate`、dev port `3000`、dependencies は `@bulr/auth`・`@bulr/ui`・`@bulr/db`・`@bulr/types`・`@bulr/lib`・next・react
   - `tailwind.config.ts` に `presets: [bulrTailwindPreset]` と content に `'../../packages/ui/src/**/*.{ts,tsx}'` を含める
@@ -192,19 +203,23 @@
   - **観測可能**: 3つの dev サーバが同時起動でき、それぞれのトップ/サインインページがブラウザで開ける
   - _Requirements: 1.5, 1.6, 1.7_
 
-- [ ] 7.3 apps/business の機能等価性 smoke test
+- [x] 7.3 apps/business の機能等価性 smoke test
   - 既存の面接官サインイン → セッション一覧 → 新規セッション作成 → 面接中 UI（状態A/B、録音→Whisper→LLM 分析→次質問候補生成）→ 面接後レポート（ヒートマップ・サマリー）の一連を手動で実行
   - 面接終了処理（finalize）まで通す
   - **観測可能**: 一連のフローが現行 `apps/web`（リネーム前）と同じく動作し、回帰がない
   - _Requirements: 2.5, 11.2, 10.6_
 
-- [ ] 7.4 apps/admin の検証パネル動作 smoke test
-  - 許可メールでサインイン → `/sessions` 一覧（フィルタ・ソート）→ `/sessions/[id]` 詳細 → 1 つの `pattern_coverage` に手動評価を入力・保存 → LLM vs 手動 並列表示と差分ハイライト → `/sessions/[id]/export?format=csv` と `?format=json` でダウンロード
-  - 面接後レポートへのリンク（`apps/business` の `/interviews/[sessionId]/report` への外部リンク遷移）が動作することを確認
+- [x] 7.4 apps/admin の検証パネル動作 smoke test
+  - 許可メール (`nonnta21@gmail.com`) でサインイン → `:3022/sessions` 一覧（フィルタ・ソート）→ `:3022/sessions/[id]` 詳細 → 1 つの `pattern_coverage` に手動評価を入力・保存 → LLM vs 手動 並列表示と差分ハイライト → `:3022/sessions/[id]/export?format=csv` と `?format=json` でダウンロード（URL 直叩き、UI ボタンは無し設計）
+  - 面接後レポートへのリンク（`apps/business` の `:3021/interviews/[sessionId]/report` への外部リンク遷移）が動作することを確認
   - **観測可能**: 既存検証パネルの全機能が flat URL 構成で現行と同じく動作する
   - _Requirements: 3.12, 11.2_
+  - **Discovered (smoke test 7.4 中)**:
+    - `apps/admin/app/_components/report-link.tsx` が相対 path のため admin 自身に飛ぶ問題 → Task 4.3 Amendment で `BUSINESS_BASE_URL` env 導入により修正済み。
+    - admin / candidate アプリに logout UI が存在しない（apps/web 時代も admin section には無かったが、3アプリ化後は cookie が localhost 共有のため再認証検証が困難）→ Wave 1 Amendment として最小 logout UI を追加予定（次タスク）。
 
-- [ ] 7.5 apps/candidate のサインイン → プレースホルダ smoke test
-  - `:3000/sign-in` でメール入力 → Magic Link 受信 → リンククリック → `:3000/` のプレースホルダ画面に到達
+- [x] 7.5 apps/candidate のサインイン → プレースホルダ smoke test
+  - `:3020/sign-in` でメール入力 → Magic Link 受信 → リンククリック → `:3020/` のプレースホルダ画面に到達
   - **観測可能**: 候補者がサインインを完了し、認証済みプレースホルダ画面に到達する（業務機能は未実装で OK）
   - _Requirements: 4.4, 11.2_
+  - **Known regression (Wave 2 で対応)**: Magic Link メール本文に `packages/auth` 共有テンプレの「bulr — AI 面接アシスタント」が候補者にも届く。Wave 2 の `candidate-auth-onboarding` spec で `packages/auth` を factory 化し、アプリ別 template に分離する。roadmap.md 該当 spec の「追加スコープ (2026-05-25)」を参照。Wave 1 の機能等価性（サインインフロー自体）は OK のため本タスクは PASS とする。
