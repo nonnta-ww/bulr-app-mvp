@@ -18,7 +18,7 @@ bulr は2フェーズで進行する。
 
 ### Wave 1 — 基盤分割
 
-- [ ] monorepo-app-split — `apps/web`→`apps/business` リネーム、`apps/candidate` スケルトン作成、`apps/admin` シェル作成＋既存検証パネル（admin-review-panel の成果）の移設、`packages/auth`＋`packages/ui` 切り出し、turbo/pnpm 設定更新。ゴール: 3アプリが build/typecheck/lint 通過。Dependencies: none（Stage 1 完了が前提）
+- [x] monorepo-app-split — `apps/web`→`apps/business` リネーム、`apps/candidate` スケルトン作成、`apps/admin` シェル作成＋既存検証パネル（admin-review-panel の成果）の移設、`packages/auth`＋`packages/ui` 切り出し、turbo/pnpm 設定更新。ゴール: 3アプリが build/typecheck/lint 通過。Dependencies: none（Stage 1 完了が前提）
 - [ ] multi-app-deployment — Vercel 3プロジェクト化、ドメイン（bulr.net / bz.bulr.net / admin.bulr.net）、`.env` 分割、Preview 自動デプロイ。Dependencies: monorepo-app-split
 
 ### Wave 2 — 候補者プロダクト基盤
