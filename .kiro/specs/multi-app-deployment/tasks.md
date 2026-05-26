@@ -2,6 +2,16 @@
 
 > 本 spec は Stage 2 再設計 Wave 1 の仕上げ。`monorepo-app-split` でローカル動作するようになった 3 アプリを、Vercel の 3 独立プロジェクトとして本番デプロイ可能な状態にする。9 major task / 16 sub-task に分解。`(P)` マーカー = 並列実行可能。大半は Vercel ダッシュボード操作 + Cloudflare DNS 設定 + 検証 + ドキュメント書き換え。コード変更は 1 行のみ（Better Auth baseURL の Preview 動的解決）。
 
+## Amendment (2026-05-26): 旧 Vercel プロジェクトはローカル確認のみで未デプロイ → クリーンスレート方式に切替
+
+実装着手時の確認で、旧 Vercel プロジェクト `bulr-app-mvp-web` は **一度もデプロイされておらず、Custom Domain も Blob ストアも接続されていない、placeholder 状態**であることが判明。本 spec の以下の手順を簡素化する：
+
+- **task 2.1**: env pull は実施済みだが抽出されたユーザー定義 env は 5 件のみ（`ANTHROPIC_API_KEY` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` / `RESEND_API_KEY`）。新プロジェクトの env 登録は `.env.local` を一次資料として進めて良い。`.env.old-project*.backup` は historical record として保管後に削除予定
+- **task 5.1**: 既存 Blob ストア再 link は不要 → business プロジェクトで新規 Blob ストア作成のみ
+- **task 6.3**: 旧 Custom Domain 解除は不要 → 旧プロジェクトには Custom Domain が attached されていなかった
+- **task 9.1**: 24-72h rollback 猶予は不要 → 守るべき本番トラフィックがないため、旧プロジェクト削除は **新規 3 プロジェクト作成前**（task 3.x 前）に実施しても良い
+- **実行順序**: 旧プロジェクト削除 → 3 新規プロジェクト作成 → env 登録 → DNS / Custom Domain 設定 → 検証、というクリーンスレート方式を採用する
+
 ## Foundation phase（コード基盤 + 旧プロジェクト控え）
 
 - [ ] 1. Better Auth baseURL の Preview 動的解決対応
@@ -18,12 +28,13 @@
 
 - [ ] 2. 旧 Vercel プロジェクトの設定値控え抽出
 
-- [ ] 2.1 旧プロジェクトの環境変数と Blob ストアトークンを抽出
+- [x] 2.1 旧プロジェクトの環境変数と Blob ストアトークンを抽出
   - Vercel CLI でローカルマシンから旧プロジェクトに `vercel link` → `vercel env pull .env.old-project.backup`（Production / Preview / Development すべて含む）
   - Settings → Storage で Vercel Blob ストアの token と store ID を別途記録（ストアが既存の場合）
-  - 控えファイルは git 管理外に保管（`.gitignore` で `.env*.local` 除外済み）
+  - 控えファイルは git 管理外に保管（`.gitignore` に `.env*.backup` パターンを追加）
   - **観測可能**: `.env.old-project.backup` がローカルに作成され、本番値（API キー / secret / token）がすべて含まれる。Blob ストア情報（token / store ID）は別途記録済み
   - _Requirements: 9.1_
+  - **実装メモ (2026-05-26)**: 旧プロジェクト `bulr-app-mvp-web` は未デプロイ placeholder で、user-defined env は 5 件のみ（`ANTHROPIC_API_KEY` / `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` / `RESEND_API_KEY`）。Vercel Blob ストアと Neon Integration は未接続、Production deploy 履歴なし。`.env.old-project.backup` と `.env.old-project-preview.backup` を historical record として保管後、task 9.1 で削除予定。本 spec 冒頭の Amendment (2026-05-26) も参照。
 
 ## Core phase（Vercel 3 プロジェクト準備 + env + Blob）
 

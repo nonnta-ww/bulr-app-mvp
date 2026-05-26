@@ -25,6 +25,7 @@ coverage
 # Environment files
 .env
 .env*.local
+.env*.backup
 
 # TypeScript build info
 *.tsbuildinfo
