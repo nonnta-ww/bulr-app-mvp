@@ -6,7 +6,7 @@
 
 - [ ] 1. Better Auth baseURL の Preview 動的解決対応
 
-- [ ] 1.1 packages/auth に `resolveBaseUrl()` を実装し baseURL に注入
+- [x] 1.1 packages/auth に `resolveBaseUrl()` を実装し baseURL に注入
   - `packages/auth/src/server.ts` 冒頭の `BETTER_AUTH_URL` 必須チェックを撤廃
   - `resolveBaseUrl()` ヘルパー関数を追加: 優先順位 `process.env.BETTER_AUTH_URL` → `\`https://${process.env.VERCEL_URL}\`` → 両方未定義なら throw
   - `betterAuth({ baseURL: resolveBaseUrl() })` に差し替え

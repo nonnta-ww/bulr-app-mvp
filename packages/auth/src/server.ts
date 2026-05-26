@@ -27,9 +27,28 @@ if (!process.env.BETTER_AUTH_SECRET) {
   );
 }
 
-if (!process.env.BETTER_AUTH_URL) {
+/**
+ * Better Auth の baseURL を解決する。
+ *
+ * 優先順位:
+ *   1. `BETTER_AUTH_URL`（ローカル `.env.local`、Vercel Production の明示設定）
+ *   2. `https://${VERCEL_URL}`（Vercel Preview デプロイで env 未設定時のフォールバック）
+ *   3. throw（両方未定義は構成エラー）
+ *
+ * `VERCEL_URL` は protocol を持たない（例: `bulr-candidate-abc123.vercel.app`）ため、
+ * 必ず `https://` を付加する。
+ *
+ * Requirements (multi-app-deployment): 8.1, 8.2, 8.3, 8.4
+ */
+function resolveBaseUrl(): string {
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
   throw new Error(
-    '[auth] BETTER_AUTH_URL が設定されていません。環境変数を確認してください。',
+    '[auth] BETTER_AUTH_URL も VERCEL_URL も設定されていません。環境変数を確認してください。',
   );
 }
 
@@ -38,7 +57,7 @@ const authSchema = { user, session, account, verification };
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: resolveBaseUrl(),
 
   database: drizzleAdapter(db, {
     provider: 'pg',
