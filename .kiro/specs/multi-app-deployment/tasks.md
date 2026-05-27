@@ -2,6 +2,18 @@
 
 > 本 spec は Stage 2 再設計 Wave 1 の仕上げ。`monorepo-app-split` でローカル動作するようになった 3 アプリを、Vercel の 3 独立プロジェクトとして本番デプロイ可能な状態にする。9 major task / 16 sub-task に分解。`(P)` マーカー = 並列実行可能。大半は Vercel ダッシュボード操作 + Cloudflare DNS 設定 + 検証 + ドキュメント書き換え。コード変更は 1 行のみ（Better Auth baseURL の Preview 動的解決）。
 
+## Amendment (2026-05-27): per-app `.env.example` を追加（Vercel 登録用リファレンス）
+
+env 配分ルール（design.md「VercelEnvVars」表）の理解を助けるため、3 アプリそれぞれの直下に `.env.example` を新規作成：
+
+- `apps/candidate/.env.example` — bulr-mvp-candidate プロジェクトに登録すべき env のみ
+- `apps/business/.env.example` — bulr-mvp-business プロジェクトに登録すべき env のみ（BLOB / Cron 自動付与の説明含む）
+- `apps/admin/.env.example` — bulr-mvp-admin プロジェクトに登録すべき env のみ（ADMIN_ALLOWED_EMAILS / BUSINESS_BASE_URL 含む）
+
+ローカル開発の symlink 構造は無変更（`apps/*/.env.local` は root の `.env.local` への symlink）。per-app `.env.example` は Vercel UI での env 登録時の参考資料として機能する。
+
+root `/.env.example` は引き続き全変数の master reference + ローカル開発用テンプレートとして維持。ヘッダコメントを更新し per-app への pointer を追加。
+
 ## Amendment (2026-05-27): DIRECT_URL を migration 専用 env として導入
 
 `packages/db/drizzle.config.ts` が `DIRECT_URL ?? DATABASE_URL` の優先順位で接続 URL を読むよう変更。背景：
