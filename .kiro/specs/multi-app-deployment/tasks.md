@@ -2,6 +2,30 @@
 
 > 本 spec は Stage 2 再設計 Wave 1 の仕上げ。`monorepo-app-split` でローカル動作するようになった 3 アプリを、Vercel の 3 独立プロジェクトとして本番デプロイ可能な状態にする。9 major task / 16 sub-task に分解。`(P)` マーカー = 並列実行可能。大半は Vercel ダッシュボード操作 + Cloudflare DNS 設定 + 検証 + ドキュメント書き換え。コード変更は 1 行のみ（Better Auth baseURL の Preview 動的解決）。
 
+## Amendment (2026-05-27): DIRECT_URL を migration 専用 env として導入
+
+`packages/db/drizzle.config.ts` が `DIRECT_URL ?? DATABASE_URL` の優先順位で接続 URL を読むよう変更。背景：
+
+- Neon の pooled connection（PgBouncer transaction pooling）は migration コマンドが踏みうる prepared statement 越え・advisory lock・トランザクション跨ぎセッション状態などで不安定になる
+- canonical pattern（Prisma が広め、Drizzle でも踏襲）: ランタイムは pooled、migration は direct を使う
+- ランタイム接続（`packages/db/src/client.ts`）は無変更 → 引き続き DATABASE_URL（pooled）を使用
+- `.env.example` に DIRECT_URL セクションを追加（Vercel には登録不要、ローカル `.env.local` 専用）
+- 既存の `pnpm drizzle-kit push/generate/migrate` コマンドは変更なし（自動で DIRECT_URL を優先）
+- 影響: ローカル開発者は `.env.local` に DIRECT_URL を追加すべきだが、未設定でも `DATABASE_URL` にフォールバックして従来通り動く
+
+## Amendment (2026-05-27): Whisper 関連 env を本 spec では未登録（deferred）
+
+`OPENAI_API_KEY` および `WHISPER_PROVIDER` は本 spec の env 登録対象から外す。背景：
+
+- 旧 Vercel プロジェクトでも未登録（task 2.1 で確認済み、ユーザーがまだ OpenAI API キーを取得していない）
+- 本 spec のゴールは「3 アプリの本番デプロイ可能化」であり、Whisper 機能自体の本番動作は task 7.x の smoke test 範囲外でも許容
+- 影響: business `/api/interview/turns/next` の Whisper 文字起こし呼び出しは本番でも 500 エラーを返す。サインイン / セッション一覧 / レポート表示 / cross-app リンクは正常動作
+- 後続対応: OpenAI API キー取得後、business プロジェクトに `OPENAI_API_KEY` と `WHISPER_PROVIDER=openai` を追加登録すれば Whisper も復活（spec 化は不要、運用作業）
+
+## Amendment (2026-05-27): プロジェクト命名は `bulr-mvp-{candidate,business,admin}`
+
+design.md / tasks.md では `bulr-candidate` / `bulr-business` / `bulr-admin` を想定していたが、Vercel 上での実プロジェクト名は **`bulr-mvp-candidate` / `bulr-mvp-business` / `bulr-mvp-admin`** を採用（リポジトリ名 `bulr-app-mvp` との接続が明確になる + 旧 `bulr-app-mvp-web` との命名連続性）。Preview URL は `bulr-mvp-business-git-<branch>-<scope>.vercel.app` 形式になる。Wave 2 以降の spec が cross-app URL helper を導入する場合は、この命名規約を base に組み立てる。Custom Domain（`bulr.net` / `bz.bulr.net` / `admin.bulr.net`）への影響なし。
+
 ## Amendment (2026-05-26): 旧 Vercel プロジェクトはローカル確認のみで未デプロイ → クリーンスレート方式に切替
 
 実装着手時の確認で、旧 Vercel プロジェクト `bulr-app-mvp-web` は **一度もデプロイされておらず、Custom Domain も Blob ストアも接続されていない、placeholder 状態**であることが判明。本 spec の以下の手順を簡素化する：
