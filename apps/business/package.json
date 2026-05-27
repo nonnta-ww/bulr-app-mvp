@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev": "BETTER_AUTH_URL=http://localhost:3021 NEXT_PUBLIC_APP_URL=http://localhost:3021 next dev --turbopack -p 3021",
+    "dev": "next dev --turbopack -p 3021",
     "build": "next build",
-    "start": "BETTER_AUTH_URL=http://localhost:3021 NEXT_PUBLIC_APP_URL=http://localhost:3021 next start -p 3021",
+    "start": "next start -p 3021",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

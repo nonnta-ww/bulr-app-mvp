@@ -2,6 +2,35 @@
 
 > 本 spec は Stage 2 再設計 Wave 1 の仕上げ。`monorepo-app-split` でローカル動作するようになった 3 アプリを、Vercel の 3 独立プロジェクトとして本番デプロイ可能な状態にする。9 major task / 16 sub-task に分解。`(P)` マーカー = 並列実行可能。大半は Vercel ダッシュボード操作 + Cloudflare DNS 設定 + 検証 + ドキュメント書き換え。コード変更は 1 行のみ（Better Auth baseURL の Preview 動的解決）。
 
+## Amendment (2026-05-27): ローカル `.env.local` を per-app 独立ファイル化 + Vercel BETTER_AUTH_SECRET 分離
+
+### ローカル env 構造の変更（symlink 廃止）
+
+monorepo-app-split で導入した `apps/*/.env.local` → root `/.env.local` への symlink 構造を廃止。代わりに 3 アプリそれぞれが**独立した実ファイル `.env.local`** を持つ。
+
+背景：
+- 旧構造では `BETTER_AUTH_URL` 等のアプリ別 URL 変数を `apps/*/package.json` の dev script 内で inline に上書きしていたが、シングルソース・オブ・トゥルース原則に反し、`next dev` を直接実行した際に env が誤った値になる footgun があった
+- 3 ファイル独立化により、各アプリの Next.js が自分の `.env.local` をそのまま読む構成に統一（Vercel 構造とパラレル）
+
+実装：
+- `apps/{candidate,business,admin}/.env.local` の symlink を削除し、root `.env.local` を 3 ファイルにコピー（URL 系変数のみアプリ別に置換: 3020 / 3021 / 3022）
+- `apps/*/package.json` の dev / start スクリプトから inline env 上書き（`BETTER_AUTH_URL=... NEXT_PUBLIC_APP_URL=...`）を削除し、`next dev --turbopack -p <port>` だけのシンプルな形に
+- `apps/*/.env.example` のヘッダから「symlink」記述を削除、独立ファイル前提に書き換え
+- root `/.env.example` のヘッダもアップデート（symlink 廃止を反映、drizzle-kit 等モノレポルート由来スクリプトのためのテンプレートとして役割継続）
+
+影響：
+- ローカル開発者は今後 `cp apps/<app>/.env.example apps/<app>/.env.local` で各アプリの env を用意する（旧手順 `cp .env.example .env.local` は drizzle-kit / 他のルート由来スクリプトのみ）
+- 既存の `pnpm --filter @bulr/<app> dev` の挙動は変わらない（Next.js が自動で `.env.local` を読む）
+
+### Vercel BETTER_AUTH_SECRET の分離
+
+design.md の VercelEnvVars 表は「3 プロジェクト共通の BETTER_AUTH_SECRET」を想定していたが、防御深化の観点から **3 プロジェクトそれぞれで別の secret を generate** する方針に変更：
+
+- ローカル: 3 アプリの `.env.local` は引き続き同じ値を共有（実害なし、ローテーション簡素化）
+- Vercel: 各プロジェクト用に `openssl rand -base64 32` を 3 回走らせ、それぞれ登録
+- 利点: Magic Link トークンの cross-app redeem 不可化、鮮度事の影響範囲を 1 アプリに局所化
+- 機能的影響なし（3 ドメインは別 origin / 別 cookie scope のため、共通 secret でも SSO は成立しない）
+
 ## Amendment (2026-05-27): per-app `.env.example` を追加（Vercel 登録用リファレンス）
 
 env 配分ルール（design.md「VercelEnvVars」表）の理解を助けるため、3 アプリそれぞれの直下に `.env.example` を新規作成：
