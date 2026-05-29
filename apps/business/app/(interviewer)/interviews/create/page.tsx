@@ -2,37 +2,28 @@
  * 新規面接セッション作成ページ（Server Component）
  *
  * Requirements: 3.1, 3.7
+ *
+ * 認証ガード: 親レイアウト `(interviewer)/layout.tsx` の `getCurrentUser()` チェックが
+ * 1 段目（未認証なら /sign-in へ redirect）。本ページ内では `requireUser()` を呼んで
+ * fail-secure 2 段目とする（CVE-2025-29927 教訓）。ただし catch + redirect を書くと
+ * Next.js が「常に redirect する route」として静的最適化し、認証済み cookie でも
+ * Vercel エッジで 307 をキャッシュ返却する症状が出るため、本ページでは catch を
+ * 持たず requireUser() の throw をそのまま伝播させる（layout 段で redirect 済みのため
+ * 実際には到達しないが、bypass 時は 500 を返して観測する）。
  */
 
-import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { requireUser } from '@bulr/auth/server';
 import { CandidateForm } from '@/app/(interviewer)/interviews/_components/candidate-form';
 
-// requireUser() 内の headers() 呼び出しだけでは Next.js / Vercel エッジが本ページを
-// 「静的に redirect する route」として最適化してしまい、認証済み cookie があっても
-// `serverless-middleware` レイヤーで 307 を返してサーバレス関数まで到達しない症状が出る。
-//
-// 二段構えで opt-out する:
-//   1. `dynamic = 'force-dynamic'` で route-level の動的化を宣言
-//   2. ハンドラ先頭で `await connection()` を呼び、リクエスト毎の dynamic 評価を強制
-//
-// `connection()` は Next.js 15 の API で、呼び出されるとそのリクエストは確実に動的扱いになる。
 export const dynamic = 'force-dynamic';
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export default async function NewInterviewPage() {
   await connection();
-
-  try {
-    await requireUser();
-  } catch {
-    redirect('/sign-in');
-  }
+  await requireUser();
 
   return (
     <main className="bg-gray-50 px-4 py-8">
