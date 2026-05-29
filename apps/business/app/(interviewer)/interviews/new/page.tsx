@@ -5,13 +5,20 @@
  */
 
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 
 import { requireUser } from '@bulr/auth/server';
 import { CandidateForm } from '@/app/(interviewer)/interviews/_components/candidate-form';
 
-// requireUser() の headers() 呼び出しだけでは Next.js が静的プリレンダー判定を回避できない
-// ことがあり、ビルド時の「未認証 → redirect(/sign-in)」結果がエッジでキャッシュされて
-// 認証済みユーザーにも 307 を返してしまう症状が出る。force-dynamic で明示的に opt-out。
+// requireUser() 内の headers() 呼び出しだけでは Next.js / Vercel エッジが本ページを
+// 「静的に redirect する route」として最適化してしまい、認証済み cookie があっても
+// `serverless-middleware` レイヤーで 307 を返してサーバレス関数まで到達しない症状が出る。
+//
+// 二段構えで opt-out する:
+//   1. `dynamic = 'force-dynamic'` で route-level の動的化を宣言
+//   2. ハンドラ先頭で `await connection()` を呼び、リクエスト毎の dynamic 評価を強制
+//
+// `connection()` は Next.js 15 の API で、呼び出されるとそのリクエストは確実に動的扱いになる。
 export const dynamic = 'force-dynamic';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +26,8 @@ export const dynamic = 'force-dynamic';
 // ---------------------------------------------------------------------------
 
 export default async function NewInterviewPage() {
+  await connection();
+
   try {
     await requireUser();
   } catch {
