@@ -12,6 +12,7 @@
         "NEXT_PUBLIC_APP_URL",
         "ANTHROPIC_API_KEY",
         "RESEND_API_KEY",
+        "EMAIL_FROM_ADDRESS",
         "OPENAI_API_KEY",
         "WHISPER_PROVIDER",
         "BLOB_STORAGE_PROVIDER",

@@ -5,13 +5,15 @@
  * 本番環境: Resend API で送信
  *
  * 送信元: FROM_ADDRESS を参照
- * Stage 1: Resend テストドメイン。Stage 2 でカスタムドメイン認証 (bulr.net) に切り替え。
+ *   - `EMAIL_FROM_ADDRESS` env を優先（Vercel 各プロジェクト Production / Preview で設定）
+ *   - 未設定時は Resend テストドメイン `onboarding@resend.dev`（ローカル dev / 初期セットアップ用）
  */
 
 /**
  * メール送信元アドレス
  */
-export const FROM_ADDRESS = 'bulr <onboarding@resend.dev>';
+export const FROM_ADDRESS =
+  process.env.EMAIL_FROM_ADDRESS ?? 'bulr <onboarding@resend.dev>';
 
 type SendEmailOptions = {
   to: string;
