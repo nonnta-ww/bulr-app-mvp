@@ -9,6 +9,11 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@bulr/auth/server';
 import { CandidateForm } from '@/app/(interviewer)/interviews/_components/candidate-form';
 
+// requireUser() の headers() 呼び出しだけでは Next.js が静的プリレンダー判定を回避できない
+// ことがあり、ビルド時の「未認証 → redirect(/sign-in)」結果がエッジでキャッシュされて
+// 認証済みユーザーにも 307 を返してしまう症状が出る。force-dynamic で明示的に opt-out。
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
