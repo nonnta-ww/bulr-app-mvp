@@ -142,7 +142,7 @@
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
   - _Depends: 2.3, 5.1, 6.2, 7.2_
 
-- [ ] 8.2 手動 smoke test による動線確認
+- [x] 8.2 手動 smoke test による動線確認
   - apps/business のサインイン → セッション一覧 → 面接中 UI が factory 移行後も回帰なく動作すること
   - apps/admin のサインイン → セッション一覧が動作すること
   - apps/candidate の候補者サインイン（候補者向け文面のメールが届く）→ 初回は `/onboarding` にリダイレクト → `display_name` 入力で `candidate_profile` 作成 → `/` に到達することを確認する
