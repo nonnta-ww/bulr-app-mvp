@@ -32,7 +32,7 @@
   - _Depends: 1.1_
 
 - [ ] 2. apps/candidate のパッケージ依存追加
-- [ ] 2.1 @vercel/blob と nanoid を apps/candidate の依存に追加する
+- [x] 2.1 @vercel/blob と nanoid を apps/candidate の依存に追加する
   - `apps/candidate/package.json` の `dependencies` に `@vercel/blob: ^0.27.3` と `nanoid: ^5` を追加する
   - `pnpm install` を実行してロックファイルを更新する
   - `turbo.json` の `build.env` に `BLOB_READ_WRITE_TOKEN` が含まれていることを確認する（既存エントリあり、変更不要）
