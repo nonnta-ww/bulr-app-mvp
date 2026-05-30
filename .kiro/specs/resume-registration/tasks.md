@@ -14,7 +14,7 @@
   - _Boundary: ResumeDocumentSchema_
   - _Depends: candidate-auth-onboarding task 3.1_（schema/index.ts は candidate-auth-onboarding が candidate_profile を追加した後に、resume_document の export 行を追記する。ファイル全体を置換せず追記すること。）
 
-- [ ] 1.2 drizzle-kit migration を生成して dev DB に適用する
+- [x] 1.2 drizzle-kit migration を生成して dev DB に適用する
   - `pnpm drizzle-kit generate` を実行して migration ファイル（`*_resume_document.sql`）を生成する
   - `pnpm drizzle-kit push`（dev）を実行して `resume_document` テーブルと `resume_kind` enum が Neon dev ブランチに作成されること
   - `packages/db` ビルドが成功すること（`pnpm --filter @bulr/db build`）
