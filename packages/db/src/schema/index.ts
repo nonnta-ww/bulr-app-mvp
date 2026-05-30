@@ -11,3 +11,5 @@ export * from './interview-turn';
 export * from './pattern-coverage';
 export * from './session-report';
 export * from './resume-document';
+export * from './skill-survey';
+export * from './skill-survey-response';

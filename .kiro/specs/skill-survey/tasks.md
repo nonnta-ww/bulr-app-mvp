@@ -33,7 +33,7 @@
 - _Boundary: ResponseSchemaModule_
 - _Requirements: 2.1, 2.2, 2.3_
 
-### 1.3 schema バレルを更新
+### 1.3 ✅ schema バレルを更新
 
 - `packages/db/src/schema/index.ts` に `export * from './skill-survey';` と `export * from './skill-survey-response';` を追加
 - 完了時の観察可能状態: `import { skillSurvey, skillSurveyResponse } from '@bulr/db/schema'` が解決する（typecheck 成功）
@@ -45,7 +45,7 @@
 
 ## 2. マイグレーション生成と適用
 
-### 2.1 drizzle-kit generate でマイグレーション SQL を生成
+### 2.1 ✅ drizzle-kit generate でマイグレーション SQL を生成
 
 - `packages/db` ルートで `pnpm generate`（または `pnpm --filter @bulr/db generate`）を実行
 - 6 テーブル分の migration SQL ファイルが `packages/db/drizzle/` に生成される
@@ -55,7 +55,7 @@
 - _Depends: 1.3_
 - _Requirements: 1.5, 2.4_
 
-### 2.2 dev branch への push と確認
+### 2.2 ✅ dev branch への push と確認
 
 - `DATABASE_URL` を dev branch に設定し `pnpm --filter @bulr/db push` を実行
 - `psql` または Neon Console で `\d skill_survey`、`\d skill_survey_response` 等のカラム一覧が仕様通りであることを確認
