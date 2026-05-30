@@ -109,7 +109,7 @@
   - _Boundary: ResumeList_
   - _Depends: 3.2, 3.3, 3.4_
 
-- [ ] 4.4 履歴書一覧ページ（Server Component）を実装する
+- [x] 4.4 履歴書一覧ページ（Server Component）を実装する
   - `apps/candidate/app/resume/page.tsx` を新規作成する
   - `requireCandidate()` で認証・プロフィール存在確認を行い、未認証 / プロフィール未作成の場合は適切にリダイレクトする
   - `getResumeDocuments(candidateProfile.id)` で一覧を取得して `<ResumeList documents={documents} />` に渡す
