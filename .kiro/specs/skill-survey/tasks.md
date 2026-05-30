@@ -171,7 +171,7 @@
 - _Depends: 4.1 (クエリ利用), 3.2 (seed 投入済み)_
 - _Requirements: 4.1, 7.1_
 
-### 5.2 回答フォームページ（Server Component）を実装
+### 5.2 ✅ 回答フォームページ（Server Component）を実装
 
 - `apps/candidate/app/skill-survey/[surveyId]/page.tsx` を新規作成（Server Component）
 - `requireCandidate()` でガード + `candidateProfile` 取得
