@@ -248,7 +248,7 @@ PR 時に Vercel が自動でプレビュー環境を作成。
 main マージで本番デプロイ自動実行。
 ```
 
-Stage 2 で apps/admin を別プロジェクトに分離し、admin.bulr.net サブドメインに切り替え。
+**更新 2026-05-23 (Stage 2 再設計)**: `apps/web` を `apps/business` にリネームし、`apps/candidate`・`apps/admin` を加えた3アプリ・3ドメイン（bulr.net / bz.bulr.net / admin.bulr.net）・Vercel 3プロジェクト構成へ移行する。詳細は `docs/superpowers/specs/2026-05-23-bulr-candidate-business-split-design.md`、Wave 別ロードマップは `roadmap.md` を参照。current-state の記述は各 Wave 実装時に同期更新する。
 
 ## コスト目安（Stage 1）
 

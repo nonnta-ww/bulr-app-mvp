@@ -1,0 +1,40 @@
+/**
+ * @bulr/auth/server — Server 専用エントリ
+ *
+ * Server Component / Server Action / Route Handler から import する。
+ * Client Component から import すると Next.js のビルドで `next/headers`・
+ * `pg`・`nodemailer` 等の server-only 依存が Client バンドルに巻き込まれて
+ * 失敗するため、Client Component では `@bulr/auth/client` を使うこと。
+ *
+ * `import 'server-only';` は本エントリが import する各 module（server.ts /
+ * guards.ts / safe-action.ts）の冒頭で宣言済み。Client から誤って import
+ * された場合は明示的な build エラーになる。
+ *
+ * Requirements: 5.1, 5.4, 5.6, 5.7, 5.8, 5.10, 5.11
+ */
+
+// Better Auth サーバインスタンス（各アプリの /api/auth/[...all] でマウント）
+export { auth } from './server';
+
+// 認証ガード（Server Component / Server Action / Route Handler の先頭で呼ぶ）
+export {
+  getCurrentUser,
+  requireUser,
+  requireAdmin,
+  requireSessionOwnership,
+} from './guards';
+
+// Server Action ラッパー（型安全な認可付き Server Action を提供）
+export { authedAction, adminAction } from './safe-action';
+export type { Result } from './safe-action';
+
+// エラー型（isomorphic だが server 側でも参照しやすいよう再エクスポート）
+export { AuthError } from './errors';
+export type { AuthErrorCode } from './errors';
+
+// 入力検証スキーマ（isomorphic だが server 側でも参照しやすいよう再エクスポート）
+export { emailSchema, interviewerProfileSchema } from './schemas';
+export type { InterviewerProfileInput } from './schemas';
+
+// Better Auth 推論型
+export type { User, Session } from './schemas';

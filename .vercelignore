@@ -1,0 +1,17 @@
+node_modules
+.next
+.turbo
+dist
+coverage
+.git
+*.tsbuildinfo
+.env*.local
+.env*.backup
+.DS_Store
+tmp/
+apps/web/tmp/
+.superpowers/
+.serena/
+.kiro/
+.claude/
+.vercel
