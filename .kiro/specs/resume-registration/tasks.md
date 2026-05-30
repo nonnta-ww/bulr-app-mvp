@@ -2,7 +2,7 @@
 
 ## タスク一覧
 
-- [ ] 1. 基盤: resume_document スキーマと migration
+- [x] 1. 基盤: resume_document スキーマと migration
 - [x] 1.1 resume_document テーブルと resumeKind enum の Drizzle スキーマを定義する
   - `packages/db/src/schema/resume-document.ts` を新規作成し、`resumeKind` pgEnum（4値）と `resumeDocument` pgTable を定義する
   - `candidateProfileId` カラムに `candidateProfile.id` への FK を設定する
@@ -31,7 +31,7 @@
   - _Boundary: GetResumeDocuments, GetPrimaryResumeDocument_
   - _Depends: 1.1_
 
-- [ ] 2. apps/candidate のパッケージ依存追加
+- [x] 2. apps/candidate のパッケージ依存追加
 - [x] 2.1 @vercel/blob と nanoid を apps/candidate の依存に追加する
   - `apps/candidate/package.json` の `dependencies` に `@vercel/blob: ^0.27.3` と `nanoid: ^5` を追加する
   - `pnpm install` を実行してロックファイルを更新する
@@ -40,7 +40,7 @@
   - _Requirements: 9.1, 9.2_
   - _Boundary: apps/candidate package.json_
 
-- [ ] 3. Server Actions の実装
+- [x] 3. Server Actions の実装
 - [x] 3.1 (P) ファイルアップロード Server Action を実装する
   - `apps/candidate/app/resume/_actions/upload-resume.ts` を新規作成する
   - `requireCandidate()` で `candidateProfile.id` を取得し、Zod で file（File 型）と kind（enum 4値）を検証する
@@ -78,7 +78,7 @@
   - _Boundary: GetSignedUrlAction_
   - _Depends: 1.1, candidate-auth-onboarding task 3.1_
 
-- [ ] 4. クライアントコンポーネントとページの実装
+- [x] 4. クライアントコンポーネントとページの実装
 - [x] 4.1 アップロードフォームのクライアントコンポーネントを実装する
   - `apps/candidate/app/resume/_components/resume-upload-form.tsx` を `'use client'` で新規作成する
   - 4種別の `<select>` と `<input type="file" accept=".pdf,.doc,.docx,.txt">` を持つフォームを実装する
@@ -118,21 +118,21 @@
   - _Boundary: ResumeListPage_
   - _Depends: 1.3, 4.3_
 
-- [ ] 5. 統合確認と smoke test
-- [ ] 5.1 アップロード・一覧・primary 管理の統合 smoke test を実施する
+- [x] 5. 統合確認と smoke test
+- [x] 5.1 アップロード・一覧・primary 管理の統合 smoke test を実施する
   - 候補者としてサインインし `/resume/upload` で PDF をアップロードする → `/resume` に一覧表示されること
   - 同じ種別を2回アップロードする → 1枚目が `is_primary=true`、2枚目が `is_primary=false` であること
   - 2枚目の「メインにする」をクリックする → atomic に primary が切り替わること（DB で確認）
   - _Requirements: 3.1, 3.5, 3.6, 6.1, 6.2_
 
-- [ ] 5.2 署名 URL・削除・アクセス制御の統合 smoke test を実施する
+- [x] 5.2 署名 URL・削除・アクセス制御の統合 smoke test を実施する
   - 「プレビュー」をクリックする → 新タブで PDF が表示されること
   - Blob の raw URL（`blob_url`）を直接ブラウザに入力する → 403 またはアクセス拒否になること（private access 確認）
   - 「削除」を実行する → DB 行が消え、Blob からも削除されること
   - 未認証でアクセスする → `/sign-in` にリダイレクトされること
   - _Requirements: 2.2, 5.1, 5.2, 7.1, 7.5, 8.1, 8.2, 8.3, 8.5_
 
-- [ ] 5.3 ビルドと型チェックで全 workspace の健全性を確認する
+- [x] 5.3 ビルドと型チェックで全 workspace の健全性を確認する
   - `pnpm typecheck` が全 workspace（packages/db, apps/candidate）で成功すること
   - `pnpm build` が packages/db および apps/candidate で成功すること
   - _Requirements: 9.1, 9.2_
