@@ -135,7 +135,7 @@
   - _Depends: 7.1_
 
 - [ ] 8. 統合検証とビルド確認
-- [ ] 8.1 全 workspace のビルド・タイプチェック確認
+- [x] 8.1 全 workspace のビルド・タイプチェック確認
   - `pnpm build` が apps/candidate、apps/business、apps/admin、packages/auth、packages/db を含む全 workspace で成功すること
   - `pnpm typecheck` が全 workspace で成功すること
   - `pnpm lint` が全 workspace でエラーなく通ること
