@@ -115,7 +115,7 @@
   - _Depends: 4.2_
 
 - [ ] 7. 招待トークン受け取りページの実装
-- [ ] 7.1 invitations/[token] ページの実装
+- [x] 7.1 invitations/[token] ページの実装
   - `apps/candidate/app/invitations/[token]/page.tsx` を新設する（Server Component）
   - 未認証の場合: `redirect('/sign-in?token=' + params.token)` を実行する
   - 認証済みの場合: `Set-Cookie` で `pending_invitation_token={token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600` を設定する
