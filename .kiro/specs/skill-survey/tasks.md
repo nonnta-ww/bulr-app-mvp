@@ -238,7 +238,7 @@
 
 ## 6. L1 棚卸し結果表示
 
-### 6.1 result ページを実装
+### 6.1 ✅ result ページを実装
 
 - `apps/candidate/app/skill-survey/[surveyId]/result/page.tsx` を新規作成（Server Component）
 - `requireCandidate()` でガード + `candidateProfileId` 取得
