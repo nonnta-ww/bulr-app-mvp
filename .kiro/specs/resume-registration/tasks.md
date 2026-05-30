@@ -22,7 +22,7 @@
   - _Boundary: ResumeDocumentSchema_
   - _Depends: 1.1_
 
-- [ ] 1.3 候補者の履歴書一覧クエリと primary 取得クエリを実装する
+- [x] 1.3 候補者の履歴書一覧クエリと primary 取得クエリを実装する
   - `packages/db/src/queries/resume/get-resume-documents.ts` を新規作成し、`candidate_profile_id` でスコープした `uploaded_at DESC` 一覧を返す関数を実装する
   - `packages/db/src/queries/resume/get-primary-resume-document.ts` を新規作成し、`candidate_profile_id` と `kind` で絞り込んだ `is_primary=true` ドキュメントを返す関数を実装する
   - `packages/db/src/queries/index.ts` に resume クエリの re-export を追加する。queries/index.ts への追加はファイル全体を置換せず追記すること。同ファイルは Wave 2 内で skill-survey も追記する。
