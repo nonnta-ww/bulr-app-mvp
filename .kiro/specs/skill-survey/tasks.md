@@ -8,7 +8,7 @@
 
 ## 1. マスタスキーマ定義
 
-### 1.1 `skill_survey` マスタ 4 テーブル + `question_type` pgEnum を実装
+### 1.1 ✅ `skill_survey` マスタ 4 テーブル + `question_type` pgEnum を実装
 
 - `packages/db/src/schema/skill-survey.ts` を新規作成
 - `pgEnum('question_type', ['single_choice', 'multi_choice', 'free_text'])` を `questionType` 名で export
@@ -22,7 +22,7 @@
 - _Boundary: MasterSchemaModule_
 - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-### 1.2 `skill_survey_response` / `skill_survey_answer` テーブルを実装 (P)
+### 1.2 ✅ `skill_survey_response` / `skill_survey_answer` テーブルを実装 (P)
 
 - `packages/db/src/schema/skill-survey-response.ts` を新規作成
 - `pgTable('skill_survey_response', { id, candidate_profile_id FK, skill_survey_id FK, submitted_at, created_at, updated_at })` を `skillSurveyResponse` 名で export
