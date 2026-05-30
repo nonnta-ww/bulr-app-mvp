@@ -89,7 +89,7 @@
   - _Boundary: ResumeUploadForm_
   - _Depends: 3.1_
 
-- [ ] 4.2 アップロードページ（Server Component）を実装する
+- [x] 4.2 アップロードページ（Server Component）を実装する
   - `apps/candidate/app/resume/upload/page.tsx` を新規作成する
   - `requireCandidate()` で認証・プロフィール存在確認を行い、未認証 / プロフィール未作成の場合は適切にリダイレクトする
   - `<ResumeUploadForm />` をレンダリングする
