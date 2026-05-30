@@ -31,7 +31,7 @@
   - _Boundary: BusinessMagicLinkTemplate_
   - _Depends: 1.1_
 
-- [ ] 2.2 (P) apps/admin の factory 移行
+- [x] 2.2 (P) apps/admin の factory 移行
   - `apps/admin/lib/magic-link-template.ts` を新設し、運営向け文面の Magic Link テンプレートを作成する
   - `apps/admin/lib/auth.ts` を更新して `createAuth({ sendMagicLink: adminSendMagicLink })` を呼び出す形に変更する
   - `pnpm --filter @bulr/admin typecheck` が通ること
