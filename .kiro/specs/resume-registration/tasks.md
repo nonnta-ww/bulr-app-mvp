@@ -41,7 +41,7 @@
   - _Boundary: apps/candidate package.json_
 
 - [ ] 3. Server Actions の実装
-- [ ] 3.1 (P) ファイルアップロード Server Action を実装する
+- [x] 3.1 (P) ファイルアップロード Server Action を実装する
   - `apps/candidate/app/resume/_actions/upload-resume.ts` を新規作成する
   - `requireCandidate()` で `candidateProfile.id` を取得し、Zod で file（File 型）と kind（enum 4値）を検証する
   - MIME チェック（pdf / msword / docx / txt）と 10MB サイズ上限チェックをサーバーサイドで実施する
