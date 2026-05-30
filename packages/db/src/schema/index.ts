@@ -10,3 +10,4 @@ export * from './question-proposal';
 export * from './interview-turn';
 export * from './pattern-coverage';
 export * from './session-report';
+export * from './resume-document';

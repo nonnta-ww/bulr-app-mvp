@@ -3,7 +3,7 @@
 ## タスク一覧
 
 - [ ] 1. 基盤: resume_document スキーマと migration
-- [ ] 1.1 resume_document テーブルと resumeKind enum の Drizzle スキーマを定義する
+- [x] 1.1 resume_document テーブルと resumeKind enum の Drizzle スキーマを定義する
   - `packages/db/src/schema/resume-document.ts` を新規作成し、`resumeKind` pgEnum（4値）と `resumeDocument` pgTable を定義する
   - `candidateProfileId` カラムに `candidateProfile.id` への FK を設定する
   - `isPrimary`, `blobUrl`, `blobPathname`, `mimeType`, `sizeBytes`, `originalFilename`, `createdAt`, `uploadedAt` カラムを定義する
