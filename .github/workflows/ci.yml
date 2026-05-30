@@ -14,9 +14,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
+        # pnpm version は package.json の packageManager フィールド (pnpm@10.33.2) を権威ソースとする。
+        # action-setup@v4 は両方指定を ERR_PNPM_BAD_PM_VERSION で拒否する。
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
