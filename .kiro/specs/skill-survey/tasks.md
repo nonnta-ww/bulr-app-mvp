@@ -129,7 +129,7 @@
 
 ## 4. Wave 3 読み出しクエリ
 
-### 4.1 `getLatestResponseByCandidateProfileId` を実装 (P)
+### 4.1 ✅ `getLatestResponseByCandidateProfileId` を実装 (P)
 
 - `packages/db/src/queries/skill-survey/index.ts` を新規作成
 - 関数シグネチャ:

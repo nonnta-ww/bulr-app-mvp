@@ -2,3 +2,4 @@
 export * from './interview/index';
 export * from './admin/index';
 export * from './resume/index';
+export * from './skill-survey';
