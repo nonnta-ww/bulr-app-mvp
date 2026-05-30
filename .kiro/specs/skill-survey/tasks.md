@@ -99,7 +99,7 @@
 - _Depends: 1.1_
 - _Requirements: 3.1_
 
-### 3.2 seed 実行関数を実装し `seeds/index.ts` から呼び出せるようにする
+### 3.2 ✅ seed 実行関数を実装し `seeds/index.ts` から呼び出せるようにする
 
 - `packages/db/src/seeds/skill-surveys/backend.ts` に `runBackendSkillSurveySeed(db: DB): Promise<void>` を実装
 - **upsert 方式（idempotent）**: `db.transaction` + `onConflictDoUpdate` を全テーブルで統一使用。DELETE + INSERT による再構築方式は禁止（FK cascade で `skill_survey_answer.question_id` が dangling になるリスクがあるため）
@@ -116,7 +116,7 @@
 - _Depends: 3.1, 2.2_
 - _Requirements: 3.2, 3.3, 3.5_
 
-### 3.3 seed の冪等性を確認
+### 3.3 ✅ seed の冪等性を確認
 
 - `pnpm seed` を 2 回連続実行し、2 回目のレコード数が変わらないことを psql で確認
 - `SELECT COUNT(*) FROM skill_survey_category;` 等が同値であることを確認
