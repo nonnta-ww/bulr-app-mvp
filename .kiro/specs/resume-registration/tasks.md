@@ -60,7 +60,7 @@
   - _Boundary: SetPrimaryResumeAction_
   - _Depends: 1.1, candidate-auth-onboarding task 3.1_
 
-- [ ] 3.3 (P) ドキュメント削除 Server Action を実装する
+- [x] 3.3 (P) ドキュメント削除 Server Action を実装する
   - `apps/candidate/app/resume/_actions/delete-resume.ts` を新規作成する
   - `requireCandidate()` と `candidate_profile_id` スコープで所有権確認後、`blob_pathname` を SELECT する
   - `del(blobPathname)` で Blob を削除し、成功後のみ DB の `resume_document` 行を DELETE する
@@ -69,7 +69,7 @@
   - _Boundary: DeleteResumeAction_
   - _Depends: 1.1, candidate-auth-onboarding task 3.1_
 
-- [ ] 3.4 (P) 署名 URL 発行 Server Action を実装する
+- [x] 3.4 (P) 署名 URL 発行 Server Action を実装する
   - `apps/candidate/app/resume/_actions/get-signed-url.ts` を新規作成する
   - `requireCandidate()` と `candidate_profile_id` スコープで所有権確認後、`blob_pathname` を SELECT する
   - `head(blobPathname, { token: BLOB_READ_WRITE_TOKEN })` を呼び、`downloadUrl` を取得して返す
