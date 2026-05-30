@@ -98,7 +98,7 @@
   - _Boundary: UploadPage_
   - _Depends: 4.1_
 
-- [ ] 4.3 履歴書一覧のクライアントコンポーネントを実装する
+- [x] 4.3 履歴書一覧のクライアントコンポーネントを実装する
   - `apps/candidate/app/resume/_components/resume-list.tsx` を `'use client'` で新規作成する
   - ドキュメントごとに `original_filename`、`kind`、`is_primary`（「メイン」バッジ）、`uploaded_at`（日本時間・日付）を表示する
   - 「メインにする」ボタンクリックで `setPrimaryResumeAction` を呼び UI を更新する

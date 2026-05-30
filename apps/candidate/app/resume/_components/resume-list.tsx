@@ -1,0 +1,244 @@
+'use client';
+
+/**
+ * ResumeList — 履歴書一覧 Client Component
+ *
+ * - ドキュメントごとに original_filename, kind, is_primary（「メイン」バッジ）、
+ *   uploaded_at（日本時間・日付）を表示する
+ * - 「メインにする」ボタンクリックで setPrimaryResumeAction を呼び UI を更新する
+ * - 「プレビュー」ボタンクリックで getSignedUrlAction を呼び window.open する
+ * - 「削除」ボタンクリックで確認ダイアログを表示し、確認後に deleteResumeAction を呼ぶ
+ * - ドキュメントが 0 件の場合は空状態メッセージとアップロードページへのリンクを表示する
+ *
+ * Requirements: 4.1, 4.2, 4.3, 5.1, 6.1, 7.4, 7.5
+ */
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+
+import { Button } from '@bulr/ui';
+import type { ResumeDocument } from '@bulr/db/schema';
+
+import { deleteResumeAction } from '../_actions/delete-resume';
+import { getSignedUrlAction } from '../_actions/get-signed-url';
+import { setPrimaryResumeAction } from '../_actions/set-primary-resume';
+
+// ---------------------------------------------------------------------------
+// 型・定数
+// ---------------------------------------------------------------------------
+
+interface Props {
+  documents: ResumeDocument[];
+}
+
+const DATE_FORMAT = new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+// ---------------------------------------------------------------------------
+// ヘルパー
+// ---------------------------------------------------------------------------
+
+function formatDate(value: Date | string): string {
+  return DATE_FORMAT.format(new Date(value));
+}
+
+// ---------------------------------------------------------------------------
+// コンポーネント
+// ---------------------------------------------------------------------------
+
+export function ResumeList({ documents }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  // 操作中のドキュメント ID と種別を管理してボタン単体の pending を表現する
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [errorMap, setErrorMap] = useState<Record<string, string>>({});
+
+  function setError(id: string, message: string) {
+    setErrorMap((prev) => ({ ...prev, [id]: message }));
+  }
+
+  function clearError(id: string) {
+    setErrorMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  // --- メインにする ---
+  function handleSetPrimary(documentId: string) {
+    clearError(documentId);
+    setPendingId(documentId);
+
+    const formData = new FormData();
+    formData.append('documentId', documentId);
+
+    startTransition(async () => {
+      const result = await setPrimaryResumeAction(formData);
+      setPendingId(null);
+
+      if (!result.ok) {
+        setError(documentId, result.error.message ?? 'メインへの変更に失敗しました。');
+        return;
+      }
+
+      router.refresh();
+    });
+  }
+
+  // --- プレビュー ---
+  function handlePreview(documentId: string) {
+    clearError(documentId);
+    setPendingId(documentId);
+
+    const formData = new FormData();
+    formData.append('documentId', documentId);
+
+    startTransition(async () => {
+      const result = await getSignedUrlAction(formData);
+      setPendingId(null);
+
+      if (!result.ok) {
+        setError(documentId, result.error.message ?? 'プレビューの表示に失敗しました。');
+        return;
+      }
+
+      window.open(result.data.downloadUrl, '_blank', 'noopener');
+    });
+  }
+
+  // --- 削除 ---
+  function handleDelete(documentId: string, filename: string) {
+    const confirmed = window.confirm(
+      `「${filename}」を削除しますか？\nこの操作は取り消せません。`,
+    );
+    if (!confirmed) return;
+
+    clearError(documentId);
+    setPendingId(documentId);
+
+    const formData = new FormData();
+    formData.append('documentId', documentId);
+
+    startTransition(async () => {
+      const result = await deleteResumeAction(formData);
+      setPendingId(null);
+
+      if (!result.ok) {
+        setError(documentId, result.error.message ?? '削除に失敗しました。');
+        return;
+      }
+
+      router.refresh();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 空状態
+  // ---------------------------------------------------------------------------
+
+  if (documents.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
+        <p className="text-sm text-gray-600">履歴書がまだアップロードされていません</p>
+        <Link
+          href="/resume/upload"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          履歴書をアップロードする
+        </Link>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 一覧
+  // ---------------------------------------------------------------------------
+
+  return (
+    <ul className="space-y-3">
+      {documents.map((doc) => {
+        const isThisPending = isPending && pendingId === doc.id;
+        const errorMessage = errorMap[doc.id];
+
+        return (
+          <li
+            key={doc.id}
+            className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            {/* ファイル情報行 */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* ファイル名 */}
+              <span className="flex-1 truncate text-sm font-medium text-gray-900">
+                {doc.originalFilename}
+              </span>
+
+              {/* 種別バッジ */}
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                {doc.kind}
+              </span>
+
+              {/* メインバッジ */}
+              {doc.isPrimary && (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  メイン
+                </span>
+              )}
+
+              {/* アップロード日 */}
+              <span className="text-xs text-gray-400">{formatDate(doc.uploadedAt)}</span>
+            </div>
+
+            {/* エラーメッセージ */}
+            {errorMessage && (
+              <p role="alert" className="rounded-md bg-red-50 px-3 py-1.5 text-xs text-red-700">
+                {errorMessage}
+              </p>
+            )}
+
+            {/* アクションボタン行 */}
+            <div className="flex flex-wrap gap-2">
+              {/* メインにする（既に primary の場合は非表示） */}
+              {!doc.isPrimary && (
+                <Button
+                  type="button"
+                  disabled={isThisPending}
+                  onClick={() => handleSetPrimary(doc.id)}
+                  className="bg-white text-sm text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isThisPending ? '処理中...' : 'メインにする'}
+                </Button>
+              )}
+
+              {/* プレビュー */}
+              <Button
+                type="button"
+                disabled={isThisPending}
+                onClick={() => handlePreview(doc.id)}
+                className="bg-white text-sm text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isThisPending ? '処理中...' : 'プレビュー'}
+              </Button>
+
+              {/* 削除 */}
+              <Button
+                type="button"
+                disabled={isThisPending}
+                onClick={() => handleDelete(doc.id, doc.originalFilename)}
+                className="bg-white text-sm text-red-600 ring-1 ring-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isThisPending ? '処理中...' : '削除'}
+              </Button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
