@@ -14,7 +14,7 @@
  * Requirements: 4.2, 4.3
  */
 
-import { auth } from '@bulr/auth/server';
+import { auth } from '@/lib/auth';
 import { toNextJsHandler } from 'better-auth/next-js';
 
 export const { GET, POST } = toNextJsHandler(auth);

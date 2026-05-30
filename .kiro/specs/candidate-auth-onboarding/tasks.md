@@ -72,7 +72,7 @@
   - _Requirements: 2.1, 2.4_
   - _Boundary: CandidateMagicLinkTemplate_
 
-- [ ] 4.2 apps/candidate の auth インスタンス設定
+- [x] 4.2 apps/candidate の auth インスタンス設定
   - `apps/candidate/lib/auth.ts` を更新して `createAuth({ sendMagicLink: candidateSendMagicLink })` を呼び出す形に変更する
   - `candidateSendMagicLink` は `renderCandidateMagicLinkEmail` を利用し、Resend でメールを送信する
   - `apps/candidate/lib/auth.ts` から `auth`（サーバー用）と `authClient`（クライアント用）を export する
