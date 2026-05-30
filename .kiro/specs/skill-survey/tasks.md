@@ -159,7 +159,7 @@
 
 ## 5. 回答フォーム UI
 
-### 5.1 survey 一覧ページを実装
+### 5.1 ✅ survey 一覧ページを実装
 
 - `apps/candidate/app/skill-survey/page.tsx` を新規作成（Server Component）
 - `requireCandidate()` でガード
