@@ -29,9 +29,9 @@ export default async function SignInPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-center text-2xl font-bold text-gray-900">bulr へようこそ</h1>
+        <h1 className="mb-2 text-center text-2xl font-bold text-gray-900">bulr に参加する</h1>
         <p className="mb-6 text-center text-sm text-gray-500">
-          メールアドレスを入力すると Magic Link をお送りします
+          メールアドレスを入力してください。サインインリンクをお送りします。
         </p>
         <SignInForm />
         <p className="mt-6 text-center text-xs text-gray-400">

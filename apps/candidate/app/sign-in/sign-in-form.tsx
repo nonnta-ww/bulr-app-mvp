@@ -63,7 +63,7 @@ export function SignInForm() {
         const msg = result.error.message ?? '';
         if (/rate limit/i.test(msg)) {
           setErrorMessage(
-            '短時間に複数回のリクエストがあったため、しばらく待ってから再試行してください',
+            '短時間に多くのリクエストがありました。しばらくお待ちいただき、再度お試しください。',
           );
         } else {
           setErrorMessage(msg || '送信中にエラーが発生しました。もう一度お試しください。');
@@ -77,7 +77,7 @@ export function SignInForm() {
       const msg = err instanceof Error ? err.message : '';
       if (/rate limit/i.test(msg)) {
         setErrorMessage(
-          '短時間に複数回のリクエストがあったため、しばらく待ってから再試行してください',
+          '短時間に多くのリクエストがありました。しばらくお待ちいただき、再度お試しください。',
         );
       } else {
         setErrorMessage(msg || '送信中にエラーが発生しました。もう一度お試しください。');
@@ -89,7 +89,7 @@ export function SignInForm() {
   if (status === 'success') {
     return (
       <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-800">
-        メールを送信しました。受信ボックス（迷惑メールフォルダも）をご確認ください。
+        メールを送信しました。受信トレイ（迷惑メールフォルダも）をご確認ください。
       </div>
     );
   }
@@ -102,7 +102,7 @@ export function SignInForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>メールアドレス</FormLabel>
+              <FormLabel>メールアドレスを入力してください</FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -126,7 +126,7 @@ export function SignInForm() {
           disabled={status === 'submitting'}
           className="w-full bg-blue-600 text-white hover:bg-blue-700"
         >
-          {status === 'submitting' ? '送信中...' : 'Magic Link を送信'}
+          {status === 'submitting' ? '送信中...' : 'サインインリンクを受け取る'}
         </Button>
       </form>
     </Form>
