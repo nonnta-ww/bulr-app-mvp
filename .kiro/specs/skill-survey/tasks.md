@@ -183,7 +183,7 @@
 - _Depends: 5.1_
 - _Requirements: 4.2, 7.1_
 
-### 5.3 回答フォーム Client Component を実装
+### 5.3 ✅ 回答フォーム Client Component を実装
 
 - `apps/candidate/app/skill-survey/_components/survey-form.tsx` を `'use client'` で作成
 - カテゴリ → 設問の順にセクション分割してレンダリング
