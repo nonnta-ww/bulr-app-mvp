@@ -126,7 +126,7 @@
   - _Boundary: InvitationTokenPage_
   - _Depends: 3.1, 1.2_
 
-- [ ] 7.2 proxy.ts の invitations リダイレクトルール追加
+- [x] 7.2 proxy.ts の invitations リダイレクトルール追加
   - `apps/candidate/proxy.ts` の matcher に `/invitations/:path*` を追加する
   - 未認証ユーザーが `/invitations/{token}` にアクセスした場合、`/sign-in?token={token}` にリダイレクトするロジックを実装する
   - token パラメータを query string に正しく引き継ぐこと
