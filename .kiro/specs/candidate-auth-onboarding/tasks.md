@@ -56,7 +56,7 @@
   - _Requirements: 3.1, 3.2, 3.4, 3.5_
   - _Boundary: CandidateProfileSchema_
 
-- [ ] 3.2 Drizzle migration の生成と適用
+- [x] 3.2 Drizzle migration の生成と適用
   - `pnpm drizzle-kit generate` を実行して `candidate_profile` テーブルの migration ファイルを生成する
   - `pnpm drizzle-kit push`（開発 DB）または `pnpm drizzle-kit migrate`（本番 DB）を実行して migration を適用する
   - `packages/db/drizzle/` に migration SQL ファイルが生成され、`candidate_profile` テーブルが DB に存在すること
