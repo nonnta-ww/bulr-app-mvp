@@ -40,7 +40,11 @@ export function proxy(request: NextRequest): NextResponse {
  */
 function handleInterviewerAuth(request: NextRequest): NextResponse {
   // Better Auth のセッション Cookie 名
-  const sessionCookie = request.cookies.get('better-auth.session_token');
+  // 本番 (HTTPS) では `__Secure-` プレフィックス付き、ローカル dev (HTTP) では無し
+  // 参考: better-auth/dist/cookies/index.mjs の isProduction 分岐
+  const sessionCookie =
+    request.cookies.get('better-auth.session_token') ??
+    request.cookies.get('__Secure-better-auth.session_token');
 
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
