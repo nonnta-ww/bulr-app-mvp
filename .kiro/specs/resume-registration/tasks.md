@@ -79,7 +79,7 @@
   - _Depends: 1.1, candidate-auth-onboarding task 3.1_
 
 - [ ] 4. クライアントコンポーネントとページの実装
-- [ ] 4.1 アップロードフォームのクライアントコンポーネントを実装する
+- [x] 4.1 アップロードフォームのクライアントコンポーネントを実装する
   - `apps/candidate/app/resume/_components/resume-upload-form.tsx` を `'use client'` で新規作成する
   - 4種別の `<select>` と `<input type="file" accept=".pdf,.doc,.docx,.txt">` を持つフォームを実装する
   - クライアント側で 10MB 超のファイルを検出してエラーメッセージを表示する
