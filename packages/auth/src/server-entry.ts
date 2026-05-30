@@ -14,7 +14,13 @@
  */
 
 // Better Auth サーバインスタンス（各アプリの /api/auth/[...all] でマウント）
+// Phase A: singleton と factory を共存させる。Phase C で singleton を削除する
 export { auth } from './server';
+
+// createAuth factory（candidate-auth-onboarding 以降、各アプリはこちらを使用）
+// candidate-auth-onboarding Requirements: 1.1, 1.3
+export { createAuth } from './server';
+export type { CreateAuthConfig, SendMagicLinkFn } from './server';
 
 // 認証ガード（Server Component / Server Action / Route Handler の先頭で呼ぶ）
 export {
