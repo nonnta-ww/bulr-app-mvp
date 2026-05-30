@@ -69,7 +69,7 @@
 
 ## 3. バックエンド職種 seed スクリプト
 
-### 3.1 `backend.ts` シードデータを実装
+### 3.1 ✅ `backend.ts` シードデータを実装
 
 - `packages/db/src/seeds/skill-surveys/` ディレクトリを新規作成
 - `packages/db/src/seeds/skill-surveys/backend.ts` を新規作成
