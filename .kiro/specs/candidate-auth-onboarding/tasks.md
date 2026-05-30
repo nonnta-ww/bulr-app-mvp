@@ -94,7 +94,7 @@
   - _Depends: 4.2_
 
 - [ ] 6. 候補者オンボーディング動線の実装
-- [ ] 6.1 onboarding ページと candidate_profile 作成 Server Action の実装
+- [x] 6.1 onboarding ページと candidate_profile 作成 Server Action の実装
   - `apps/candidate/app/onboarding/page.tsx` を新設する（Server Component。`requireUser` でセッションを確認する）
   - `apps/candidate/app/onboarding/_actions/create-profile.ts` を新設し、`authedAction` でラップした `createCandidateProfile` Server Action を実装する
   - Zod スキーマで `displayName`（必須、1〜100文字）を検証し、バリデーションエラー時はエラーメッセージを返す
