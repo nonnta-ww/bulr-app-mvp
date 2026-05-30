@@ -13,11 +13,7 @@
  * Requirements: 5.1, 5.4, 5.6, 5.7, 5.8, 5.10, 5.11
  */
 
-// Better Auth サーバインスタンス（各アプリの /api/auth/[...all] でマウント）
-// Phase A: singleton と factory を共存させる。Phase C で singleton を削除する
-export { auth } from './server';
-
-// createAuth factory（candidate-auth-onboarding 以降、各アプリはこちらを使用）
+// createAuth factory（各アプリは lib/auth.ts で呼び出し、独自の auth インスタンスを生成する）
 // candidate-auth-onboarding Requirements: 1.1, 1.3
 export { createAuth } from './server';
 export type { CreateAuthConfig, SendMagicLinkFn } from './server';

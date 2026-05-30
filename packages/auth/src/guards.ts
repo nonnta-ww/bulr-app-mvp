@@ -19,10 +19,21 @@ import { db } from '@bulr/db';
 import { candidateProfile } from '@bulr/db/schema';
 import { eq } from 'drizzle-orm';
 
-import { auth } from './server';
+import { createAuth } from './server';
 import { AuthError } from './errors';
 import type { CandidateProfile } from '@bulr/db/schema';
 import type { User, Session } from './schemas';
+
+/**
+ * guards 内部専用の auth インスタンス。
+ * セッション読み取り（getSession）にのみ使用する。
+ * sendMagicLink は guards では不要なため no-op を注入する。
+ */
+const auth = createAuth({
+  sendMagicLink: async () => {
+    // guards 内でメール送信は発生しない（no-op）
+  },
+});
 
 // AuthError は ./errors に集約済み。後方互換のため re-export する
 // （既存 `apps/web` 側 `import { AuthError } from '@/lib/guards'` への配慮）。

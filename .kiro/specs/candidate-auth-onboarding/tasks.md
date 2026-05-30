@@ -39,7 +39,7 @@
   - _Boundary: AdminMagicLinkTemplate_
   - _Depends: 1.1_
 
-- [ ] 2.3 shared template の削除と turbo.json 更新
+- [x] 2.3 shared template の削除と turbo.json 更新
   - `packages/auth/src/email/templates/magic-link.ts`（旧 shared template）を削除する
   - `turbo.json` の `build.env` に `NEXT_PUBLIC_APP_URL`（候補者アプリ用）および `BETTER_AUTH_URL`（候補者アプリ用）を追加する（既に列挙済みの場合はスキップ）
   - `pnpm build` が全 workspace で成功すること
