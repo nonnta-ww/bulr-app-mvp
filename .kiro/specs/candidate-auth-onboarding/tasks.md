@@ -48,7 +48,7 @@
   - _Depends: 2.1, 2.2_
 
 - [ ] 3. candidate_profile スキーマと migration
-- [ ] 3.1 candidate_profile テーブルスキーマの定義
+- [x] 3.1 candidate_profile テーブルスキーマの定義
   - `packages/db/src/schema/candidate-profile.ts` を新設し、`candidateProfile` テーブルを Drizzle スキーマで定義する
   - カラム: `id`（text primaryKey、nanoid）、`userId`（text notNull unique、FK → `user.id`）、`displayName`（text notNull）、`headline`（text nullable）、`createdAt`（timestamp defaultNow）、`updatedAt`（timestamp defaultNow）
   - `packages/db/src/schema/index.ts` のバレルエクスポートに `candidate-profile.ts` を追加する
