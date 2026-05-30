@@ -52,7 +52,7 @@
   - _Boundary: UploadResumeAction_
   - _Depends: 1.1, candidate-auth-onboarding task 3.1_
 
-- [ ] 3.2 (P) primary フラグ更新 Server Action を実装する
+- [x] 3.2 (P) primary フラグ更新 Server Action を実装する
   - `apps/candidate/app/resume/_actions/set-primary-resume.ts` を新規作成する
   - `requireCandidate()` で所有権確認後、DB トランザクション内で同 `candidate_profile_id` + 同 `kind` の全ドキュメントを `is_primary=false` に UPDATE し、指定ドキュメントを `is_primary=true` に UPDATE する
   - atomic な更新後、対象ドキュメントのみ `is_primary=true` になっていること（他の同 kind は全て false）
