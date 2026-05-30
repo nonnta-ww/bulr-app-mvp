@@ -2,7 +2,7 @@
 
 ## タスク一覧
 
-- [ ] 1. packages/auth factory 化の基盤実装
+- [x] 1. packages/auth factory 化の基盤実装
 - [x] 1.1 createAuth factory 関数の実装
   - `packages/auth/src/server.ts` に `export function createAuth(config: CreateAuthConfig): ReturnType<typeof betterAuth>` を実装する
   - `CreateAuthConfig` 型を `{ sendMagicLink: SendMagicLinkFn; overrides?: Partial<BetterAuthOptions> }` として定義する
@@ -22,7 +22,7 @@
   - _Boundary: RequireCandidate, AuthServerEntry_
   - _Depends: 3.1_
 
-- [ ] 2. アプリ別 Magic Link テンプレートの分離と factory 適用
+- [x] 2. アプリ別 Magic Link テンプレートの分離と factory 適用
 - [x] 2.1 (P) apps/business の factory 移行
   - `apps/business/lib/magic-link-template.ts` を新設し、既存の `packages/auth/src/email/templates/magic-link.ts` の企業向け内容を移設する
   - `apps/business/lib/auth.ts` を更新して `createAuth({ sendMagicLink: businessSendMagicLink })` を呼び出す形に変更する（`businessSendMagicLink` は `magic-link-template.ts` を利用する）
@@ -47,7 +47,7 @@
   - _Boundary: TurboConfig_
   - _Depends: 2.1, 2.2_
 
-- [ ] 3. candidate_profile スキーマと migration
+- [x] 3. candidate_profile スキーマと migration
 - [x] 3.1 candidate_profile テーブルスキーマの定義
   - `packages/db/src/schema/candidate-profile.ts` を新設し、`candidateProfile` テーブルを Drizzle スキーマで定義する
   - カラム: `id`（text primaryKey、nanoid）、`userId`（text notNull unique、FK → `user.id`）、`displayName`（text notNull）、`headline`（text nullable）、`createdAt`（timestamp defaultNow）、`updatedAt`（timestamp defaultNow）
@@ -64,7 +64,7 @@
   - _Boundary: CandidateProfileSchema_
   - _Depends: 3.1_
 
-- [ ] 4. apps/candidate の auth 設定と Magic Link テンプレート
+- [x] 4. apps/candidate の auth 設定と Magic Link テンプレート
 - [x] 4.1 候補者向け Magic Link テンプレートの作成
   - `apps/candidate/lib/magic-link-template.ts` を新設し、候補者向け文言のメールテンプレート（HTML + テキスト + 件名）を実装する
   - 文言例: 「bulr へようこそ」「採用プロセスにご参加いただきありがとうございます」など候補者に適したコピー（日本語）
@@ -82,7 +82,7 @@
   - _Boundary: CandidateMagicLinkTemplate_
   - _Depends: 1.1, 4.1_
 
-- [ ] 5. 候補者サインインページの候補者向け文言更新
+- [x] 5. 候補者サインインページの候補者向け文言更新
 - [x] 5.1 sign-in ページの UI・文言更新
   - `apps/candidate/app/sign-in/page.tsx` の UI 文言を候補者向けに更新する（「bulr に参加する」「メールアドレスを入力してください」等、日本語）
   - フォーム送信後のサクセスメッセージも候補者向けに更新する
@@ -93,7 +93,7 @@
   - _Boundary: CandidateSignInPage_
   - _Depends: 4.2_
 
-- [ ] 6. 候補者オンボーディング動線の実装
+- [x] 6. 候補者オンボーディング動線の実装
 - [x] 6.1 onboarding ページと candidate_profile 作成 Server Action の実装
   - `apps/candidate/app/onboarding/page.tsx` を新設する（Server Component。`requireUser` でセッションを確認する）
   - `apps/candidate/app/onboarding/_actions/create-profile.ts` を新設し、`authedAction` でラップした `createCandidateProfile` Server Action を実装する
@@ -114,7 +114,7 @@
   - _Boundary: CandidateProxy_
   - _Depends: 4.2_
 
-- [ ] 7. 招待トークン受け取りページの実装
+- [x] 7. 招待トークン受け取りページの実装
 - [x] 7.1 invitations/[token] ページの実装
   - `apps/candidate/app/invitations/[token]/page.tsx` を新設する（Server Component）
   - 未認証の場合: `redirect('/sign-in?token=' + params.token)` を実行する
@@ -134,7 +134,7 @@
   - _Boundary: CandidateProxy_
   - _Depends: 7.1_
 
-- [ ] 8. 統合検証とビルド確認
+- [x] 8. 統合検証とビルド確認
 - [x] 8.1 全 workspace のビルド・タイプチェック確認
   - `pnpm build` が apps/candidate、apps/business、apps/admin、packages/auth、packages/db を含む全 workspace で成功すること
   - `pnpm typecheck` が全 workspace で成功すること
