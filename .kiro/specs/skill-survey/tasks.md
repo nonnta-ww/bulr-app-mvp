@@ -257,7 +257,7 @@
 
 ## 7. 統合確認と最終検証
 
-### 7.1 エンドツーエンド動線の手動 smoke test を実施
+### 7.1 ✅ エンドツーエンド動線の手動 smoke test を実施
 
 - 候補者としてサインイン → `/skill-survey` で一覧表示 → survey 選択 → フォーム回答 → 送信 → result 表示の全動線を確認
 - 再回答（同一 surveyId に 2 回目の送信）後、`skill_survey_response` のレコード数が増えていないことを psql で確認
@@ -267,7 +267,7 @@
 - _Depends: 6.1_
 - _Requirements: 4.1〜4.7, 5.1〜5.5, 7.1〜7.4_
 
-### 7.2 Wave 3 seam の型レベル確認
+### 7.2 ✅ Wave 3 seam の型レベル確認
 
 - `getLatestResponseByCandidateProfileId` を仮の呼び出しコードで import し `pnpm typecheck` が通ることを確認
 - `SkillSurveyResponseWithAnswers` 型の shape が Wave 3 で消費可能であることをコメントで記録
@@ -276,7 +276,7 @@
 - _Depends: 4.1_
 - _Requirements: 6.1, 6.4, 6.5_
 
-### 7.3 ビルドとタイプチェックの全 workspace 確認
+### 7.3 ✅ ビルドとタイプチェックの全 workspace 確認
 
 - `pnpm typecheck` が全 workspace（packages/db、packages/auth、apps/candidate、apps/business、apps/admin）で成功することを確認
 - `pnpm build` が全 packages・apps で成功することを確認
