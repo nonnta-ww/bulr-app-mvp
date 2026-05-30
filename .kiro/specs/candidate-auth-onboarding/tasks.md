@@ -65,7 +65,7 @@
   - _Depends: 3.1_
 
 - [ ] 4. apps/candidate の auth 設定と Magic Link テンプレート
-- [ ] 4.1 候補者向け Magic Link テンプレートの作成
+- [x] 4.1 候補者向け Magic Link テンプレートの作成
   - `apps/candidate/lib/magic-link-template.ts` を新設し、候補者向け文言のメールテンプレート（HTML + テキスト + 件名）を実装する
   - 文言例: 「bulr へようこそ」「採用プロセスにご参加いただきありがとうございます」など候補者に適したコピー（日本語）
   - テンプレート関数は `renderCandidateMagicLinkEmail({ url }: { url: string }): { html: string; text: string; subject: string }` として export する
