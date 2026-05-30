@@ -105,7 +105,7 @@
   - _Boundary: OnboardingPage, CreateProfileAction_
   - _Depends: 3.1, 1.2_
 
-- [ ] 6.2 proxy.ts の onboarding リダイレクトルール追加
+- [x] 6.2 proxy.ts の onboarding リダイレクトルール追加
   - `apps/candidate/proxy.ts` の matcher に `/onboarding` を追加する
   - 未認証ユーザーが `/onboarding` にアクセスした場合、`/sign-in` にリダイレクトするロジックを実装する
   - `__Secure-better-auth.session_token` と `better-auth.session_token` の両方の cookie 名に対応する
