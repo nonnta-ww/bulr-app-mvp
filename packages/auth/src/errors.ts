@@ -18,7 +18,8 @@ export type AuthErrorCode =
   | 'UNAUTHORIZED'
   | 'FORBIDDEN'
   | 'SESSION_EXPIRED'
-  | 'NOT_FOUND';
+  | 'NOT_FOUND'
+  | 'CANDIDATE_PROFILE_MISSING';
 
 export class AuthError extends Error {
   constructor(

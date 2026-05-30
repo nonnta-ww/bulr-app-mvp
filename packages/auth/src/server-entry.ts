@@ -23,11 +23,13 @@ export { createAuth } from './server';
 export type { CreateAuthConfig, SendMagicLinkFn } from './server';
 
 // 認証ガード（Server Component / Server Action / Route Handler の先頭で呼ぶ）
+// candidate-auth-onboarding Requirements: 7.1, 7.4
 export {
   getCurrentUser,
   requireUser,
   requireAdmin,
   requireSessionOwnership,
+  requireCandidate,
 } from './guards';
 
 // Server Action ラッパー（型安全な認可付き Server Action を提供）

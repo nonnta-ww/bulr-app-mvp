@@ -12,7 +12,7 @@
   - _Requirements: 1.1, 1.2, 1.4_
   - _Boundary: CreateAuthFactory_
 
-- [ ] 1.2 requireCandidate ガードの実装
+- [x] 1.2 requireCandidate ガードの実装
   - `packages/auth/src/guards.ts` に `export async function requireCandidate()` を追加する
   - 内部で `requireUser()` を呼び出し（UNAUTHORIZED は委譲）、`candidate_profile` を `userId` でクエリする
   - `candidate_profile` が存在しない場合は `AuthError('CANDIDATE_PROFILE_MISSING')` を throw する
