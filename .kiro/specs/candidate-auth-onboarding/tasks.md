@@ -23,7 +23,7 @@
   - _Depends: 3.1_
 
 - [ ] 2. アプリ別 Magic Link テンプレートの分離と factory 適用
-- [ ] 2.1 (P) apps/business の factory 移行
+- [x] 2.1 (P) apps/business の factory 移行
   - `apps/business/lib/magic-link-template.ts` を新設し、既存の `packages/auth/src/email/templates/magic-link.ts` の企業向け内容を移設する
   - `apps/business/lib/auth.ts` を更新して `createAuth({ sendMagicLink: businessSendMagicLink })` を呼び出す形に変更する（`businessSendMagicLink` は `magic-link-template.ts` を利用する）
   - `pnpm --filter @bulr/business typecheck` が通ること

@@ -36,6 +36,10 @@ export {
 export { authedAction, adminAction } from './safe-action';
 export type { Result } from './safe-action';
 
+// メール送信ユーティリティ（sendMagicLink 実装を各アプリが自前で用意する際に使用）
+// candidate-auth-onboarding Requirements: 2.2, 8.2
+export { sendEmail } from './email/resend';
+
 // エラー型（isomorphic だが server 側でも参照しやすいよう再エクスポート）
 export { AuthError } from './errors';
 export type { AuthErrorCode } from './errors';
