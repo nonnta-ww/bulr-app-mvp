@@ -197,7 +197,7 @@
 - _Depends: 5.2_
 - _Requirements: 4.3_
 
-### 5.4 送信 Server Action を実装
+### 5.4 ✅ 送信 Server Action を実装
 
 - `apps/candidate/app/skill-survey/[surveyId]/_actions/submit-survey.ts` を新規作成
 - `authedAction` でラップ
