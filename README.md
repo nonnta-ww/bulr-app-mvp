@@ -39,3 +39,4 @@ packages/lib      # 共有ユーティリティ
 packages/ai       # AI SDK ラッパー
 docs/setup/       # セットアップ手順
 ```
+
