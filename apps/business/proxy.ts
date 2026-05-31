@@ -9,9 +9,11 @@
  *
  * やること:
  *   - /interviews/* の Cookie 存在チェック → /sign-in リダイレクト
+ *   - /openings, /openings/new, /openings/:openingId* の Cookie 存在チェック → /sign-in リダイレクト
  *
  * やらないこと:
  *   - Better Auth セッション validation（Cookie の存在確認のみ、セッションの有効性は Server Component で requireUser() が行う）
+ *   - user_profile.company_id の確認（DB クエリが必要なため、各 Server Component / Server Action の requireCompanyUser() に委譲）
  *   - /admin/* の認可（monorepo-app-split Task 4.3 で /admin/* は apps/admin に移設されたため、本アプリには存在しない）
  *   - Server Action / API Route の認可
  */
@@ -20,13 +22,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Next.js middleware。
- * UX リダイレクトのみを担う。認可判定（セッション有効性 / 許可メール検査）は行わない。
+ * UX リダイレクトのみを担う。認可判定（セッション有効性 / 許可メール検査 / company 所属確認）は行わない。
  */
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // /interviews/* への Cookie 存在チェック → /sign-in リダイレクト
-  if (pathname.startsWith('/interviews/')) {
+  // /interviews/* および /openings/* への Cookie 存在チェック → /sign-in リダイレクト
+  if (pathname.startsWith('/interviews/') || pathname === '/openings' || pathname.startsWith('/openings/')) {
     return handleInterviewerAuth(request);
   }
 
@@ -34,9 +36,10 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 /**
- * /interviews/* へのアクセスに対して Better Auth セッション Cookie の存在を確認する。
+ * 企業ユーザー向けルートへのアクセスに対して Better Auth セッション Cookie の存在を確認する。
  * Cookie が存在しない場合は /sign-in にリダイレクト（UX リダイレクトのみ）。
  * Cookie が存在しても、セッションの有効性は Server Component の requireUser() が独立に検証する。
+ * company 所属確認は DB クエリが必要なため Server Component の requireCompanyUser() に委譲する。
  */
 function handleInterviewerAuth(request: NextRequest): NextResponse {
   // Better Auth のセッション Cookie 名
@@ -56,5 +59,5 @@ function handleInterviewerAuth(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/interviews/:path*'],
+  matcher: ['/interviews/:path*', '/openings', '/openings/new', '/openings/:openingId*'],
 };

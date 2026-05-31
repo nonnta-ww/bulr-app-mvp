@@ -127,7 +127,7 @@
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
   - _Depends: 4.3, 4.5_
 
-- [ ] 4.7 `apps/business/proxy.ts` の matcher に opening ルートを追加する
+- [x] 4.7 `apps/business/proxy.ts` の matcher に opening ルートを追加する
   - `apps/business/proxy.ts` の `config.matcher` 配列に以下を追加する:
     - `/openings`
     - `/openings/new`
