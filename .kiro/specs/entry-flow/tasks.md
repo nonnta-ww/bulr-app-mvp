@@ -440,7 +440,7 @@ export const getResumeSignedUrlForBusiness = authedAction(
 
 ## フェーズ 3: 候補者側 UI
 
-### タスク 3.0: proxy.ts の matcher 拡張 (apps/business + apps/candidate)
+### タスク 3.0 ✅: proxy.ts の matcher 拡張 (apps/business + apps/candidate)
 
 **目的**: entry-flow で新設するルートを proxy.ts の matcher に追加し、未認証アクセスを適切にリダイレクトする。
 
@@ -481,7 +481,7 @@ export const getResumeSignedUrlForBusiness = authedAction(
 
 ---
 
-### タスク 3.1: エントリー確認画面（候補者）
+### タスク 3.1 ✅: エントリー確認画面（候補者）
 
 **目的**: `/invitations/[token]/confirm` でエントリー確認画面を実装する。
 
@@ -529,7 +529,7 @@ cookie クリア時も同じ 2 名で `delete()` すること。
 
 ---
 
-### タスク 3.2: 候補者エントリー一覧ページ
+### タスク 3.2 ✅: 候補者エントリー一覧ページ
 
 **目的**: `/entries` で候補者の全エントリーを一覧表示する Server Component を実装する。
 

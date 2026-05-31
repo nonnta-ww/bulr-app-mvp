@@ -10,6 +10,7 @@
  * やること:
  *   - /interviews/* の Cookie 存在チェック → /sign-in リダイレクト
  *   - /openings, /openings/new, /openings/:openingId* の Cookie 存在チェック → /sign-in リダイレクト
+ *   - /openings/:openingId/entries, /openings/:openingId/entries/:entryId* の Cookie 存在チェック → /sign-in リダイレクト
  *
  * やらないこと:
  *   - Better Auth セッション validation（Cookie の存在確認のみ、セッションの有効性は Server Component で requireUser() が行う）
@@ -59,5 +60,12 @@ function handleInterviewerAuth(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/interviews/:path*', '/openings', '/openings/new', '/openings/:openingId*'],
+  matcher: [
+    '/interviews/:path*',
+    '/openings',
+    '/openings/new',
+    '/openings/:openingId*',
+    '/openings/:openingId/entries',
+    '/openings/:openingId/entries/:entryId*',
+  ],
 };

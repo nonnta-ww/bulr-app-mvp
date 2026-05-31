@@ -10,6 +10,8 @@
  * やること:
  *   - /onboarding への Cookie 存在チェック → /sign-in リダイレクト
  *   - /invitations/{token} への Cookie 存在チェック → /sign-in?token={token} リダイレクト
+ *   - /invitations/{token}/confirm への Cookie 存在チェック → /sign-in?token={token} リダイレクト
+ *   - /entries への Cookie 存在チェック → /sign-in リダイレクト
  *
  * やらないこと:
  *   - Better Auth セッション validation（Cookie の存在確認のみ、セッションの有効性は Server Component で requireUser() が行う）
@@ -32,9 +34,15 @@ export function proxy(request: NextRequest): NextResponse {
     return handleCandidateAuth(request);
   }
 
-  // /invitations/{token} への Cookie 存在チェック → /sign-in?token={token} リダイレクト
+  // /invitations/{token} および /invitations/{token}/confirm への Cookie 存在チェック
+  // → /sign-in?token={token} リダイレクト
   if (pathname.startsWith('/invitations/')) {
     return handleInvitationAuth(request);
+  }
+
+  // /entries への Cookie 存在チェック → /sign-in リダイレクト
+  if (pathname === '/entries' || pathname.startsWith('/entries/')) {
+    return handleCandidateAuth(request);
   }
 
   return NextResponse.next();
@@ -86,5 +94,10 @@ function handleInvitationAuth(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/onboarding', '/invitations/:path*'],
+  matcher: [
+    '/onboarding',
+    '/invitations/:path*',
+    '/invitations/:token/confirm',
+    '/entries',
+  ],
 };
