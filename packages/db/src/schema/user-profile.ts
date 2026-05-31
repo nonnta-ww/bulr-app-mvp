@@ -8,11 +8,13 @@
 
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth';
+import { company } from './company';
 
 export const userProfile = pgTable('user_profile', {
   userId: text('user_id')
     .primaryKey()
     .references(() => user.id, { onDelete: 'cascade' }),
+  companyId: text('company_id').references(() => company.id),
   displayName: text('display_name').notNull(),
   roleInOrg: text('role_in_org'),
   yearsOfExperience: integer('years_of_experience'),

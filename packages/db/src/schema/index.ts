@@ -13,3 +13,6 @@ export * from './session-report';
 export * from './resume-document';
 export * from './skill-survey';
 export * from './skill-survey-response';
+export * from './company';
+export * from './opening';
+export * from './invitation';

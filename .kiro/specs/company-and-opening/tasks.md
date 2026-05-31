@@ -2,41 +2,41 @@
 
 ## タスク一覧
 
-- [ ] 1. DB スキーマ基盤の整備
-- [ ] 1.1 company テーブルの Drizzle スキーマを追加する
+- [x] 1. DB スキーマ基盤の整備
+- [x] 1.1 company テーブルの Drizzle スキーマを追加する
   - `packages/db/src/schema/company.ts` を新規作成し、`id` (text PK, nanoid)、`name` (text, NOT NULL)、`created_at` / `updated_at` (timestamptz, `{ withTimezone: true }`) カラムを定義する
   - `Company` / `NewCompany` 型を `$inferSelect` / `$inferInsert` で導出してエクスポートする
   - `pnpm --filter @bulr/db typecheck` が通ること
   - _Requirements: 1.1, 1.3_
 
-- [ ] 1.2 opening テーブルの Drizzle スキーマを追加する
+- [x] 1.2 opening テーブルの Drizzle スキーマを追加する
   - `packages/db/src/schema/opening.ts` を新規作成し、`id`、`company_id` (NOT NULL FK → company.id)、`title`、`description` (nullable)、`status` (pgEnum: `'draft' | 'open' | 'closed'`, NOT NULL, default `'draft'`)、`created_at` / `updated_at` (timestamptz) カラムを定義する
   - `Opening` / `NewOpening` 型をエクスポートする
   - `pnpm --filter @bulr/db typecheck` が通ること
   - _Requirements: 2.1, 2.4_
   - _Depends: 1.1_
 
-- [ ] 1.3 invitation テーブルの Drizzle スキーマを追加する
+- [x] 1.3 invitation テーブルの Drizzle スキーマを追加する
   - `packages/db/src/schema/invitation.ts` を新規作成し、`id`、`opening_id` (NOT NULL FK → opening.id)、`token` (text, NOT NULL, `.unique()`)、`created_at` (timestamptz)、`expires_at` (nullable timestamptz)、`consumed_at` (nullable timestamptz) カラムを定義する
   - `Invitation` / `NewInvitation` 型をエクスポートする
   - `pnpm --filter @bulr/db typecheck` が通ること
   - _Requirements: 3.1, 3.5, 3.6, 3.7_
   - _Depends: 1.2_
 
-- [ ] 1.4 user_profile テーブルに company_id nullable FK を追加する
+- [x] 1.4 user_profile テーブルに company_id nullable FK を追加する
   - `packages/db/src/schema/user-profile.ts` の `userProfile` テーブル定義に `companyId: text('company_id').references(() => company.id)` カラムを追加する（nullable FK）
   - 既存レコードは `company_id=NULL` のままで継続稼働できることを確認する（nullable のため migration が non-destructive であること）
   - `pnpm --filter @bulr/db typecheck` が通ること
   - _Requirements: 1.4, 1.5_
   - _Depends: 1.1_
 
-- [ ] 1.5 packages/db のバレルエクスポートを更新する
+- [x] 1.5 packages/db のバレルエクスポートを更新する
   - `packages/db/src/schema/index.ts` に `company` / `opening` / `invitation` スキーマの re-export を追加する
   - `pnpm --filter @bulr/db typecheck` が通ること
   - _Requirements: 1.3, 2.3, 3.3_
   - _Depends: 1.1, 1.2, 1.3_
 
-- [ ] 1.6 Drizzle migration ファイルを生成して開発 DB に適用する
+- [x] 1.6 Drizzle migration ファイルを生成して開発 DB に適用する
   - `drizzle-kit generate` を実行して migration SQL ファイル（`packages/db/drizzle/` 配下）を生成する
   - `drizzle-kit push`（inline env override: `DIRECT_URL=... DATABASE_URL=...`）で dev DB に `company` / `opening` / `invitation` テーブルと `user_profile.company_id` カラムが作成されること
   - psql または drizzle-studio で 3 テーブルの存在と `user_profile.company_id` カラムを確認できること
