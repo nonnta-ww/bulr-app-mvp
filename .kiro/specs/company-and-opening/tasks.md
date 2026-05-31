@@ -72,8 +72,8 @@
   - `pnpm build` が全 packages・apps で成功すること（`CANDIDATE_BASE_URL` 未設定時は起動時エラーではなく、利用箇所での fail-loud を許容）
   - _Requirements: 9.1, 9.2_
 
-- [ ] 4. 企業向け openings ルート群の実装
-- [ ] 4.1 (P) openings 一覧ページを実装する
+- [x] 4. 企業向け openings ルート群の実装
+- [x] 4.1 (P) openings 一覧ページを実装する
   - `apps/business/app/(interviewer)/openings/page.tsx` を新規作成する（Server Component）
   - `requireCompanyUser()` を呼び出して認証・企業所属を確認する
   - `company_id` でスコープした opening 一覧を `created_at` 降順で DB から取得して表示する
@@ -82,7 +82,7 @@
   - _Boundary: OpeningsListPage_
   - _Depends: 2.3_
 
-- [ ] 4.2 (P) openings 作成ページと Server Action を実装する
+- [x] 4.2 (P) openings 作成ページと Server Action を実装する
   - `apps/business/app/(interviewer)/openings/new/page.tsx` を新規作成する（Client Component: フォーム）
   - `apps/business/app/(interviewer)/openings/_actions/create-opening.ts` を新規作成する
   - Server Action: `authedAction(schema, handler)` でラップ。handler 内で `requireCompanyUser()` を呼び、`company_id` を取得して `opening` テーブルに INSERT し、`redirect(/openings/{id})` する
@@ -92,7 +92,7 @@
   - _Boundary: OpeningsNewPage, CreateOpeningAction_
   - _Depends: 2.3_
 
-- [ ] 4.3 (P) クリップボードコピーボタンコンポーネントを実装する
+- [x] 4.3 (P) クリップボードコピーボタンコンポーネントを実装する
   - `apps/business/app/(interviewer)/openings/_components/copy-url-button.tsx` を新規作成する（`'use client'`）
   - `url: string` props を受け取り、クリック時に `navigator.clipboard.writeText(url)` を呼ぶ
   - コピー成功時に「コピーしました ✓」のような一時フィードバックを表示する（useState でトグル）
