@@ -139,14 +139,14 @@
   - _Depends: 4.1（openings ルートが作成されていること）_
   - _Requirements: 5.5_
 
-- [ ] 5. 統合検証
-- [ ] 5.1 全体ビルド・タイプチェックの確認
+- [x] 5. 統合検証
+- [x] 5.1 全体ビルド・タイプチェックの確認
   - `pnpm typecheck` が全 workspace（packages/auth、packages/db、apps/business 等）で成功すること
   - `pnpm build` が全 packages と apps で成功すること
   - `requireCompanyUser` が `@bulr/auth/server` から正しく import できること
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 4.1, 4.4, 4.5, 9.2_
 
-- [ ] 5.2 smoke test: opening 作成・招待発行フローの手動確認
+- [x] 5.2 smoke test: opening 作成・招待発行フローの手動確認
   - 開発環境で `CANDIDATE_BASE_URL=http://localhost:3020` を設定して `pnpm dev` を起動する
   - company_id が設定済みのユーザーで `/openings` にアクセスし一覧が表示されること
   - `/openings/new` で title を入力して送信 → opening 詳細ページにリダイレクトされること
