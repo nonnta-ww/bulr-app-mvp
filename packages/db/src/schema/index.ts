@@ -16,3 +16,4 @@ export * from './skill-survey-response';
 export * from './company';
 export * from './opening';
 export * from './invitation';
+export * from './entry';

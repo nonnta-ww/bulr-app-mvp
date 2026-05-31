@@ -57,6 +57,13 @@
       "when": 1780186902961,
       "tag": "0007_worthless_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780212763934,
+      "tag": "0008_dark_darkstar",
+      "breakpoints": true
     }
   ]
 }
