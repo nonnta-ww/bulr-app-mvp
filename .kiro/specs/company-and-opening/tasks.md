@@ -99,7 +99,7 @@
   - _Requirements: 7.4, 8.4_
   - _Boundary: CopyUrlButton_
 
-- [ ] 4.4 opening 詳細ページを実装する
+- [x] 4.4 opening 詳細ページを実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/page.tsx` を新規作成する（Server Component）
   - `requireCompanyUser()` で認証確認後、`opening.id AND opening.company_id = companyId` でクエリし、他社 opening は `notFound()` を返す
   - opening の title / description / status を表示する
@@ -109,7 +109,7 @@
   - _Requirements: 6.1, 6.2, 6.3, 7.1_
   - _Depends: 4.3, 2.3_
 
-- [ ] 4.5 招待リンク発行 Server Action を実装する
+- [x] 4.5 招待リンク発行 Server Action を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/_actions/create-invitation.ts` を新規作成する
   - `authedAction` でラップし、handler 内で `requireCompanyUser()` を呼び出す
   - `opening.id AND company_id` で所有権を確認し、失敗時は `AuthError('NOT_FOUND')` を throw する
@@ -120,7 +120,7 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.5, 7.6, 9.3_
   - _Depends: 4.4, 3.1_
 
-- [ ] 4.6 招待一覧ページを実装する
+- [x] 4.6 招待一覧ページを実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/invitations/page.tsx` を新規作成する（Server Component）
   - `requireCompanyUser()` で認証・所有権確認後、当該 opening の全 invitation を `created_at` 降順で表示する
   - 各招待行に: 招待 URL（`CANDIDATE_BASE_URL + '/invitations/' + token` で構築）、作成日時、消費状態（`consumed_at=NULL` → 「未使用」 / それ以外 → 「使用済み」）、`CopyUrlButton` を表示する
