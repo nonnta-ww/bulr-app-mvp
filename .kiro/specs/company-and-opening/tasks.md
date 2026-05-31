@@ -43,14 +43,14 @@
   - _Requirements: 1.2, 2.2, 3.2_
   - _Depends: 1.5_
 
-- [ ] 2. requireCompanyUser 認証ガードの実装
-- [ ] 2.1 AuthErrorCode に COMPANY_NOT_ASSOCIATED を追加する
+- [x] 2. requireCompanyUser 認証ガードの実装
+- [x] 2.1 AuthErrorCode に COMPANY_NOT_ASSOCIATED を追加する
   - `packages/auth/src/errors.ts` の `AuthErrorCode` union 型に `'COMPANY_NOT_ASSOCIATED'` を追加する
   - `pnpm --filter @bulr/auth typecheck` が通ること
   - _Requirements: 4.5_
   - _Depends: 1.4_
 
-- [ ] 2.2 requireCompanyUser ガード関数を実装する
+- [x] 2.2 requireCompanyUser ガード関数を実装する
   - `packages/auth/src/guards.ts` に `requireCompanyUser` 関数を追加する
   - 実装: `requireUser()` を呼び出して認証を確認 → `user_profile` テーブルを `userId` でクエリ → `company_id` が NULL なら `AuthError('COMPANY_NOT_ASSOCIATED')` を throw → `{ user, companyId }` を返す
   - 未認証ユーザーには `AuthError('UNAUTHORIZED')` が返ること（`requireUser` に委譲）
@@ -59,7 +59,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
   - _Depends: 2.1, 1.4_
 
-- [ ] 2.3 @bulr/auth/server バレルから requireCompanyUser を re-export する
+- [x] 2.3 @bulr/auth/server バレルから requireCompanyUser を re-export する
   - `packages/auth/src/server-entry.ts` の exports に `requireCompanyUser` を追加する
   - `pnpm typecheck` が全 workspace で通ること
   - _Requirements: 4.1, 4.4_

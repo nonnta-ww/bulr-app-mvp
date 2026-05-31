@@ -26,6 +26,7 @@ export {
   requireAdmin,
   requireSessionOwnership,
   requireCandidate,
+  requireCompanyUser,
 } from './guards';
 
 // Server Action ラッパー（型安全な認可付き Server Action を提供）

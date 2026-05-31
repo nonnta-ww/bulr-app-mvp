@@ -19,7 +19,8 @@ export type AuthErrorCode =
   | 'FORBIDDEN'
   | 'SESSION_EXPIRED'
   | 'NOT_FOUND'
-  | 'CANDIDATE_PROFILE_MISSING';
+  | 'CANDIDATE_PROFILE_MISSING'
+  | 'COMPANY_NOT_ASSOCIATED';
 
 export class AuthError extends Error {
   constructor(

@@ -16,7 +16,7 @@ import 'server-only';
 import { headers } from 'next/headers';
 
 import { db } from '@bulr/db';
-import { candidateProfile } from '@bulr/db/schema';
+import { candidateProfile, userProfile } from '@bulr/db/schema';
 import { eq } from 'drizzle-orm';
 
 import { createAuth } from './server';
@@ -146,4 +146,50 @@ export async function requireCandidate(): Promise<{
   };
 
   return { user, session, candidateProfile: profile };
+}
+
+// ---------------------------------------------------------------------------
+// requireCompanyUser — 認証済み かつ user_profile に company_id が存在することを確認するガード
+//
+// company-and-opening Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+// ---------------------------------------------------------------------------
+
+export async function requireCompanyUser(): Promise<{ user: User; companyId: string }> {
+  // Step 1: UNAUTHORIZED の throw を requireUser() に委譲（design.md パターン）
+  await requireUser();
+
+  // Step 2: Better Auth フル Session データ取得（user.id を取得するため）
+  const sessionData = await auth.api.getSession({ headers: await headers() });
+
+  // Step 3: Fail-secure 二重チェック（requireUser 通過後の多層防御）
+  if (!sessionData?.user) throw new AuthError('UNAUTHORIZED');
+
+  const baUser = sessionData.user;
+
+  // user_profile を userId でクエリし company_id を取得する
+  const [profile] = await db
+    .select({ companyId: userProfile.companyId })
+    .from(userProfile)
+    .where(eq(userProfile.userId, baUser.id))
+    .limit(1);
+
+  // company_id が NULL の場合は COMPANY_NOT_ASSOCIATED を throw
+  if (!profile?.companyId) {
+    throw new AuthError('COMPANY_NOT_ASSOCIATED');
+  }
+
+  // Better Auth の getSession は optional フィールドを string | null | undefined で返すが、
+  // Drizzle $inferSelect の User 型は string | null を期待する。
+  // undefined → null に正規化して型を揃える。
+  const user: User = {
+    id: baUser.id,
+    email: baUser.email,
+    emailVerified: baUser.emailVerified,
+    name: baUser.name ?? null,
+    image: baUser.image ?? null,
+    createdAt: baUser.createdAt,
+    updatedAt: baUser.updatedAt,
+  };
+
+  return { user, companyId: profile.companyId };
 }
