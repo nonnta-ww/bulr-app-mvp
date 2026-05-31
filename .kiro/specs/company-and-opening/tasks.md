@@ -65,8 +65,8 @@
   - _Requirements: 4.1, 4.4_
   - _Depends: 2.2_
 
-- [ ] 3. CANDIDATE_BASE_URL 環境変数と Turborepo 設定
-- [ ] 3.1 turbo.json の build.env に CANDIDATE_BASE_URL を追加する
+- [x] 3. CANDIDATE_BASE_URL 環境変数と Turborepo 設定
+- [x] 3.1 turbo.json の build.env に CANDIDATE_BASE_URL を追加する
   - ルートの `turbo.json` の `pipeline.build.env`（または `tasks.build.env`）配列に `"CANDIDATE_BASE_URL"` を追加する
   - Vercel ビルド時に `CANDIDATE_BASE_URL` が `apps/business` の Next.js ビルドプロセスに届くことを確認する
   - `pnpm build` が全 packages・apps で成功すること（`CANDIDATE_BASE_URL` 未設定時は起動時エラーではなく、利用箇所での fail-loud を許容）

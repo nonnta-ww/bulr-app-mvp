@@ -19,6 +19,7 @@
         "BLOB_READ_WRITE_TOKEN",
         "ADMIN_ALLOWED_EMAILS",
         "BUSINESS_BASE_URL",
+        "CANDIDATE_BASE_URL",
         "CRON_SECRET",
         "VERCEL_URL",
         "VERCEL_ENV"
