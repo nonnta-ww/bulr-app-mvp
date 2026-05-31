@@ -263,7 +263,7 @@ export * from './entry/get-entry-with-snapshots';
 
 ## フェーズ 2: Server Actions
 
-### タスク 2.1: createEntry Server Action（候補者側）
+### タスク 2.1 ✅: createEntry Server Action（候補者側）
 
 **目的**: `pending_invitation_token` cookie を消費して `entry` を作成し、`invitation.consumed_at` をセットする Server Action を実装する。
 
@@ -375,7 +375,7 @@ export const createEntry = authedAction(
 
 ---
 
-### タスク 2.2: getResumeSignedUrlForBusiness Server Action（企業側）
+### タスク 2.2 ✅: getResumeSignedUrlForBusiness Server Action（企業側）
 
 **目的**: 企業ユーザーが候補者の履歴書を署名 URL 経由で安全に閲覧するための Server Action を実装する。
 
