@@ -30,7 +30,7 @@ bulr は2フェーズで進行する。
 ### Wave 3 — エントリー連携
 
 - [x] company-and-opening — `company` エンティティ、`opening`（募集）、`invitation` 発行（企業側 UI）。Dependencies: monorepo-app-split
-- [ ] entry-flow — `entry` エンティティ、候補者のエントリー完了フロー、企業側エントリー一覧（履歴書＋アンケート確認）。Dependencies: company-and-opening, resume-registration, skill-survey
+- [x] entry-flow — `entry` エンティティ、候補者のエントリー完了フロー、企業側エントリー一覧（履歴書＋アンケート確認）。Dependencies: company-and-opening, resume-registration, skill-survey
 - [ ] session-from-entry — 面接セッション作成を `entry` から引き継ぐよう assessment-engine を改修（候補者情報の手入力を廃止）＋スキルアンケート結果からのパターン選定支援。Dependencies: entry-flow
 
 ### Wave 4 — 候補者 engagement hook ＋ 運営機能
