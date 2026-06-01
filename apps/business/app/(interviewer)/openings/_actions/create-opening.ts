@@ -13,7 +13,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
-import { authedAction, requireCompanyUser, AuthError } from '@bulr/auth/server';
+import { authedAction, requireCompanyUser } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { opening } from '@bulr/db/schema';
 
