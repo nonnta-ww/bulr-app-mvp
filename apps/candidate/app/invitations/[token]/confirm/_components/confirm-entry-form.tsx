@@ -21,23 +21,29 @@ export function ConfirmEntryForm({ token }: ConfirmEntryFormProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isPending, startTransition] = useTransition();
 
+  function messageForCode(code: string, fallback?: string): string {
+    if (code === 'DUPLICATE_ENTRY') return '同じ募集に既にエントリー済みです。';
+    if (code === 'INVALID_TOKEN') return '招待リンクが無効です。';
+    if (code === 'ALREADY_CONSUMED') return 'この招待リンクは既に使用されています。';
+    return fallback ?? 'エラーが発生しました。もう一度お試しください。';
+  }
+
   function handleSubmit() {
     setErrorMessage('');
     startTransition(async () => {
       const result = await createEntry({ token });
-      if (result && !result.ok) {
-        const code = result.error.code;
-        if (code === 'DUPLICATE_ENTRY') {
-          setErrorMessage('同じ募集に既にエントリー済みです。');
-        } else if (code === 'INVALID_TOKEN') {
-          setErrorMessage('招待リンクが無効です。');
-        } else if (code === 'ALREADY_CONSUMED') {
-          setErrorMessage('この招待リンクは既に使用されています。');
-        } else {
-          setErrorMessage(result.error.message ?? 'エラーが発生しました。もう一度お試しください。');
-        }
+      if (!result) return;
+      // authedAction レベルのエラー（requireCandidate の AuthError / INVALID_INPUT 等）
+      if (!result.ok) {
+        setErrorMessage(messageForCode(result.error.code, result.error.message));
+        return;
       }
-      // 成功時は Server Action 内で redirect('/entries') が呼ばれる
+      // createEntry ハンドラが返す業務エラー（authedAction が { ok:true, data } でラップする）
+      const inner = result.data;
+      if (inner && !inner.ok) {
+        setErrorMessage(messageForCode(inner.error.code, inner.error.message));
+      }
+      // 成功時は Server Action 内で redirect('/entries') が呼ばれる（ここには到達しない）
     });
   }
 

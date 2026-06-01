@@ -614,40 +614,46 @@ cookie クリア時も同じ 2 名で `delete()` すること。
 
 ## フェーズ 5: 統合検証
 
-### タスク 5.1: 統合 Smoke Test の実施
+### タスク 5.1 ✅: 統合 Smoke Test の実施
 
 **目的**: エンドツーエンドのエントリーフローが正常に動作することを手動 smoke test で確認する。
+
+**結果**: 履歴書署名 URL（Blob ブロッカー）を除く全項目を確認済み。smoke test 中に以下3件のバグを検出・修正した:
+
+1. **招待 landing の Cookie 設定クラッシュ**: `/invitations/[token]/page.tsx`（Server Component）がレンダー中に `cookies().set()` を呼び 500。Route Handler（`route.ts`）に変換し Cookie をリダイレクトレスポンスに付与するよう修正。
+2. **重複エントリーが未処理エラーに**: drizzle 0.45 が unique 違反を `DrizzleQueryError` でラップし、PG の `code=23505`/制約名は `err.cause` 側にあるため検出漏れ。`isUniqueViolation()`（cause チェーン走査）を新設して `DUPLICATE_ENTRY` 変換を修正。
+3. **確認フォームがエラーを表示しない**: `confirm-entry-form.tsx` が `authedAction` の二重ラップ（`{ ok:true, data:{ ok:false } }`）を 1 段階しか読んでおらず無反応。既存の `resume-preview-button.tsx` と同じ 2 段階読みに統一。加えて confirm ページに事前「エントリー済み」表示を追加（フォーム到達前に案内）。
 
 **実施内容**:
 
 1. **DB 確認**:
-   - [ ] `entry` テーブルが DB に存在すること
-   - [ ] `UNIQUE(candidate_profile_id, opening_id)` インデックスが存在すること
-   - [ ] `entry.resume_document_id` の FK が `ON DELETE SET NULL` で定義されていること
-   - [ ] `entry_status` enum が DB に存在すること
+   - [x] `entry` テーブルが DB に存在すること
+   - [x] `UNIQUE(candidate_profile_id, opening_id)` インデックスが存在すること（`entry_candidate_opening_uniq`）
+   - [x] `entry.resume_document_id` の FK が `ON DELETE SET NULL` で定義されていること（`confdeltype='n'`）
+   - [x] `entry_status` enum が DB に存在すること（`submitted` / `reviewed` / `rejected` / `progressing`）
 
 2. **エントリー確定フロー（候補者）**:
-   - [ ] 有効な招待リンクからサインイン後、`/invitations/{token}/confirm` で会社名・募集名が表示される
-   - [ ] 「エントリーを確定する」ボタンをクリックすると entry が作成される
-   - [ ] 確定後に `/entries` にリダイレクトされる
-   - [ ] 同じ招待リンクで再度 confirm にアクセスすると「使用済みです」が表示される
+   - [x] 有効な招待リンクからサインイン後、`/invitations/{token}/confirm` で会社名・募集名が表示される
+   - [x] 「エントリーを確定する」ボタンをクリックすると entry が作成される（DB確認: status=submitted, 履歴書・アンケート snapshot 紐付け済み）
+   - [x] 確定後に `/entries` にリダイレクトされる
+   - [x] 同じ招待リンクで再度 confirm にアクセスすると「使用済みです」が表示される（cookie 一致時。不一致時は 404 ガード = 設計どおり）
 
 3. **重複エントリー防止**:
-   - [ ] 同一候補者が同一 opening に 2 回エントリーを試みると DUPLICATE_ENTRY エラーが返る
+   - [x] 同一候補者が同一 opening に 2 回エントリーを試みると DUPLICATE_ENTRY エラーが返る（修正後: confirm ページが事前に「エントリー済み」を表示しフォーム非表示。race 時は Server Action が DUPLICATE_ENTRY を返しフォームに表示）
 
 4. **候補者エントリー一覧**:
-   - [ ] `/entries` でエントリー一覧（企業名・募集名・日付・ステータス）が表示される
-   - [ ] 未認証でのアクセスが `/sign-in` にリダイレクトされる
+   - [x] `/entries` でエントリー一覧（企業名・募集名・日付・ステータス）が表示される
+   - [x] 未認証でのアクセスが `/sign-in` にリダイレクトされる（307 → /sign-in を実測）
 
 5. **企業側エントリー一覧・詳細**:
-   - [ ] `/openings/{openingId}/entries` でエントリー一覧が表示される
-   - [ ] `/openings/{openingId}/entries/{entryId}` で候補者詳細が表示される
-   - [ ] 「履歴書を確認」ボタンで署名 URL が発行され PDF が開く
-   - [ ] 他社 opening へのアクセスが 404 になる
+   - [x] `/openings/{openingId}/entries` でエントリー一覧が表示される
+   - [x] `/openings/{openingId}/entries/{entryId}` で候補者詳細が表示される
+   - [~] 「履歴書を確認」ボタンで署名 URL が発行され PDF が開く — **ローカル未検証（ブロッカー）**: `BLOB_READ_WRITE_TOKEN` 未設定のため署名 URL 発行が失敗する。Blob トークン設定済み環境で要確認。
+   - [x] 他社 opening へのアクセスが 404 になる
 
 6. **ビルドとタイプチェック**:
-   - [ ] `pnpm build` が全 packages と apps で成功すること
-   - [ ] `pnpm typecheck` が全 workspace で成功すること
+   - [x] `pnpm build` が全 packages と apps で成功すること（5/5、entry ルート出力確認）
+   - [x] `pnpm typecheck` が全 workspace で成功すること（9/9）
 
 ---
 

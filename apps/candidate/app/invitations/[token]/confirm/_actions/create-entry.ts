@@ -23,6 +23,8 @@ import { db } from '@bulr/db';
 import { entry, invitation, skillSurvey } from '@bulr/db/schema';
 import { getPrimaryResumeDocument, getLatestResponseByCandidateProfileId } from '@bulr/db';
 
+import { isUniqueViolation } from './pg-error';
+
 const createEntrySchema = z.object({
   token: z.string().min(1).regex(/^[A-Za-z0-9_-]+$/).max(256),
 });
@@ -96,12 +98,13 @@ export const createEntry = authedAction(createEntrySchema, async ({ token }, _ct
       });
     });
   } catch (err) {
-    // UNIQUE(candidate_profile_id, opening_id) 違反 → 重複エントリー
     const msg = err instanceof Error ? err.message : '';
     if (msg.includes('CONSUME_RACE')) {
       return { ok: false as const, error: { code: 'ALREADY_CONSUMED', message: '他のリクエストが先にエントリーしました' } };
     }
-    if (msg.includes('entry_candidate_opening_uniq') || msg.includes('duplicate key')) {
+    // UNIQUE(candidate_profile_id, opening_id) 違反 → 重複エントリー
+    // drizzle 0.45 は DrizzleQueryError でラップするため err.cause チェーンを辿って判定する
+    if (isUniqueViolation(err, 'entry_candidate_opening_uniq')) {
       return { ok: false as const, error: { code: 'DUPLICATE_ENTRY', message: '同じ募集に既にエントリー済みです' } };
     }
     if (err instanceof AuthError) {

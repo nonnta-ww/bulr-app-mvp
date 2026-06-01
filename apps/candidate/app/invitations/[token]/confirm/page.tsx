@@ -23,7 +23,11 @@ import { and, eq } from 'drizzle-orm';
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { invitation, opening, company, skillSurvey } from '@bulr/db/schema';
-import { getPrimaryResumeDocument, getLatestResponseByCandidateProfileId } from '@bulr/db';
+import {
+  getPrimaryResumeDocument,
+  getLatestResponseByCandidateProfileId,
+  getEntriesByCandidateProfileId,
+} from '@bulr/db';
 
 import { ConfirmEntryForm } from './_components/confirm-entry-form';
 
@@ -93,6 +97,23 @@ export default async function ConfirmEntryPage({ params }: PageProps) {
       <main className="mx-auto max-w-2xl px-4 py-8">
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-6 py-5">
           <p className="text-sm text-yellow-800">この招待リンクは既に使用されています。</p>
+        </div>
+      </main>
+    );
+  }
+
+  // この募集に既にエントリー済みかを確認（UNIQUE(candidate_profile_id, opening_id)）
+  // 済みの場合はフォームを出さず、最初の表示でその旨を案内する
+  const existingEntries = await getEntriesByCandidateProfileId(candidateProfileId);
+  const alreadyEntered = existingEntries.some((e) => e.entry.openingId === row.openingId);
+  if (alreadyEntered) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-8">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-6 py-5">
+          <p className="mb-3 text-sm text-yellow-800">この募集には既にエントリー済みです。</p>
+          <Link href="/entries" className="text-sm text-blue-600 underline hover:text-blue-800">
+            エントリー一覧を見る
+          </Link>
         </div>
       </main>
     );
