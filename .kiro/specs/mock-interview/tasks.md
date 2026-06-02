@@ -170,7 +170,7 @@
   - _Boundary: UIコンポーネント_
   - _Depends: 4.1_
 
-- [ ] 4.4 `QuotaStatus` コンポーネントを実装する (P)
+- [x] 4.4 `QuotaStatus` コンポーネントを実装する (P)
   - `apps/candidate/app/mock-interview/_components/QuotaStatus.tsx` を作成する
   - Props: `remaining: number` (0-3)
   - 「今月の残り回数: X 回」を表示する
