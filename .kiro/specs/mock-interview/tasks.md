@@ -62,7 +62,7 @@
   - _Requirements: 要件 9_
   - _Boundary: AIパッケージ_
 
-- [ ] 2.2 `conductMockInterview` 関数を実装する (P)
+- [x] 2.2 `conductMockInterview` 関数を実装する (P)
   - `packages/ai/mock/src/conduct-mock-interview.ts` を作成する
   - `conductMockInterviewOutputSchema`（`next_question`, `current_level`, `notes` フィールド）を Zod で定義する
   - `generateObject` + `claudeSonnet46` で LLM を呼び出し、構造化出力を返す

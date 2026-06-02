@@ -13,7 +13,8 @@
   "dependencies": {
     "ai": "^6.0.0",
     "@ai-sdk/anthropic": "^3.0.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@bulr/ai": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22",

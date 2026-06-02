@@ -331,6 +331,9 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.77(zod@4.4.3)
+      '@bulr/ai':
+        specifier: workspace:*
+        version: link:..
       ai:
         specifier: ^6.0.0
         version: 6.0.180(zod@4.4.3)
