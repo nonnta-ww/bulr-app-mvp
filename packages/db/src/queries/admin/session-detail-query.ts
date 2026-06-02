@@ -5,8 +5,11 @@ import { db } from '../../client';
 import { assessmentPattern } from '../../schema/assessment-pattern';
 import { user } from '../../schema/auth';
 import { candidate } from '../../schema/candidate';
+import { candidateProfile } from '../../schema/candidate-profile';
+import { entry } from '../../schema/entry';
 import { interviewSession } from '../../schema/interview-session';
 import { interviewTurn } from '../../schema/interview-turn';
+import { opening } from '../../schema/opening';
 import { patternCoverage } from '../../schema/pattern-coverage';
 import { userProfile } from '../../schema/user-profile';
 import type { AssessmentPattern } from '../../schema/assessment-pattern';
@@ -63,6 +66,8 @@ export async function sessionDetailQuery(
 ): Promise<SessionDetail | null> {
   // ----------------------------------------------------------------
   // クエリ 1: session + candidate + user (面接官) + user_profile
+  //           entry 経由セッション（stage2）では candidate_id が NULL のため
+  //           LEFT JOIN を使用し、entry → opening → candidateProfile も取得する
   // ----------------------------------------------------------------
   const sessionRows = await db
     .select({
@@ -71,11 +76,17 @@ export async function sessionDetailQuery(
       userEmail: user.email,
       userDisplayName: userProfile.displayName,
       userRoleInOrg: userProfile.roleInOrg,
+      // stage2 フィールド（entry 経由セッションのみ）
+      candidateProfileDisplayName: candidateProfile.displayName,
+      openingTitle: opening.title,
     })
     .from(interviewSession)
-    .innerJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
+    .leftJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
     .innerJoin(user, eq(interviewSession.interviewer_id, user.id))
     .leftJoin(userProfile, eq(interviewSession.interviewer_id, userProfile.userId))
+    .leftJoin(entry, eq(interviewSession.entry_id, entry.id))
+    .leftJoin(opening, eq(entry.openingId, opening.id))
+    .leftJoin(candidateProfile, eq(entry.candidateProfileId, candidateProfile.id))
     .where(eq(interviewSession.id, sessionId))
     .limit(1);
 
@@ -116,6 +127,19 @@ export async function sessionDetailQuery(
     roleInOrg: sessionRow.userRoleInOrg ?? null,
   };
 
+  // stage2 セッション（candidate_id=NULL, entry_id あり）の場合は
+  // candidateProfile / opening の情報から合成 Candidate を構築する。
+  // これにより CSV/JSON エクスポートが entry 経由セッションでも正常動作する（要件 8.4）。
+  const resolvedCandidate: Candidate = sessionRow.candidate ?? {
+    id: '',
+    name: sessionRow.candidateProfileDisplayName ?? '—',
+    applied_role: sessionRow.openingTitle ?? '—',
+    background_summary: '',
+    email: null,
+    created_at: new Date(0),
+    updated_at: new Date(0),
+  };
+
   const coverages: SessionDetailCoverage[] = coverageRows.map((row) => ({
     id: row.coverage.id,
     pattern: row.pattern,
@@ -129,7 +153,7 @@ export async function sessionDetailQuery(
 
   return {
     session: sessionRow.session,
-    candidate: sessionRow.candidate,
+    candidate: resolvedCandidate,
     interviewer,
     turns,
     coverages,

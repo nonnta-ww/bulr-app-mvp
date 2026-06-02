@@ -3,11 +3,13 @@
  *
  * Server Component。Layer 2 多層防御として requireAdmin() を先頭で呼び出す。
  * sessionDetailQuery でデータを取得し、各サブコンポーネントに渡して描画する。
+ * Stage 2（entry 経由）セッションでは getInterviewSession を二次フェッチして
+ * opening タイトル・会社名・candidateProfile.displayName を追加表示する（要件 8.3, 8.4）。
  *
  * monorepo-app-split Task 4.3 で apps/business から flat URL（/sessions/[id]）に移設。
  * 旧パス: apps/business/app/admin/sessions/[id]/page.tsx。
  *
- * Requirements: 4.1, 4.2, 4.5, 4.8, 4.9, 4.10, 4.11, 10.2, 13.1, 13.2
+ * Requirements: 4.1, 4.2, 4.5, 4.8, 4.9, 4.10, 4.11, 10.2, 13.1, 13.2, 8.3, 8.4
  * Boundary: SessionDetailPage (this file only)
  * Depends: 5.1 ✓ (ProfileDisplay), 5.2 ✓ (InterviewerDisplay),
  *          5.4 ✓ (ChatMessageTimeline), 5.5 ✓ (AnswerCard), 5.6 ✓ (ReportLink)
@@ -22,6 +24,8 @@ import { InterviewerDisplay } from '@/app/_components/interviewer-display';
 import { ProfileDisplay } from '@/app/_components/profile-display';
 import { ReportLink } from '@/app/_components/report-link';
 import { AuthError, requireAdmin } from '@bulr/auth/server';
+import { getInterviewSession } from '@bulr/db';
+import type { InterviewSessionResult } from '@bulr/db';
 import { sessionDetailQuery } from '@bulr/db/queries/admin';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +88,32 @@ function Term({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+/**
+ * entry 経由セッション（stage2）の場合に opening / company / candidateProfile を表示する。
+ * stage1 セッション（entry_id=NULL）では null を返す（要件 8.3）。
+ */
+function EntryInfoSection({ sessionResult }: { sessionResult: InterviewSessionResult }) {
+  if (sessionResult.kind === 'stage1') return null;
+
+  const { opening, company, candidateProfile } = sessionResult;
+
+  return (
+    <section aria-labelledby="entry-info-heading">
+      <h2
+        id="entry-info-heading"
+        className="mb-3 text-base font-semibold text-gray-900"
+      >
+        エントリー情報
+      </h2>
+      <dl className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white px-4">
+        <Term label="候補者名">{candidateProfile.displayName}</Term>
+        <Term label="募集ポジション">{opening.title}</Term>
+        <Term label="企業名">{company.name}</Term>
+      </dl>
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // ページコンポーネント
 // ---------------------------------------------------------------------------
@@ -115,8 +145,12 @@ export default async function SessionDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // DBクエリ
-  const detail = await sessionDetailQuery(parsed.data);
+  // DBクエリ（sessionDetailQuery は既存の eval/export パスに使い続ける）
+  // getInterviewSession は entry 経由セッションのコンテキスト表示専用の二次フェッチ（要件 8.3, 8.4）
+  const [detail, sessionResult] = await Promise.all([
+    sessionDetailQuery(parsed.data),
+    getInterviewSession(parsed.data),
+  ]);
   if (detail === null) {
     notFound();
   }
@@ -147,6 +181,11 @@ export default async function SessionDetailPage({ params }: PageProps) {
 
       {/* 候補者情報 */}
       <ProfileDisplay candidate={candidateInfo} />
+
+      {/* entry 経由セッション（stage2）の場合: opening / 会社名 / 候補者プロフィール（要件 8.3） */}
+      {sessionResult !== null && (
+        <EntryInfoSection sessionResult={sessionResult} />
+      )}
 
       {/* 面接官情報 */}
       <InterviewerDisplay interviewer={interviewer} />

@@ -184,7 +184,7 @@
   - _Depends: 1.1_
   - _Boundary: AdminSessionList_
 
-- [ ] 8.2 (P) admin セッション詳細に entry 情報を追加表示する
+- [x] 8.2 (P) admin セッション詳細に entry 情報を追加表示する
   - `packages/db/src/queries/admin/session-detail-query.ts` を更新して entry 経由 JOIN を追加する（または `getInterviewSession` を利用する）
   - `apps/admin/app/sessions/[id]/page.tsx` を更新して `entry_id IS NOT NULL` の場合に opening タイトル・会社名・candidateProfile.displayName を追加表示する
   - `/admin/sessions/{id}` で entry 経由セッションの opening / entry 情報が表示されること
