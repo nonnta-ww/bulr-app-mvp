@@ -194,7 +194,7 @@
   - _Requirements: 要件 6, 10_
   - _Boundary: UIページ_
 
-- [ ] 5.2 `MockInterviewChat` Client Component を実装する (P)
+- [x] 5.2 `MockInterviewChat` Client Component を実装する (P)
   - `apps/candidate/app/mock-interview/[sessionId]/_components/MockInterviewChat.tsx` を作成する（`'use client'`）
   - State: `history: TurnItem[]`, `isLoading: boolean`, `accumulatedUsage: { input_tokens: number, output_tokens: number }`
   - セッション開始時（履歴が空の場合）に `/api/mock-interview/turns/next` を呼び出し最初の質問を取得する
