@@ -74,7 +74,7 @@
   - _Boundary: AIパッケージ_
   - _Depends: 2.1_
 
-- [ ] 2.3 `generateFormativeFeedback` 関数を実装する (P)
+- [x] 2.3 `generateFormativeFeedback` 関数を実装する (P)
   - `packages/ai/mock/src/generate-formative-feedback.ts` を作成する
   - `generateFormativeFeedbackOutputSchema`（`authenticity`, `judgment`, `scope`, `meta_cognition`, `ai_literacy`, `overall` フィールド）を Zod で定義する
   - `generateObject` + `claudeSonnet46` で LLM を呼び出し、構造化出力を返す
