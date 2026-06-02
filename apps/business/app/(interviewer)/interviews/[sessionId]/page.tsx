@@ -1,19 +1,20 @@
 /**
  * 面接中ページ（Server Component）
  *
- * Requirements: 5.1, 5.3, 5.6, 6.1, 20.5
+ * Requirements: 5.1, 5.2, 5.3, 5.6, 6.1, 20.5
  */
 
 import { notFound, redirect } from 'next/navigation';
 import { inArray } from 'drizzle-orm';
 
-import { db } from '@bulr/db';
+import { db, getInterviewSession } from '@bulr/db';
 import { assessmentPattern } from '@bulr/db/schema';
 import type { AssessmentPattern } from '@bulr/db/schema';
 import { loadSessionWithTurns } from '@bulr/db/queries';
 import { requireUser } from '@bulr/auth/server';
 
 import { InterviewSessionRunner } from '../_components/interview-session-runner';
+import { SessionHeader } from './_components/session-header';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -47,6 +48,13 @@ export default async function InterviewSessionPage({ params }: Props) {
 
   const { session, candidate, turns, latestProposal, proposals } = data;
 
+  // SessionHeader 用にセッション拡張データを取得（Stage 1/2 分岐表示）
+  const interviewSessionResult = await getInterviewSession(sessionId);
+
+  if (!interviewSessionResult) {
+    notFound();
+  }
+
   // 完了済みの場合はレポートページへリダイレクト
   if (session.status === 'completed') {
     redirect('/interviews/' + sessionId + '/report');
@@ -68,13 +76,16 @@ export default async function InterviewSessionPage({ params }: Props) {
   }
 
   return (
-    <InterviewSessionRunner
-      session={session}
-      turns={turns}
-      latestProposal={latestProposal}
-      candidate={candidate}
-      plannedPatterns={plannedPatterns}
-      proposals={proposals}
-    />
+    <div className="flex flex-col gap-4">
+      <SessionHeader session={interviewSessionResult} />
+      <InterviewSessionRunner
+        session={session}
+        turns={turns}
+        latestProposal={latestProposal}
+        candidate={candidate}
+        plannedPatterns={plannedPatterns}
+        proposals={proposals}
+      />
+    </div>
   );
 }

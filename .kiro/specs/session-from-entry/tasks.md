@@ -119,7 +119,7 @@
   - _Depends: 2.1_
   - _Boundary: SessionHeader_
 
-- [ ] 5.2 (P) 面接アシスタントページに `SessionHeader` を組み込む
+- [x] 5.2 (P) 面接アシスタントページに `SessionHeader` を組み込む
   - `apps/business/app/(interviewer)/interviews/[sessionId]/page.tsx` を更新する
   - `getInterviewSession(sessionId)` を使ってセッションデータを取得する
   - `<SessionHeader session={session} />` を面接 UI の上部に配置する
