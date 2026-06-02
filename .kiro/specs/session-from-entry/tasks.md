@@ -216,6 +216,7 @@
 
 ## Implementation Notes
 
+- **9.2 で検出したバグ（loadSessionWithTurns）**: 面接ページの既存ローダー `packages/db/src/queries/interview/load-session-with-turns.ts` が `innerJoin(candidate, eq(interviewSession.candidate_id, candidate.id))` していたため、Stage 2 セッション(candidate_id=NULL)で0行→null→`notFound()`→404。8.2 の admin 詳細クエリと同型のバグ。leftJoin 化 + entry→opening→candidateProfile から合成 Candidate を構築して修正（SessionWithTurns.candidate: Candidate 契約は維持）。req 5.1/5.2 の Stage 2 面接UI表示に必須。
 - **4.1**: `SkillSurveyResponseWithAnswers` は選択肢ラベル文字列を持たず `selectedChoiceIds`(ID) のみ。`getLatestResponseByCandidateProfileId` も `skill_survey_choice` を JOIN しない。よって matchPatterns は「選択肢テキスト」の代わりに `question.body` + `answer.freeText` をトークン源にした（純関数境界内で取得可能な最善）。4.2 が表示する matchedKeywords もこの語源。
 - **1.1**: `candidate_id` の nullable 化により downstream で型エラーが出る。task 9.1 で修正対象:
   - `apps/business/lib/queries/build-llm-context.ts:34` — `eq(schema.candidate.id, session.candidate_id)` が `string | null` 不可で TS2769。null ガードか非nullアサートが必要。
