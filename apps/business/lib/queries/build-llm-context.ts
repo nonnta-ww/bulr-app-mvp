@@ -30,9 +30,11 @@ export async function buildLlmContext(
   const { session, userId, currentPattern } = input;
 
   const [candidate, interviewerProfile] = await Promise.all([
-    db.query.candidate.findFirst({
-      where: eq(schema.candidate.id, session.candidate_id),
-    }),
+    session.candidate_id != null
+      ? db.query.candidate.findFirst({
+          where: eq(schema.candidate.id, session.candidate_id),
+        })
+      : Promise.resolve(undefined),
     db.query.userProfile.findFirst({
       where: eq(schema.userProfile.userId, userId),
     }),

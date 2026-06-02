@@ -195,7 +195,7 @@
 
 - [ ] 9. Integration: 全体統合・ビルド検証
 
-- [ ] 9.1 全 packages・apps のタイプチェックとビルドが通ることを確認する
+- [x] 9.1 全 packages・apps のタイプチェックとビルドが通ることを確認する
   - `pnpm typecheck` を実行して全 workspace でエラーがないことを確認する
   - `pnpm build` を実行して全 packages + apps (business, admin, candidate) がビルド成功することを確認する
   - `candidate_id` nullable 化により影響を受けた既存コードがある場合は修正する（Stage 1 セッション作成フロー等）
