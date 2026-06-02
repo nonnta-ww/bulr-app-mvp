@@ -228,7 +228,7 @@
 - [ ] 7. 統合スモークテスト（型チェック・ビルド・手動検証）
   - _Depends: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 6.1_
 
-- [ ] 7.1 `pnpm typecheck` と `pnpm build` が全パッケージ・アプリで通過する
+- [x] 7.1 `pnpm typecheck` と `pnpm build` が全パッケージ・アプリで通過する
   - `pnpm typecheck` がエラーなし（`packages/db`, `packages/ai/mock`, `apps/candidate` 全て）
   - `pnpm build` が `packages/ai/mock`, `packages/db`, `apps/candidate` でエラーなし
   - _Requirements: 要件 8, 9_
