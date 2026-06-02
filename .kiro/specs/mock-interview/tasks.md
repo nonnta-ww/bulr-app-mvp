@@ -114,7 +114,7 @@
   - _Requirements: 要件 3, 6, 7_
   - _Boundary: APIRoute_
 
-- [ ] 3.2 `/api/mock-interview/finalize` Route Handler を実装する (P)
+- [x] 3.2 `/api/mock-interview/finalize` Route Handler を実装する (P)
   - `apps/candidate/app/api/mock-interview/finalize/route.ts` を作成する
   - `requireCandidate()` で認証・candidateProfileId 取得
   - リクエストボディを Zod で検証（`sessionId`, `history`, `patternCode`, `accumulatedUsage`）
