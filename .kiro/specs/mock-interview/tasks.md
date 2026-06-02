@@ -132,7 +132,7 @@
 - [ ] 4. Server Action・パターン選択 UI を実装する
   - _Depends: 1.4, 1.5_
 
-- [ ] 4.1 `createMockInterviewSessionAction` Server Action を実装する (P)
+- [x] 4.1 `createMockInterviewSessionAction` Server Action を実装する (P)
   - `apps/candidate/app/mock-interview/_actions/create-session.ts` を作成する（`'use server'`）
   - `requireCandidate()` で認証・candidateProfileId 取得
   - `db.select({ quotaResetAt: candidateProfile.quotaResetAt }).from(candidateProfile).where(eq(candidateProfile.id, profile.id))` で `quota_reset_at` を取得する
