@@ -101,7 +101,7 @@
 - [ ] 3. API Routes を実装する
   - _Depends: 1.4, 2.4_
 
-- [ ] 3.1 `/api/mock-interview/turns/next` Route Handler を実装する (P)
+- [x] 3.1 `/api/mock-interview/turns/next` Route Handler を実装する (P)
   - `apps/candidate/app/api/mock-interview/turns/next/route.ts` を作成する
   - `requireCandidate()` で認証・candidateProfileId 取得
   - リクエストボディを Zod で検証（`sessionId`, `userMessage`, `history`, `patternCode`）
