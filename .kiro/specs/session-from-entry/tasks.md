@@ -50,7 +50,7 @@
 
 - [ ] 3. Core: createSessionFromEntry Server Action 実装
 
-- [ ] 3.1 `createSessionFromEntry` Server Action を実装する
+- [x] 3.1 `createSessionFromEntry` Server Action を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_actions/create-session-from-entry.ts` を新規作成する
   - `authedAction` + `requireCompanyUser` の二重防御パターンで認証・認可する
   - `getEntryWithSnapshots(entryId)` で entry を取得し、`entry.opening.companyId === companyId` の所有権を検証する
