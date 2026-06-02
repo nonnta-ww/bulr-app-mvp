@@ -110,18 +110,16 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    // React Strict Mode の二重呼び出しを防ぐ
+    // React Strict Mode の二重呼び出しを防ぐ（ref ガードで 1 回だけ fetch を発行）
     if (initialFetchCalledRef.current) return;
     initialFetchCalledRef.current = true;
-
-    let cancelled = false;
 
     async function fetchInitialQuestion() {
       setIsLoading(true);
       setErrorMessage('');
       try {
         const data = await fetchNextQuestion([]);
-        if (cancelled || !data) return;
+        if (!data) return;
         const interviewerTurn: TurnItem = { role: 'interviewer', content: data.question };
         setHistory([interviewerTurn]);
         setAccumulatedUsage((prev) => ({
@@ -129,21 +127,15 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
           output_tokens: prev.output_tokens + data.usage.output_tokens,
         }));
       } catch (err) {
-        if (!cancelled) {
-          setErrorMessage(
-            err instanceof Error ? err.message : '初期質問の取得に失敗しました。',
-          );
-        }
+        setErrorMessage(
+          err instanceof Error ? err.message : '初期質問の取得に失敗しました。',
+        );
       } finally {
-        if (!cancelled) setIsLoading(false);
+        setIsLoading(false);
       }
     }
 
     void fetchInitialQuestion();
-
-    return () => {
-      cancelled = true;
-    };
   }, [fetchNextQuestion]);
 
   // ---------------------------------------------------------------------------

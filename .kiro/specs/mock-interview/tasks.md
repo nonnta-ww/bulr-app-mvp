@@ -253,4 +253,7 @@
 
 ## Implementation Notes
 
+- **7.3 で検出したバグ（MockInterviewChat 初回 fetch が strict mode で永久ローディング）**: `useRef` ガード + `cancelled` クリーンアップフラグの併用が非互換。dev の strict mode 二重 mount で、Mount1 の cleanup が `cancelled=true` にし、Mount1 の唯一の fetch 結果を破棄、Mount2 は ref ガードで fetch せず → 永久「面接官が準備中です...」。prod では出ない（strict mode のみ）。修正: `cancelled` 破棄を撤去し ref ガードのみで単一 fetch を担保、`setIsLoading(false)` を finally で無条件実行。
+
+
 - **1.1/1.3**: mock_interview のインデックス(candidate_profile_id, created_at)は schema(1.1) で `index()` 宣言が必要。当初 1.1 で未宣言→1.3 の生成 SQL に出ず、schema にインデックス宣言追加+migration 再生成で是正。drizzle のメタ(0010 重複)整理のため baseline を 0009 に戻して単一 0010 を再生成した。
