@@ -18,7 +18,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   - _Boundary: InterviewSessionSchema_
 
-- [ ] 1.2 drizzle-kit で migration ファイルを生成し dev DB に適用する
+- [x] 1.2 drizzle-kit で migration ファイルを生成し dev DB に適用する
   - `pnpm --filter @bulr/db drizzle-kit generate` で migration SQL ファイルを生成する
   - 生成された SQL に `ALTER COLUMN candidate_id DROP NOT NULL` と `ADD COLUMN entry_id` が含まれることを確認する
   - `DATABASE_URL` inline env override を使用して `drizzle-kit push` で dev DB に適用する

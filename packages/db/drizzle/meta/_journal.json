@@ -64,6 +64,13 @@
       "when": 1780212763934,
       "tag": "0008_dark_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780400375622,
+      "tag": "0009_lumpy_celestials",
+      "breakpoints": true
     }
   ]
 }
