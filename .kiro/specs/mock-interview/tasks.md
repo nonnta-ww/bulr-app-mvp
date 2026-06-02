@@ -143,7 +143,7 @@
   - _Requirements: 要件 1, 2, 6_
   - _Boundary: ServerAction_
 
-- [ ] 4.2 パターン選択画面（`/mock-interview`）を実装する (P)
+- [x] 4.2 パターン選択画面（`/mock-interview`）を実装する (P)
   - `apps/candidate/app/mock-interview/page.tsx`（Server Component）を作成する
   - `requireCandidate()` でガード（未認証 → `/sign-in`、プロフィール未設定 → `/onboarding`）
   - `candidate_profile.quota_reset_at` を SELECT して取得する
