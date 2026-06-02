@@ -30,7 +30,7 @@
   - _Requirements: 要件 8, 要件 1_
   - _Depends: 1.1_
 
-- [ ] 1.4 `mock_interview` クエリ関数を実装する (P)
+- [x] 1.4 `mock_interview` クエリ関数を実装する (P)
   - `packages/db/src/queries/mock-interview.ts` に以下の関数を実装する
     - `countMockInterviewsInQuotaWindow(candidateProfileId: string, quotaResetAt: Date | null): Promise<number>` — クォータウィンドウ内の件数を返す。ウィンドウ開始 = `GREATEST(date_trunc('month', now()), COALESCE(quotaResetAt, date_trunc('month', now())))` をアプリ層で計算し、`WHERE created_at >= windowStart` で絞り込む（または SQL の `GREATEST`/`COALESCE` を Drizzle の `sql` タグで直接使用する）
     - `createMockInterview({ candidateProfileId, patternCode })` — INSERT し生成レコードを返す
