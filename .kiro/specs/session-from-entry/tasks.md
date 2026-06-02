@@ -1,6 +1,6 @@
 # Implementation Plan — session-from-entry
 
-- [ ] 1. Foundation: interview_session スキーマ拡張と migration
+- [x] 1. Foundation: interview_session スキーマ拡張と migration
 
 - [x] 1.1 `interview_session` テーブルに `entry_id` カラムを追加し、`candidate_id` を nullable 化する
   - `packages/db/src/schema/interview-session.ts` の `candidateId` から `.notNull()` を削除する
@@ -27,7 +27,7 @@
   - _Depends: 1.1_
   - _Boundary: DrizzleMigration_
 
-- [ ] 2. Foundation: getInterviewSession クエリ実装
+- [x] 2. Foundation: getInterviewSession クエリ実装
 
 - [x] 2.1 `getInterviewSession` クエリ関数を実装する
   - `packages/db/src/queries/interview/get-interview-session.ts` を新規作成する
@@ -48,7 +48,7 @@
   - _Depends: 2.1, entry-flow タスク 1.3_ (queries/index.ts は entry-flow が entry クエリを追記した後に本 spec が getInterviewSession を追記する。ファイル全体を置換せず追記すること)
   - _Boundary: GetInterviewSession_
 
-- [ ] 3. Core: createSessionFromEntry Server Action 実装
+- [x] 3. Core: createSessionFromEntry Server Action 実装
 
 - [x] 3.1 `createSessionFromEntry` Server Action を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_actions/create-session-from-entry.ts` を新規作成する
@@ -62,7 +62,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
   - _Boundary: CreateSessionFromEntryAction_
 
-- [ ] 4. Core: パターン選定支援 UI 実装（apps/business、entry 詳細ページ拡張）(P)
+- [x] 4. Core: パターン選定支援 UI 実装（apps/business、entry 詳細ページ拡張）(P)
 
 - [x] 4.1 (P) `PatternMatchingUtil` キーワードマッチング純関数を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_lib/pattern-matching.ts` を新規作成する（またはコンポーネントと同じファイル内の純関数でも可）
@@ -108,7 +108,7 @@
   - _Depends: 4.1, 4.2, 4.3, entry-flow タスク 4.2_ (entry-flow が作成する entry 詳細ページに本 spec が追記する形のため、entry-flow 4.2 完了が前提)
   - _Boundary: BusinessEntryDetailPage_
 
-- [ ] 5. Core: 面接アシスタント UI ヘッダー Stage 1/2 分岐 (P)
+- [x] 5. Core: 面接アシスタント UI ヘッダー Stage 1/2 分岐 (P)
 
 - [x] 5.1 (P) `SessionHeader` コンポーネントを実装する
   - `apps/business/app/(interviewer)/interviews/[sessionId]/_components/session-header.tsx` を新規作成する
@@ -129,7 +129,7 @@
   - _Depends: 5.1_
   - _Boundary: InterviewSessionPage_
 
-- [ ] 6. Core: 面接後レポート Stage 2 拡張 (P)
+- [x] 6. Core: 面接後レポート Stage 2 拡張 (P)
 
 - [x] 6.1 (P) `EntryContextSection` コンポーネントを実装する
   - `apps/business/app/(interviewer)/interviews/[sessionId]/report/_components/entry-context-section.tsx` を新規作成する
@@ -152,7 +152,7 @@
   - _Depends: 6.1_
   - _Boundary: ReportPage_
 
-- [ ] 7. Core: /interviews/new ナビゲーション非表示化 (P)
+- [x] 7. Core: /interviews/new ナビゲーション非表示化 (P)
 
 - [x] 7.1 (P) `apps/business` ナビゲーションから `/interviews/new` へのリンクを削除する
   - `apps/business` の layout.tsx または nav コンポーネントファイルを特定する
@@ -163,7 +163,7 @@
   - _Requirements: 7.1, 7.2, 7.3_
   - _Boundary: Nav_
 
-- [ ] 8. Core: admin セッション一覧・詳細 entry 経由対応 (P)
+- [x] 8. Core: admin セッション一覧・詳細 entry 経由対応 (P)
 
 - [x] 8.1 (P) admin セッション一覧クエリを拡張して entry 経由セッションの候補者名を取得できるようにする
   - 注意: 実装前に admin セッション一覧クエリの現在のファイルパスを確認すること:
@@ -193,7 +193,7 @@
   - _Depends: 2.1_
   - _Boundary: AdminSessionDetail_
 
-- [ ] 9. Integration: 全体統合・ビルド検証
+- [x] 9. Integration: 全体統合・ビルド検証
 
 - [x] 9.1 全 packages・apps のタイプチェックとビルドが通ることを確認する
   - `pnpm typecheck` を実行して全 workspace でエラーがないことを確認する
@@ -202,7 +202,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 6.1, 7.1, 7.2, 8.1, 8.2_
   - _Depends: 4.4, 5.2, 6.2, 7.1, 8.1, 8.2_
 
-- [ ] 9.2 entry 経由セッション作成の E2E smoke test を手動で実施する
+- [x] 9.2 entry 経由セッション作成の E2E smoke test を手動で実施する
   - dev 環境で `/openings/{openingId}/entries/{entryId}` にアクセスしパターン選定支援 UI が表示されること
   - パターンを選択して「面接セッションを作成」を押下し、`interview_session` が entry_id 付きで作成され、`entry.status='progressing'` になること
   - 作成後 `/interviews/{sessionId}` に遷移し、Stage 2 ヘッダー（candidateProfile.displayName + opening.title）が表示されること
