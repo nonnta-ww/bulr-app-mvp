@@ -6,9 +6,9 @@
 
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { desc, eq, count } from 'drizzle-orm';
+import { desc, eq, count, sql } from 'drizzle-orm';
 import { db } from '@bulr/db';
-import { interviewSession, interviewTurn, candidate } from '@bulr/db/schema';
+import { interviewSession, interviewTurn, candidate, entry, opening, candidateProfile } from '@bulr/db/schema';
 import { requireUser } from '@bulr/auth/server';
 
 // ---------------------------------------------------------------------------
@@ -57,13 +57,23 @@ export default async function InterviewsPage() {
   }
 
   // セッション一覧と候補者情報を JOIN で取得
+  // Stage 1: candidate_id NOT NULL → candidate から名前・職種を取得
+  // Stage 2: entry_id NOT NULL, candidate_id NULL → entry → opening / candidateProfile から取得
   const rows = await db
     .select({
       session: interviewSession,
-      candidate: candidate,
+      // Stage 2 (entry 経由) は candidateProfile.displayName を優先、Stage 1 は candidate.name
+      candidateName: sql<string>`COALESCE(${candidateProfile.displayName}, ${candidate.name}, '—')`,
+      // Stage 2 は opening.title を優先、Stage 1 は candidate.applied_role
+      appliedRole: sql<string>`COALESCE(${opening.title}, ${candidate.applied_role}, '—')`,
     })
     .from(interviewSession)
-    .innerJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
+    // candidate_id は Stage 2 で NULL → LEFT JOIN
+    .leftJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
+    // entry 経由セッション用 LEFT JOIN
+    .leftJoin(entry, eq(interviewSession.entry_id, entry.id))
+    .leftJoin(opening, eq(entry.openingId, opening.id))
+    .leftJoin(candidateProfile, eq(entry.candidateProfileId, candidateProfile.id))
     .where(eq(interviewSession.interviewer_id, user.id))
     .orderBy(desc(interviewSession.created_at));
 
@@ -106,7 +116,7 @@ export default async function InterviewsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.map(({ session, candidate: cand }) => {
+                {rows.map(({ session, candidateName, appliedRole }) => {
                   const turns = turnCountMap.get(session.id) ?? 0;
                   const href =
                     session.status === 'completed'
@@ -115,8 +125,8 @@ export default async function InterviewsPage() {
 
                   return (
                     <tr key={session.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{cand.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{cand.applied_role}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{candidateName}</td>
+                      <td className="px-4 py-3 text-gray-600">{appliedRole}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[session.status] ?? 'bg-gray-100 text-gray-600'}`}

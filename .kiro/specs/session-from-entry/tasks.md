@@ -216,6 +216,7 @@
 
 ## Implementation Notes
 
+- **9.2 で検出したバグ（business セッション一覧）**: `apps/business/app/(interviewer)/interviews/page.tsx` の一覧クエリも `innerJoin(candidate)` で Stage 2 セッションが脱落し /interviews に出なかった。leftJoin 化 + entry→opening→candidateProfile + COALESCE(displayName,name)/(opening.title,applied_role) で修正（admin 8.1 と同型）。なお admin 一覧は status='draft' を常に除外する既存仕様のため、draft の Stage 2 セッションが出ないのは正常（面接開始で in_progress 以上になれば表示）。
 - **9.2 で検出したバグ（loadSessionWithTurns）**: 面接ページの既存ローダー `packages/db/src/queries/interview/load-session-with-turns.ts` が `innerJoin(candidate, eq(interviewSession.candidate_id, candidate.id))` していたため、Stage 2 セッション(candidate_id=NULL)で0行→null→`notFound()`→404。8.2 の admin 詳細クエリと同型のバグ。leftJoin 化 + entry→opening→candidateProfile から合成 Candidate を構築して修正（SessionWithTurns.candidate: Candidate 契約は維持）。req 5.1/5.2 の Stage 2 面接UI表示に必須。
 - **4.1**: `SkillSurveyResponseWithAnswers` は選択肢ラベル文字列を持たず `selectedChoiceIds`(ID) のみ。`getLatestResponseByCandidateProfileId` も `skill_survey_choice` を JOIN しない。よって matchPatterns は「選択肢テキスト」の代わりに `question.body` + `answer.freeText` をトークン源にした（純関数境界内で取得可能な最善）。4.2 が表示する matchedKeywords もこの語源。
 - **1.1**: `candidate_id` の nullable 化により downstream で型エラーが出る。task 9.1 で修正対象:
