@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 
 import { candidate } from './candidate';
 import { user } from './auth';
+import { entry } from './entry';
 
 export const sessionStatus = pgEnum('interview_session_status', [
   'draft',
@@ -19,7 +20,6 @@ export const interviewSession = pgTable('interview_session', {
     .notNull()
     .references(() => user.id),
   candidate_id: text('candidate_id')
-    .notNull()
     .references(() => candidate.id),
   status: sessionStatus('status').notNull().default('draft'),
   role: text('role').notNull().default('backend'),
@@ -32,6 +32,7 @@ export const interviewSession = pgTable('interview_session', {
   completed_at: timestamp('completed_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  entry_id: text('entry_id').references(() => entry.id),
 });
 
 export type InterviewSession = typeof interviewSession.$inferSelect;

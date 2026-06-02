@@ -2,7 +2,7 @@
 
 - [ ] 1. Foundation: interview_session スキーマ拡張と migration
 
-- [ ] 1.1 `interview_session` テーブルに `entry_id` カラムを追加し、`candidate_id` を nullable 化する
+- [x] 1.1 `interview_session` テーブルに `entry_id` カラムを追加し、`candidate_id` を nullable 化する
   - `packages/db/src/schema/interview-session.ts` の `candidateId` から `.notNull()` を削除する
   - `entryId: text('entry_id').references(() => entry.id)` カラムを追加する（nullable FK）
   - `entry` スキーマのインポートを追加する
@@ -211,3 +211,11 @@
   - `/admin/sessions` で entry 経由セッションが正しい候補者名で表示されること
   - _Requirements: 2.6, 3.5, 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 7.2, 7.3, 8.1, 8.3_
   - _Depends: 9.1_
+
+---
+
+## Implementation Notes
+
+- **1.1**: `candidate_id` の nullable 化により downstream で型エラーが出る。task 9.1 で修正対象:
+  - `apps/business/lib/queries/build-llm-context.ts:34` — `eq(schema.candidate.id, session.candidate_id)` が `string | null` 不可で TS2769。null ガードか非nullアサートが必要。
+  - 参考: `apps/business/lib/actions/create-session.ts:82`、`apps/business/app/(interviewer)/interviews/page.tsx:66` も `candidate_id` を使用（現状エラーなしだが getInterviewSession 移行時に要確認）。
