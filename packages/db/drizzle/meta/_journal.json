@@ -71,6 +71,13 @@
       "when": 1780400375622,
       "tag": "0009_lumpy_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780418156952,
+      "tag": "0010_many_namor",
+      "breakpoints": true
     }
   ]
 }

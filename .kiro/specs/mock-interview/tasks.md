@@ -22,7 +22,7 @@
   - _Boundary: DBスキーマ_
   - _Depends: 1.1_
 
-- [ ] 1.3 drizzle-kit で migration ファイルを生成・適用する
+- [x] 1.3 drizzle-kit で migration ファイルを生成・適用する
   - `pnpm drizzle-kit generate` を実行し migration ファイルが生成されること
   - `pnpm drizzle-kit push`（開発 DB）または `pnpm drizzle-kit migrate`（本番 DB）で `mock_interview` テーブルが作成されること
   - `candidate_profile_id` と `created_at` のインデックスが生成 SQL に含まれること
@@ -248,3 +248,9 @@
   - 別候補者のセッション URL（`/mock-interview/[他人のsessionId]`）に直接アクセスして 404 が返ること
   - 未認証状態で `/mock-interview` にアクセスして `/sign-in` にリダイレクトされること
   - _Requirements: 要件 6_
+
+---
+
+## Implementation Notes
+
+- **1.1/1.3**: mock_interview のインデックス(candidate_profile_id, created_at)は schema(1.1) で `index()` 宣言が必要。当初 1.1 で未宣言→1.3 の生成 SQL に出ず、schema にインデックス宣言追加+migration 再生成で是正。drizzle のメタ(0010 重複)整理のため baseline を 0009 に戻して単一 0010 を再生成した。
