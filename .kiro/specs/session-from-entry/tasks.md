@@ -64,7 +64,7 @@
 
 - [ ] 4. Core: パターン選定支援 UI 実装（apps/business、entry 詳細ページ拡張）(P)
 
-- [ ] 4.1 (P) `PatternMatchingUtil` キーワードマッチング純関数を実装する
+- [x] 4.1 (P) `PatternMatchingUtil` キーワードマッチング純関数を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_lib/pattern-matching.ts` を新規作成する（またはコンポーネントと同じファイル内の純関数でも可）
   - `matchPatterns(answers, patterns)` を実装する：回答テキスト（選択肢 + 記述）の単語セットと、各パターンの `title + description` の単語セットをキーワードマッチングする
   - `matchScore > 0` のパターンを `matchScore` 降順で返す
@@ -216,6 +216,7 @@
 
 ## Implementation Notes
 
+- **4.1**: `SkillSurveyResponseWithAnswers` は選択肢ラベル文字列を持たず `selectedChoiceIds`(ID) のみ。`getLatestResponseByCandidateProfileId` も `skill_survey_choice` を JOIN しない。よって matchPatterns は「選択肢テキスト」の代わりに `question.body` + `answer.freeText` をトークン源にした（純関数境界内で取得可能な最善）。4.2 が表示する matchedKeywords もこの語源。
 - **1.1**: `candidate_id` の nullable 化により downstream で型エラーが出る。task 9.1 で修正対象:
   - `apps/business/lib/queries/build-llm-context.ts:34` — `eq(schema.candidate.id, session.candidate_id)` が `string | null` 不可で TS2769。null ガードか非nullアサートが必要。
   - 参考: `apps/business/lib/actions/create-session.ts:82`、`apps/business/app/(interviewer)/interviews/page.tsx:66` も `candidate_id` を使用（現状エラーなしだが getInterviewSession 移行時に要確認）。
