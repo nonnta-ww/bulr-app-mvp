@@ -84,24 +84,12 @@ export default async function InterviewsPage() {
         {/* ヘッダー */}
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">面接セッション一覧</h1>
-          <Link
-            href="/interviews/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            新規セッション作成
-          </Link>
         </div>
 
         {/* セッション一覧 */}
         {rows.length === 0 ? (
           <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
             <p className="text-gray-500">まだ面接セッションがありません。</p>
-            <Link
-              href="/interviews/new"
-              className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              最初のセッションを作成する
-            </Link>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">

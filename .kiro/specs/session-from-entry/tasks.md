@@ -154,7 +154,7 @@
 
 - [ ] 7. Core: /interviews/new ナビゲーション非表示化 (P)
 
-- [ ] 7.1 (P) `apps/business` ナビゲーションから `/interviews/new` へのリンクを削除する
+- [x] 7.1 (P) `apps/business` ナビゲーションから `/interviews/new` へのリンクを削除する
   - `apps/business` の layout.tsx または nav コンポーネントファイルを特定する
   - `/interviews/new` へのリンクを削除する（`page.tsx` ファイルは削除しない）
   - サイドバー・ヘッダーなどのナビゲーション UI に `/interviews/new` リンクが表示されないこと
