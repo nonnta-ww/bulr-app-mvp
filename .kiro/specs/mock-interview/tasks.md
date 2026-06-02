@@ -42,7 +42,7 @@
   - _Boundary: DBクエリ_
   - _Depends: 1.1_
 
-- [ ] 1.5 `packages/db/src/queries/index.ts` にクエリ関数を re-export する (P)
+- [x] 1.5 `packages/db/src/queries/index.ts` にクエリ関数を re-export する (P)
   - `export * from './mock-interview';` を追記する
   - **クロス spec 注記**: このタスクで追加される re-export（`countMockInterviewsInQuotaWindow` 等）は `admin-operations` spec がコスト集計クエリを実装する際の前提となる。admin-operations のタスクはこのタスク完了後に着手すること。
   - _Requirements: 要件 8_
