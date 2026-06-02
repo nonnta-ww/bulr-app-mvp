@@ -87,7 +87,7 @@
   - _Boundary: AIパッケージ_
   - _Depends: 2.1_
 
-- [ ] 2.4 `packages/ai/mock/src/index.ts` バレルに両関数を export する (P)
+- [x] 2.4 `packages/ai/mock/src/index.ts` バレルに両関数を export する (P)
   - `conductMockInterview`, `conductMockInterviewOutputSchema` を export する
   - `generateFormativeFeedback`, `generateFormativeFeedbackOutputSchema` を export する
   - `TurnItem`（`{ role: 'interviewer' | 'candidate'; content: string }`）型を export する
