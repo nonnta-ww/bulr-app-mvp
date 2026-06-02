@@ -41,7 +41,7 @@
   - _Depends: 1.1_
   - _Boundary: GetInterviewSession_
 
-- [ ] 2.2 `packages/db/src/queries/index.ts` に `getInterviewSession` を re-export する
+- [x] 2.2 `packages/db/src/queries/index.ts` に `getInterviewSession` を re-export する
   - `export * from './interview/get-interview-session'` を追加する
   - `@bulr/db` から `getInterviewSession` と `InterviewSessionResult` 型がインポートできること
   - _Requirements: 4.4_
