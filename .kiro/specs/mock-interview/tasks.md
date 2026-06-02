@@ -157,7 +157,7 @@
   - _Boundary: UIページ_
   - _Depends: 4.1_
 
-- [ ] 4.3 `PatternList` コンポーネントを実装する (P)
+- [x] 4.3 `PatternList` コンポーネントを実装する (P)
   - `apps/candidate/app/mock-interview/_components/PatternList.tsx` を作成する
   - Props: `patterns: AssessmentPattern[]`, `quotaRemaining: number`, `disabled: boolean`, `hasSkillSurvey: boolean`
   - `hasSkillSurvey=true` の場合は上部に「あなたへのおすすめ」セクションとして汎用的なヒント文言を表示する（`response_data` は存在しないため特定パターンの抽出は行わない）
