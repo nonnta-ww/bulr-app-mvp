@@ -83,7 +83,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - _Boundary: PatternRecommendation_
 
-- [ ] 4.3 `CreateSessionForm` Client Component を実装する
+- [x] 4.3 `CreateSessionForm` Client Component を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_components/create-session-form.tsx` を新規作成する
   - `'use client'` を指定する
   - props: `{ entryId: string, recommendedPatternCodes: string[], allPatterns: AssessmentPattern[] }`
