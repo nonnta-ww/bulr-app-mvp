@@ -97,7 +97,7 @@
   - _Depends: 3.1_
   - _Boundary: CreateSessionForm_
 
-- [ ] 4.4 entry 詳細ページを拡張してパターン選定支援 UI を統合する
+- [x] 4.4 entry 詳細ページを拡張してパターン選定支援 UI を統合する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/page.tsx` を更新する
   - `assessment_pattern` テーブルから全アクティブパターンを取得する
   - `PatternRecommendation` コンポーネントに `skillSurveyResponse` と `patterns` を渡す

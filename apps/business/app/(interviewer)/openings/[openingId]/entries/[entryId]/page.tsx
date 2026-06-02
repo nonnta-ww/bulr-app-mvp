@@ -9,8 +9,10 @@
  * - UpdateStatusButtons: 'submitted' → 'reviewed' / 'rejected' のステータス更新
  * - ResumePreviewButton: 署名 URL 取得 → 新タブで PDF 表示
  * - スキルアンケート: カテゴリ → 設問 → 回答内容を構造化表示
+ * - PatternRecommendation: スキルアンケート回答ベースのパターン推奨表示
+ * - CreateSessionForm: 面接パターン選択 + セッション作成
  *
- * Requirements: entry-flow 8.1〜8.5
+ * Requirements: entry-flow 8.1〜8.5, session-from-entry 3.1, 3.4
  */
 
 import { notFound, redirect } from 'next/navigation';
@@ -18,12 +20,16 @@ import Link from 'next/link';
 import { asc, eq, inArray } from 'drizzle-orm';
 
 import { requireCompanyUser, AuthError } from '@bulr/auth/server';
-import { db, getEntryWithSnapshots } from '@bulr/db';
-import { skillSurveyAnswer, skillSurveyCategory, skillSurveyChoice, skillSurveyQuestion } from '@bulr/db/schema';
+import { db, getEntryWithSnapshots, getLatestResponseByCandidateProfileId } from '@bulr/db';
+import type { SkillSurveyResponseWithAnswers } from '@bulr/db';
+import { assessmentPattern, skillSurveyAnswer, skillSurveyCategory, skillSurveyChoice, skillSurveyQuestion } from '@bulr/db/schema';
 import type { EntryStatus } from '@bulr/db/schema';
 
 import { ResumePreviewButton } from './_components/resume-preview-button';
 import { UpdateStatusButtons } from './_components/update-status-buttons';
+import { PatternRecommendation } from './_components/pattern-recommendation';
+import { CreateSessionForm } from './_components/create-session-form';
+import { matchPatterns } from './_lib/pattern-matching';
 
 // ---------------------------------------------------------------------------
 // ステータスラベル・バッジマッピング
@@ -91,6 +97,38 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
   if (entryData.opening.companyId !== companyId) notFound();
 
   const { entry, opening, candidateProfile, resumeDocument, skillSurveyResponse } = entryData;
+
+  // ---------------------------------------------------------------------------
+  // アクティブな assessment_pattern 取得（パターン選定支援 UI 用）
+  // ---------------------------------------------------------------------------
+
+  const activePatterns = await db
+    .select()
+    .from(assessmentPattern)
+    .where(eq(assessmentPattern.is_active, true));
+
+  // ---------------------------------------------------------------------------
+  // SkillSurveyResponseWithAnswers 取得（推奨パターン計算 + PatternRecommendation 用）
+  // skillSurveyResponse が存在する場合のみ getLatestResponseByCandidateProfileId を呼ぶ
+  // ---------------------------------------------------------------------------
+
+  let skillSurveyResponseWithAnswers: SkillSurveyResponseWithAnswers | null = null;
+  if (skillSurveyResponse) {
+    skillSurveyResponseWithAnswers = await getLatestResponseByCandidateProfileId(
+      skillSurveyResponse.candidateProfileId,
+      skillSurveyResponse.skillSurveyId,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 推奨パターンコード計算（キーワードマッチング）
+  // ---------------------------------------------------------------------------
+
+  const recommendedPatternCodes: string[] = skillSurveyResponseWithAnswers
+    ? matchPatterns(skillSurveyResponseWithAnswers, activePatterns)
+        .slice(0, 10)
+        .map((m) => m.patternCode)
+    : [];
 
   // ---------------------------------------------------------------------------
   // スキルアンケート回答データ取得（skillSurveyResponse が存在する場合のみ）
@@ -301,20 +339,18 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* 面接セッション作成（プレースホルダ） */}
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">面接セッション</h2>
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center rounded-md bg-gray-300 px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed"
-          >
-            面接セッションを作成（準備中）
-          </button>
-          <p className="mt-2 text-xs text-gray-400">
-            ※ 面接セッション機能は近日公開予定です。
-          </p>
-        </section>
+        {/* 推奨パターン（参考） */}
+        <PatternRecommendation
+          skillSurveyResponse={skillSurveyResponseWithAnswers}
+          patterns={activePatterns}
+        />
+
+        {/* 面接パターン選択 + セッション作成 */}
+        <CreateSessionForm
+          entryId={entryId}
+          recommendedPatternCodes={recommendedPatternCodes}
+          allPatterns={activePatterns}
+        />
 
         {/* 戻りリンク */}
         <div>
