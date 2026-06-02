@@ -211,7 +211,7 @@
 - [ ] 6. フィードバック結果画面を実装する
   - _Depends: 1.4_
 
-- [ ] 6.1 フィードバック結果画面（Server Component）を実装する
+- [x] 6.1 フィードバック結果画面（Server Component）を実装する
   - `apps/candidate/app/mock-interview/[sessionId]/result/page.tsx` を作成する
   - `requireCandidate()` でガード
   - `getMockInterviewByIdAndOwner` でセッション取得（所有者不一致は `notFound()`）
