@@ -183,7 +183,7 @@
 - [ ] 5. チャット画面を実装する
   - _Depends: 3.1, 3.2, 1.4_
 
-- [ ] 5.1 チャット画面 Server Component を実装する (P)
+- [x] 5.1 チャット画面 Server Component を実装する (P)
   - `apps/candidate/app/mock-interview/[sessionId]/page.tsx`（Server Component）を作成する
   - `requireCandidate()` でガード
   - `getMockInterviewByIdAndOwner` でセッション取得（所有者不一致は `notFound()`）
