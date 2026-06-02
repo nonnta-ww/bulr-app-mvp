@@ -186,6 +186,8 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
   // ---------------------------------------------------------------------------
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // IME 変換確定の Enter を送信扱いしない
+    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       void handleSend();

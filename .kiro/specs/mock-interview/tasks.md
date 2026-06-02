@@ -253,6 +253,7 @@
 
 ## Implementation Notes
 
+- **7.3 で検出したバグ（IME 変換確定 Enter で誤送信）**: チャット textarea の `handleKeyDown` が Enter 送信時に IME 変換中を除外しておらず、日本語変換確定の Enter で誤送信。`e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229` のガードを先頭に追加して解消。
 - **7.3 で検出したバグ（MockInterviewChat 初回 fetch が strict mode で永久ローディング）**: `useRef` ガード + `cancelled` クリーンアップフラグの併用が非互換。dev の strict mode 二重 mount で、Mount1 の cleanup が `cancelled=true` にし、Mount1 の唯一の fetch 結果を破棄、Mount2 は ref ガードで fetch せず → 永久「面接官が準備中です...」。prod では出ない（strict mode のみ）。修正: `cancelled` 破棄を撤去し ref ガードのみで単一 fetch を担保、`setIsLoading(false)` を finally で無条件実行。
 
 
