@@ -5,7 +5,7 @@
 ---
 
 - [ ] 1. DB スキーマ・migration・クエリ関数
-- [ ] 1.1 `mock_interview` Drizzle スキーマを作成する (P)
+- [x] 1.1 `mock_interview` Drizzle スキーマを作成する (P)
   - `packages/db/src/schema/mock-interview.ts` に `mockInterview` テーブルを定義する
   - `candidateProfileId`（FK → `candidate_profile.id`, ON DELETE CASCADE）・`patternCode`・`startedAt`・`endedAt`（nullable）・`turnCount`（default 0）・`formativeFeedback`（JSONB nullable）・`metadata`（JSONB nullable）・`createdAt`・`updatedAt` カラムを含む
   - `FormativeFeedback` / `MockInterviewMetadata` の TypeScript インターフェースを同ファイルで定義する

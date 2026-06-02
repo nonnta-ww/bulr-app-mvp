@@ -19,6 +19,7 @@ export const candidateProfile = pgTable('candidate_profile', {
     .references(() => user.id, { onDelete: 'cascade' }),
   displayName: text('display_name').notNull(),
   headline: text('headline'),
+  quotaResetAt: timestamp('quota_reset_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
