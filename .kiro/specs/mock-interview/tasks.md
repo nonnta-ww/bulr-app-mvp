@@ -15,7 +15,7 @@
   - _Requirements: 要件 8, 要件 1_
   - _Boundary: DBスキーマ_
 
-- [ ] 1.2 `packages/db/src/schema/index.ts` に `mock-interview` を追加する (P)
+- [x] 1.2 `packages/db/src/schema/index.ts` に `mock-interview` を追加する (P)
   - `export * from './mock-interview';` を追記する
   - `pnpm typecheck` でエラーがないこと
   - _Requirements: 要件 8_

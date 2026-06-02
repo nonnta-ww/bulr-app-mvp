@@ -17,3 +17,4 @@ export * from './company';
 export * from './opening';
 export * from './invitation';
 export * from './entry';
+export * from './mock-interview';
