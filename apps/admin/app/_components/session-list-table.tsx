@@ -146,6 +146,9 @@ export function SessionListTable({ items }: Props) {
                   href={`/sessions/${item.id}`}
                   className="hover:text-blue-600 hover:underline"
                 >
+                  {/* Stage 2 (entry 経由): entry_id あり → candidateProfile.displayName 相当
+                      Stage 1 (手入力): entry_id なし → candidate.name 相当
+                      いずれも candidate_name に解決済みの値が入っている */}
                   {item.candidate_name}
                 </Link>
               </td>

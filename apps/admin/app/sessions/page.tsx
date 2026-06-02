@@ -9,6 +9,9 @@
  * 旧パス: apps/business/app/admin/sessions/page.tsx（/admin/sessions）。
  *
  * Requirements: 1.1, 1.2, 1.7, 2.3, 2.4, 3.4, 10.1, 13.1, 13.2
+ *   session-from-entry 8.1, 8.2: entry 経由セッション（entry_id IS NOT NULL）も一覧表示し、
+ *   候補者名として candidateProfile.displayName を使用。Stage 1 セッションは candidate.name を表示。
+ *   名前解決は sessionListQuery 内の SQL COALESCE で行われる。
  * Boundary: SessionListPage (this file only)
  * Depends: 2.1 ✓ (parseListQueryParams), 2.2 ✓ (sessionListQuery),
  *          2.3 ✓ (SessionListFilters), 2.3 ✓ (SessionListTable)

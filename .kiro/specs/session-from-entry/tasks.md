@@ -165,7 +165,7 @@
 
 - [ ] 8. Core: admin セッション一覧・詳細 entry 経由対応 (P)
 
-- [ ] 8.1 (P) admin セッション一覧クエリを拡張して entry 経由セッションの候補者名を取得できるようにする
+- [x] 8.1 (P) admin セッション一覧クエリを拡張して entry 経由セッションの候補者名を取得できるようにする
   - 注意: 実装前に admin セッション一覧クエリの現在のファイルパスを確認すること:
     - 候補 1: `packages/db/src/queries/admin/session-list-query.ts` (assessment-engine spec 経由で作成された場合)
     - 候補 2: `apps/admin/app/sessions/_queries/*.ts` (monorepo-app-split で apps/admin に移設された場合)

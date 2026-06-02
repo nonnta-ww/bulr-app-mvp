@@ -3,6 +3,8 @@ import type { SQL } from 'drizzle-orm';
 
 import { db } from '../../client';
 import { candidate } from '../../schema/candidate';
+import { candidateProfile } from '../../schema/candidate-profile';
+import { entry } from '../../schema/entry';
 import { interviewSession } from '../../schema/interview-session';
 import { interviewTurn } from '../../schema/interview-turn';
 import { patternCoverage } from '../../schema/pattern-coverage';
@@ -14,7 +16,10 @@ import { user } from '../../schema/auth';
 
 export type SessionListItem = {
   id: string;
+  /** Stage 1: candidate.name, Stage 2 (entry_id IS NOT NULL): candidateProfile.displayName */
   candidate_name: string;
+  /** entry_id が存在する場合は Stage 2 セッション（entry 経由）と判別できる */
+  entry_id: string | null;
   interviewer_email: string;
   status: 'in_progress' | 'completed' | 'abandoned';
   started_at: string; // ISO 8601 string
@@ -159,10 +164,12 @@ export async function sessionListQuery(
       orderByClause = sql`${avgScoreSql} DESC NULLS LAST`;
     }
   } else if (sortBy === 'candidate_name') {
+    // entry 経由 (Stage 2) は candidateProfile.displayName、Stage 1 は candidate.name
+    const nameSql = sql`COALESCE(${candidateProfile.displayName}, ${candidate.name})`;
     if (sortOrder === 'asc') {
-      orderByClause = asc(candidate.name) as unknown as SQL;
+      orderByClause = sql`${nameSql} ASC NULLS LAST`;
     } else {
-      orderByClause = desc(candidate.name) as unknown as SQL;
+      orderByClause = sql`${nameSql} DESC NULLS LAST`;
     }
   } else {
     // sortBy === 'started_at' (default)
@@ -179,7 +186,10 @@ export async function sessionListQuery(
   const rows = await db
     .select({
       id: interviewSession.id,
-      candidate_name: candidate.name,
+      entry_id: interviewSession.entry_id,
+      // Stage 2 (entry 経由): candidateProfile.displayName を優先
+      // Stage 1 (candidate 直接): candidate.name を使用
+      candidate_name: sql<string>`COALESCE(${candidateProfile.displayName}, ${candidate.name}, '')`,
       interviewer_email: user.email,
       status: interviewSession.status,
       started_at: interviewSession.started_at,
@@ -189,8 +199,12 @@ export async function sessionListQuery(
       review_status: reviewStatusSql,
     })
     .from(interviewSession)
-    .innerJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
+    // candidate_id は nullable (Stage 1 は非 null、Stage 2 は null) → LEFT JOIN
+    .leftJoin(candidate, eq(interviewSession.candidate_id, candidate.id))
     .innerJoin(user, eq(interviewSession.interviewer_id, user.id))
+    // entry 経由セッション用 LEFT JOIN
+    .leftJoin(entry, eq(interviewSession.entry_id, entry.id))
+    .leftJoin(candidateProfile, eq(entry.candidateProfileId, candidateProfile.id))
     .leftJoin(coverageAgg, eq(interviewSession.id, coverageAgg.session_id))
     .leftJoin(turnAgg, eq(interviewSession.id, turnAgg.session_id))
     .where(whereClause)
@@ -201,6 +215,7 @@ export async function sessionListQuery(
   // ------------------------------------------------------------------
   return rows.map((row) => ({
     id: row.id,
+    entry_id: row.entry_id ?? null,
     candidate_name: row.candidate_name,
     interviewer_email: row.interviewer_email,
     status: row.status as 'in_progress' | 'completed' | 'abandoned',
