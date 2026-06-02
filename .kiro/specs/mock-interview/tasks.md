@@ -52,7 +52,7 @@
 ---
 
 - [ ] 2. `packages/ai/mock/` パッケージを新設する
-- [ ] 2.1 `@bulr/ai-mock` パッケージ雛形を作成する (P)
+- [x] 2.1 `@bulr/ai-mock` パッケージ雛形を作成する (P)
   - `packages/ai/mock/package.json` を作成する（name: `@bulr/ai-mock`、dependencies: `ai`, `@ai-sdk/anthropic`, `zod`）
   - **`@bulr/db` は runtime dependencies に含めない**: `@bulr/ai-mock` の LLM 関数（`conductMockInterview` / `generateFormativeFeedback`）は純粋関数であり、パターンデータ・会話履歴を引数として受け取るだけでDB に直接アクセスしない。型のみが必要な場合は `devDependencies` に追加し、引数型は型として import するのみとする（循環依存の回避、パッケージ境界の明確化）。
   - `packages/ai/mock/src/index.ts` （空バレル）を作成する

@@ -209,6 +209,9 @@ importers:
 
   apps/candidate:
     dependencies:
+      '@bulr/ai-mock':
+        specifier: workspace:*
+        version: link:../../packages/ai/mock
       '@bulr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -312,6 +315,25 @@ importers:
       openai:
         specifier: ^4.0.0
         version: 4.104.0(zod@4.4.3)
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22
+        version: 22.19.19
+      typescript:
+        specifier: ^5.4
+        version: 5.9.3
+
+  packages/ai/mock:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.0
+        version: 3.0.77(zod@4.4.3)
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.180(zod@4.4.3)
       zod:
         specifier: ^4.0.0
         version: 4.4.3
