@@ -142,7 +142,7 @@
   - _Depends: 2.1_
   - _Boundary: EntryContextSection_
 
-- [ ] 6.2 (P) 面接後レポートページに `EntryContextSection` を組み込む
+- [x] 6.2 (P) 面接後レポートページに `EntryContextSection` を組み込む
   - `apps/business/app/(interviewer)/interviews/[sessionId]/report/page.tsx` を更新する
   - `getInterviewSession(sessionId)` でセッションデータを取得する
   - `<EntryContextSection session={session} />` を面接スコアセクションの上部に配置する

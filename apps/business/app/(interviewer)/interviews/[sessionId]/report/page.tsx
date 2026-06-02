@@ -8,13 +8,14 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
-import { db } from '@bulr/db';
+import { db, getInterviewSession } from '@bulr/db';
 import { interviewSession } from '@bulr/db/schema';
 import ReactMarkdown from 'react-markdown';
 
 import { requireUser } from '@bulr/auth/server';
 import { getReportData } from '@/lib/queries/get-report-data';
 import { ReportView } from '../../_components/report/report-view';
+import { EntryContextSection } from './_components/entry-context-section';
 
 function formatDate(date: Date | null): string {
   if (!date) return '—';
@@ -41,15 +42,22 @@ export default async function ReportPage({ params }: Props) {
     redirect('/sign-in');
   }
 
-  const session = await db.query.interviewSession.findFirst({
+  const rawSession = await db.query.interviewSession.findFirst({
     where: eq(interviewSession.id, sessionId),
   });
 
-  if (!session || session.interviewer_id !== user.id) {
+  if (!rawSession || rawSession.interviewer_id !== user.id) {
     notFound();
   }
 
-  const { report, allTurns, allPatterns } = await getReportData(sessionId);
+  const [{ report, allTurns, allPatterns }, sessionResult] = await Promise.all([
+    getReportData(sessionId),
+    getInterviewSession(sessionId),
+  ]);
+
+  if (!sessionResult) {
+    notFound();
+  }
 
   if (!report) {
     return (
@@ -74,6 +82,8 @@ export default async function ReportPage({ params }: Props) {
             生成日時：{formatDate(report.generated_at)}
           </p>
         </div>
+
+        <EntryContextSection session={sessionResult} />
 
         <ReportView
           heatmapData={report.heatmap_data}
