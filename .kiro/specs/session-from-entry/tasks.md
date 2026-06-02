@@ -29,7 +29,7 @@
 
 - [ ] 2. Foundation: getInterviewSession クエリ実装
 
-- [ ] 2.1 `getInterviewSession` クエリ関数を実装する
+- [x] 2.1 `getInterviewSession` クエリ関数を実装する
   - `packages/db/src/queries/interview/get-interview-session.ts` を新規作成する
   - `InterviewSessionWithCandidate`（Stage 1 形式）と `InterviewSessionWithEntry`（Stage 2 形式）の型を定義する
   - `InterviewSessionResult = ({ kind: 'stage1' } & ...) | ({ kind: 'stage2' } & ...)` の discriminated union を定義する
