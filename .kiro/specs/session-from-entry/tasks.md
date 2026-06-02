@@ -110,7 +110,7 @@
 
 - [ ] 5. Core: 面接アシスタント UI ヘッダー Stage 1/2 分岐 (P)
 
-- [ ] 5.1 (P) `SessionHeader` コンポーネントを実装する
+- [x] 5.1 (P) `SessionHeader` コンポーネントを実装する
   - `apps/business/app/(interviewer)/interviews/[sessionId]/_components/session-header.tsx` を新規作成する
   - props: `{ session: InterviewSessionResult }`
   - `session.kind === 'stage2'` の場合: `candidateProfile.displayName` と `opening.title` を表示する
