@@ -131,7 +131,7 @@
 
 - [ ] 6. Core: 面接後レポート Stage 2 拡張 (P)
 
-- [ ] 6.1 (P) `EntryContextSection` コンポーネントを実装する
+- [x] 6.1 (P) `EntryContextSection` コンポーネントを実装する
   - `apps/business/app/(interviewer)/interviews/[sessionId]/report/_components/entry-context-section.tsx` を新規作成する
   - props: `{ session: InterviewSessionResult }`
   - `session.kind === 'stage2'` の場合のみ内容を返す（`session.kind === 'stage1'` の場合は `null`）
