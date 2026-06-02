@@ -73,7 +73,7 @@
   - _Requirements: 3.2, 3.7_
   - _Boundary: PatternMatchingUtil_
 
-- [ ] 4.2 (P) `PatternRecommendation` Server Component を実装する
+- [x] 4.2 (P) `PatternRecommendation` Server Component を実装する
   - `apps/business/app/(interviewer)/openings/[openingId]/entries/[entryId]/_components/pattern-recommendation.tsx` を新規作成する
   - props: `{ skillSurveyResponse: SkillSurveyResponseWithAnswers | null, patterns: AssessmentPattern[] }`
   - `skillSurveyResponse` が null の場合「スキルアンケート未回答のため推奨パターンを表示できません」を表示する
