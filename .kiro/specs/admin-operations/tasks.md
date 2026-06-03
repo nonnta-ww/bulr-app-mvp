@@ -410,7 +410,7 @@ _Requirements:_ 6.1, 6.6
 _Boundary:_ apps/admin/app/_components/header.tsx（または layout.tsx）
 _Depends:_ 10.2, 11.2, 12.2, 13.1, 14.1
 
-- [ ] 15.1 管理画面のナビゲーションに新規タブを追加する
+- [x] 15.1 管理画面のナビゲーションに新規タブを追加する
 
 - `apps/admin/app/_components/header.tsx`（または layout レベルの nav）を更新
 - 追加タブ: 候補者（/candidates）・企業（/companies）・マスタ（/masters/skill-survey）・パターン（/masters/assessment-pattern）・監視（/monitoring）
