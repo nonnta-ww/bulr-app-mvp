@@ -261,14 +261,14 @@ _Requirements:_ 1.1, 1.2, 1.3, 6.1, 6.6
 _Boundary:_ apps/admin/app/candidates/
 _Depends:_ 2.1, 2.2, 2.3, 7.1, 7.2
 
-- [ ] 10.1 `SearchFilter` 共通 Client Component を実装する
+- [x] 10.1 `SearchFilter` 共通 Client Component を実装する
 
 - `apps/admin/app/_components/search-filter.tsx` を新規作成（`'use client'`）
 - Props: `{ placeholder: string; paramKey?: string }` — URL searchParams を更新する
 - テキスト入力 + `router.push` で URL を更新（500ms debounce）
 - `pnpm typecheck` がエラーなし
 
-- [ ] 10.2 候補者一覧ページを実装する
+- [x] 10.2 候補者一覧ページを実装する
 
 - `apps/admin/app/candidates/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getCandidatesForAdmin` → `SearchFilter` + テーブル描画
@@ -277,7 +277,7 @@ _Depends:_ 2.1, 2.2, 2.3, 7.1, 7.2
 - ページング UI（前へ/次へボタン）
 - `pnpm typecheck` がエラーなし
 
-- [ ] 10.3 候補者詳細ページを実装する
+- [x] 10.3 候補者詳細ページを実装する
 
 - `apps/admin/app/candidates/[id]/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getCandidateProfileDetail`（不在なら `notFound()`）
