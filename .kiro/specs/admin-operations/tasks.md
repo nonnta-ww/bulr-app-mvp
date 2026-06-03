@@ -211,7 +211,7 @@ _Requirements:_ 2.4, 2.5, 2.6, 6.2, 6.5
 _Boundary:_ apps/admin/app/companies/_actions/
 _Depends:_ 1.2, 1.3, 3.1
 
-- [ ] 8.1 `createCompany` Server Action を実装する
+- [x] 8.1 `createCompany` Server Action を実装する
 
 - `apps/admin/app/companies/_actions/create-company.ts` を新規作成
 - `adminAction(z.object({ name: z.string().min(1).max(200) }), ...)` でラップ
@@ -219,7 +219,7 @@ _Depends:_ 1.2, 1.3, 3.1
 - 作成後 `redirect('/companies/${created.id}')` を実行
 - `pnpm typecheck` がエラーなし
 
-- [ ] 8.2 `disableCompany` Server Action を実装する
+- [x] 8.2 `disableCompany` Server Action を実装する
 
 - `apps/admin/app/companies/_actions/disable-company.ts` を新規作成
 - `adminAction(z.object({ companyId: z.string().min(1) }), ...)` でラップ
