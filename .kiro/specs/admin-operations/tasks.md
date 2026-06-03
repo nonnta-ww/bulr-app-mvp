@@ -73,7 +73,7 @@ _Requirements:_ 2.1, 2.2, 2.3, 6.4
 _Boundary:_ packages/db/src/queries/admin/companies-query.ts
 _Depends:_ 1.2, 1.3
 
-- [ ] 3.1 `getCompaniesForAdmin` クエリ関数を実装する
+- [x] 3.1 `getCompaniesForAdmin` クエリ関数を実装する
 
 - `packages/db/src/queries/admin/companies-query.ts` を新規作成
 - `company` LEFT JOIN `opening`（件数集計）
@@ -81,7 +81,7 @@ _Depends:_ 1.2, 1.3
 - `{ items: CompanyListItem[]; total: number }` を返す
 - `pnpm typecheck` がエラーなし
 
-- [ ] 3.2 `getCompanyDetail` クエリ関数を実装する
+- [x] 3.2 `getCompanyDetail` クエリ関数を実装する
 
 - 同ファイルに `getCompanyDetail(companyId: string)` を追加
 - `company` + `opening` 一覧 + `user_profile`（`company_id` 一致）+ `user`（メール）を結合取得
