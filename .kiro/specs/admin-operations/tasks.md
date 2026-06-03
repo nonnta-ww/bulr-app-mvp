@@ -171,7 +171,7 @@ _Depends:_ タスク 1.1・1.3（`is_active` カラム）、**mock-interview Wav
 - `CandidateQuotaUsage[]` を `usedThisMonth DESC` 順で返す
 - `pnpm typecheck` がエラーなし
 
-- [ ] 6.3 `packages/db/src/queries/admin/index.ts` に監視クエリを re-export する
+- [x] 6.3 `packages/db/src/queries/admin/index.ts` に監視クエリを re-export する
 
 > **APPEND-ONLY**: 既存 export 行を変更せず `export * from './monitoring-query'` を末尾に追記する（タスク 2.3 参照）。
 
