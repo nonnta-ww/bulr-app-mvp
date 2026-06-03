@@ -128,7 +128,7 @@ _Requirements:_ 4.1, 4.2, 6.4
 _Boundary:_ packages/db/src/queries/admin/assessment-pattern-query.ts
 _Depends:_ なし
 
-- [ ] 5.1 `getAssessmentPatternsForAdmin` および `getAssessmentPatternDetail` クエリ関数を実装する
+- [x] 5.1 `getAssessmentPatternsForAdmin` および `getAssessmentPatternDetail` クエリ関数を実装する
 
 - `packages/db/src/queries/admin/assessment-pattern-query.ts` を新規作成
 - `getAssessmentPatternsForAdmin()`: 全パターンを `code` 昇順で取得（`id`・`code`・`category`・`title`・`isActive`）
