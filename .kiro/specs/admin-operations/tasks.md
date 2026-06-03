@@ -22,7 +22,7 @@ _Depends:_ なし（最初に実施すること）
 - `Company` 型・`NewCompany` 型が新カラムを含む
 - `pnpm typecheck` がエラーなし
 
-- [ ] 1.3 Drizzle マイグレーションファイルを生成してローカル DB に適用する
+- [x] 1.3 Drizzle マイグレーションファイルを生成してローカル DB に適用する
 
 > **前提**: mock-interview（Wave 4a）が先行して `quota_reset_at` カラムを追加済みであること。本タスクのマイグレーションは `is_active` のみ追加する（`quota_reset_at` は含めない）。
 
