@@ -32,7 +32,9 @@ type PageProps = {
 
 /** Date を「YYYY-MM-DD HH:mm:ss」形式（JST）に整形する。null の場合は「—」を返す。 */
 function formatTimestamp(date: Date | null | undefined): string {
-  if (!date) return '—';
+  if (date == null) return '—';
+  const d = date instanceof Date ? date : new Date(date as unknown as string);
+  if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -43,7 +45,7 @@ function formatTimestamp(date: Date | null | undefined): string {
     hour12: false,
     timeZone: 'Asia/Tokyo',
   })
-    .format(date)
+    .format(d)
     .replace(/\//g, '-');
 }
 

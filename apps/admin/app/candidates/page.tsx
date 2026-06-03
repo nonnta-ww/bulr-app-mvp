@@ -45,7 +45,9 @@ function first(value: string | string[] | undefined): string | undefined {
 
 /** Date を「YYYY-MM-DD HH:mm」形式（JST）に整形する */
 function formatDate(date: Date | null): string {
-  if (!date) return '—';
+  if (date == null) return '—';
+  const d = date instanceof Date ? date : new Date(date as unknown as string);
+  if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -55,7 +57,7 @@ function formatDate(date: Date | null): string {
     hour12: false,
     timeZone: 'Asia/Tokyo',
   })
-    .format(date)
+    .format(d)
     .replace(/\//g, '-');
 }
 
