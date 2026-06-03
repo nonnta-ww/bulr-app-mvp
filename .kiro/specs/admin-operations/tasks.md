@@ -360,14 +360,14 @@ _Requirements:_ 4.1, 4.2, 4.3, 6.1
 _Boundary:_ apps/admin/app/masters/assessment-pattern/
 _Depends:_ 5.1, 5.2
 
-- [ ] 13.1 アセスメントパターン一覧ページを実装する
+- [x] 13.1 アセスメントパターン一覧ページを実装する
 
 - `apps/admin/app/masters/assessment-pattern/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getAssessmentPatternsForAdmin()` → テーブル表示
 - テーブル行: コード・カテゴリ・タイトル・有効/無効バッジ・[詳細]リンク
 - `pnpm typecheck` がエラーなし
 
-- [ ] 13.2 アセスメントパターン詳細ページを実装する
+- [x] 13.2 アセスメントパターン詳細ページを実装する
 
 - `apps/admin/app/masters/assessment-pattern/[code]/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getAssessmentPatternDetail(code)`（不在なら `notFound()`）
