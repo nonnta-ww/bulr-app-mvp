@@ -426,7 +426,7 @@ _Requirements:_ 全要件
 _Boundary:_ モノレポ全体
 _Depends:_ 全タスク完了後
 
-- [ ] 16.1 型チェックとビルドを通す
+- [x] 16.1 型チェックとビルドを通す
 
 - `pnpm typecheck` がモノレポ全体でエラーなし
 - `pnpm build` が `packages/db`・`apps/admin` でエラーなし
