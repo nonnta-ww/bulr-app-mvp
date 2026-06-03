@@ -383,7 +383,7 @@ _Requirements:_ 5.1, 5.2, 5.3, 5.4, 5.5, 6.1
 _Boundary:_ apps/admin/app/monitoring/
 _Depends:_ 6.1, 6.2, 6.3
 
-- [ ] 14.1 LLM コストダッシュボードページを実装する
+- [x] 14.1 LLM コストダッシュボードページを実装する
 
 - `apps/admin/app/monitoring/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getLlmCostMetrics()`
@@ -394,7 +394,7 @@ _Depends:_ 6.1, 6.2, 6.3
 - チャートライブラリは不使用（CSS のみ）
 - `pnpm typecheck` がエラーなし
 
-- [ ] 14.2 クォータ使用状況ページを実装する
+- [x] 14.2 クォータ使用状況ページを実装する
 
 - `apps/admin/app/monitoring/quota/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getCandidateQuotaUsage()`
