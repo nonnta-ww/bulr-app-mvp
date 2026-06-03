@@ -104,7 +104,7 @@ _Requirements:_ 3.1, 3.2, 6.4
 _Boundary:_ packages/db/src/queries/admin/skill-survey-master-query.ts
 _Depends:_ なし（スキーマ変更不要）
 
-- [ ] 4.1 `getSkillSurveyList` および `getSkillSurveyMaster` クエリ関数を実装する
+- [x] 4.1 `getSkillSurveyList` および `getSkillSurveyMaster` クエリ関数を実装する
 
 - `packages/db/src/queries/admin/skill-survey-master-query.ts` を新規作成
 - `getSkillSurveyList()`: `skill_survey` 全件取得（`id`・`jobType`・`title`・`isActive`）
