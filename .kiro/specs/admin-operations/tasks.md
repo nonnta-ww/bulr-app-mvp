@@ -324,7 +324,7 @@ _Requirements:_ 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 6.1, 6.6
 _Boundary:_ apps/admin/app/masters/skill-survey/
 _Depends:_ 4.1, 4.2, 9.1, 9.2
 
-- [ ] 12.1 `SkillSurveyQuestionForm` および `SkillSurveyChoiceForm` Client Components を実装する
+- [x] 12.1 `SkillSurveyQuestionForm` および `SkillSurveyChoiceForm` Client Components を実装する
 
 - `apps/admin/app/_components/skill-survey-question-form.tsx` を新規作成（`'use client'`）
   - Props: `{ question: SkillSurveyQuestion; surveyId: string }`
@@ -336,14 +336,14 @@ _Depends:_ 4.1, 4.2, 9.1, 9.2
   - `updateSkillSurveyChoiceAction` を呼び出し
 - `pnpm typecheck` がエラーなし
 
-- [ ] 12.2 スキルアンケート一覧ページを実装する
+- [x] 12.2 スキルアンケート一覧ページを実装する
 
 - `apps/admin/app/masters/skill-survey/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getSkillSurveyList()` → サーベイカード一覧
 - 各カードに[詳細/編集] リンク
 - `pnpm typecheck` がエラーなし
 
-- [ ] 12.3 スキルアンケート詳細/編集ページを実装する
+- [x] 12.3 スキルアンケート詳細/編集ページを実装する
 
 - `apps/admin/app/masters/skill-survey/[surveyId]/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getSkillSurveyMaster`（不在なら `notFound()`）
