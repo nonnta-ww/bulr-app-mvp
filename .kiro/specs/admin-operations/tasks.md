@@ -16,7 +16,7 @@ _Depends:_ なし（最初に実施すること）
 - `CandidateProfile` 型・`NewCandidateProfile` 型が `isActive` を含む（`quotaResetAt` は mock-interview schema 定義から既に存在）
 - `pnpm typecheck` がエラーなし
 
-- [ ] 1.2 `company` テーブルに `is_active` カラムを追加する
+- [x] 1.2 `company` テーブルに `is_active` カラムを追加する
 
 - `packages/db/src/schema/company.ts` に `isActive: boolean('is_active').notNull().default(true)` を追加
 - `Company` 型・`NewCompany` 型が新カラムを含む

@@ -5,7 +5,7 @@
  * opening テーブルや user_profile から参照される。
  */
 
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 
 export const company = pgTable('company', {
@@ -13,6 +13,7 @@ export const company = pgTable('company', {
     .primaryKey()
     .$defaultFn(() => nanoid()),
   name: text('name').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
