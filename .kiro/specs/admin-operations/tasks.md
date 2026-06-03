@@ -135,7 +135,7 @@ _Depends:_ なし
 - `getAssessmentPatternDetail(code)`: パターン 1 件の全フィールドを取得。存在しない場合は `undefined`
 - `pnpm typecheck` がエラーなし
 
-- [ ] 5.2 `packages/db/src/queries/admin/index.ts` にパターンクエリを re-export する
+- [x] 5.2 `packages/db/src/queries/admin/index.ts` にパターンクエリを re-export する
 
 > **APPEND-ONLY**: 既存 export 行を変更せず `export * from './assessment-pattern-query'` を末尾に追記する（タスク 2.3 参照）。
 
