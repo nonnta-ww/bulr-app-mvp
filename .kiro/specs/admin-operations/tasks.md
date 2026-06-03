@@ -235,7 +235,7 @@ _Requirements:_ 3.3, 3.4, 3.5, 6.5
 _Boundary:_ apps/admin/app/masters/skill-survey/_actions/
 _Depends:_ 4.1
 
-- [ ] 9.1 `updateSkillSurveyQuestion` Server Action を実装する
+- [x] 9.1 `updateSkillSurveyQuestion` Server Action を実装する
 
 - `apps/admin/app/masters/skill-survey/_actions/update-question.ts` を新規作成
 - Zod スキーマ: `{ questionId, body: string min1 max1000, questionType: enum, displayOrder: int >= 0 }`
@@ -244,7 +244,7 @@ _Depends:_ 4.1
 - `surveyId` を取得して `revalidatePath('/masters/skill-survey/${surveyId}')` を実行
 - `pnpm typecheck` がエラーなし
 
-- [ ] 9.2 `updateSkillSurveyChoice` Server Action を実装する
+- [x] 9.2 `updateSkillSurveyChoice` Server Action を実装する
 
 - `apps/admin/app/masters/skill-survey/_actions/update-choice.ts` を新規作成
 - Zod スキーマ: `{ choiceId, label: string min1 max500, displayOrder: int >= 0 }`
