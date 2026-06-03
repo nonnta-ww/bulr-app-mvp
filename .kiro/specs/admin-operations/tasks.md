@@ -89,7 +89,7 @@ _Depends:_ 1.2, 1.3
 - `CompanyDetail` インターフェースを満たす
 - `pnpm typecheck` がエラーなし
 
-- [ ] 3.3 `packages/db/src/queries/admin/index.ts` に企業クエリを re-export する
+- [x] 3.3 `packages/db/src/queries/admin/index.ts` に企業クエリを re-export する
 
 > **APPEND-ONLY**: 既存 export 行を変更せず `export * from './companies-query'` を末尾に追記する（タスク 2.3 参照）。
 
