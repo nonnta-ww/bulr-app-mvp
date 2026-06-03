@@ -8,7 +8,7 @@ _Requirements:_ 6.2, 6.3
 _Boundary:_ packages/db/src/schema/candidate-profile.ts, packages/db/src/schema/company.ts, migration ファイル
 _Depends:_ なし（最初に実施すること）
 
-- [ ] 1.1 `candidate_profile` テーブルに `is_active` カラムを追加する
+- [x] 1.1 `candidate_profile` テーブルに `is_active` カラムを追加する
 
 > **注意**: `quota_reset_at` カラムは mock-interview spec（Wave 4a）が所有・追加する。admin-operations はこのカラムを ADD COLUMN しない。mock-interview の migration が先行適用済みであることを前提として参照（READ/WRITE）のみ行う。
 

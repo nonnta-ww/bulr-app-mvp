@@ -5,7 +5,7 @@
  * 求職者固有の属性を格納する。
  */
 
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 import { user } from './auth';
 
@@ -20,6 +20,7 @@ export const candidateProfile = pgTable('candidate_profile', {
   displayName: text('display_name').notNull(),
   headline: text('headline'),
   quotaResetAt: timestamp('quota_reset_at', { withTimezone: true }),
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
