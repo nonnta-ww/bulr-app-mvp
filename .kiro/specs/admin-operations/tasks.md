@@ -150,7 +150,7 @@ _Requirements:_ 5.1, 5.2, 5.3, 5.4, 6.4
 _Boundary:_ packages/db/src/queries/admin/monitoring-query.ts
 _Depends:_ タスク 1.1・1.3（`is_active` カラム）、**mock-interview Wave 4a 完了**（`mock_interview` テーブル、`quota_reset_at` カラム、`packages/db/src/queries/index.ts` の mock-interview export が存在すること）
 
-- [ ] 6.1 `getLlmCostMetrics` クエリ関数を実装する
+- [x] 6.1 `getLlmCostMetrics` クエリ関数を実装する
 
 - `packages/db/src/queries/admin/monitoring-query.ts` を新規作成
 - `mock_interview` テーブルの `metadata` JSONB から `llm_cost_estimate.estimated_usd`・`input_tokens`・`output_tokens` を集計
@@ -162,7 +162,7 @@ _Depends:_ タスク 1.1・1.3（`is_active` カラム）、**mock-interview Wav
 - `LlmCostMetrics` インターフェースを満たす（データなしの場合は 0 値・空配列）
 - `pnpm typecheck` がエラーなし
 
-- [ ] 6.2 `getCandidateQuotaUsage` クエリ関数を実装する
+- [x] 6.2 `getCandidateQuotaUsage` クエリ関数を実装する
 
 - 同ファイルに `getCandidateQuotaUsage()` を追加
 - `candidate_profile` LEFT JOIN `user`（メール）LEFT JOIN `mock_interview`（`quota_reset_at` 考慮の当月件数）
