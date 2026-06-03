@@ -113,7 +113,7 @@ _Depends:_ なし（スキーマ変更不要）
   - `SkillSurveyTree` インターフェースを満たす
 - `pnpm typecheck` がエラーなし
 
-- [ ] 4.2 `packages/db/src/queries/admin/index.ts` にスキルアンケートクエリを re-export する
+- [x] 4.2 `packages/db/src/queries/admin/index.ts` にスキルアンケートクエリを re-export する
 
 > **APPEND-ONLY**: 既存 export 行を変更せず `export * from './skill-survey-master-query'` を末尾に追記する（タスク 2.3 参照）。
 
