@@ -294,21 +294,21 @@ _Requirements:_ 2.1, 2.2, 2.3, 2.4, 6.1, 6.6
 _Boundary:_ apps/admin/app/companies/
 _Depends:_ 3.1, 3.2, 3.3, 8.1, 8.2
 
-- [ ] 11.1 `CreateCompanyForm` Client Component を実装する
+- [x] 11.1 `CreateCompanyForm` Client Component を実装する
 
 - `apps/admin/app/_components/create-company-form.tsx` を新規作成（`'use client'`）
 - 企業名テキスト入力 + [作成] ボタン
 - `createCompanyAction` を呼び出し、エラー時はエラーメッセージ表示
 - `pnpm typecheck` がエラーなし
 
-- [ ] 11.2 企業一覧ページを実装する
+- [x] 11.2 企業一覧ページを実装する
 
 - `apps/admin/app/companies/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getCompaniesForAdmin` → `SearchFilter` + テーブル + `CreateCompanyForm`
 - テーブル行: 企業名・募集件数・有効/無効バッジ・[詳細]リンク
 - `pnpm typecheck` がエラーなし
 
-- [ ] 11.3 企業詳細ページを実装する
+- [x] 11.3 企業詳細ページを実装する
 
 - `apps/admin/app/companies/[id]/page.tsx` を新規作成（Server Component）
 - `requireAdmin()` → `getCompanyDetail`（不在なら `notFound()`）
