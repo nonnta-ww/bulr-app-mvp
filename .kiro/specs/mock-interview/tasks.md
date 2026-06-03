@@ -4,7 +4,7 @@
 
 ---
 
-- [ ] 1. DB スキーマ・migration・クエリ関数
+- [x] 1. DB スキーマ・migration・クエリ関数
 - [x] 1.1 `mock_interview` Drizzle スキーマを作成する (P)
   - `packages/db/src/schema/mock-interview.ts` に `mockInterview` テーブルを定義する
   - `candidateProfileId`（FK → `candidate_profile.id`, ON DELETE CASCADE）・`patternCode`・`startedAt`・`endedAt`（nullable）・`turnCount`（default 0）・`formativeFeedback`（JSONB nullable）・`metadata`（JSONB nullable）・`createdAt`・`updatedAt` カラムを含む
@@ -51,7 +51,7 @@
 
 ---
 
-- [ ] 2. `packages/ai/mock/` パッケージを新設する
+- [x] 2. `packages/ai/mock/` パッケージを新設する
 - [x] 2.1 `@bulr/ai-mock` パッケージ雛形を作成する (P)
   - `packages/ai/mock/package.json` を作成する（name: `@bulr/ai-mock`、dependencies: `ai`, `@ai-sdk/anthropic`, `zod`）
   - **`@bulr/db` は runtime dependencies に含めない**: `@bulr/ai-mock` の LLM 関数（`conductMockInterview` / `generateFormativeFeedback`）は純粋関数であり、パターンデータ・会話履歴を引数として受け取るだけでDB に直接アクセスしない。型のみが必要な場合は `devDependencies` に追加し、引数型は型として import するのみとする（循環依存の回避、パッケージ境界の明確化）。
@@ -98,7 +98,7 @@
 
 ---
 
-- [ ] 3. API Routes を実装する
+- [x] 3. API Routes を実装する
   - _Depends: 1.4, 2.4_
 
 - [x] 3.1 `/api/mock-interview/turns/next` Route Handler を実装する (P)
@@ -129,7 +129,7 @@
 
 ---
 
-- [ ] 4. Server Action・パターン選択 UI を実装する
+- [x] 4. Server Action・パターン選択 UI を実装する
   - _Depends: 1.4, 1.5_
 
 - [x] 4.1 `createMockInterviewSessionAction` Server Action を実装する (P)
@@ -180,7 +180,7 @@
 
 ---
 
-- [ ] 5. チャット画面を実装する
+- [x] 5. チャット画面を実装する
   - _Depends: 3.1, 3.2, 1.4_
 
 - [x] 5.1 チャット画面 Server Component を実装する (P)
@@ -208,7 +208,7 @@
 
 ---
 
-- [ ] 6. フィードバック結果画面を実装する
+- [x] 6. フィードバック結果画面を実装する
   - _Depends: 1.4_
 
 - [x] 6.1 フィードバック結果画面（Server Component）を実装する
@@ -225,7 +225,7 @@
 
 ---
 
-- [ ] 7. 統合スモークテスト（型チェック・ビルド・手動検証）
+- [x] 7. 統合スモークテスト（型チェック・ビルド・手動検証）
   - _Depends: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 6.1_
 
 - [x] 7.1 `pnpm typecheck` と `pnpm build` が全パッケージ・アプリで通過する
@@ -233,18 +233,18 @@
   - `pnpm build` が `packages/ai/mock`, `packages/db`, `apps/candidate` でエラーなし
   - _Requirements: 要件 8, 9_
 
-- [ ] 7.2 月次クォータの手動スモークテスト
+- [x] 7.2 月次クォータの手動スモークテスト
   - 同一候補者で 3 セッションを開始・終了し、4 回目の「開始」ボタン押下で「今月の上限に達しました（3 回 / 月）」が表示されること
   - パターン選択画面でクォータ残数が 0 になると全「開始」ボタンが無効化されること
   - _Requirements: 要件 1, 2_
 
-- [ ] 7.3 AI チャットフローの手動スモークテスト
+- [x] 7.3 AI チャットフローの手動スモークテスト
   - 57 パターンの中から 1 つを選択してセッションが作成されること
   - チャット画面で回答送信後に AI の次の質問が表示されること
   - 「面接を終了する」押下後にフィードバック結果ページに遷移し、5 次元フィードバックが表示されること
   - _Requirements: 要件 3, 4, 5_
 
-- [ ] 7.4 セッション所有権の手動スモークテスト
+- [x] 7.4 セッション所有権の手動スモークテスト
   - 別候補者のセッション URL（`/mock-interview/[他人のsessionId]`）に直接アクセスして 404 が返ること
   - 未認証状態で `/mock-interview` にアクセスして `/sign-in` にリダイレクトされること
   - _Requirements: 要件 6_
