@@ -186,7 +186,7 @@ _Requirements:_ 1.4, 1.5, 1.6, 6.2, 6.5
 _Boundary:_ apps/admin/app/candidates/_actions/
 _Depends:_ 1.1, 1.3, 2.1
 
-- [ ] 7.1 `disableCandidateProfile` Server Action を実装する
+- [x] 7.1 `disableCandidateProfile` Server Action を実装する
 
 - `apps/admin/app/candidates/_actions/disable-candidate.ts` を新規作成
 - `'use server'` 指定
@@ -195,7 +195,7 @@ _Depends:_ 1.1, 1.3, 2.1
 - `revalidatePath('/candidates')` と `revalidatePath('/candidates/${id}')` を実行
 - `pnpm typecheck` がエラーなし
 
-- [ ] 7.2 `resetCandidateQuota` Server Action を実装する
+- [x] 7.2 `resetCandidateQuota` Server Action を実装する
 
 - `apps/admin/app/candidates/_actions/reset-quota.ts` を新規作成
 - `adminAction(z.object({ candidateProfileId: z.string().min(1) }), ...)` でラップ
