@@ -85,6 +85,13 @@
       "when": 1780459761418,
       "tag": "0011_flashy_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780592556088,
+      "tag": "0012_flat_kylun",
+      "breakpoints": true
     }
   ]
 }

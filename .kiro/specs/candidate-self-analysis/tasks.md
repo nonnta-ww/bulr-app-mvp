@@ -6,7 +6,7 @@
   - `AggregatedSnapshot` / `SelfAnalysisNarrative` / `SelfAnalysisMetadata`(llm_cost_estimate) 型を定義し schema barrel から export
   - 完了条件: スキーマファイルが型 export され `pnpm --filter @bulr/db typecheck` が通る
   - _Requirements: 6.1, 9.1_
-- [ ] 1.2 マイグレーションを生成・適用する
+- [x] 1.2 マイグレーションを生成・適用する
   - self_analysis の drizzle マイグレーションを生成し、ローカル DB に適用（push）して実テーブルが作成される
   - 完了条件: ローカル Postgres に self_analysis テーブルと一意インデックスが存在する
   - _Requirements: 6.1_
