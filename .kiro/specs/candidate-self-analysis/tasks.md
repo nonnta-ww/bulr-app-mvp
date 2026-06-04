@@ -94,7 +94,7 @@
   - _Depends: 6.3_
 
 - [ ] 8. 統合確認・検証
-- [ ] 8.1 型チェックとビルドを通す
+- [x] 8.1 型チェックとビルドを通す
   - 変更パッケージ（@bulr/db / @bulr/ai-self-analysis / @bulr/candidate）の typecheck と candidate の build を通す
   - 完了条件: typecheck・build がエラーなく完了し /self-analysis ルートが生成される
   - _Requirements: 1.1, 3.1_
