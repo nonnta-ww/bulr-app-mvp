@@ -29,7 +29,7 @@
   - _Depends: 1.1_
 
 - [ ] 3. 自然言語生成パッケージ（@bulr/ai-self-analysis）
-- [ ] 3.1 LLM パッケージを scaffold する
+- [x] 3.1 LLM パッケージを scaffold する
   - 新パッケージ `@bulr/ai-self-analysis`（package.json/tsconfig、deps: ai / @ai-sdk/anthropic / zod / @bulr/ai）を作成し、`@bulr/db` に依存させない
   - `pnpm-workspace.yaml` と `turbo.json` に `packages/ai/self-analysis` を登録し、workspace がパッケージを解決できることを確認する
   - 完了条件: パッケージが workspace に認識され（pnpm install/解決が通る）空 barrel が typecheck を通る

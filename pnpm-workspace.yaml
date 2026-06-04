@@ -2,3 +2,4 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'packages/ai/mock'
+  - 'packages/ai/self-analysis'
