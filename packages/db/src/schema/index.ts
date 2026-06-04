@@ -18,3 +18,4 @@ export * from './opening';
 export * from './invitation';
 export * from './entry';
 export * from './mock-interview';
+export * from './self-analysis';
