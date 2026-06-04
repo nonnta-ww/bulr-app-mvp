@@ -42,13 +42,13 @@
   - _Depends: 3.1_
 
 - [ ] 4. 集計・コスト（純関数）
-- [ ] 4.1 (P) 決定論的集計ロジックを実装する
+- [x] 4.1 (P) 決定論的集計ロジックを実装する
   - 回答からカテゴリ別カバレッジ（answered/total）・選択の広さ・自由記述の有無・全体網羅度を算出する純関数。同一入力→同一出力。数値スコア化・他者比較を含めない
   - 完了条件: 同じ回答入力に対し常に同一の AggregatedSnapshot を返し、序列化スコアを含まない
   - _Requirements: 2.1, 2.2, 2.3_
   - _Boundary: aggregate_
   - _Depends: 2.1_
-- [ ] 4.2 (P) LLM コスト推定の純関数を実装する
+- [x] 4.2 (P) LLM コスト推定の純関数を実装する
   - usage(input/output tokens) から estimated_usd を $3/$15 per M で算出
   - 完了条件: 既知のトークン数に対し estimated_usd が $3/$15 式と一致する
   - _Requirements: 9.1, 9.2_
