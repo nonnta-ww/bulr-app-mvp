@@ -1,0 +1,251 @@
+'use client';
+
+/**
+ * SelfAnalysisView — 自己分析 表示コンポーネント（Client Component）
+ *
+ * page.tsx（Server Component）から record と isStale を受け取り、状態別に表示を切り替える。
+ *
+ * 表示状態の分岐（design.md §表示状態 stateDiagram 準拠）:
+ *   - Empty（record === null）:
+ *       自己分析未生成。「自己分析を生成する」CTA（generate）を表示（Req 8.2）。
+ *   - Complete（record あり & llmOutput あり & !isStale）:
+ *       coverage-bars + 強み/弱み/成長アクションを箇条書き表示（Req 3.x）。
+ *   - VizOnly（record あり & llmOutput === null）:
+ *       coverage-bars + 「サマリ生成に失敗しました」バナー + 「サマリ再生成」CTA（regenerate）（Req 4.1, 4.3）。
+ *   - Stale（record あり & llmOutput あり & isStale）:
+ *       Complete の表示に加え陳腐化バナー + 「再生成」CTA（generate=全体再生成）（Req 5.2）。
+ *
+ * 全体失敗（Req 4.2）: GenerateButton 側の GENERATION_FAILED エラーメッセージで
+ *   「生成に失敗しました。再度お試しください」を表示し再試行を促す。
+ *
+ * 数値スコア・他者比較・順位付けは一切含めない（Req 2.3, 3.4）。
+ *
+ * Requirements: 1.4, 4.1, 4.2, 4.3, 5.2, 8.2
+ * Boundary: self-analysis-view
+ */
+
+import { Card, CardContent, CardHeader, CardTitle } from '@bulr/ui';
+
+import type { SelfAnalysisRecord } from '@bulr/db';
+
+import { CoverageBars } from './coverage-bars';
+import { GenerateButton } from './generate-button';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+export interface SelfAnalysisViewProps {
+  /** 保存済み自己分析レコード（null = 未生成） */
+  record: SelfAnalysisRecord | null;
+  /** 最新 skill-survey 回答が record の生成元より新しい場合 true（Req 5.1） */
+  isStale: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// サブコンポーネント: 強み/弱み/成長アクションのリスト表示
+// ---------------------------------------------------------------------------
+
+interface NarrativeSectionProps {
+  title: string;
+  items: string[];
+  accentClass: string;
+}
+
+function NarrativeSection({ title, items, accentClass }: NarrativeSectionProps) {
+  if (items.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className={`text-base font-semibold ${accentClass}`}>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {items.map((item, index) => (
+            // 静的リストのため index を key に使用（回答は immutable）
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+              <span className="mt-1 shrink-0 text-gray-400">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// サブコンポーネント: 陳腐化バナー
+// ---------------------------------------------------------------------------
+
+function StaleBanner() {
+  return (
+    <div
+      role="status"
+      className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+    >
+      <p className="font-medium">回答が更新されています</p>
+      <p className="mt-1 text-amber-700">
+        最新の skill-survey 回答が自己分析の生成後に更新されています。最新化するには再生成してください。
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// サブコンポーネント: VizOnly バナー（サマリ生成失敗）
+// ---------------------------------------------------------------------------
+
+function VizOnlyBanner() {
+  return (
+    <div
+      role="status"
+      className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+    >
+      <p className="font-medium">サマリ生成に失敗しました</p>
+      <p className="mt-1 text-rose-700">
+        可視化データは正常に保存されています。「サマリ再生成」ボタンから自然言語サマリの再生成をお試しください。
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// メインコンポーネント
+// ---------------------------------------------------------------------------
+
+export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
+  // ---------------------------------------------------------------------------
+  // Empty 状態: 自己分析が未生成
+  // ---------------------------------------------------------------------------
+  if (record === null) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-12 text-center">
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-gray-900">自己分析を始めましょう</h2>
+          <p className="text-sm text-gray-500">
+            skill-survey の回答をもとに、強み・弱み・成長アクションを生成します。
+            <br />
+            ※ 生成には skill-survey への回答が必要です。
+          </p>
+        </div>
+        <GenerateButton
+          action="generate"
+          label="自己分析を生成する"
+          className="min-w-40"
+        />
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // VizOnly 状態: record あり & llmOutput === null（サマリ生成失敗）
+  // ---------------------------------------------------------------------------
+  if (record.llmOutput === null) {
+    return (
+      <div className="space-y-6">
+        {/* 可視化は常に表示（Req 4.1） */}
+        <CoverageBars snapshot={record.aggregatedSnapshot} />
+
+        {/* 失敗バナー */}
+        <VizOnlyBanner />
+
+        {/* サマリ再生成 CTA（Req 4.3） */}
+        <div className="flex justify-center">
+          <GenerateButton
+            action="regenerate"
+            label="サマリ再生成"
+            variant="outline"
+            className="min-w-36"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stale 状態: record あり & llmOutput あり & isStale
+  // ---------------------------------------------------------------------------
+  if (isStale) {
+    return (
+      <div className="space-y-6">
+        {/* 陳腐化バナー（Req 5.2） */}
+        <StaleBanner />
+
+        {/* 再生成 CTA（全体再生成 = generate）（Req 5.2） */}
+        <div className="flex justify-center">
+          <GenerateButton
+            action="generate"
+            label="再生成する"
+            className="min-w-36"
+          />
+        </div>
+
+        {/* 既存の分析内容（最新でない旨を伝えたうえで表示）（Req 5.3） */}
+        <div className="opacity-80">
+          <p className="mb-4 text-xs text-gray-500">
+            ※ 以下は最後に生成された自己分析です（最新の回答に基づいていない可能性があります）
+          </p>
+          <CoverageBars snapshot={record.aggregatedSnapshot} />
+          <div className="mt-6 space-y-4">
+            <NarrativeSection
+              title="強み"
+              items={record.llmOutput.strengths}
+              accentClass="text-emerald-700"
+            />
+            <NarrativeSection
+              title="弱み・手薄な領域"
+              items={record.llmOutput.weaknesses}
+              accentClass="text-rose-700"
+            />
+            <NarrativeSection
+              title="成長アクション"
+              items={record.llmOutput.growthActions}
+              accentClass="text-blue-700"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Complete 状態: record あり & llmOutput あり & !isStale（正常表示）
+  // ---------------------------------------------------------------------------
+  return (
+    <div className="space-y-6">
+      {/* 可視化（Req 2.1） */}
+      <CoverageBars snapshot={record.aggregatedSnapshot} />
+
+      {/* 自然言語サマリ + 成長アクション（Req 3.1, 3.2） */}
+      <div className="space-y-4">
+        <NarrativeSection
+          title="強み"
+          items={record.llmOutput.strengths}
+          accentClass="text-emerald-700"
+        />
+        <NarrativeSection
+          title="弱み・手薄な領域"
+          items={record.llmOutput.weaknesses}
+          accentClass="text-rose-700"
+        />
+        <NarrativeSection
+          title="成長アクション"
+          items={record.llmOutput.growthActions}
+          accentClass="text-blue-700"
+        />
+      </div>
+
+      {/* 再生成ボタン（Complete 状態でも提供、Req 5.2） */}
+      <div className="flex justify-end">
+        <GenerateButton
+          action="generate"
+          label="再生成する"
+          variant="outline"
+          className="min-w-28"
+        />
+      </div>
+    </div>
+  );
+}
