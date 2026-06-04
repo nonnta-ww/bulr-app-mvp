@@ -36,7 +36,7 @@ bulr は2フェーズで進行する。
 ### Wave 4 — 候補者 engagement hook ＋ 運営機能
 
 - [x] mock-interview — L4 AI 模擬面接。`mock_interview` テーブル、`packages/ai/mock` の候補者向け関数（面接官役＋形成的フィードバック）、テキストチャット UI、LLM クォータ。Dependencies: candidate-auth-onboarding, skill-survey
-- [ ] admin-operations — `apps/admin` の機能拡張：企業管理（閲覧/無効化/新規作成）・候補者管理（閲覧/無効化/クォータリセット）・skill_survey CMS（編集）＋ assessment_pattern 閲覧・LLM コスト/クォータ監視。Dependencies: company-and-opening, skill-survey, mock-interview
+- [x] admin-operations — `apps/admin` の機能拡張：企業管理（閲覧/無効化/新規作成）・候補者管理（閲覧/無効化/クォータリセット）・skill_survey CMS（編集）＋ assessment_pattern 閲覧・LLM コスト/クォータ監視。Dependencies: company-and-opening, skill-survey, mock-interview
 
 ### Wave 5+ — Later（保留・spec 化は時期到来時に判断）
 
