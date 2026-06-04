@@ -277,3 +277,27 @@ export async function updateNarrative(
     })
     .where(eq(selfAnalysis.id, id));
 }
+
+// ---------------------------------------------------------------------------
+// incrementRegenerationCount
+// ---------------------------------------------------------------------------
+
+/**
+ * 再生成カウンタと窓開始時刻を進める（Req 9.3）。
+ * regenerateNarrative の成功パスで updateNarrative の直後に呼ぶ。
+ * llm_output / metadata / aggregated_snapshot / source_* には触れない。
+ *
+ * @param id          - self_analysis.id
+ * @param nextCount   - checkRegenerationAllowed().nextCount
+ * @param windowStart - checkRegenerationAllowed().windowStart
+ */
+export async function incrementRegenerationCount(
+  id: string,
+  nextCount: number,
+  windowStart: Date,
+): Promise<void> {
+  await db
+    .update(selfAnalysis)
+    .set({ regenerationCount: nextCount, regenerationWindowStart: windowStart, updatedAt: new Date() })
+    .where(eq(selfAnalysis.id, id));
+}
