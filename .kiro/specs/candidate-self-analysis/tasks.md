@@ -80,7 +80,7 @@
   - 完了条件: 生成中はローディング、viz_only では可視化＋再試行、全体失敗時は失敗メッセージ＋再生成導線、陳腐化時は再生成導線が表示される
   - _Requirements: 1.4, 4.1, 4.2, 4.3, 5.2, 8.2_
   - _Depends: 5.1, 5.2, 6.1_
-- [ ] 6.3 自己分析ページ（状態分岐・アクセス制御）を実装する
+- [x] 6.3 自己分析ページ（状態分岐・アクセス制御）を実装する
   - Server Component で requireCandidate（未認証→/sign-in、プロフィール無→/onboarding）。対象 survey・保存済み自己分析・最新回答 submittedAt を取得し NoResponse/Empty/Complete/VizOnly/Stale を分岐。陳腐化＝最新 submittedAt > source_submitted_at。再訪時は再生成なしで保存済みを表示
   - 完了条件: 各状態が正しく出し分けられ、未認証/本人以外はアクセスできず、再訪で再生成なしに表示される
   - _Requirements: 1.1, 1.3, 5.1, 5.3, 6.3, 7.1, 7.2, 8.2_
