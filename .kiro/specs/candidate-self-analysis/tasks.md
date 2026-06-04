@@ -20,7 +20,7 @@
   - 完了条件: 候補者IDから回答が「カテゴリ名＋選択ラベル＋自由記述」の構造で取得でき、未回答時は null を返す
   - _Requirements: 1.2, 2.1, 7.2_
   - _Boundary: analysis-source-query_
-- [ ] 2.2 (P) self_analysis 読み書きと再生成抑制カウンタを実装する
+- [x] 2.2 (P) self_analysis 読み書きと再生成抑制カウンタを実装する
   - 取得（本人 candidate_profile_id 固定）・upsert（一意キーで最新1件上書き・source_submitted_at 記録）・narrative のみ更新・日次再生成カウンタ判定（行内 regeneration_count/window_start、mock の quota_reset_at は使わない）を実装
   - queries barrel から export
   - 完了条件: 同一(候補者,survey)で upsert が最新1件を保持し、日次上限超過時に判定が拒否を返す
