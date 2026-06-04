@@ -6,6 +6,17 @@ import { candidateProfile } from '../../schema/candidate-profile';
 import { mockInterview } from '../../schema/mock-interview';
 
 // ---------------------------------------------------------------------------
+// 定数
+// ---------------------------------------------------------------------------
+
+/**
+ * mock_interview.metadata には model フィールドが保存されていないため、
+ * MVP では全 mock-interview コストをこの単一モデルに帰属させる。
+ * モデルが変わった場合はここを更新すること。
+ */
+const MOCK_INTERVIEW_MODEL = 'Claude Sonnet 4.6';
+
+// ---------------------------------------------------------------------------
 // 公開型
 // ---------------------------------------------------------------------------
 
@@ -17,6 +28,8 @@ import { mockInterview } from '../../schema/mock-interview';
  * - totalOutputTokens: 全セッション合計出力トークン数
  * - dailyTrend: 直近 30 日の日次コスト推移
  * - topCandidates: 候補者別コスト上位 10 名
+ * - modelBreakdown: モデル別内訳（MVP では Claude Sonnet 4.6 の単一エントリ）
+ * - featureBreakdown: 機能別内訳（MVP では mock-interview の単一エントリ）
  *
  * 注意: コストデータは mock_interview のみ。assessment-engine（interview セッション）は
  * llm_cost_estimate を持たないため、このメトリクスの対象外となる。
@@ -32,6 +45,30 @@ export interface LlmCostMetrics {
     candidateProfileId: string;
     displayName: string;
     totalUsd: number;
+    sessionCount: number;
+  }>;
+  /**
+   * モデル別内訳
+   * metadata にモデル名が保存されていないため MVP では MOCK_INTERVIEW_MODEL の単一エントリのみ。
+   * コストが存在しない場合は空配列。
+   */
+  modelBreakdown: Array<{
+    model: string;
+    estimatedUsd: number;
+    inputTokens: number;
+    outputTokens: number;
+    sessionCount: number;
+  }>;
+  /**
+   * 機能別内訳
+   * interview（本番面接）は llm_cost_estimate を記録しないため mock-interview のみ。
+   * コストが存在しない場合は空配列。
+   */
+  featureBreakdown: Array<{
+    feature: string;
+    estimatedUsd: number;
+    inputTokens: number;
+    outputTokens: number;
     sessionCount: number;
   }>;
 }
@@ -153,12 +190,63 @@ export async function getLlmCostMetrics(): Promise<LlmCostMetrics> {
     sessionCount: Number(row.sessionCount),
   }));
 
+  // ------------------------------------------------------------------
+  // 4. モデル別内訳
+  //    metadata に model フィールドが存在しないため、コストがある場合は
+  //    MOCK_INTERVIEW_MODEL の単一エントリとしてグローバル集計値をそのまま使用する。
+  //    コストが 0（行なし）の場合は空配列。
+  //    sessionCount はグローバル集計と同じ WHERE 条件で COUNT を取得する。
+  // ------------------------------------------------------------------
+  const sessionCountRows = await db
+    .select({ cnt: sql<string>`COUNT(${mockInterview.id})` })
+    .from(mockInterview)
+    .where(
+      sql`${mockInterview.metadata} IS NOT NULL
+        AND ${mockInterview.metadata}->'llm_cost_estimate' IS NOT NULL`,
+    );
+  const totalSessionCount = Number(sessionCountRows[0]?.cnt ?? 0);
+
+  const modelBreakdown: LlmCostMetrics['modelBreakdown'] =
+    totalUsd > 0
+      ? [
+          {
+            model: MOCK_INTERVIEW_MODEL,
+            estimatedUsd: totalUsd,
+            inputTokens: totalInputTokens,
+            outputTokens: totalOutputTokens,
+            sessionCount: totalSessionCount,
+          },
+        ]
+      : [];
+
+  // ------------------------------------------------------------------
+  // 5. 機能別内訳
+  //    interview（本番面接）は llm_cost_estimate を記録していないため
+  //    mock-interview のみのエントリになる（上流 assessment-engine の制約）。
+  //    sessionCount はモデル別内訳と同じ値を再利用する。
+  //    コストが 0（行なし）の場合は空配列。
+  // ------------------------------------------------------------------
+  const featureBreakdown: LlmCostMetrics['featureBreakdown'] =
+    modelBreakdown.length > 0
+      ? [
+          {
+            feature: '模擬面接',
+            estimatedUsd: totalUsd,
+            inputTokens: totalInputTokens,
+            outputTokens: totalOutputTokens,
+            sessionCount: totalSessionCount,
+          },
+        ]
+      : [];
+
   return {
     totalUsd,
     totalInputTokens,
     totalOutputTokens,
     dailyTrend,
     topCandidates,
+    modelBreakdown,
+    featureBreakdown,
   };
 }
 

@@ -97,6 +97,87 @@ export default async function MonitoringPage() {
         </div>
       </section>
 
+      {/* ========== モデル別内訳 ========== */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-lg font-semibold text-gray-800">モデル別内訳</h2>
+        {metrics.modelBreakdown.length === 0 ? (
+          <p className="py-4 text-sm text-gray-500">データがありません</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">モデル</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">コスト（USD）</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">入力トークン</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">出力トークン</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">セッション数</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {metrics.modelBreakdown.map((row) => (
+                  <tr key={row.model} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">{row.model}</td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatUsd(row.estimatedUsd)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatTokens(row.inputTokens)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatTokens(row.outputTokens)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">{row.sessionCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* ========== 機能別内訳 ========== */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-lg font-semibold text-gray-800">機能別内訳</h2>
+        {metrics.featureBreakdown.length === 0 ? (
+          <p className="py-4 text-sm text-gray-500">データがありません</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">機能</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">コスト（USD）</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">入力トークン</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">出力トークン</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">セッション数</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {metrics.featureBreakdown.map((row) => (
+                  <tr key={row.feature} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">{row.feature}</td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatUsd(row.estimatedUsd)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatTokens(row.inputTokens)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatTokens(row.outputTokens)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">{row.sessionCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="mt-2 text-xs text-gray-400">
+          ※ interview（本番面接）のコストは未記録のため mock-interview のみ表示
+        </p>
+      </section>
+
       {/* ========== 日次トレンド（直近 30 日） ========== */}
       <section className="mb-8">
         <h2 className="mb-3 text-lg font-semibold text-gray-800">日次コスト推移（直近 30 日）</h2>
