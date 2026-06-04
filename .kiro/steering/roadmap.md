@@ -38,9 +38,21 @@ bulr は2フェーズで進行する。
 - [x] mock-interview — L4 AI 模擬面接。`mock_interview` テーブル、`packages/ai/mock` の候補者向け関数（面接官役＋形成的フィードバック）、テキストチャット UI、LLM クォータ。Dependencies: candidate-auth-onboarding, skill-survey
 - [x] admin-operations — `apps/admin` の機能拡張：企業管理（閲覧/無効化/新規作成）・候補者管理（閲覧/無効化/クォータリセット）・skill_survey CMS（編集）＋ assessment_pattern 閲覧・LLM コスト/クォータ監視。Dependencies: company-and-opening, skill-survey, mock-interview
 
-### Wave 5+ — Later（保留・spec 化は時期到来時に判断）
+### Wave 5 — 候補者 自己分析（self-diagnosis 中核）
+
+候補者プロダクトの中核「自己診断」を実装する Wave。skill-survey 回答を入力に、強み・弱みの可視化＋自然言語サマリ＋成長アクション提案を返す。並走で skill-survey の回答 UX 洗練（既存 spec 拡張、`## Existing Spec Updates` 参照）を行う。
+
+- [ ] candidate-self-analysis — skill-survey 回答をもとに候補者の強み・弱みを可視化し、自然言語サマリ＋成長アクション提案を返す自己分析機能。集計は決定論的（構造化）、要約・成長アクションは LLM（ハイブリッド）。入力は skill-survey 回答のみ（mock-interview は含めない）。数値スコア・他者比較は出さない。Dependencies: skill-survey, candidate-auth-onboarding
+
+### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
 
 スカウト層（候補者プール検索＋企業のスカウト課金）／L3 年収査定（bulr 自身のデータ蓄積後）／マッチング／模擬面接の音声対応／マルチテナント本格化。
+
+## Existing Spec Updates
+
+> Wave 5 と並走する既存 spec の拡張。新規 spec ではないため `/kiro-spec-batch` の波形実行対象には含めず、`/kiro-spec-requirements {feature}` で既存 spec を更新する。
+
+- [ ] skill-survey — アンケート回答 UX の洗練：多段ステップ/進捗表示、選択肢レンダリングの改善、入力検証の強化、L1 結果表示のビジュアル向上。新テーブルは追加せず、既存の回答フォーム/結果 UI（`apps/candidate/app/skill-survey/*`）を改善する。`candidate-self-analysis` の入力となる回答スキーマ/読み出し query は変更しない（変える場合は candidate-self-analysis の再検証が必要）。Dependencies: none（既存 skill-survey 拡張）
 
 ## Stage 2 の制約・方針
 
