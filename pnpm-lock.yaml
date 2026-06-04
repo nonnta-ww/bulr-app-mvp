@@ -212,6 +212,9 @@ importers:
       '@bulr/ai-mock':
         specifier: workspace:*
         version: link:../../packages/ai/mock
+      '@bulr/ai-self-analysis':
+        specifier: workspace:*
+        version: link:../../packages/ai/self-analysis
       '@bulr/auth':
         specifier: workspace:*
         version: link:../../packages/auth

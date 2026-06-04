@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@bulr/ai-mock": "workspace:*",
+    "@bulr/ai-self-analysis": "workspace:*",
     "@bulr/auth": "workspace:*",
     "@bulr/db": "workspace:*",
     "@bulr/lib": "workspace:*",

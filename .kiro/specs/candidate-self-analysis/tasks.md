@@ -55,7 +55,7 @@
   - _Boundary: cost_
 
 - [ ] 5. 生成オーケストレーション（Server Action）
-- [ ] 5.1 自己分析の生成アクションを実装する
+- [x] 5.1 自己分析の生成アクションを実装する
   - authedAction 内で requireCandidate→対象 survey 特定→未回答なら NO_RESPONSE→日次抑制判定で超過なら RATE_LIMITED→回答読出→決定論集計→LLM 生成→コスト算出→upsert（source_submitted_at・カウンタ更新）→/self-analysis を revalidate
   - LLM 生成失敗時は aggregated_snapshot を残し llm_output=null・metadata=null で保存し status を viz_only で返す
   - 完了条件: 回答ありで生成すると self_analysis が永続化され、LLM 失敗時も集計のみ保存されて viz_only が返る
