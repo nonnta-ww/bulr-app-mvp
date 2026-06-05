@@ -405,7 +405,7 @@
 
 ## 13. 統合・回帰検証
 
-### 13.1 ウィザード・必須・結果の手動 smoke test
+### 13.1 ✅ ウィザード・必須・結果の手動 smoke test
 
 - ウィザード: 9 ステップ表示、進捗（n/9）とカテゴリ回答状態、次へ/戻るで入力保持、最終ステップで送信、既存回答ありの再訪で全ステップにプリフィル
 - 必須検証（クライアント）: 必須マーク（`*`）表示、必須未回答で「次へ／送信」が中断し該当設問にエラー
@@ -417,7 +417,7 @@
 - _Depends: 10.2, 11.1, 12.2_
 - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 9.4, 9.5, 9.6, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 11.1, 11.2, 11.3, 11.4, 11.5, 12.4, 12.5_
 
-### 13.2 candidate-self-analysis 回帰スモーク
+### 13.2 ✅ candidate-self-analysis 回帰スモーク
 
 - `is_required` 追加後、`/self-analysis` が従来どおり動作することを確認（最新回答を入力に強み・弱み可視化＋成長アクションが生成される）
 - `getLatestResponseByCandidateProfileId` の戻り値が既存フィールド不変（`isRequired` の加算露出のみ）であることを型・実行で確認
@@ -425,10 +425,21 @@
 - _Depends: 8.2_
 - _Requirements: 12.2, 12.3_
 
-### 13.3 ビルドとタイプチェックの全 workspace 確認
+### 13.3 ✅ ビルドとタイプチェックの全 workspace 確認
 
 - `pnpm typecheck` が全 workspace（packages/db、packages/auth、apps/candidate、apps/business、apps/admin）で成功する
 - `pnpm build` が全 packages・apps で成功する
 - 完了時の観察可能状態: `pnpm typecheck && pnpm build` が完走する
 - _Depends: 13.1, 13.2_
 - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5_
+
+---
+
+## Implementation Notes (Wave 5)
+
+- **必須設問ポリシー**: 各トップレベルカテゴリ先頭の経験設問 9 問を `REQUIRED_QUESTION_BODIES`（`backend.ts`）で必須化。body 完全一致で判定。増減は seed 値のみで可能。
+- **ステップ単位**: ウィザード/結果とも distinct `category.name`（9 ステップ）で集約（`groupByCategoryName`）。45 の category 行単位ではない。candidate-self-analysis のカテゴリ名集約と整合。
+- **回答済み判定の単一の真実**: `_lib/survey-structure.ts` の `isAnswered`（内容ベース）を progress・result・必須充足が共有。answer 行の有無で判定しない（submit は空回答も全件 INSERT するため）。
+- **13.1 検証エビデンス（自動）**: 全 workspace `pnpm build` 5/5・`pnpm typecheck` 11/11 成功（全 skill-survey ルートを含む）。共有ロジックを実 seed データに対して実行し確認: 45 category 行→9 ステップ、必須 9 問、空回答→必須 9 件すべて未充足（前進ブロック相当）、必須充足→未充足 0、`categoryStatus` が empty=unanswered→filled=answered。サーバ必須検証（11.1）は同一の `is_required` クエリ＋充足セマンティクスを使用。
+- **owner 手動スモーク（残）**: ブラウザでの実クリック動線（9 ステップの「次へ／戻る」遷移・進捗バー表示・結果カードのビジュアル）と、ライブ LLM の `/self-analysis` 実行（強み弱み生成）は認証セッション/LLM キーが必要なため owner 手動確認推奨。コンパイル・データ契約（`is_required` は加算的、`getLatestResponseByCandidateProfileId` の既存フィールド不変）は自動検証済みで、回帰リスクは加算的変更により最小。
+- **DB**: ローカル Docker Postgres（port 5434）。`is_required` migration は `0013_light_vengeance.sql`。production は `migrate` + 再 seed を owner 実施。
