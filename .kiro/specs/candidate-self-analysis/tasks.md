@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. スキーマとマイグレーション（self_analysis）
+- [x] 1. スキーマとマイグレーション（self_analysis）
 - [x] 1.1 self_analysis テーブルと型を定義する
   - `self_analysis`（candidate_profile_id cascade / skill_survey_id / source_response_id / source_submitted_at / aggregated_snapshot jsonb / llm_output jsonb null可 / metadata jsonb null可 / regeneration_count / regeneration_window_start / timestamps）と `(candidate_profile_id, skill_survey_id)` 一意インデックスを定義
   - `AggregatedSnapshot` / `SelfAnalysisNarrative` / `SelfAnalysisMetadata`(llm_cost_estimate) 型を定義し schema barrel から export
@@ -12,7 +12,7 @@
   - _Requirements: 6.1_
   - _Depends: 1.1_
 
-- [ ] 2. データ読み書きクエリ
+- [x] 2. データ読み書きクエリ
 - [x] 2.1 (P) 自己分析用の skill-survey 読み出しクエリを実装する
   - 候補者の回答済み survey を特定する関数と、最新回答を「カテゴリ名・選択肢ラベル付き」で束ねて返す関数を実装（skill_survey 系テーブルは read-only、書き込みしない）
   - 複数回答時は最新提出の survey 1 件を対象（複数職種横断は対象外）
@@ -28,7 +28,7 @@
   - _Boundary: self-analysis-query_
   - _Depends: 1.1_
 
-- [ ] 3. 自然言語生成パッケージ（@bulr/ai-self-analysis）
+- [x] 3. 自然言語生成パッケージ（@bulr/ai-self-analysis）
 - [x] 3.1 LLM パッケージを scaffold する
   - 新パッケージ `@bulr/ai-self-analysis`（package.json/tsconfig、deps: ai / @ai-sdk/anthropic / zod / @bulr/ai）を作成し、`@bulr/db` に依存させない
   - `pnpm-workspace.yaml` と `turbo.json` に `packages/ai/self-analysis` を登録し、workspace がパッケージを解決できることを確認する
@@ -41,7 +41,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - _Depends: 3.1_
 
-- [ ] 4. 集計・コスト（純関数）
+- [x] 4. 集計・コスト（純関数）
 - [x] 4.1 (P) 決定論的集計ロジックを実装する
   - 回答からカテゴリ別カバレッジ（answered/total）・選択の広さ・自由記述の有無・全体網羅度を算出する純関数。同一入力→同一出力。数値スコア化・他者比較を含めない
   - 完了条件: 同じ回答入力に対し常に同一の AggregatedSnapshot を返し、序列化スコアを含まない
@@ -54,7 +54,7 @@
   - _Requirements: 9.1, 9.2_
   - _Boundary: cost_
 
-- [ ] 5. 生成オーケストレーション（Server Action）
+- [x] 5. 生成オーケストレーション（Server Action）
 - [x] 5.1 自己分析の生成アクションを実装する
   - authedAction 内で requireCandidate→対象 survey 特定→未回答なら NO_RESPONSE→日次抑制判定で超過なら RATE_LIMITED→回答読出→決定論集計→LLM 生成→コスト算出→upsert（source_submitted_at・カウンタ更新）→/self-analysis を revalidate
   - LLM 生成失敗時は aggregated_snapshot を残し llm_output=null・metadata=null で保存し status を viz_only で返す
@@ -67,7 +67,7 @@
   - _Requirements: 4.3, 5.2, 9.3_
   - _Depends: 5.1_
 
-- [ ] 6. 自己分析 UI
+- [x] 6. 自己分析 UI
 - [x] 6.1 (P) 網羅度可視化コンポーネントを実装する
   - AggregatedSnapshot を Tailwind バーで描画（カテゴリ別カバレッジ・広さ・自由記述有無）。数値スコア・他者比較は表示しない
   - 完了条件: スナップショットを渡すとカテゴリ別網羅度バーが描画され、序列化スコア表示が無い
@@ -86,20 +86,20 @@
   - _Requirements: 1.1, 1.3, 5.1, 5.3, 6.3, 7.1, 7.2, 8.2_
   - _Depends: 2.1, 2.2, 6.2_
 
-- [ ] 7. 導線統合（ホーム）
+- [x] 7. 導線統合（ホーム）
 - [x] 7.1 候補者ホームに自己分析導線を追加する
   - ホームの「Wave 2+ 予定」プレースホルダを /self-analysis への導線（前提として skill-survey 回答が必要な旨）に置換
   - 完了条件: ホームから自己分析へ遷移でき、未回答前提の案内が表示される
   - _Requirements: 8.1, 8.2_
   - _Depends: 6.3_
 
-- [ ] 8. 統合確認・検証
+- [x] 8. 統合確認・検証
 - [x] 8.1 型チェックとビルドを通す
   - 変更パッケージ（@bulr/db / @bulr/ai-self-analysis / @bulr/candidate）の typecheck と candidate の build を通す
   - 完了条件: typecheck・build がエラーなく完了し /self-analysis ルートが生成される
   - _Requirements: 1.1, 3.1_
   - _Depends: 7.1_
-- [ ] 8.2 手動スモークテストを完走する
+- [x] 8.2 手動スモークテストを完走する
   - 生成→可視化＋サマリ＋成長アクション表示／未回答→NO_RESPONSE 導線／LLM 失敗注入→viz_only＋再試行／回答更新→Stale→再生成／再訪→再生成なし表示／日次上限→RATE_LIMITED／未認証→/sign-in／本人以外非表示／ホーム導線／出力に数値スコア・他者比較が出ないことを確認
   - 完了条件: 上記シナリオがすべて期待どおり動作する
   - _Requirements: 1.3, 1.4, 2.3, 3.4, 4.1, 4.3, 5.1, 5.3, 6.3, 7.2, 8.1, 9.3_
