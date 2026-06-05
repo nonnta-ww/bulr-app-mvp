@@ -313,7 +313,7 @@
 - _Depends: 8.1_
 - _Requirements: 9.1, 12.1_
 
-### 8.3 seed に `is_required` を反映し必須設問を選定
+### 8.3 ✅ seed に `is_required` を反映し必須設問を選定
 
 - `packages/db/src/seeds/skill-surveys/backend.ts` の question 型に `isRequired: boolean` を追加
 - **必須設問の選定（ユーザーと確定）**: 9 トップレベルカテゴリ × 設問の一覧（カテゴリ / サブカテゴリ / 設問文）を提示し、必須にする設問をユーザーが選定して `isRequired: true` を設定する。残りは `false`。位置ヒューリスティックではなく意図的に選んだ集合とする（candidate-self-analysis が各カテゴリの土台データを得られる代表設問を目安）

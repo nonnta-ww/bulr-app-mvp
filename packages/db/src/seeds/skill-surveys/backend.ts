@@ -27,10 +27,30 @@ export type BackendSurveySeedData = {
       text: string;
       questionType: 'single_choice' | 'multi_choice' | 'free_text';
       displayOrder: number;
+      // Wave 5: per-question 必須上書き（任意）。未指定時は REQUIRED_QUESTION_BODIES で判定する。
+      isRequired?: boolean;
       choices: Array<{ text: string; displayOrder: number }>;
     }>;
   }>;
 };
+
+/**
+ * Wave 5: 必須設問（is_required=true）の集合（task 8.3）。
+ * 各トップレベルカテゴリ先頭の「経験設問」9 問をユーザーが選定。回答品質の最低限を担保しつつ
+ * candidate-self-analysis が各カテゴリの土台データを得られるようにする。
+ * body の完全一致で判定する（下記 9 件の body はカテゴリ横断でも一意）。
+ */
+const REQUIRED_QUESTION_BODIES = new Set<string>([
+  '経験のある言語（サーバーサイド）を選択してください。', // プログラミング
+  '経験のある言語（サーバーサイド）で利用したフレームワークを選択してください。', // フレームワーク・ライブラリ
+  '経験のあるRDB（リレーショナルデータベース）を選択してください。', // データベース
+  'RESTful APIの実装経験がありますか？', // API開発
+  'XSS（クロスサイトスクリプティング）対策を実装した経験がありますか？', // セキュリティ（認証・認可以外）
+  '経験のあるレイヤー設計を選択してください。', // アーキテクチャ設計
+  'プロファイリングツール（Datadog、New Relic、Google Cloud Profiler、JVM Profilerなど）を使って、アプリケーションのパフォーマンスボトルネックを診断したことがありますか？', // パフォーマンス・チューニング
+  '単体テストの経験がありますか？', // テスト
+  'Linux上の操作において、経験のあるものを選択してください。', // DevOps・インフラ
+]);
 
 export const backendSurveySeed: BackendSurveySeedData = {
   jobType: 'backend',
@@ -1758,12 +1778,14 @@ export async function runBackendSkillSurveySeed(db: DB): Promise<void> {
             body: question.text,
             questionType: question.questionType,
             displayOrder: question.displayOrder,
+            isRequired: question.isRequired ?? REQUIRED_QUESTION_BODIES.has(question.text),
           })
           .onConflictDoUpdate({
             target: [skillSurveyQuestion.categoryId, skillSurveyQuestion.body],
             set: {
               questionType: sql`excluded.question_type`,
               displayOrder: sql`excluded.display_order`,
+              isRequired: sql`excluded.is_required`,
               updatedAt: new Date(),
             },
           })
