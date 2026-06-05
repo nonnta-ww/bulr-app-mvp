@@ -42,7 +42,7 @@ bulr は2フェーズで進行する。
 
 候補者プロダクトの中核「自己診断」を実装する Wave。skill-survey 回答を入力に、強み・弱みの可視化＋自然言語サマリ＋成長アクション提案を返す。並走で skill-survey の回答 UX 洗練（既存 spec 拡張、`## Existing Spec Updates` 参照）を行う。
 
-- [ ] candidate-self-analysis — skill-survey 回答をもとに候補者の強み・弱みを可視化し、自然言語サマリ＋成長アクション提案を返す自己分析機能。集計は決定論的（構造化）、要約・成長アクションは LLM（ハイブリッド）。入力は skill-survey 回答のみ（mock-interview は含めない）。数値スコア・他者比較は出さない。Dependencies: skill-survey, candidate-auth-onboarding
+- [x] candidate-self-analysis — skill-survey 回答をもとに候補者の強み・弱みを可視化し、自然言語サマリ＋成長アクション提案を返す自己分析機能。集計は決定論的（構造化）、要約・成長アクションは LLM（ハイブリッド）。入力は skill-survey 回答のみ（mock-interview は含めない）。数値スコア・他者比較は出さない。Dependencies: skill-survey, candidate-auth-onboarding
 
 ### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
 
