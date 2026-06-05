@@ -366,7 +366,7 @@
 
 ## 11. サーバ側必須検証
 
-### 11.1 (P) `submit-survey.ts` にサーバ側必須検証を追加
+### 11.1 ✅ (P) `submit-survey.ts` にサーバ側必須検証を追加
 
 - Zod `submitSurveySchema` の形は変更しない（`surveyId` + `answers[]`）。必須情報はクライアント送信を信頼せず DB から取得
 - upsert 前に当該 survey の `skill_survey_question`（`is_required=true`）を DB 取得し、各必須設問のペイロード充足を再検証（single/multi は選択肢 1 件以上、free_text は非空白）
