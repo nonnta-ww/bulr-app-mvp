@@ -303,7 +303,7 @@
 - _Boundary: MasterSchemaModule_
 - _Requirements: 9.1, 9.2, 12.1, 12.2_
 
-### 8.2 マイグレーション生成と dev push
+### 8.2 ✅ マイグレーション生成と dev push
 
 - `pnpm --filter @bulr/db generate` で `ALTER TABLE skill_survey_question ADD COLUMN is_required boolean NOT NULL DEFAULT false` の migration が生成される
 - 生成 SQL を目視レビュー: `skill_survey_response` / `skill_survey_answer` に差分が無いことを確認（要件 12.1）。バックフィル不要（DEFAULT false）
