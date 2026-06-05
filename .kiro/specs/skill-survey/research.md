@@ -109,3 +109,59 @@ export async function requireCandidate(): Promise<{
 | Server Component ファースト | マスタデータの取得・結果表示は Server Component で完結 | Client Components の範囲を最小化（DB アクセスはサーバー側のみ）。Next.js 16 App Router の方針に準拠 |
 | seed の upsert conflict target | テーブル別に異なる一意キーを設計（job_type / name+subcategory+surveyId / text+categoryId / text+questionId） | 人間が読みやすいビジネスキーを conflict target とし、seed の再実行を冪等に保つ |
 | Wave 3 向け seam | `packages/db/src/queries/skill-survey/index.ts` に `getLatestResponseByCandidateProfileId` を定義 | packages/db がクエリの単一の真実となり、Wave 3 は packages/db を import するだけで使える。apps 層に依存しない |
+
+---
+
+## Wave 5 UX 洗練 — 追加調査（2026-06-05）
+
+**Feature Type**: Extension（実装済み skill-survey の回答 UX 洗練。要件 8〜12）
+
+**Discovery Process**: Light discovery（既存実装の構造確認 + マスタ実データの形状確認）
+
+### W5-1. 既存回答フォーム実装の構造確認
+
+**結果**:
+- `apps/candidate/app/skill-survey/_components/survey-form.tsx` は単一 Client Component。`buildInitialAnswers` で全設問の回答 state を生成し、カテゴリ行ごとに `<section>` を縦並べ（全カテゴリ 1 ページ表示）。`single_choice`→radio / `multi_choice`→checkbox / `free_text`→textarea を inline でレンダリング。char counter（`/2000`）、フィールドエラー、フォームエラーは実装済み。進捗・ステップ・必須検証は無い。
+- `submit-survey.ts` は `authedAction` + `requireCandidate()` 二重呼び出し。`selectedChoiceIds` の実在確認はあるが**必須検証なし**（空送信可）。Zod は `submitSurveySchema`（surveyId + answers[]）。
+- 別コンポーネント（question-single 等）は存在せず survey-form.tsx に inline。`_components/` は `survey-form.tsx` と `survey-list.tsx` のみ。
+
+**設計への影響**: 要件 8〜10 は survey-form.tsx の **改修**（新規ページ追加なし）。必須検証は submit-survey.ts にサーバ側追加。
+
+### W5-2. マスタ実データの形状（バックエンド survey）
+
+**結果**（`seeds/skill-surveys/backend.ts` 実データ）:
+- **トップレベルカテゴリ名（distinct `name`）= 9 件**: プログラミング / フレームワーク・ライブラリ / データベース / API開発 / セキュリティ（認証・認可以外）/ アーキテクチャ設計 / パフォーマンス・チューニング / テスト / DevOps・インフラ
+- `skill_survey_category` 行数 = **45**（= `(name, subcategory)` のペアごとに 1 行）。設問 119、選択肢 503。
+- スキーマのカラム名は `skill_survey_question.body`（`text` ではない）、`skill_survey_choice.label`。seed の型 `BackendSurveySeedData` は `text` プロパティ名を使い、runner で `body`/`label` にマップしている。
+
+**設計への影響（最重要）**:
+- ウィザードの **1 ステップ = distinct トップレベルカテゴリ名（≈9 ステップ）**。45 category 行を 1 ステップにすると 45 ステップとなり UX が破綻するため不採用。サブカテゴリは 1 ステップ内のグループ見出しとして表示する（要件 10.1）。
+- このグルーピングは `candidate-self-analysis` が既に採用する「カテゴリ名で集約（subcategory 統合）」と整合する（commit `f4248f1` 参照）。要件 8.1 の「1 カテゴリ = 1 ステップ」を**「distinct category.name 単位」**と定義する。
+
+### W5-3. 必須フラグの加算的追加と下流影響
+
+**結果**:
+- `getLatestResponseByCandidateProfileId` の戻り値 `question` は `skillSurveyQuestion.$inferSelect`。`skill_survey_question` に `is_required` を追加すると戻り値 question に `isRequired` が**加算的**に現れる。
+- `candidate-self-analysis`（`@bulr/ai-self-analysis` + `apps/candidate/app/self-analysis/*`）は回答内容（answer / question.body / category）を入力にする。`isRequired` 追加は非破壊（既存フィールド不変）。
+
+**決定**: `is_required boolean NOT NULL DEFAULT false` を追加（加算的）。バックフィル不要。seed 再実行で値設定。回答スキーマ（response/answer）と関数シグネチャは不変 → 要件 12 を満たす。post-change で candidate-self-analysis のスモークを必須化（要件 12.3）。
+
+### W5-4. 必須設問ポリシー（過剰必須の回避）
+
+**懸念**: 119 設問すべてを必須にすると回答負荷が過大。
+
+**決定（validate-design で確定 2026-06-05）**: `is_required` のデフォルトは false。enforcement は初版から ON。**必須集合は位置ヒューリスティックではなく人が意図的に選ぶ seed データ値**とする（ユーザー判断）。メカニズム（列 + 検証 + 必須マーク）は設問数・選び方に依存せず一般化。具体的な必須設問の選定は **seed 更新タスク内で実施**（選定タイミング = B）。設計・タスクは「必須集合は人が選ぶ」前提で確定。
+
+---
+
+## validate-design 結果（2026-06-05）
+
+**判定: GO（条件付き → 追補済み）**
+
+| Issue | 内容 | 対応 |
+|------|------|------|
+| Issue 1（🔴） | result ページの answer 中心データ形状と `groupByCategoryName`（master 木前提）の再利用ミスマッチ | result ページが master 木（categories+questions+choices）を組み立て、`answersToStateMap` で回答を Record 化して `survey-result.tsx` に渡す。45 行 category id 単位の独自グルーピングを廃し form と同一の `groupByCategoryName` に統一。design.md 追補済み |
+| Issue 2（🟡） | 「回答済み/未回答」が answer 行の有無で判定できない（submit が空回答も全件 INSERT） | `survey-structure.ts` に内容ベースの `isAnswered` を単一の真実として定義。progress（8.3）・result（11.2）・必須充足（9.x）が共有。design.md 追補済み |
+| Issue 3（🟡） | 必須設問の初版ポリシー未確定 | 上記 W5-4 のとおり「人が選ぶ seed 値」「選定は seed タスク内（B）」で確定 |
+
+**Strengths**: 加算的変更の徹底（回答スキーマ・読み出しクエリ契約を不変に保ち回帰スモーク必須化）／ステップ単位を 45 行でなく distinct カテゴリ名 9 ステップに正しく抽象化し candidate-self-analysis の集約と整合。

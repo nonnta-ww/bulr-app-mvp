@@ -284,3 +284,151 @@
 - _Boundary: 全コンポーネント_
 - _Depends: 7.1, 7.2_
 - _Requirements: 全要件_
+
+---
+---
+
+# Wave 5 UX 洗練タスク（要件 8〜12）
+
+> 本セクションは roadmap.md `## Existing Spec Updates` に基づく既存 skill-survey の UX 拡張タスク。タスク 1〜7（コア実装）は完了済み。新テーブルは追加せず、`skill_survey_question.is_required` の加算的列追加と `apps/candidate/app/skill-survey/*` の UI 改修のみ。回答スキーマ（response/answer）と `getLatestResponseByCandidateProfileId` の既存契約は不変（`isRequired` の加算露出を除く）。設計は design.md「Wave 5 UX 洗練 設計（要件 8〜12）」を参照。
+
+## 8. 必須フラグ基盤（スキーマ・マイグレーション・seed）
+
+### 8.1 `skill_survey_question` に `is_required` 列を加算的に追加
+
+- `packages/db/src/schema/skill-survey.ts` の `skillSurveyQuestion` に `isRequired: boolean('is_required').notNull().default(false)` を追加
+- `skill_survey_response` / `skill_survey_answer` テーブルは変更しない（要件 12.1）
+- `$inferSelect` 経由で `getLatestResponseByCandidateProfileId` の戻り値 `question` に `isRequired` が加算的に現れること。既存フィールドの型・名前は不変（要件 12.2）
+- 完了時の観察可能状態: `pnpm --filter @bulr/db typecheck` が成功し、`skillSurveyQuestion.$inferSelect` に `isRequired: boolean` が含まれる
+- _Boundary: MasterSchemaModule_
+- _Requirements: 9.1, 9.2, 12.1, 12.2_
+
+### 8.2 マイグレーション生成と dev push
+
+- `pnpm --filter @bulr/db generate` で `ALTER TABLE skill_survey_question ADD COLUMN is_required boolean NOT NULL DEFAULT false` の migration が生成される
+- 生成 SQL を目視レビュー: `skill_survey_response` / `skill_survey_answer` に差分が無いことを確認（要件 12.1）。バックフィル不要（DEFAULT false）
+- dev branch へ push 後、`psql` で `\d skill_survey_question` に `is_required` 列が存在することを確認
+- 完了時の観察可能状態: dev DB の `skill_survey_question` に `is_required` 列が存在する
+- _Boundary: MasterSchemaModule_
+- _Depends: 8.1_
+- _Requirements: 9.1, 12.1_
+
+### 8.3 seed に `is_required` を反映し必須設問を選定
+
+- `packages/db/src/seeds/skill-surveys/backend.ts` の question 型に `isRequired: boolean` を追加
+- **必須設問の選定（ユーザーと確定）**: 9 トップレベルカテゴリ × 設問の一覧（カテゴリ / サブカテゴリ / 設問文）を提示し、必須にする設問をユーザーが選定して `isRequired: true` を設定する。残りは `false`。位置ヒューリスティックではなく意図的に選んだ集合とする（candidate-self-analysis が各カテゴリの土台データを得られる代表設問を目安）
+- seed runner（`backend.ts` の `runBackendSkillSurveySeed`）の question upsert の `set` に `is_required` を含める（`id` 不変方針は維持、要件 3 の冪等性を保持）
+- 完了時の観察可能状態: 再 seed 後、選定した設問のみ `SELECT count(*) FROM skill_survey_question WHERE is_required = true` が選定集合と一致し、2 回連続実行で件数・`id` が不変
+- _Boundary: BackendSeedModule_
+- _Depends: 8.2_
+- _Requirements: 9.3_
+
+## 9. 共有構造ヘルパー
+
+### 9.1 `survey-structure.ts` の純関数群を実装
+
+- `apps/candidate/app/skill-survey/_lib/survey-structure.ts` を新規作成（`'use client'` を付けない純 TS。form/result/progress が共有）
+- `groupByCategoryName`: distinct `category.name` 単位で `SurveyStep[]` を構成（サブカテゴリ行を保持、`displayOrder` 昇順、ステップ順は category.name の最小 displayOrder 昇順で安定）
+- `isAnswered`: 内容ベースの回答済み判定（single/multi は選択肢 1 件以上、free_text は空白以外）。answer 行の有無では判定しない（単一の真実）
+- `isRequiredSatisfied`: `is_required=false` は常に true、true は `isAnswered` と同基準
+- `categoryStatus`: 必須設問があれば全必須充足で `'answered'`、無ければ `isAnswered` な設問が 1 問以上で `'answered'`
+- `answersToStateMap`: DB の answers 配列を `questionId` キーの `Record<string, AnswerState>` に正規化
+- 完了時の観察可能状態: `pnpm --filter candidate typecheck` 成功、client（form）と server（result page）の双方から import できる
+- _Boundary: SurveyStructureLib_
+- _Depends: 8.1_
+- _Requirements: 8.1, 8.3, 9.5, 9.7, 9.8, 10.1, 11.2_
+
+## 10. ウィザード回答フォーム
+
+### 10.1 (P) 進捗インジケータコンポーネントを実装
+
+- `apps/candidate/app/skill-survey/_components/survey-progress.tsx` を新規作成（presentational client）
+- `steps` と `answers` を受け、現在位置（例「カテゴリ 3 / 9」）と各カテゴリの回答状態（`categoryStatus`）を視覚表示
+- 完了時の観察可能状態: フォーム上部に「n / 9」と各カテゴリの回答済み/未回答が表示される
+- _Boundary: SurveyProgress_
+- _Depends: 9.1_
+- _Requirements: 8.2, 8.3_
+
+### 10.2 `survey-form.tsx` をカテゴリ名単位ウィザードに改修
+
+- `groupByCategoryName(categories)` で `SurveyStep[]` を導出し、`currentStepIndex` で当該ステップ（1 カテゴリ名グループ）のみ描画
+- 「戻る」「次へ」「送信」を配置。最終ステップでのみ送信ボタン（要件 8.6）。入力 state は全設問分を保持しステップ間で失わない（要件 8.4, 8.5）
+- 「次へ」時に当該ステップの必須設問を `isRequiredSatisfied` で検証し、未充足はインラインエラーで前進中断（要件 9.5）。送信時は全ステップを検証し未充足ステップへ誘導
+- 必須設問に視覚マーク（`*`）を表示（要件 9.4）
+- `single_choice`→radio / `multi_choice`→checkbox（選択状態を明確化）/ `free_text`→textarea + 残り文字数表示、2000 字超で前進/送信中断（要件 10.2〜10.5、既存ロジック流用）
+- サブカテゴリ見出しで設問をグルーピング（要件 10.1）。各設問の検証エラーは近傍にインライン表示（要件 10.6）
+- 既存回答のプリフィルを維持（要件 8.7）。途中保存は実装しない（リロード/離脱で未送信入力は破棄、新規 state 永続フィールドを追加しない＝要件 12.4, 12.5）
+- `survey-progress.tsx` を統合
+- 完了時の観察可能状態: `/skill-survey/{surveyId}` が 9 ステップで表示され、次へ/戻るで入力が保持され、必須未回答で前進が中断され、最終ステップで送信できる
+- _Boundary: SurveyFormComponent_
+- _Depends: 9.1, 10.1_
+- _Requirements: 8.1, 8.4, 8.5, 8.6, 8.7, 8.8, 9.4, 9.5, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 12.4, 12.5_
+
+## 11. サーバ側必須検証
+
+### 11.1 (P) `submit-survey.ts` にサーバ側必須検証を追加
+
+- Zod `submitSurveySchema` の形は変更しない（`surveyId` + `answers[]`）。必須情報はクライアント送信を信頼せず DB から取得
+- upsert 前に当該 survey の `skill_survey_question`（`is_required=true`）を DB 取得し、各必須設問のペイロード充足を再検証（single/multi は選択肢 1 件以上、free_text は非空白）
+- 未充足があれば `{ ok: false, error: { code: 'MISSING_REQUIRED_ANSWERS', message } }` を返す（既存 `INVALID_CHOICE_IDS` と同じ envelope 規約）
+- 既存の choice 実在確認・`onConflictDoUpdate` upsert・answer 全件差し替え・`redirect`・回答スキーマは不変（要件 12.1）
+- 完了時の観察可能状態: クライアント検証を迂回した必須未充足ペイロードが `MISSING_REQUIRED_ANSWERS` で拒否され、DB に書き込まれない
+- _Boundary: SubmitSurveyAction_
+- _Depends: 8.2, 8.3_
+- _Requirements: 9.6, 12.1_
+
+## 12. 結果ビジュアル
+
+### 12.1 (P) `survey-result.tsx` 結果ビューを実装
+
+- `apps/candidate/app/skill-survey/_components/survey-result.tsx` を新規作成（presentational）
+- 入力は result ページが組み立てた master 木（`CategoryWithQuestions[]`）＋回答 state Map＋choiceLabels
+- `groupByCategoryName` でカテゴリ名 → サブカテゴリ → 設問の構造化カードに整形し、`categoryStatus` / `isAnswered`（共有定義）で回答済み/未回答バッジを描画（要件 11.1, 11.2）
+- 選択肢は choice id → label を解決して表示、自由記述は入力どおり整形表示（要件 11.3）
+- 数値スコア・強み弱み解釈・他者比較・成長アクションは描画しない（要件 11.4）
+- 自己診断（`/self-analysis`）への導線リンクを置く（要件 11.5）
+- 完了時の観察可能状態: カテゴリ名カードに回答内容と回答済み/未回答バッジが表示され、スコア・解釈・比較が一切表示されない
+- _Boundary: SurveyResultView_
+- _Depends: 9.1_
+- _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+
+### 12.2 result ページを master 木組み立て + `survey-result.tsx` に差し替え
+
+- `apps/candidate/app/skill-survey/[surveyId]/result/page.tsx` で master 木（`skillSurveyCategory` + `skillSurveyQuestion` + `skillSurveyChoice` を survey 単位取得し `CategoryWithQuestions[]` に組み立て）
+- `getLatestResponseByCandidateProfileId` の回答を `answersToStateMap` で Record 化、choice id→label の Map を構築し `survey-result.tsx` に渡す
+- 45 行 category id 単位の独自グルーピングを廃し `groupByCategoryName` に統一（Issue 1 対応）
+- 既存の「未提出時リダイレクト」（要件 5.5）と「数値スコア・他者比較を出さない」（要件 5.4）は維持
+- 完了時の観察可能状態: result ページがカテゴリ名単位の構造化カードで表示され、自己診断への導線リンクが機能する
+- _Boundary: SurveyResultPage_
+- _Depends: 8.1, 12.1_
+- _Requirements: 11.1, 11.5_
+
+## 13. 統合・回帰検証
+
+### 13.1 ウィザード・必須・結果の手動 smoke test
+
+- ウィザード: 9 ステップ表示、進捗（n/9）とカテゴリ回答状態、次へ/戻るで入力保持、最終ステップで送信、既存回答ありの再訪で全ステップにプリフィル
+- 必須検証（クライアント）: 必須マーク（`*`）表示、必須未回答で「次へ／送信」が中断し該当設問にエラー
+- 必須検証（サーバ）: クライアント検証を迂回した必須未充足ペイロードが `MISSING_REQUIRED_ANSWERS` で拒否される
+- 選択肢/自由記述: サブカテゴリ見出しグルーピング、radio/checkbox の選択状態が明確、残り文字数表示、2000 字超で中断
+- 結果: カテゴリ名単位の構造化カード、回答済み/未回答バッジ、スコア/解釈/比較なし、自己診断リンク、未提出時リダイレクト
+- 途中保存なし: 未送信のまま離脱 → 再訪で確定済み回答のみ復元される
+- 完了時の観察可能状態: 上記すべての UX 動線がエラーなく期待通りに動作する
+- _Depends: 10.2, 11.1, 12.2_
+- _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 9.4, 9.5, 9.6, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 11.1, 11.2, 11.3, 11.4, 11.5, 12.4, 12.5_
+
+### 13.2 candidate-self-analysis 回帰スモーク
+
+- `is_required` 追加後、`/self-analysis` が従来どおり動作することを確認（最新回答を入力に強み・弱み可視化＋成長アクションが生成される）
+- `getLatestResponseByCandidateProfileId` の戻り値が既存フィールド不変（`isRequired` の加算露出のみ）であることを型・実行で確認
+- 完了時の観察可能状態: `/self-analysis` が変更前と同じ入力で正常動作する（回帰なし）
+- _Depends: 8.2_
+- _Requirements: 12.2, 12.3_
+
+### 13.3 ビルドとタイプチェックの全 workspace 確認
+
+- `pnpm typecheck` が全 workspace（packages/db、packages/auth、apps/candidate、apps/business、apps/admin）で成功する
+- `pnpm build` が全 packages・apps で成功する
+- 完了時の観察可能状態: `pnpm typecheck && pnpm build` が完走する
+- _Depends: 13.1, 13.2_
+- _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5_
