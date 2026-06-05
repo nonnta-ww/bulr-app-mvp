@@ -66,6 +66,7 @@ export const skillSurveyQuestion = pgTable(
       .references(() => skillSurveyCategory.id),
     body: text('body').notNull(),
     questionType: questionType('question_type').notNull(),
+    isRequired: boolean('is_required').notNull().default(false),
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

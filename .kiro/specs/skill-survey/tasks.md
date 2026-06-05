@@ -294,7 +294,7 @@
 
 ## 8. 必須フラグ基盤（スキーマ・マイグレーション・seed）
 
-### 8.1 `skill_survey_question` に `is_required` 列を加算的に追加
+### 8.1 ✅ `skill_survey_question` に `is_required` 列を加算的に追加
 
 - `packages/db/src/schema/skill-survey.ts` の `skillSurveyQuestion` に `isRequired: boolean('is_required').notNull().default(false)` を追加
 - `skill_survey_response` / `skill_survey_answer` テーブルは変更しない（要件 12.1）
