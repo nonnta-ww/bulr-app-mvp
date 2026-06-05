@@ -349,7 +349,7 @@
 - _Depends: 9.1_
 - _Requirements: 8.2, 8.3_
 
-### 10.2 `survey-form.tsx` をカテゴリ名単位ウィザードに改修
+### 10.2 ✅ `survey-form.tsx` をカテゴリ名単位ウィザードに改修
 
 - `groupByCategoryName(categories)` で `SurveyStep[]` を導出し、`currentStepIndex` で当該ステップ（1 カテゴリ名グループ）のみ描画
 - 「戻る」「次へ」「送信」を配置。最終ステップでのみ送信ボタン（要件 8.6）。入力 state は全設問分を保持しステップ間で失わない（要件 8.4, 8.5）
