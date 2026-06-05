@@ -340,7 +340,7 @@
 
 ## 10. ウィザード回答フォーム
 
-### 10.1 (P) 進捗インジケータコンポーネントを実装
+### 10.1 ✅ (P) 進捗インジケータコンポーネントを実装
 
 - `apps/candidate/app/skill-survey/_components/survey-progress.tsx` を新規作成（presentational client）
 - `steps` と `answers` を受け、現在位置（例「カテゴリ 3 / 9」）と各カテゴリの回答状態（`categoryStatus`）を視覚表示
