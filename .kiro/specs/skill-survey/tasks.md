@@ -392,7 +392,7 @@
 - _Depends: 9.1_
 - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-### 12.2 result ページを master 木組み立て + `survey-result.tsx` に差し替え
+### 12.2 ✅ result ページを master 木組み立て + `survey-result.tsx` に差し替え
 
 - `apps/candidate/app/skill-survey/[surveyId]/result/page.tsx` で master 木（`skillSurveyCategory` + `skillSurveyQuestion` + `skillSurveyChoice` を survey 単位取得し `CategoryWithQuestions[]` に組み立て）
 - `getLatestResponseByCandidateProfileId` の回答を `answersToStateMap` で Record 化、choice id→label の Map を構築し `survey-result.tsx` に渡す

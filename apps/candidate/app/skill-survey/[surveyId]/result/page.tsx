@@ -1,24 +1,35 @@
 /**
  * /skill-survey/[surveyId]/result — L1 棚卸し結果表示ページ (Server Component)
  *
- * - requireCandidate() でガード
- * - getLatestResponseByCandidateProfileId(candidate_profile_id, survey_id) で回答取得
- * - 未回答なら /skill-survey/{surveyId} に redirect
- * - カテゴリ → 設問 → 回答内容を構造化表示
- *   - single_choice / multi_choice: 選択した選択肢テキストを列挙
- *   - free_text: 入力テキストをそのまま表示 (LLM 変換・要約なし、assessment-design.md L3 注記準拠)
- * - 数値スコア・他者比較・年収は出さない
+ * - requireCandidate() でガード（UNAUTHORIZED → /sign-in, CANDIDATE_PROFILE_MISSING → /onboarding）
+ * - getLatestResponseByCandidateProfileId で最新回答を取得。未提出なら回答フォームへ redirect（要件 5.5）
+ * - master 木（categories + questions + choices）を組み立て、answersToStateMap で回答を Record 化し、
+ *   SurveyResult（カテゴリ名単位の構造化カード）に渡す（要件 11.1）
+ * - 45 行 category id 単位の独自グルーピングは廃し groupByCategoryName に統一（Issue 1 対応）
+ * - 数値スコア・他者比較は出さない（要件 5.4 / 11.4）。解釈・分析は自己診断へ導線で委譲（要件 11.5）
  *
- * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 7.1
+ * Requirements: 5.1, 5.3, 5.4, 5.5, 7.1, 11.1, 11.5
  */
 
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { eq, asc, inArray } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db, getLatestResponseByCandidateProfileId } from '@bulr/db';
-import { skillSurvey, skillSurveyCategory, skillSurveyChoice } from '@bulr/db/schema';
+import {
+  skillSurvey,
+  skillSurveyCategory,
+  skillSurveyQuestion,
+  skillSurveyChoice,
+} from '@bulr/db/schema';
+
+import { SurveyResult } from '../../_components/survey-result';
+import {
+  answersToStateMap,
+  type CategoryWithQuestions,
+  type QuestionWithChoices,
+} from '../../_lib/survey-structure';
 
 interface PageProps {
   params: Promise<{ surveyId: string }>;
@@ -27,6 +38,7 @@ interface PageProps {
 export default async function SkillSurveyResultPage({ params }: PageProps) {
   const { surveyId } = await params;
 
+  // 認証ガード
   let candidateProfileId: string;
   try {
     const { candidateProfile } = await requireCandidate();
@@ -39,6 +51,7 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
     throw err;
   }
 
+  // survey マスタ取得
   const [survey] = await db
     .select()
     .from(skillSurvey)
@@ -49,39 +62,62 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
     notFound();
   }
 
+  // 最新回答を取得。未提出ならフォームへ戻す（要件 5.5）
   const responseData = await getLatestResponseByCandidateProfileId(candidateProfileId, surveyId);
 
   if (!responseData) {
     redirect(`/skill-survey/${surveyId}`);
   }
 
-  // カテゴリ取得 (順序付き)
+  // master 木（categories + questions + choices）を組み立てる（form ページと同一スタイル）。
+  // choiceLabels（id → label）も同時に構築し、選択肢の表示テキストを解決できるようにする。
   const categories = await db
     .select()
     .from(skillSurveyCategory)
     .where(eq(skillSurveyCategory.skillSurveyId, surveyId))
     .orderBy(asc(skillSurveyCategory.displayOrder));
 
-  // 該当回答に紐づく選択肢を全件取得し、id → label でマップ化
-  const allChoiceIds = responseData.answers.flatMap((a) => a.answer.selectedChoiceIds ?? []);
+  const categoryIds = categories.map((c) => c.id);
+
+  let categoryTree: CategoryWithQuestions[] = [];
   const choiceLabels = new Map<string, string>();
-  if (allChoiceIds.length > 0) {
-    const allChoices = await db
-      .select({ id: skillSurveyChoice.id, label: skillSurveyChoice.label })
-      .from(skillSurveyChoice)
-      .where(inArray(skillSurveyChoice.id, allChoiceIds));
-    for (const c of allChoices) {
+
+  if (categoryIds.length > 0) {
+    const questions = await db
+      .select()
+      .from(skillSurveyQuestion)
+      .orderBy(asc(skillSurveyQuestion.displayOrder));
+    const filteredQuestions = questions.filter((q) => categoryIds.includes(q.categoryId));
+    const questionIds = filteredQuestions.map((q) => q.id);
+
+    const choices =
+      questionIds.length > 0
+        ? await db
+            .select()
+            .from(skillSurveyChoice)
+            .orderBy(asc(skillSurveyChoice.displayOrder))
+        : [];
+    const filteredChoices = choices.filter((c) => questionIds.includes(c.questionId));
+
+    const questionMap = new Map<string, QuestionWithChoices>();
+    for (const q of filteredQuestions) {
+      questionMap.set(q.id, { ...q, choices: [] });
+    }
+    for (const c of filteredChoices) {
+      questionMap.get(c.questionId)?.choices.push(c);
       choiceLabels.set(c.id, c.label);
     }
+
+    categoryTree = categories.map((cat) => ({
+      ...cat,
+      questions: filteredQuestions
+        .filter((q) => q.categoryId === cat.id)
+        .map((q) => questionMap.get(q.id)!),
+    }));
   }
 
-  // カテゴリ → 設問の順で表示用にグループ化
-  const questionsByCategory = new Map<string, typeof responseData.answers>();
-  for (const a of responseData.answers) {
-    const list = questionsByCategory.get(a.question.categoryId) ?? [];
-    list.push(a);
-    questionsByCategory.set(a.question.categoryId, list);
-  }
+  // DB の回答配列を questionId キーの state マップへ正規化
+  const answers = answersToStateMap(responseData.answers);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -91,9 +127,6 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
         </Link>
       </nav>
       <h1 className="mb-2 text-2xl font-semibold text-gray-900">{survey.title} の結果</h1>
-      <p className="mb-6 text-sm text-gray-600">
-        あなたが入力した内容を構造化して表示しています。スコアや他者比較は表示されません。
-      </p>
 
       <div className="mb-6">
         <Link
@@ -104,50 +137,12 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
         </Link>
       </div>
 
-      <div className="space-y-8">
-        {categories.map((category) => {
-          const categoryAnswers = (questionsByCategory.get(category.id) ?? []).sort(
-            (a, b) => a.question.displayOrder - b.question.displayOrder,
-          );
-          if (categoryAnswers.length === 0) return null;
-          return (
-            <section key={category.id} className="rounded-lg border border-gray-200 p-6">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                {category.name}
-                {category.subcategory ? (
-                  <span className="ml-2 text-sm font-normal text-gray-500">
-                    / {category.subcategory}
-                  </span>
-                ) : null}
-              </h2>
-              <dl className="space-y-4">
-                {categoryAnswers.map((a) => (
-                  <div key={a.answer.id}>
-                    <dt className="text-sm font-medium text-gray-700">{a.question.body}</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {a.question.questionType === 'free_text' ? (
-                        a.answer.freeText ? (
-                          <p className="whitespace-pre-wrap">{a.answer.freeText}</p>
-                        ) : (
-                          <p className="text-gray-400">（未回答）</p>
-                        )
-                      ) : (a.answer.selectedChoiceIds ?? []).length === 0 ? (
-                        <p className="text-gray-400">（未回答）</p>
-                      ) : (
-                        <ul className="list-disc pl-5">
-                          {(a.answer.selectedChoiceIds ?? []).map((cid) => (
-                            <li key={cid}>{choiceLabels.get(cid) ?? cid}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          );
-        })}
-      </div>
+      <SurveyResult
+        categories={categoryTree}
+        answers={answers}
+        choiceLabels={choiceLabels}
+        surveyTitle={survey.title}
+      />
     </main>
   );
 }
