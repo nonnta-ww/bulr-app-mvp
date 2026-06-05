@@ -52,7 +52,7 @@ bulr は2フェーズで進行する。
 
 > Wave 5 と並走する既存 spec の拡張。新規 spec ではないため `/kiro-spec-batch` の波形実行対象には含めず、`/kiro-spec-requirements {feature}` で既存 spec を更新する。
 
-- [ ] skill-survey — アンケート回答 UX の洗練：多段ステップ/進捗表示、選択肢レンダリングの改善、入力検証の強化、L1 結果表示のビジュアル向上。新テーブルは追加せず、既存の回答フォーム/結果 UI（`apps/candidate/app/skill-survey/*`）を改善する。`candidate-self-analysis` の入力となる回答スキーマ/読み出し query は変更しない（変える場合は candidate-self-analysis の再検証が必要）。Dependencies: none（既存 skill-survey 拡張）
+- [x] skill-survey — アンケート回答 UX の洗練：多段ステップ/進捗表示、選択肢レンダリングの改善、入力検証の強化、L1 結果表示のビジュアル向上。新テーブルは追加せず、既存の回答フォーム/結果 UI（`apps/candidate/app/skill-survey/*`）を改善する。`candidate-self-analysis` の入力となる回答スキーマ/読み出し query は変更しない（変える場合は candidate-self-analysis の再検証が必要）。Dependencies: none（既存 skill-survey 拡張）。**実装完了 2026-06-06**: 要件8〜12、`is_required` 加算列（migration 0013）＋必須9問 seed＋カテゴリ名単位ウィザード＋サーバ必須検証＋結果ビジュアル＋自己診断導線。検証: typecheck 11/11・build 5/5・boot smoke（routes 307→sign-in）・共有ロジック実データスモーク。回答スキーマ/読み出し query 不変（is_required 加算のみ）。
 
 ## Stage 2 の制約・方針
 
