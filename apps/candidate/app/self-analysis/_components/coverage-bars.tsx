@@ -65,10 +65,11 @@ export function CoverageBars({ snapshot }: CoverageBarsProps) {
       {/* カテゴリ別網羅度 */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-gray-700">カテゴリ別の回答状況</h3>
-        {snapshot.categories.map((category) => {
+        {snapshot.categories.map((category, index) => {
           const percent = toPercent(category.coverageRatio);
           return (
-            <Card key={category.categoryName}>
+            // index 併用で一意化（保存済みスナップショットが同名カテゴリを含む場合に備える）
+            <Card key={`${category.categoryName}-${index}`}>
               <CardContent className="py-4">
                 {/* カテゴリ名 */}
                 <div className="mb-2 flex items-center justify-between">
