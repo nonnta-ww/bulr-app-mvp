@@ -325,7 +325,7 @@
 
 ## 9. 共有構造ヘルパー
 
-### 9.1 `survey-structure.ts` の純関数群を実装
+### 9.1 ✅ `survey-structure.ts` の純関数群を実装
 
 - `apps/candidate/app/skill-survey/_lib/survey-structure.ts` を新規作成（`'use client'` を付けない純 TS。form/result/progress が共有）
 - `groupByCategoryName`: distinct `category.name` 単位で `SurveyStep[]` を構成（サブカテゴリ行を保持、`displayOrder` 昇順、ステップ順は category.name の最小 displayOrder 昇順で安定）
