@@ -379,7 +379,7 @@
 
 ## 12. 結果ビジュアル
 
-### 12.1 (P) `survey-result.tsx` 結果ビューを実装
+### 12.1 ✅ (P) `survey-result.tsx` 結果ビューを実装
 
 - `apps/candidate/app/skill-survey/_components/survey-result.tsx` を新規作成（presentational）
 - 入力は result ページが組み立てた master 木（`CategoryWithQuestions[]`）＋回答 state Map＋choiceLabels
