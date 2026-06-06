@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 
-import { Header } from './_components/header';
+import { getCurrentUser } from '@bulr/auth/server';
+
+import { AppShell } from './_components/app-shell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -8,12 +10,12 @@ export const metadata: Metadata = {
   description: 'bulr 候補者ポータル',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
   return (
     <html lang="ja">
       <body>
-        <Header title="bulr" />
-        {children}
+        <AppShell userEmail={user?.email ?? null}>{children}</AppShell>
       </body>
     </html>
   );
