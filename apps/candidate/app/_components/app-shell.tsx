@@ -14,8 +14,8 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
-import { SignOutButton } from './sign-out-button';
 import { Sidebar } from './sidebar';
+import { UserMenu } from './user-menu';
 
 const COLLAPSE_KEY = 'bulr.nav.collapsed';
 const CHROMELESS_PATHS = ['/sign-in', '/onboarding'];
@@ -92,7 +92,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
           </button>
           <span className="text-sm font-semibold text-gray-800">bulr</span>
         </div>
-        <SignOutButton email={userEmail} />
+        <UserMenu email={userEmail} />
       </header>
 
       <div className="flex flex-1">
