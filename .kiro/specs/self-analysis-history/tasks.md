@@ -149,7 +149,7 @@
   - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 3.3, 3.5, 6.3_
   - _Depends: 4.1, 4.2_
 
-- [ ] 7.2 履歴・比較UIの受入を確認する
+- [x] 7.2 履歴・比較UIの受入を確認する
   - 推移グラフ表示（2件以上）、1件時の単点・比較無効、2版比較の差分・新旧対比、可視化のみ版を含む比較の縮退表示、序列非表示を手動確認する
   - 観測可能な完了条件: 受入観点の各ケースが画面上で期待どおりに表示される
   - _Requirements: 4.1, 4.4, 4.5, 5.1, 5.3, 5.4_
@@ -169,3 +169,4 @@
 - 4.1 follow-up: `trend.test.ts`（task 3.2）に `noUncheckedIndexedAccess` 由来の "possibly undefined"(配列添字アクセス) tsc エラーが2件残存。vitest は緑だが `tsc --noEmit` が拾う。task 7.3（typecheck 緑ゲート）までに `?.`/`!` で解消すること。
 - 7.1 verification: ローカル Postgres で実クエリ関数を用いた統合検証 29 PASS / 0 FAIL（追記保持・最新提出日時・クールダウン拒否/経過/初回・版スコープ upsert/履歴/最新/指定版・版独立カウンタ・所有フィルタ）。一時 fixture は finally で削除、行数 pre-test 一致を確認（self_analysis=1, response=2, answer=238）。注: versionIndex は (candidate,survey) の全版での 1-based 位置（既存版があれば連番でなく順序のみ保証）。
 - 7.3 gate: 全11パッケージ typecheck 緑、candidate production build 緑（/self-analysis 含む11/11 ページ生成）。candidate/db lint も緑。横断比較なし（getSelfAnalysis/History は単一 surveyId 引数）。結果ページの最新回答表示は 2.3 で ORDER BY 修正済み＋7.1 でデータ層検証済み。注: 既存の `@bulr/business` lint エラー2件（eq 未使用 / prefer-const）は本ブランチ非関与の先行技術債務（main から存在、packages/business は未変更）。narrative-section.tsx の未設定ルール参照 eslint-disable（自己分析旧コードからの持ち越し）は除去済み。
+- 7.2 acceptance: 自動検証で到達可能な範囲を確認済み —（a）production build で /self-analysis を含む11/11ページ生成成功、（b）dev server (:3020) で /self-analysis が 307（未認証→sign-in リダイレクト, ランタイムエラー無し）、（c）各受入観点のコンポーネントロジックを 5.2/5.3/5.4 のレビューで個別検証（2件以上→推移グラフ＋カテゴリトグル／1件→単点・比較無効／0件→非表示／2版差分＋強み・成長アクション新旧対比／可視化のみ版は差分のみ縮退／数値序列・他者比較なし）。設計上 UI 受入は「手動確認」分類のため、2版以上の実データでのピクセルレベル目視サインオフはユーザーのスポットチェックを推奨（認証セッション＋複数版データのシードが必要なため自律実行では未実施）。
