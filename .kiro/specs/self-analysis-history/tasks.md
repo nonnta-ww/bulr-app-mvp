@@ -8,7 +8,7 @@
   - 観測可能な完了条件: 空のサンプルテスト1件が `pnpm test`（candidate スコープ）で緑になり、CI 相当のローカル実行が通る
   - _Requirements: 4.1, 5.1, 2.1_
 
-- [ ] 1.2 成長推移グラフ用に recharts を導入する
+- [x] 1.2 成長推移グラフ用に recharts を導入する
   - candidate アプリに recharts を追加し、React 19 互換のため `react-is` を React 19 系へ固定（pnpm overrides）する
   - 観測可能な完了条件: recharts を import した最小コンポーネントがビルド（`pnpm build` / typecheck）を通過し、peer 解決エラーが出ない
   - _Requirements: 4.1_
