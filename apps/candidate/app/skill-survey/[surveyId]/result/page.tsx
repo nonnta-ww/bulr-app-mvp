@@ -7,8 +7,9 @@
  *   SurveyResult（カテゴリ名単位の構造化カード）に渡す（要件 11.1）
  * - 45 行 category id 単位の独自グルーピングは廃し groupByCategoryName に統一（Issue 1 対応）
  * - 数値スコア・他者比較は出さない（要件 5.4 / 11.4）。解釈・分析は自己診断へ導線で委譲（要件 11.5）
+ * - クールダウン中は「回答を編集する」リンクを非表示にし再開日を表示する（要件 2.1, 2.2）
  *
- * Requirements: 5.1, 5.3, 5.4, 5.5, 7.1, 11.1, 11.5
+ * Requirements: 5.1, 5.3, 5.4, 5.5, 7.1, 11.1, 11.5, 2.1, 2.2
  */
 
 import { redirect, notFound } from 'next/navigation';
@@ -16,7 +17,8 @@ import Link from 'next/link';
 import { asc, eq } from 'drizzle-orm';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
-import { db, getLatestResponseByCandidateProfileId } from '@bulr/db';
+import { db, getLatestResponseByCandidateProfileId, getLatestResponseSubmittedAt } from '@bulr/db';
+import { canReAnswer } from '../../../self-analysis/_lib/cooldown';
 import {
   skillSurvey,
   skillSurveyCategory,
@@ -68,6 +70,10 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
   if (!responseData) {
     redirect(`/skill-survey/${surveyId}`);
   }
+
+  // クールダウン判定（要件 2.1, 2.2）— 提出日時を取得して再回答可否を算出する
+  const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfileId, surveyId);
+  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date());
 
   // master 木（categories + questions + choices）を組み立てる（form ページと同一スタイル）。
   // choiceLabels（id → label）も同時に構築し、選択肢の表示テキストを解決できるようにする。
@@ -129,12 +135,22 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
       <h1 className="mb-2 text-2xl font-semibold text-gray-900">{survey.title} の結果</h1>
 
       <div className="mb-6">
-        <Link
-          href={`/skill-survey/${surveyId}`}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          回答を編集する →
-        </Link>
+        {cooldownVerdict.allowed ? (
+          <Link
+            href={`/skill-survey/${surveyId}`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            回答を編集する →
+          </Link>
+        ) : (
+          <p className="text-sm text-gray-400">
+            {(cooldownVerdict.nextAvailableAt as Date).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            })}以降に再回答できます
+          </p>
+        )}
       </div>
 
       <SurveyResult
