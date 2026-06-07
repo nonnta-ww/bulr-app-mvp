@@ -4,29 +4,30 @@
  * generateSelfAnalysis — 自己分析の生成 Server Action
  * regenerateNarrative — 自然言語部分の再生成 Server Action
  *
- * generateSelfAnalysis authedAction フロー（design.md §生成フロー厳守）:
+ * generateSelfAnalysis authedAction フロー（design.md §自己分析の生成（版スコープ）厳守）:
  *   1. requireCandidate — 未認証は AuthError として authedAction が捕捉し ok:false を返す
  *   2. getAnsweredSurveyForCandidate — 未回答なら NO_RESPONSE を返す
- *   3. checkRegenerationAllowed — 日次上限超過なら RATE_LIMITED を返す
- *   4. getSurveyResponseForAnalysis — 回答＋カテゴリ名＋選択肢ラベルを取得
+ *   3. getLatestSurveyResponseForAnalysis — 最新版 response を解決（responseId を確定させる）
+ *   4. checkRegenerationAllowed(sourceResponseId) — 版スコープの日次上限超過なら RATE_LIMITED を返す
  *   5. aggregate — 決定論的集計で AggregatedSnapshot を算出
  *   6. generateSelfAnalysisNarrative — try/catch で LLM 生成を試みる
  *      - 成功: estimateUsd でコスト算出、llmOutput/metadata を含めて upsert → status 'complete'
  *      - 失敗: llmOutput=null/metadata=null で upsert → status 'viz_only'
- *   7. revalidatePath('/self-analysis')
+ *   7. upsertSelfAnalysis（onConflict target = source_response_id）
+ *   8. revalidatePath('/self-analysis')
  *
- * regenerateNarrative authedAction フロー（design.md §System Flows 末尾・R4.3）:
+ * regenerateNarrative authedAction フロー（design.md §System Flows 末尾・集計不変）:
  *   1. requireCandidate
  *   2. getAnsweredSurveyForCandidate — 未回答なら NO_RESPONSE
- *   3. getSelfAnalysis — 保存済み分析が無ければ NO_ANALYSIS
- *   4. checkRegenerationAllowed — 日次上限超過なら RATE_LIMITED
- *   5. getSurveyResponseForAnalysis — LLM 入力用回答取得（answers/jobType のみ。集計は再実行しない）
+ *   3. getSelfAnalysis — 最新版の保存済み分析。無ければ NO_ANALYSIS
+ *   4. checkRegenerationAllowed(existing.sourceResponseId) — 版スコープ判定。上限超過なら RATE_LIMITED
+ *   5. getSurveyResponseByResponseId(existing.sourceResponseId) — 同一版の回答を取得（版固定）
  *   6. generateSelfAnalysisNarrative(aggregated=保存済みスナップショット) — try/catch
- *      - 成功: estimateUsd でコスト算出、updateNarrative → status 'complete'
+ *      - 成功: estimateUsd でコスト算出、updateNarrative → incrementRegenerationCount → status 'complete'
  *      - 失敗: updateNarrative を呼ばず既存状態を保持 → { ok:false, error: GENERATION_FAILED }
  *   7. revalidatePath('/self-analysis')
  *
- * 再生成カウンタ反映（Req 9.3）:
+ * 再生成カウンタ反映（Req 3.5）:
  *   updateNarrative（llm_output / metadata / updated_at）の直後に
  *   incrementRegenerationCount を呼び出し、regeneration_count / regeneration_window_start を
  *   verdict.nextCount / verdict.windowStart に進める。
@@ -37,7 +38,10 @@
  * discriminated 形で表現し、consumer は result.ok（authedAction 層）→ result.data（ビジネス層）
  * の2段階で読む。
  *
- * Requirements: 1.1, 1.2, 1.3, 1.5, 4.1, 4.2, 4.3, 5.2, 6.1, 7.1, 9.1, 9.3
+ * RATE_LIMITED は版スコープ（10/24h）として機能し、30日クールダウン（再回答抑止）とは独立した
+ * 日次上限である。checkRegenerationAllowed は sourceResponseId 単位で判定する。
+ *
+ * Requirements: 3.1, 3.2, 3.5
  * Boundary: generate-self-analysis action
  */
 
@@ -47,7 +51,8 @@ import { z } from 'zod';
 import { authedAction, requireCandidate } from '@bulr/auth/server';
 import {
   getAnsweredSurveyForCandidate,
-  getSurveyResponseForAnalysis,
+  getLatestSurveyResponseForAnalysis,
+  getSurveyResponseByResponseId,
   getSelfAnalysis,
   checkRegenerationAllowed,
   upsertSelfAnalysis,
@@ -81,6 +86,8 @@ type GenerateSelfAnalysisResult =
 
 /**
  * 候補者の最新 skill-survey 回答から自己分析を生成・永続化する。
+ * 最新回答版（responseId）を先に解決してから版スコープで rate-limit を判定する。
+ * upsert の onConflict target は source_response_id のため、同一版への再生成は版数を増やさず行を更新する。
  *
  * consumer は次の順で戻り値を読む:
  *   1. result.ok === false → auth/Zod エラー（result.error.code / result.error.message）
@@ -107,8 +114,18 @@ export const generateSelfAnalysis = authedAction(
 
     const { surveyId } = surveySummary;
 
-    // 3. 日次再生成抑制カウンタ判定（上限超過なら RATE_LIMITED）
-    const verdict = await checkRegenerationAllowed(candidateProfile.id, surveyId);
+    // 3. 最新版 response を解決して responseId を確定させる
+    // 理論上 null にはならないが防御的に扱う（null の場合はシステムエラーとして再 throw）
+    const source = await getLatestSurveyResponseForAnalysis(candidateProfile.id, surveyId);
+    if (!source) {
+      throw new Error(
+        `getLatestSurveyResponseForAnalysis returned null for candidateProfileId=${candidateProfile.id} surveyId=${surveyId}`,
+      );
+    }
+
+    // 4. 版スコープの日次再生成抑制カウンタ判定（上限超過なら RATE_LIMITED）
+    // NOTE: checkRegenerationAllowed は sourceResponseId 単位で判定し、30日クールダウンとは独立した日次上限として機能する
+    const verdict = await checkRegenerationAllowed(candidateProfile.id, source.responseId);
     if (!verdict.allowed) {
       return {
         ok: false,
@@ -117,15 +134,6 @@ export const generateSelfAnalysis = authedAction(
           message: '本日の再生成上限に達しました。時間をおいてから再度お試しください。',
         },
       };
-    }
-
-    // 4. 回答＋カテゴリ名＋選択肢ラベルを取得
-    // 理論上 null にはならないが防御的に扱う（null の場合はシステムエラーとして再 throw）
-    const source = await getSurveyResponseForAnalysis(candidateProfile.id, surveyId);
-    if (!source) {
-      throw new Error(
-        `getSurveyResponseForAnalysis returned null for candidateProfileId=${candidateProfile.id} surveyId=${surveyId}`,
-      );
     }
 
     // 5. 決定論的集計（純関数 — 副作用なし、同一入力→同一出力）
@@ -167,13 +175,14 @@ export const generateSelfAnalysis = authedAction(
       status = 'complete';
     } catch {
       // LLM 生成失敗 — 決定論集計結果（aggregatedSnapshot）は保持し viz_only で保存
-      // llmOutput=null / metadata=null で upsert する（Req 4.1）
+      // llmOutput=null / metadata=null で upsert する（Req 3.2）
       llmOutputForUpsert = null;
       metadataForUpsert = null;
       status = 'viz_only';
     }
 
-    // upsert（成功・失敗どちらのケースも aggregatedSnapshot は必ず永続化）
+    // 7. upsert（成功・失敗どちらのケースも aggregatedSnapshot は必ず永続化）
+    // onConflict target = source_response_id → 同一版への upsert は版数を増やさず行を更新する
     await upsertSelfAnalysis({
       candidateProfileId: candidateProfile.id,
       skillSurveyId: surveyId,
@@ -186,7 +195,7 @@ export const generateSelfAnalysis = authedAction(
       regenerationWindowStart: verdict.windowStart,
     });
 
-    // /self-analysis を revalidate（再訪時に最新状態を表示するため）
+    // 8. /self-analysis を revalidate（再訪時に最新状態を表示するため）
     revalidatePath('/self-analysis');
 
     return { ok: true, status };
@@ -213,8 +222,11 @@ type RegenerateNarrativeResult =
 
 /**
  * 保存済み self_analysis の aggregated_snapshot を入力に LLM のみ再実行し、
- * llm_output / metadata を更新する（Req 4.3, 5.2, 9.3）。
+ * llm_output / metadata を更新する（Req 3.2, 3.5）。
  * 決定論的集計（aggregated_snapshot / source_submitted_at）は変更しない（invariant）。
+ *
+ * 再生成は最新版の分析（getSelfAnalysis）の sourceResponseId の回答を版固定で取得し、
+ * その版の行のみを更新する（新しい版を追加しない）。
  *
  * consumer は次の順で戻り値を読む:
  *   1. result.ok === false → auth/Zod エラー（result.error.code / result.error.message）
@@ -241,7 +253,7 @@ export const regenerateNarrative = authedAction(
 
     const { surveyId } = surveySummary;
 
-    // 3. 保存済み自己分析を取得（無ければ再生成対象が無い）
+    // 3. 最新版の保存済み自己分析を取得（無ければ再生成対象が無い）
     const existing = await getSelfAnalysis(candidateProfile.id, surveyId);
     if (!existing) {
       return {
@@ -253,8 +265,9 @@ export const regenerateNarrative = authedAction(
       };
     }
 
-    // 4. 日次再生成抑制カウンタ判定（上限超過なら RATE_LIMITED）
-    const verdict = await checkRegenerationAllowed(candidateProfile.id, surveyId);
+    // 4. 版スコープの日次再生成抑制カウンタ判定（上限超過なら RATE_LIMITED）
+    // NOTE: existing.sourceResponseId で版スコープの判定を行う（30日クールダウンとは独立した日次上限）
+    const verdict = await checkRegenerationAllowed(candidateProfile.id, existing.sourceResponseId);
     if (!verdict.allowed) {
       return {
         ok: false,
@@ -265,12 +278,15 @@ export const regenerateNarrative = authedAction(
       };
     }
 
-    // 5. LLM 入力用の回答データを取得
-    // 集計は再実行しない — 保存済み aggregatedSnapshot をそのまま LLM 入力に渡す（Req 4.3）
-    const source = await getSurveyResponseForAnalysis(candidateProfile.id, surveyId);
+    // 5. 既存分析と同一版の回答を版固定で取得（最新 response ではなく existing の版を使う — 集計不変の invariant）
+    // 理論上 null にはならないが防御的に扱う（null の場合はシステムエラーとして再 throw）
+    const source = await getSurveyResponseByResponseId(
+      candidateProfile.id,
+      existing.sourceResponseId,
+    );
     if (!source) {
       throw new Error(
-        `getSurveyResponseForAnalysis returned null for candidateProfileId=${candidateProfile.id} surveyId=${surveyId}`,
+        `getSurveyResponseByResponseId returned null for candidateProfileId=${candidateProfile.id} sourceResponseId=${existing.sourceResponseId}`,
       );
     }
 
@@ -289,7 +305,7 @@ export const regenerateNarrative = authedAction(
     try {
       const llmResult = await generateSelfAnalysisNarrative({
         jobType: source.jobType,
-        // 保存済みスナップショットをそのまま渡す（Req 4.3: 集計は不変）
+        // 保存済みスナップショットをそのまま渡す（Req 3.2: 集計は不変）
         aggregated: existing.aggregatedSnapshot,
         answers,
       });
@@ -304,14 +320,14 @@ export const regenerateNarrative = authedAction(
         },
       };
 
-      // 7. narrative のみ更新（aggregated_snapshot / source_submitted_at は変更しない）
+      // narrative のみ更新（aggregated_snapshot / source_submitted_at は変更しない）
       await updateNarrative(existing.id, llmResult.output, llmMetadata);
 
-      // 8. 再生成カウンタを進める（Req 9.3 — 日次上限が正しく機能するよう DB に反映）
+      // 再生成カウンタを進める（Req 3.5 — 日次上限が正しく機能するよう DB に反映）
       //    verdict.allowed === true が保証されているため nextCount / windowStart は型安全に参照可能
       await incrementRegenerationCount(existing.id, verdict.nextCount, verdict.windowStart);
     } catch {
-      // LLM 生成失敗 — updateNarrative を呼ばず既存状態を保持（Req 4.3）
+      // LLM 生成失敗 — updateNarrative を呼ばず既存状態を保持（Req 3.2）
       return {
         ok: false,
         error: {
