@@ -155,7 +155,7 @@
   - _Requirements: 4.1, 4.4, 4.5, 5.1, 5.3, 5.4_
   - _Depends: 6.1_
 
-- [ ] 7.3 既存挙動の非破壊回帰を確認する
+- [x] 7.3 既存挙動の非破壊回帰を確認する
   - 結果ページが最新回答を表示すること、自己分析の生成・再生成・最新版表示・陳腐化導線が従来どおり動くこと、横断比較が提供されないことを確認し、typecheck/build を通す
   - 観測可能な完了条件: 既存フローが従来どおり動作し、typecheck と build が緑になる
   - _Requirements: 7.2, 7.3, 3.3_
@@ -168,3 +168,4 @@
 - 2.3 advisory: `submit-survey.ts` の `onConflictDoUpdate([candidate, survey])` は task 1.3 で当該 unique 制約が消えたため現状ランタイムで失敗する。task 4.1（追記型 insert 化）で解消予定。4.1 完了まで回答提出は実行不可（中間状態）。
 - 4.1 follow-up: `trend.test.ts`（task 3.2）に `noUncheckedIndexedAccess` 由来の "possibly undefined"(配列添字アクセス) tsc エラーが2件残存。vitest は緑だが `tsc --noEmit` が拾う。task 7.3（typecheck 緑ゲート）までに `?.`/`!` で解消すること。
 - 7.1 verification: ローカル Postgres で実クエリ関数を用いた統合検証 29 PASS / 0 FAIL（追記保持・最新提出日時・クールダウン拒否/経過/初回・版スコープ upsert/履歴/最新/指定版・版独立カウンタ・所有フィルタ）。一時 fixture は finally で削除、行数 pre-test 一致を確認（self_analysis=1, response=2, answer=238）。注: versionIndex は (candidate,survey) の全版での 1-based 位置（既存版があれば連番でなく順序のみ保証）。
+- 7.3 gate: 全11パッケージ typecheck 緑、candidate production build 緑（/self-analysis 含む11/11 ページ生成）。candidate/db lint も緑。横断比較なし（getSelfAnalysis/History は単一 surveyId 引数）。結果ページの最新回答表示は 2.3 で ORDER BY 修正済み＋7.1 でデータ層検証済み。注: 既存の `@bulr/business` lint エラー2件（eq 未使用 / prefer-const）は本ブランチ非関与の先行技術債務（main から存在、packages/business は未変更）。narrative-section.tsx の未設定ルール参照 eslint-disable（自己分析旧コードからの持ち越し）は除去済み。

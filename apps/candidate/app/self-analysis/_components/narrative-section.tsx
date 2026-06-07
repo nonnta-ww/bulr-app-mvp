@@ -21,7 +21,6 @@ export function NarrativeSection({ title, items, accentClass }: NarrativeSection
         <ul className="space-y-2">
           {items.map((item, index) => (
             // 静的リストのため index を key に使用（回答は immutable）
-            // eslint-disable-next-line react/no-array-index-key
             <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
               <span className="mt-1 shrink-0 text-gray-400">•</span>
               <span>{item}</span>
