@@ -12,6 +12,7 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "db:up": "docker compose -f docker/compose.yml up -d",
     "db:down": "docker compose -f docker/compose.yml down",
     "db:reset": "docker compose -f docker/compose.yml down -v && docker compose -f docker/compose.yml up -d",
