@@ -10,6 +10,8 @@ node_modules
 
 # Next.js
 .next
+# 自動生成され dev/build で参照先が揺れるため追跡しない（起動時に毎回再生成される）
+next-env.d.ts
 
 # Turbo
 .turbo
