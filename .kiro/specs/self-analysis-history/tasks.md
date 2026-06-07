@@ -41,7 +41,7 @@
   - _Boundary: analysis-source-query_
   - _Depends: 1.3_
 
-- [ ] 2.3 (P) スキル棚卸し最新回答クエリを最新版保証へ修正し、全消費箇所を棚卸しする
+- [x] 2.3 (P) スキル棚卸し最新回答クエリを最新版保証へ修正し、全消費箇所を棚卸しする
   - 結果ページ等が使う最新回答取得を、提出日時の降順で最新1件を返すよう明示修正する（一意制約前提の暗黙依存を除去）
   - 両テーブルの全消費箇所を横断検索し、一意制約・最新1件前提の残存箇所が無いことを確認する
   - 観測可能な完了条件: 複数版が存在しても結果ページ向けクエリが最新回答を返し、棚卸しで未対応の消費箇所が0件であることを確認できる
@@ -164,3 +164,5 @@
 ## Implementation Notes
 
 - 1.3: ローカル Docker Postgres は過去に `drizzle-kit push` で構築されており `__drizzle_migrations` 追跡テーブルが空。そのため `drizzle-kit migrate` は全マイグレーションを再適用しようとしてハングする。ローカル検証では生成済み migration SQL（0014）を `docker exec ... psql` で直接適用した。migration ファイル自体は本番（Neon）向けに正しく生成済み。以降の DB タスクでローカル適用が必要な場合は、生成 SQL を psql 直接適用するか、対象 DDL のみを手動適用すること。本番適用は別途運用で実施。
+- 2.3 audit: 単一行読み出しは全て ORDER BY submitted_at DESC か unique/PK キー指定で安全（NEEDS_FIX=0）。entry/interview は entry.skillSurveyResponseId（特定版FK）経由で版安全。
+- 2.3 advisory: `submit-survey.ts` の `onConflictDoUpdate([candidate, survey])` は task 1.3 で当該 unique 制約が消えたため現状ランタイムで失敗する。task 4.1（追記型 insert 化）で解消予定。4.1 完了まで回答提出は実行不可（中間状態）。
