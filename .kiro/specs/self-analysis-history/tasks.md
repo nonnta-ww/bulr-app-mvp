@@ -143,7 +143,7 @@
 
 ## 7. Validation: 統合・受入・回帰確認
 
-- [ ] 7.1 データ層の統合動作をローカルで検証する
+- [x] 7.1 データ層の統合動作をローカルで検証する
   - 追記保持・30日クールダウン・版スコープ生成/再生成・最新版/履歴取得を、ローカル Postgres 実データで一通り確認する
   - 観測可能な完了条件: 再回答で行が増え過去回答が残る／クールダウン拒否と経過後受理／同一版再生成で版数不変／最新版・履歴の各クエリ結果が期待どおり、を確認できる
   - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 3.3, 3.5, 6.3_
@@ -167,3 +167,4 @@
 - 2.3 audit: 単一行読み出しは全て ORDER BY submitted_at DESC か unique/PK キー指定で安全（NEEDS_FIX=0）。entry/interview は entry.skillSurveyResponseId（特定版FK）経由で版安全。
 - 2.3 advisory: `submit-survey.ts` の `onConflictDoUpdate([candidate, survey])` は task 1.3 で当該 unique 制約が消えたため現状ランタイムで失敗する。task 4.1（追記型 insert 化）で解消予定。4.1 完了まで回答提出は実行不可（中間状態）。
 - 4.1 follow-up: `trend.test.ts`（task 3.2）に `noUncheckedIndexedAccess` 由来の "possibly undefined"(配列添字アクセス) tsc エラーが2件残存。vitest は緑だが `tsc --noEmit` が拾う。task 7.3（typecheck 緑ゲート）までに `?.`/`!` で解消すること。
+- 7.1 verification: ローカル Postgres で実クエリ関数を用いた統合検証 29 PASS / 0 FAIL（追記保持・最新提出日時・クールダウン拒否/経過/初回・版スコープ upsert/履歴/最新/指定版・版独立カウンタ・所有フィルタ）。一時 fixture は finally で削除、行数 pre-test 一致を確認（self_analysis=1, response=2, answer=238）。注: versionIndex は (candidate,survey) の全版での 1-based 位置（既存版があれば連番でなく順序のみ保証）。
