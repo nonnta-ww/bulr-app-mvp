@@ -125,8 +125,8 @@ describe("buildCoverageTrend", () => {
     const tech = result.byCategory.find((c) => c.categoryName === "技術");
     expect(tech).toBeDefined();
     expect(tech!.points).toHaveLength(2);
-    expect(tech!.points[0].value).toBe(0.3);
-    expect(tech!.points[1].value).toBe(0.6);
+    expect(tech!.points[0]?.value).toBe(0.3);
+    expect(tech!.points[1]?.value).toBe(0.6);
 
     // 「ビジネス」は v2 のみ → 1 点 (v1 の点は 0 埋めしない)
     const biz = result.byCategory.find((c) => c.categoryName === "ビジネス");
