@@ -24,12 +24,11 @@
  * Boundary: self-analysis-view
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@bulr/ui';
-
 import type { SelfAnalysisRecord } from '@bulr/db';
 
 import { CoverageBars } from './coverage-bars';
 import { GenerateButton } from './generate-button';
+import { NarrativeSection } from './narrative-section';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -40,39 +39,6 @@ export interface SelfAnalysisViewProps {
   record: SelfAnalysisRecord | null;
   /** 最新 skill-survey 回答が record の生成元より新しい場合 true（Req 5.1） */
   isStale: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// サブコンポーネント: 強み/弱み/成長アクションのリスト表示
-// ---------------------------------------------------------------------------
-
-interface NarrativeSectionProps {
-  title: string;
-  items: string[];
-  accentClass: string;
-}
-
-function NarrativeSection({ title, items, accentClass }: NarrativeSectionProps) {
-  if (items.length === 0) return null;
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className={`text-base font-semibold ${accentClass}`}>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
-          {items.map((item, index) => (
-            // 静的リストのため index を key に使用（回答は immutable）
-            // eslint-disable-next-line react/no-array-index-key
-            <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-              <span className="mt-1 shrink-0 text-gray-400">•</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  );
 }
 
 // ---------------------------------------------------------------------------
