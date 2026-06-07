@@ -83,7 +83,7 @@
 
 ## 4. Core: Server Actions の版対応
 
-- [ ] 4.1 回答提出を追記型化し30日クールダウンを適用する
+- [x] 4.1 回答提出を追記型化し30日クールダウンを適用する
   - 回答提出を上書き（upsert＋既存回答削除）から新規版の追記へ変更し、過去版とその回答を保持する
   - 提出前に最新提出日時とクールダウン判定を行い、期間内は再開日付きの拒否を返す（最終防衛線）。初回は対象外
   - 観測可能な完了条件: 30日以内の再提出が拒否され、期間経過後は新しい版が追加され過去版の回答が残ることをローカルで確認できる
@@ -166,3 +166,4 @@
 - 1.3: ローカル Docker Postgres は過去に `drizzle-kit push` で構築されており `__drizzle_migrations` 追跡テーブルが空。そのため `drizzle-kit migrate` は全マイグレーションを再適用しようとしてハングする。ローカル検証では生成済み migration SQL（0014）を `docker exec ... psql` で直接適用した。migration ファイル自体は本番（Neon）向けに正しく生成済み。以降の DB タスクでローカル適用が必要な場合は、生成 SQL を psql 直接適用するか、対象 DDL のみを手動適用すること。本番適用は別途運用で実施。
 - 2.3 audit: 単一行読み出しは全て ORDER BY submitted_at DESC か unique/PK キー指定で安全（NEEDS_FIX=0）。entry/interview は entry.skillSurveyResponseId（特定版FK）経由で版安全。
 - 2.3 advisory: `submit-survey.ts` の `onConflictDoUpdate([candidate, survey])` は task 1.3 で当該 unique 制約が消えたため現状ランタイムで失敗する。task 4.1（追記型 insert 化）で解消予定。4.1 完了まで回答提出は実行不可（中間状態）。
+- 4.1 follow-up: `trend.test.ts`（task 3.2）に `noUncheckedIndexedAccess` 由来の "possibly undefined"(配列添字アクセス) tsc エラーが2件残存。vitest は緑だが `tsc --noEmit` が拾う。task 7.3（typecheck 緑ゲート）までに `?.`/`!` で解消すること。
