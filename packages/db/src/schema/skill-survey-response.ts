@@ -2,11 +2,11 @@
  * skill_survey_response / skill_survey_answer テーブル定義
  *
  * 候補者がスキルアンケートに回答した結果を格納する。
- * 1 候補者につき 1 survey あたり 1 レスポンス（DB ユニーク制約で保証）。
+ * 追記型（append-only）。再回答ごとに行が追加され、過去の回答は上書きされない。
  * answer は response に紐づき、response 削除時は CASCADE で削除される。
  */
 
-import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 import { candidateProfile } from './candidate-profile';
 import { skillSurvey, skillSurveyQuestion } from './skill-survey';
@@ -29,11 +29,13 @@ export const skillSurveyResponse = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    uniqueCandidateSurveyResponse: uniqueIndex(
-      'skill_survey_response_candidate_survey_idx',
-    ).on(t.candidateProfileId, t.skillSurveyId),
-  }),
+  (t) => [
+    index('skill_survey_response_candidate_survey_submitted_idx').on(
+      t.candidateProfileId,
+      t.skillSurveyId,
+      t.submittedAt,
+    ),
+  ],
 );
 
 export const skillSurveyAnswer = pgTable('skill_survey_answer', {

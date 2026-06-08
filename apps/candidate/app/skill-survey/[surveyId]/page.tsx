@@ -8,15 +8,18 @@
  * - マスタデータ（survey + categories + questions + choices）を全件取得して
  *   Client Component に渡す
  * - 既存回答があれば取得して初期値として渡す（再回答時のプリフィル）
+ * - クールダウン中はフォームを表示せず再開日を通知するページを表示する（要件 2.1, 2.2）
  *
- * Requirements: 4.2, 7.1
+ * Requirements: 4.2, 7.1, 2.1, 2.2
  */
 
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { asc, eq } from 'drizzle-orm';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
-import { db, getLatestResponseByCandidateProfileId } from '@bulr/db';
+import { db, getLatestResponseByCandidateProfileId, getLatestResponseSubmittedAt } from '@bulr/db';
+import { canReAnswer } from '../../self-analysis/_lib/cooldown';
 import {
   skillSurvey,
   skillSurveyCategory,
@@ -127,6 +130,53 @@ export default async function SurveyFormPage({ params }: PageProps) {
     candidateProfileId,
     surveyId,
   );
+
+  // クールダウン判定（要件 2.1, 2.2）— 初回（existingResponse===null）は常に許可
+  const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfileId, surveyId);
+  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date());
+
+  // クールダウン中はフォームを表示せず再開日を通知する
+  if (!cooldownVerdict.allowed) {
+    const nextAvailableAt = cooldownVerdict.nextAvailableAt as Date;
+    const resumeDateStr = nextAvailableAt.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <nav className="mb-4 text-sm text-gray-500">
+          <Link href="/skill-survey" className="hover:underline">
+            ← アンケート一覧に戻る
+          </Link>
+        </nav>
+        <h1 className="mb-4 text-2xl font-semibold text-gray-900">{survey.title}</h1>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+          <p className="text-gray-700">
+            このアンケートは前回提出から30日間は再回答できません。
+          </p>
+          <p className="mt-2 text-gray-700">
+            {resumeDateStr}以降に再度ご回答ください。
+          </p>
+          <div className="mt-6 flex gap-4">
+            <Link
+              href={`/skill-survey/${surveyId}/result`}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              前回の回答結果を見る →
+            </Link>
+            <Link
+              href="/skill-survey"
+              className="text-sm text-gray-500 hover:underline"
+            >
+              アンケート一覧
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">

@@ -9,3 +9,5 @@ export type {
   SelfAnalysisNarrative,
   SelfAnalysisMetadata,
 } from './schema/self-analysis';
+// SelfAnalysisVersion は trend _lib / compare _lib から import するため明示再 export
+export type { SelfAnalysisVersion } from './queries/self-analysis/self-analysis-query';

@@ -5,13 +5,15 @@
  *
  * - authedAction でラップし、candidateProfile は requireCandidate() で取得する。
  * - selectedChoiceIds が指定された場合は skill_survey_choice テーブルで実在確認。
- * - DB トランザクション内で:
- *   1. skill_survey_response を upsert
- *   2. 既存 skill_survey_answer を DELETE
- *   3. 新規 skill_survey_answer を INSERT
+ * - 提出前に getLatestResponseSubmittedAt で最新提出日時を取得し canReAnswer で
+ *   30日クールダウンを判定する。初回（未回答）はクールダウン対象外。
+ *   クールダウン中は COOLDOWN エラー（nextAvailableAt 付き）を返して終了する。
+ * - DB トランザクション内で（追記型・過去版を保持）:
+ *   1. skill_survey_response を新規 INSERT（append-only。onConflict なし）
+ *   2. 新規 skill_survey_answer を INSERT（既存回答は削除しない）
  * - 成功後 redirect('/skill-survey/{surveyId}/result')
  *
- * Requirements: 4.4, 4.5, 4.6, 4.7, 7.2, 7.3, 7.4
+ * Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 4.4, 4.5, 4.6, 4.7, 7.2, 7.3, 7.4
  */
 
 import { redirect } from 'next/navigation';
@@ -20,7 +22,7 @@ import { inArray, eq, and } from 'drizzle-orm';
 
 import { authedAction } from '@bulr/auth/server';
 import { requireCandidate } from '@bulr/auth/server';
-import { db } from '@bulr/db';
+import { db, getLatestResponseSubmittedAt } from '@bulr/db';
 import {
   skillSurveyResponse,
   skillSurveyAnswer,
@@ -28,6 +30,7 @@ import {
   skillSurveyQuestion,
   skillSurveyCategory,
 } from '@bulr/db/schema';
+import { canReAnswer } from '../../../self-analysis/_lib/cooldown';
 
 // --- Zod スキーマ ---
 
@@ -124,39 +127,53 @@ export const submitSurvey = authedAction(
       };
     }
 
-    // --- DB トランザクション ---
+    // --- 30日クールダウン判定（最終防衛線）---
+    // 入口での抑止（result ページ・フォーム入口）と合わせて二層で担保する（Req 2.1, 2.2）。
+    // 初回提出（lastSubmittedAt === null）はクールダウン対象外（Req 2.4）。
+
+    const now = new Date();
+    const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfile.id, surveyId);
+    const cooldownVerdict = canReAnswer(lastSubmittedAt, now);
+
+    if (!cooldownVerdict.allowed) {
+      // nextAvailableAt は allowed=false のとき必ず Date 値が入る（cooldown.ts の不変条件）
+      const nextAvailableAt = cooldownVerdict.nextAvailableAt as Date;
+      const resumeDateStr = nextAvailableAt.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return {
+        ok: false as const,
+        error: {
+          code: 'COOLDOWN' as const,
+          message: `このアンケートは前回提出から30日間は再回答できません。${resumeDateStr}以降に再度ご回答ください。`,
+          nextAvailableAt: nextAvailableAt.toISOString(),
+        },
+      };
+    }
+
+    // --- DB トランザクション（追記型）---
 
     await db.transaction(async (tx) => {
-      const now = new Date();
-
-      // Step 1: skill_survey_response を upsert し、response.id を取得
-      const upsertResult = await tx
+      // Step 1: skill_survey_response を新規 INSERT（append-only・onConflict なし）
+      // 一意制約は撤廃済み（task 1.3）。毎回新しい版として行を追加し過去版を保持する（Req 1.1）。
+      const insertResult = await tx
         .insert(skillSurveyResponse)
         .values({
           candidateProfileId: candidateProfile.id,
           skillSurveyId: surveyId,
           submittedAt: now,
         })
-        .onConflictDoUpdate({
-          target: [skillSurveyResponse.candidateProfileId, skillSurveyResponse.skillSurveyId],
-          set: {
-            submittedAt: now,
-            updatedAt: now,
-          },
-        })
         .returning({ id: skillSurveyResponse.id });
 
-      const responseId = upsertResult[0]?.id;
+      const responseId = insertResult[0]?.id;
       if (!responseId) {
-        throw new Error('skill_survey_response の upsert に失敗しました。');
+        throw new Error('skill_survey_response の insert に失敗しました。');
       }
 
-      // Step 2: 既存 skill_survey_answer を DELETE
-      await tx
-        .delete(skillSurveyAnswer)
-        .where(eq(skillSurveyAnswer.responseId, responseId));
-
-      // Step 3: 新規 skill_survey_answer を全設問分 INSERT（回答が空でも挿入する）
+      // Step 2: 新規 skill_survey_answer を全設問分 INSERT
+      // 既存回答は削除しない — 過去版の回答を履歴として保持する（Req 1.2）。
       if (answers.length > 0) {
         await tx.insert(skillSurveyAnswer).values(
           answers.map((a) => ({

@@ -22,19 +22,29 @@
  *   5. Complete（Req 6.3）:
  *        record あり & llmOutput あり & !stale → SelfAnalysisView(record, isStale=false)
  *
+ * 版履歴（Req 3.3, 3.4, 5.4, 6.1）:
+ *   getSelfAnalysisHistory で過去版を昇順取得し HistorySection に渡す。
+ *   0件のとき HistorySection は null を返す（非表示）。
+ *   最新版未生成でも過去版があれば履歴・推移を閲覧可能（Req 3.4）。
+ *
  * 再訪時の挙動（Req 6.3）:
  *   保存済み self_analysis を再生成せずそのまま表示するだけ。
  *   生成は _actions/generate-self-analysis.ts の明示操作（GenerateButton 経由）。
  *
- * Requirements: 1.1, 1.3, 5.1, 5.3, 6.3, 7.1, 7.2, 8.2
+ * Requirements: 1.1, 1.3, 3.3, 3.4, 4.1, 5.1, 5.3, 5.4, 6.1, 6.2, 6.3, 7.1, 7.2, 8.2
  */
 
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AuthError, requireCandidate } from '@bulr/auth/server';
-import { getAnsweredSurveyForCandidate, getSelfAnalysis } from '@bulr/db';
+import {
+  getAnsweredSurveyForCandidate,
+  getSelfAnalysis,
+  getSelfAnalysisHistory,
+} from '@bulr/db';
 
+import { HistorySection } from './_components/history-section';
 import { SelfAnalysisView } from './_components/self-analysis-view';
 
 export default async function SelfAnalysisPage() {
@@ -90,8 +100,11 @@ export default async function SelfAnalysisPage() {
     );
   }
 
-  // Step 2: 保存済み自己分析を取得（Req 5.3, 6.3 — 本人 ID + survey ID で所有確認）
-  const record = await getSelfAnalysis(candidateProfileId, answered.surveyId);
+  // Step 2: 保存済み自己分析と版履歴を並列取得（Req 5.3, 6.1, 6.3 — 本人 ID + survey ID で所有確認）
+  const [record, history] = await Promise.all([
+    getSelfAnalysis(candidateProfileId, answered.surveyId),
+    getSelfAnalysisHistory(candidateProfileId, answered.surveyId),
+  ]);
 
   // Step 3: 陳腐化判定（Req 5.1）
   // 最新 skill-survey 回答の submittedAt が self_analysis.sourceSubmittedAt より新しい場合を陳腐化とみなす。
@@ -100,6 +113,8 @@ export default async function SelfAnalysisPage() {
     record !== null && answered.submittedAt > record.sourceSubmittedAt;
 
   // ── Empty / VizOnly / Stale / Complete — SelfAnalysisView に委譲（Req 6.3）
+  // HistorySection は 0件のとき null を返す（非表示）。
+  // 最新版未生成でも過去版があれば履歴・推移を閲覧可能（Req 3.4）。
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6">
@@ -109,8 +124,13 @@ export default async function SelfAnalysisPage() {
         </p>
       </div>
 
-      {/* 保存済み自己分析を再生成なしに表示（Req 6.3）。生成は GenerateButton 経由の明示操作。 */}
-      <SelfAnalysisView record={record} isStale={isStale} />
+      <div className="space-y-10">
+        {/* 保存済み自己分析を再生成なしに表示（Req 6.3）。生成は GenerateButton 経由の明示操作。 */}
+        <SelfAnalysisView record={record} isStale={isStale} />
+
+        {/* 版履歴・成長推移（Req 3.3, 3.4, 5.4）。0件のとき非表示。 */}
+        <HistorySection versions={history} />
+      </div>
     </main>
   );
 }

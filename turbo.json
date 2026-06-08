@@ -35,6 +35,10 @@
     },
     "lint": {
       "dependsOn": ["^lint"]
+    },
+    "test": {
+      "outputs": [],
+      "cache": false
     }
   }
 }

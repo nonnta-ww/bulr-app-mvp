@@ -1,12 +1,12 @@
 /**
  * self_analysis 読み書きクエリ
  *
- * self_analysis テーブルへの read/write・(candidate_profile_id, skill_survey_id)
- * 一意キーによる upsert・日次再生成抑制カウンタ判定を担う。
- * 全 read 操作は candidateProfileId フィルタで本人所有データのみを返す（Req 7.2, 9.x）。
+ * self_analysis テーブルへの read/write・source_response_id（版キー）
+ * 一意キーによる upsert・版スコープ再生成抑制カウンタ判定を担う。
+ * 全 read 操作は candidateProfileId フィルタで本人所有データのみを返す（Req 6.1, 6.3）。
  */
 
-import { and, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { db } from '../../client';
 import type {
@@ -41,7 +41,7 @@ const REGEN_WINDOW_MS = 24 * 60 * 60 * 1000;
 // 公開型
 // ---------------------------------------------------------------------------
 
-/** getSelfAnalysis の戻り値 */
+/** getSelfAnalysis / getSelfAnalysisByResponseId の戻り値 */
 export interface SelfAnalysisRecord {
   id: string;
   candidateProfileId: string;
@@ -58,6 +58,22 @@ export interface SelfAnalysisRecord {
   regenerationWindowStart: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * 履歴の1版（source_submitted_at 昇順に versionIndex を付与）。
+ * getSelfAnalysisHistory の要素型。
+ */
+export interface SelfAnalysisVersion {
+  /** = source_response_id（版キー） */
+  responseId: string;
+  /** 1-based, source_submitted_at 昇順 */
+  versionIndex: number;
+  /** = source_submitted_at */
+  submittedAt: Date;
+  aggregatedSnapshot: AggregatedSnapshot;
+  /** null = 可視化のみ（LLM 未生成/失敗）（Req 4.3, Req 5.3） */
+  llmOutput: SelfAnalysisNarrative | null;
 }
 
 /**
@@ -95,9 +111,11 @@ function toRecord(row: typeof selfAnalysis.$inferSelect): SelfAnalysisRecord {
 // ---------------------------------------------------------------------------
 
 /**
- * 候補者の指定 survey に対する自己分析を返す（最大 1 件）。
- * candidateProfileId で本人フィルタを適用し、他候補者のデータは返さない（Req 7.2, 6.2）。
- * 未生成の場合は null を返す（Req 5.3, 6.3）。
+ * 候補者の指定 survey に対する最新版（source_submitted_at 降順の先頭）の自己分析を返す。
+ * candidateProfileId で本人フィルタを適用し、他候補者のデータは返さない（Req 6.1, 6.3）。
+ * 未生成の場合は null を返す（Req 5.3）。
+ *
+ * 複数版が存在する場合は source_submitted_at が最も新しい版を返す（Req 3.3）。
  *
  * @param candidateProfileId - 認証済み候補者の profile ID
  * @param skillSurveyId      - 対象 skill_survey の ID
@@ -115,6 +133,75 @@ export async function getSelfAnalysis(
         eq(selfAnalysis.skillSurveyId, skillSurveyId),
       ),
     )
+    .orderBy(desc(selfAnalysis.sourceSubmittedAt))
+    .limit(1);
+
+  const row = rows[0];
+  return row ? toRecord(row) : null;
+}
+
+// ---------------------------------------------------------------------------
+// getSelfAnalysisHistory
+// ---------------------------------------------------------------------------
+
+/**
+ * 候補者の指定 survey に対する全版を source_submitted_at 昇順で返す（Req 4.1, Req 3.2）。
+ * versionIndex は昇順の連番（1-based）で付与する。
+ * candidateProfileId で本人フィルタを適用し、他候補者のデータは返さない（Req 6.1, 6.3）。
+ * 版が存在しない場合は空配列を返す。
+ *
+ * @param candidateProfileId - 認証済み候補者の profile ID
+ * @param skillSurveyId      - 対象 skill_survey の ID
+ */
+export async function getSelfAnalysisHistory(
+  candidateProfileId: string,
+  skillSurveyId: string,
+): Promise<SelfAnalysisVersion[]> {
+  const rows = await db
+    .select()
+    .from(selfAnalysis)
+    .where(
+      and(
+        eq(selfAnalysis.candidateProfileId, candidateProfileId),
+        eq(selfAnalysis.skillSurveyId, skillSurveyId),
+      ),
+    )
+    .orderBy(asc(selfAnalysis.sourceSubmittedAt));
+
+  return rows.map((row, index) => ({
+    responseId: row.sourceResponseId,
+    versionIndex: index + 1,
+    submittedAt: row.sourceSubmittedAt,
+    aggregatedSnapshot: row.aggregatedSnapshot,
+    llmOutput: row.llmOutput ?? null,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// getSelfAnalysisByResponseId
+// ---------------------------------------------------------------------------
+
+/**
+ * 指定版（responseId = source_response_id）の自己分析を返す（Req 5.1, 5.2）。
+ * candidateProfileId で本人フィルタを適用し、他候補者のデータは返さない（Req 6.1, 6.3）。
+ * 該当版が存在しない場合は null を返す。
+ *
+ * @param candidateProfileId - 認証済み候補者の profile ID
+ * @param responseId         - 取得対象の版キー（= source_response_id）
+ */
+export async function getSelfAnalysisByResponseId(
+  candidateProfileId: string,
+  responseId: string,
+): Promise<SelfAnalysisRecord | null> {
+  const rows = await db
+    .select()
+    .from(selfAnalysis)
+    .where(
+      and(
+        eq(selfAnalysis.candidateProfileId, candidateProfileId),
+        eq(selfAnalysis.sourceResponseId, responseId),
+      ),
+    )
     .limit(1);
 
   const row = rows[0];
@@ -126,22 +213,25 @@ export async function getSelfAnalysis(
 // ---------------------------------------------------------------------------
 
 /**
- * 再生成を許可するかを判定する（Req 9.3）。
+ * 指定版（sourceResponseId）に対する再生成を許可するかを判定する（Req 9.3, Req 3.5）。
  *
- * 判定ロジック（UTC 24h スライディングウィンドウ）:
+ * 判定は版キー（source_response_id）単位で独立して行われ、30日クールダウン（再回答抑止）
+ * とは別軸で管理される。1版あたり UTC 24h スライディングウィンドウで上限を適用する。
+ *
+ * 判定ロジック:
  * 1. 行が無い → 初回生成。allowed: true, nextCount: 1, windowStart: 今
  * 2. 行がある + regeneration_window_start から 24h 超過 → 窓リセット。allowed: true, nextCount: 1, windowStart: 今
  * 3. 行がある + 窓内 + regeneration_count < LIMIT → allowed: true, nextCount: count+1, windowStart: 既存
  * 4. 行がある + 窓内 + regeneration_count >= LIMIT → allowed: false
  *
- * candidateProfileId フィルタで本人データのみを参照（Req 9.x）。
+ * candidateProfileId フィルタで本人データのみを参照（Req 6.1）。
  *
  * @param candidateProfileId - 認証済み候補者の profile ID
- * @param skillSurveyId      - 対象 skill_survey の ID
+ * @param sourceResponseId   - 対象版の版キー（= source_response_id）
  */
 export async function checkRegenerationAllowed(
   candidateProfileId: string,
-  skillSurveyId: string,
+  sourceResponseId: string,
 ): Promise<RateLimitVerdict> {
   const rows = await db
     .select({
@@ -152,7 +242,7 @@ export async function checkRegenerationAllowed(
     .where(
       and(
         eq(selfAnalysis.candidateProfileId, candidateProfileId),
-        eq(selfAnalysis.skillSurveyId, skillSurveyId),
+        eq(selfAnalysis.sourceResponseId, sourceResponseId),
       ),
     )
     .limit(1);
@@ -186,12 +276,13 @@ export async function checkRegenerationAllowed(
 // ---------------------------------------------------------------------------
 
 /**
- * (candidate_profile_id, skill_survey_id) 一意キーで self_analysis を upsert する（Req 6.1, 6.2）。
- * 再生成時は既存行を上書きし、1 候補者 × 1 survey につき最新 1 件を保持する（Req 5.x）。
+ * version 版キー（source_response_id）で self_analysis を upsert する（Req 3.1, Req 6.1）。
+ * 同一回答版（同一 source_response_id）は既存行を上書きし、新回答版は新規行を追加する。
+ * これにより1版1行の不変条件を保証しつつ、複数版を追記型で保持する。
  *
  * 更新対象列:
  *   aggregated_snapshot / llm_output / metadata /
- *   source_response_id / source_submitted_at /
+ *   source_submitted_at /
  *   regeneration_count / regeneration_window_start / updated_at
  *
  * @param input - upsert に必要なフィールド群
@@ -230,9 +321,8 @@ export async function upsertSelfAnalysis(input: {
       updatedAt: now,
     })
     .onConflictDoUpdate({
-      target: [selfAnalysis.candidateProfileId, selfAnalysis.skillSurveyId],
+      target: [selfAnalysis.sourceResponseId],
       set: {
-        sourceResponseId: input.sourceResponseId,
         sourceSubmittedAt: input.sourceSubmittedAt,
         aggregatedSnapshot: input.aggregatedSnapshot,
         llmOutput: input.llmOutput ?? null,

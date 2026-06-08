@@ -2,11 +2,11 @@
  * self_analysis テーブル定義
  *
  * 候補者の skill-survey 回答から生成した自己分析を永続化する。
- * 1 候補者につき 1 survey あたり 1 件（UNIQUE インデックスで保証）。
+ * 1 回答版あたり 1 件（source_response_id 一意で保証）。版管理（追記型）。
  * candidate_profile 削除時は CASCADE で削除される。
  */
 
-import { integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 
 import { candidateProfile } from './candidate-profile';
@@ -92,9 +92,11 @@ export const selfAnalysis = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex('self_analysis_candidate_survey_idx').on(
+    uniqueIndex('self_analysis_source_response_idx').on(table.sourceResponseId),
+    index('self_analysis_candidate_survey_submitted_idx').on(
       table.candidateProfileId,
       table.skillSurveyId,
+      table.sourceSubmittedAt,
     ),
   ],
 );
