@@ -30,7 +30,7 @@
     "@typescript-eslint/parser": "^8",
     "eslint": "^9.39",
     "prettier": "^3.8",
-    "turbo": "^2.9",
+    "turbo": "^2.9.16",
     "typescript": "^5.4",
     "typescript-eslint": "^8.59"
   }
