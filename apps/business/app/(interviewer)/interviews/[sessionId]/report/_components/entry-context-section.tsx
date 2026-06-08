@@ -13,7 +13,7 @@
  * Requirements: 6.1, 6.2, 6.3, 6.4
  */
 
-import { eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { db, getLatestResponseByCandidateProfileId } from '@bulr/db';
 import type { InterviewSessionResult } from '@bulr/db';
 import { skillSurveyCategory } from '@bulr/db/schema';
