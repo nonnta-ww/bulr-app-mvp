@@ -45,7 +45,7 @@ Docker を使ったローカル開発環境の構築手順は [`./local.md`](./l
 |-------------|------|
 | [`./neon.md`](./neon.md) | Neon PostgreSQL プロジェクトおよびブランチのセットアップ手順 |
 | [`./mailpit.md`](./mailpit.md) | ローカル開発用メールキャプチャツール（Mailpit）の概要と使い方 |
-| [`./resend.md`](./resend.md) | Resend メール配信サービスのアカウント作成と API キー取得手順 |
+| [`./resend.md`](./resend.md) | Resend メール配信のセットアップ。**§7 本番ドメイン検証（実ユーザー解放に必須・未対応だと所有者以外への magic link が 500）** を含む |
 | [`./openai.md`](./openai.md) | OpenAI アカウント作成と API キー取得手順 |
 | [`./anthropic.md`](./anthropic.md) | Anthropic アカウント作成と API キー取得手順 |
 | [`./vercel.md`](./vercel.md) | Vercel プロジェクト `bulr-web` の作成と設定手順 |
