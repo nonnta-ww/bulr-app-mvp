@@ -54,3 +54,4 @@ Docker を使ったローカル開発環境の構築手順は [`./local.md`](./l
 | [`./env-vars.md`](./env-vars.md) | Vercel 環境変数の一覧と登録手順 |
 | [`./ci.md`](./ci.md) | GitHub Actions CI パイプラインの動作確認手順 |
 | [`./drizzle-kit.md`](./drizzle-kit.md) | drizzle-kit を使用した初回スキーマ push 手順 |
+| [`./db-migration-runbook.md`](./db-migration-runbook.md) | 本番 DB マイグレーション適用 runbook（落とし穴・検証・デプロイ順序込み。0014 self-analysis-history 付録あり） |

@@ -25,6 +25,9 @@ pnpm --filter @bulr/db push
 
 本番環境への反映は必ず `generate` → レビュー → `migrate` の順で行う。
 
+> **実運用の落とし穴と検証込みの手順は [db-migration-runbook.md](./db-migration-runbook.md) を参照。**
+> 特に「DIRECT(非プール) URL を使う」「`.env.local` の env 上書き回避（`DIRECT_URL`/`DATABASE_URL` をインライン明示）」「`__drizzle_migrations` が空（push 構築）の場合は `migrate` が全再適用で失敗する → psql 直接適用へ切替」「UNIQUE 追加時の重複事前チェック」「デプロイ順序」は本番適用前に必読。
+
 ### 1. スキーマを確定する（dev branch で作業）
 
 dev branch でスキーマの変更を完了させる。
