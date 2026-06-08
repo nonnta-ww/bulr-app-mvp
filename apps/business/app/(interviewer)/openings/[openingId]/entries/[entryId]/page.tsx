@@ -147,7 +147,7 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
   };
 
   let categories: CategoryWithAnswers[] = [];
-  let choiceLabels = new Map<string, string>();
+  const choiceLabels = new Map<string, string>();
 
   if (skillSurveyResponse) {
     // カテゴリ取得
