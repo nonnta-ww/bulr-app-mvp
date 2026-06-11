@@ -3,13 +3,15 @@
  * LiveCaptureRunner コンポーネントのテスト
  *
  * 検証内容:
- *  - 操作要素が「キャプチャ開始」「面接終了」「中止」の 3 つのみ（Req 3.5）
+ *  - 操作要素が「キャプチャ開始系」「面接終了」「中止」の 3 種のみ（Req 3.5）
  *  - 「面接終了」クリックで stopCapture({ sessionId, reason: 'finish' }) が呼ばれる
  *  - 「中止」クリックで stopCapture({ sessionId, reason: 'abort' }) が呼ばれる
- *  - 「キャプチャ開始」クリックで startCapture が呼ばれる
+ *  - 「対面録音で開始」クリックで startCapture が呼ばれる
  *  - フックから取得したセグメントが描画される（Req 8.2）
+ *  - idle 状態では CaptureStartPanel が表示される（task 5.5 パネル結線）
+ *  - recording 状態では LiveTranscriptPane + SidePanel が表示される（task 5.5 パネル結線）
  *
- * Requirements: 3.5, 8.2
+ * Requirements: 3.5, 6.1, 8.2
  * Design: LiveCaptureRunner / CaptureStartPanel / LiveTranscriptPane / SidePanel
  */
 
@@ -94,24 +96,45 @@ afterEach(() => {
 
 describe('LiveCaptureRunner', () => {
   // -------------------------------------------------------------------------
-  // Req 3.5: 操作要素は開始・終了・中止の 3 つのみ
+  // Req 3.5: 操作要素は開始・終了・中止の 3 種のみ
   // -------------------------------------------------------------------------
 
   describe('操作要素 (Req 3.5)', () => {
-    it('idle 状態では「キャプチャ開始」ボタンが 1 つだけ存在する', () => {
+    it('idle 状態では会議 URL 入力と開始ボタンが表示される（CaptureStartPanel）', () => {
       vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
 
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
       );
 
-      expect(screen.getByRole('button', { name: /キャプチャ開始|start/i })).toBeInTheDocument();
+      // CaptureStartPanel の会議 URL テキストボックス
+      expect(screen.getByRole('textbox', { name: /会議 URL/i })).toBeInTheDocument();
+      // recall 開始ボタン
+      expect(screen.getByRole('button', { name: /オンライン会議を録音開始/i })).toBeInTheDocument();
+      // mic 開始ボタン
+      expect(screen.getByRole('button', { name: /対面録音で開始/i })).toBeInTheDocument();
+    });
+
+    it('idle 状態では CaptureStartPanel の 2 つの開始ボタンが表示される', () => {
+      vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      // idle 状態のボタン: "オンライン会議を録音開始"（submit）+ "対面録音で開始"（button）= 2 個
       const buttons = screen.getAllByRole('button');
-      expect(buttons).toHaveLength(1);
+      expect(buttons).toHaveLength(2);
     });
 
     it('recording 状態では「面接終了」「中止」ボタンが存在する', () => {
@@ -122,6 +145,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -131,7 +155,7 @@ describe('LiveCaptureRunner', () => {
       expect(screen.getByRole('button', { name: /中止|abort/i })).toBeInTheDocument();
     });
 
-    it('recording 状態では「キャプチャ開始」ボタンが存在せず 2 ボタンのみ', () => {
+    it('recording 状態では開始系ボタンが存在せず 2 ボタンのみ（面接終了・中止）', () => {
       vi.mocked(useLiveState).mockReturnValue(
         makeDefaultHookResult({ captureStatus: 'recording' }),
       );
@@ -139,14 +163,19 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
       );
 
+      // recording 状態: LiveTranscriptPane + SidePanel には操作ボタンなし。
+      // capture-controls に finish + abort の 2 ボタンのみ。
       const buttons = screen.getAllByRole('button');
       expect(buttons).toHaveLength(2);
-      expect(screen.queryByRole('button', { name: /キャプチャ開始|start/i })).toBeNull();
+      // 開始系ボタン（CaptureStartPanel）が存在しない
+      expect(screen.queryByRole('button', { name: /オンライン会議を録音開始/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /対面録音で開始/i })).toBeNull();
     });
 
     it('idle 状態では面接終了・中止ボタンが存在しない', () => {
@@ -155,6 +184,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -170,6 +200,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -193,6 +224,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="session-finish"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
         />,
@@ -216,6 +248,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="session-abort"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
         />,
@@ -230,23 +263,24 @@ describe('LiveCaptureRunner', () => {
       });
     });
 
-    it('「キャプチャ開始」クリックで startCapture({ sessionId, ... }) が呼ばれる', async () => {
+    it('「対面録音で開始」クリックで startCapture({ sessionId, mode:{kind:"mic"} }) が呼ばれる', async () => {
       vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
 
       const mockStart = vi.fn().mockResolvedValue({ ok: true, data: {} });
       render(
         <LiveCaptureRunner
           sessionId="session-start"
+          consentObtained={true}
           startCapture={mockStart as never}
           stopCapture={vi.fn() as never}
         />,
       );
 
-      await userEvent.click(screen.getByRole('button', { name: /キャプチャ開始|start/i }));
+      await userEvent.click(screen.getByRole('button', { name: /対面録音で開始/i }));
 
       expect(mockStart).toHaveBeenCalledTimes(1);
       expect(mockStart).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionId: 'session-start' }),
+        expect.objectContaining({ sessionId: 'session-start', mode: { kind: 'mic' } }),
       );
     });
   });
@@ -256,7 +290,7 @@ describe('LiveCaptureRunner', () => {
   // -------------------------------------------------------------------------
 
   describe('セグメント描画 (Req 8.2)', () => {
-    it('フックから取得したセグメントが画面に表示される', () => {
+    it('フックから取得したセグメントが LiveTranscriptPane に表示される', () => {
       const segments = [makeLiveSegment(1), makeLiveSegment(2)];
       vi.mocked(useLiveState).mockReturnValue(
         makeDefaultHookResult({
@@ -268,6 +302,7 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -277,7 +312,7 @@ describe('LiveCaptureRunner', () => {
       expect(screen.getByText('テスト発話 seq=2')).toBeInTheDocument();
     });
 
-    it('staleTranscript=true のとき警告が表示される', () => {
+    it('staleTranscript=true のとき LiveTranscriptPane が遅延通知を表示する', () => {
       vi.mocked(useLiveState).mockReturnValue(
         makeDefaultHookResult({ captureStatus: 'recording', staleTranscript: true }),
       );
@@ -285,12 +320,142 @@ describe('LiveCaptureRunner', () => {
       render(
         <LiveCaptureRunner
           sessionId="s1"
+          consentObtained={true}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
       );
 
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      // LiveTranscriptPane は role="status" で遅延通知を表示する（role="alert" ではない）
+      expect(screen.getByText(/転写が遅延しています/i)).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // パネル結線 (Req 6.1, task 5.5)
+  // idle/failed → CaptureStartPanel; recording/stopping → LiveTranscriptPane + SidePanel
+  // -------------------------------------------------------------------------
+
+  describe('パネル結線 (Req 6.1)', () => {
+    it('idle 状態では "ライブトランスクリプト" セクションが表示されない（LiveTranscriptPane は非表示）', () => {
+      vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.queryByRole('region', { name: /ライブトランスクリプト/i })).toBeNull();
+    });
+
+    it('idle 状態では "面接サイドパネル" が表示されない（SidePanel は非表示）', () => {
+      vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.queryByRole('complementary', { name: /面接サイドパネル/i })).toBeNull();
+    });
+
+    it('recording 状態では LiveTranscriptPane のセクションが表示される', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      // LiveTranscriptPane の aria-label="ライブトランスクリプト" セクション
+      expect(screen.getByRole('region', { name: /ライブトランスクリプト/i })).toBeInTheDocument();
+    });
+
+    it('recording 状態では SidePanel が表示される', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      // SidePanel の aria-label="面接サイドパネル" aside 要素
+      expect(screen.getByRole('complementary', { name: /面接サイドパネル/i })).toBeInTheDocument();
+    });
+
+    it('recording 状態では CaptureStartPanel（会議 URL 入力）が表示されない', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.queryByRole('textbox', { name: /会議 URL/i })).toBeNull();
+    });
+
+    it('failed 状態でも CaptureStartPanel が表示される', () => {
+      vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'failed' }));
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      // CaptureStartPanel は idle + failed の両方で表示される
+      expect(screen.getByRole('textbox', { name: /会議 URL/i })).toBeInTheDocument();
+    });
+
+    it('SidePanel の経過時間（00:00）と残りパターン数が表示される', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({
+          captureStatus: 'recording',
+          elapsedSeconds: 0,
+          remainingPlannedPatterns: 5,
+        }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.getByLabelText(/経過時間/i)).toBeInTheDocument();
+      expect(screen.getByText(/残り 5 パターン/i)).toBeInTheDocument();
     });
   });
 });
