@@ -137,7 +137,7 @@
   - 観測可能な完了: 転写を意図的に欠落させたセッションで、finalize 後にレポートが全区間を反映する
   - _Requirements: 2.6_
   - _Depends: 7.1_
-- [ ] 7.3 (P) 音声保持ポリシー拡張
+- [x] 7.3 (P) 音声保持ポリシー拡張
   - audio-purge cron の削除対象に capture_recording（期限切れ）を追加: Blob 削除 + audio_key null 化 + 削除ログ。transcript_segment / interview_turn / 評価データが削除されないことをテストで保証
   - 観測可能な完了: 期限切れレコード投入後の cron 実行で音声のみ消え、転写・評価が残る
   - _Requirements: 7.3, 7.4_
