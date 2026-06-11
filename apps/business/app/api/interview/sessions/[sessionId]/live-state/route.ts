@@ -55,6 +55,7 @@ import { db, schema } from '@bulr/db';
 import { requireUser, requireSessionOwnership } from '@bulr/auth/server';
 import { LiveStateSchema } from '@/lib/capture/live-state';
 import { runSegmenterTick } from '@/lib/capture/segmenter-tick';
+import { createWriteBackConsumer } from '@/lib/capture/turn-pipeline';
 
 // ---------------------------------------------------------------------------
 // Zod: cursor クエリパラメータ検証
@@ -299,7 +300,13 @@ export async function GET(
   // ------------------------------------------------------------------
   if (isActiveRecording) {
     try {
-      await runSegmenterTick({ sessionId });
+      await runSegmenterTick({
+        sessionId,
+        // task 4.2: 実際の write-back コンシューマを注入する。
+        // createWriteBackConsumer(sessionId) は sessionId をクロージャに束縛した
+        // TickConsumer を返す（LogicalTurn 自体は sessionId を持たないため factory パターン）。
+        consumer: createWriteBackConsumer(sessionId),
+      });
     } catch (tickError) {
       // tick の失敗はレスポンスに伝播させない（設計: "応答遅延を避けるため tick はレスポンス生成と独立"）
       console.error('[live-state] segmenter tick failed:', tickError);

@@ -73,7 +73,7 @@
   - 観測可能な完了: 単体テストで完全一致・言い換え・閾値未満（manual = フリー質問入口）の判定が検証される
   - _Requirements: 3.6, 3.7_
   - _Boundary: ProposalMatcher_
-- [ ] 4.2 論理ターンの書き戻し（claim + 冪等）
+- [x] 4.2 論理ターンの書き戻し（claim + 冪等）
   - 書き戻しトランザクション: `logical_turn_id IS NULL` 条件付き UPDATE でセグメントを claim（更新 0 行なら放棄）→ interview_turn insert（既存 transcript JSON 形状 `{interviewer, candidate, raw}`、audio_key=null、turn_fingerprint 一意制約で冪等、question_source は ProposalMatcher 結果）
   - unknown 保留ターンは splitInterviewerCandidate で質問/回答を分離してから書き戻し
   - 観測可能な完了: 並行二重起動・再実行で interview_turn が重複せず、admin の回答全文確認に新方式ターンが表示される
@@ -170,3 +170,4 @@
 - 【spec owner 要確認】interview_session.consent_obtained_at は現スキーマで notNull().defaultNow() のため consent ゲート(1.6)は実運用で発火しない。ゲート実装は設計通り(非null チェック)だが事実上 vacuous。同意モデルを明示取得にするなら別 spec。
 - TurnSegmenter: evaluate は純粋関数。tail close は自分で行わず、task 3.3 が wall-clock で無音超過を判定し `evaluate({forceCloseTrailing:true})` を渡す契約。unknown-only ターンは question 空の保留ターン（pendingSplit）で返り、task 4.2 が splitInterviewerCandidate で分離。advisory lock harness=runWithSessionLock(sessionId, fn) は claim/書き戻しを持たず(4.2 が所有)。
 - 3.3 tick の consumer seam: runSegmenterTick({sessionId, consumer?}) の TickConsumer=(turns, tx)=>Promise<void>。task 4.2 はここに (a) logical_turn_id IS NULL 条件付き claim (b) interview_turn 書き戻し(turn_fingerprint 一意) (c) TurnPipeline 起動 を注入する。live-state route はレスポンス構築後に tick を await(try/catch でレスポンスに伝播させない)。
+- 4.2 書き戻し順序: design の「claim→insert」は FK(transcript_segment.logical_turn_id→interview_turn.id) のため不可能。実装は pre-check→analyzeTurn→interview_turn INSERT→segment claim を **同一 advisory-lock トランザクション**で実行（turn 存在⟺segment claim 済 の不変条件を atomicity で保証）。turn-pipeline.ts に [TASK 4.3 接続点] あり: insert 後に aggregatePatternCoverage→proposeNextQuestions→question_proposal insert + llm:<sessionId>150 cap を追加する。interview_turn は llm_analysis 等が NOT NULL のため write-back は analyzeTurn を必ず呼ぶ。
