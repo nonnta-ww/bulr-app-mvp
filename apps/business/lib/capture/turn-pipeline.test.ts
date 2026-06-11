@@ -55,7 +55,7 @@ import { count, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@bulr/db';
 import type { LlmAnalysis, LlmEvaluation } from '@bulr/types/evaluation';
 import { evaluate, DEFAULT_SEGMENTER_CONFIG, runWithSessionLock } from './segmenter';
-import { createWriteBackConsumer, writeBackLogicalTurns } from './turn-pipeline';
+import { createWriteBackConsumer } from './turn-pipeline';
 
 // ---------------------------------------------------------------------------
 // テスト用モック LlmAnalysis（パターンマッチ: inferred_high、完了なし）

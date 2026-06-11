@@ -93,7 +93,7 @@ export function LiveTranscriptPane({
     if (bottomRef.current?.scrollIntoView) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 新着セグメント到着時のみ自動スクロールするため segments.length を依存にする。
   }, [segments.length]);
 
   // -------------------------------------------------------------------------

@@ -78,11 +78,11 @@ function makeParams(sessionId: string): { params: Promise<{ sessionId: string }>
 // ---------------------------------------------------------------------------
 
 describe('GET /api/interview/sessions/[sessionId]/live-state', () => {
-  let userId: string;
+  let _userId: string;
   let sessionId: string;
 
   beforeEach(async () => {
-    userId = crypto.randomUUID();
+    _userId = crypto.randomUUID();
     sessionId = crypto.randomUUID();
 
     // デフォルト: requireUser は所有者ユーザーを返す

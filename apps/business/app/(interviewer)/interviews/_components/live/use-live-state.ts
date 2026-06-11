@@ -31,7 +31,7 @@
  * Design: LiveStateAPI (API Contract, LiveState interface fields)
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LiveStateSchema } from '../../../../../lib/capture/live-state';
 import type {
   LiveState,

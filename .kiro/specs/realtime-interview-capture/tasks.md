@@ -149,7 +149,7 @@
   - _Boundary: TranscriptView_
 
 - [ ] 8. 互換検証と旧 UI 削除
-- [ ] 8.1 旧 状態A/B コンポーネント削除
+- [x] 8.1 旧 状態A/B コンポーネント削除
   - interview-session-runner / recording-state / choosing 系コンポーネントと旧ターン処理経路への UI 導線を削除し、新方式に一本化（turns/next ルートは管理画面互換のため削除せず導線のみ遮断、完全削除は別途判断）
   - 観測可能な完了: 新規セッションで旧 UI に到達する経路が存在せず、build / typecheck / lint が通る
   - _Requirements: 6.1_
@@ -173,3 +173,4 @@
 - 4.2 書き戻し順序: design の「claim→insert」は FK(transcript_segment.logical_turn_id→interview_turn.id) のため不可能。実装は pre-check→analyzeTurn→interview_turn INSERT→segment claim を **同一 advisory-lock トランザクション**で実行（turn 存在⟺segment claim 済 の不変条件を atomicity で保証）。turn-pipeline.ts に [TASK 4.3 接続点] あり: insert 後に aggregatePatternCoverage→proposeNextQuestions→question_proposal insert + llm:<sessionId>150 cap を追加する。interview_turn は llm_analysis 等が NOT NULL のため write-back は analyzeTurn を必ず呼ぶ。
 - 6.1 チャンク冪等性: capture_recording は (session_id, chunk_no, kind=mic_chunk) の存在チェックで冪等化（6.2 の再送が保証されるため必須）。transcript_segment は source_id=mic:{sessionId}:{chunkNo} で onConflictDoNothing 冪等。残課題(MVP許容): 重複再送時に transcribeAudio が無駄に呼ばれる（segment insert は no-op）。将来、存在チェックヒット時に transcribe もスキップ可能。
 - 7.2 フォールバック転写の MVP 制限: 完全欠落(realtimeSegmentCount=0)のみ録音全体をバッチ転写して回復する。部分障害(セグメント有り+60s超ギャップ/failed後の脱落)は isTranscriptionUnhealthy で検出されるが overlap 回避のため再転写スキップ。Stage 1 本番前に tail-region 補完(last healthy ended_at_ms 以降を slice して post_batch:tail として転写)を推奨。fallback-transcription.ts + finalize-session.ts のみで実装可能。
+- 検証ゲート注意: この project は typecheck/test に加えて `pnpm --filter @bulr/business lint` も通す必要がある（@typescript-eslint/no-unused-vars は厳格、unused は ^_ プレフィックス必須）。react-hooks プラグインは未登録なので `eslint-disable react-hooks/exhaustive-deps` は「rule not found」エラーになる—使わない。UI/route タスクでは lint も実行すること。

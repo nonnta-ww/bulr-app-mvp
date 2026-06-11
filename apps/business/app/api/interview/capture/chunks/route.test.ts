@@ -16,8 +16,7 @@ vi.mock('server-only', () => ({}));
 // vi.hoisted: vi.mock ファクトリ内から参照できるよう先に評価する
 // ---------------------------------------------------------------------------
 
-const { TEST_USER_ID, mockRequireUser } = vi.hoisted(() => ({
-  TEST_USER_ID: 'chunk-route-test-user-fixed-id',
+const { mockRequireUser } = vi.hoisted(() => ({
   mockRequireUser: vi.fn<() => Promise<{ id: string; email: string }>>(),
 }));
 
