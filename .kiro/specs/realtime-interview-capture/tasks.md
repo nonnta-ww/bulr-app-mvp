@@ -4,7 +4,7 @@
 > フェーズ構成は design の Migration Strategy（Phase 1 縦切り → Phase 2 評価接続 → Phase 3 UI/対面/終了 → Phase 4 互換・削除)に従う。
 
 - [ ] 1. 基盤: スキーマと設定
-- [ ] 1.1 DB スキーマ追加（migration 0015）
+- [x] 1.1 DB スキーマ追加（migration 0015）
   - `transcript_segment` / `capture_recording` テーブル新設（`(session_id, seq)` と `(session_id, source_id)` の一意制約、`logical_turn_id` FK、origin enum）
   - `interview_session` に capture 系カラム（capture_provider / capture_status / bot_id / meeting_url / last_capture_event_at / analysis_capped_at）を追加。status enum は変更しない
   - `interview_turn` に `turn_fingerprint` カラム + `(session_id, turn_fingerprint)` 一意制約を**加算的に**追加（既存行は null 許容、評価層の読み出しスキーマは不変）
