@@ -68,7 +68,7 @@
   - _Depends: 3.1, 3.2_
 
 - [ ] 4. 評価パイプライン接続
-- [ ] 4.1 (P) ProposalMatcher
+- [x] 4.1 (P) ProposalMatcher
   - 正規化 n-gram 重複率で面接官発話と直近 3 候補を照合し selected_index / manual を判定（LLM・埋め込み不使用）
   - 観測可能な完了: 単体テストで完全一致・言い換え・閾値未満（manual = フリー質問入口）の判定が検証される
   - _Requirements: 3.6, 3.7_
