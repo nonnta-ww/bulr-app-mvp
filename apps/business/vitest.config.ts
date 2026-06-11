@@ -37,6 +37,9 @@ function loadDotEnvLocal(): Record<string, string> {
 }
 
 export default defineConfig({
+  // JSX を自動ランタイム（react/jsx-runtime）で変換する。これがないと
+  // 古い classic runtime が使われ `React is not defined` になる。
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       // Next.js の `@/*` エイリアスを vitest でも解決する（tsconfig.json paths と対応）
@@ -45,7 +48,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "app/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "app/**/*.test.ts", "app/**/*.test.tsx"],
+    setupFiles: ["./vitest.setup.ts"],
     env: { ...loadDotEnvLocal(), ...process.env },
     testTimeout: 30_000,
     hookTimeout: 30_000,
