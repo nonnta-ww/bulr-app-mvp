@@ -79,7 +79,7 @@
   - 観測可能な完了: 並行二重起動・再実行で interview_turn が重複せず、admin の回答全文確認に新方式ターンが表示される
   - _Requirements: 4.1, 4.4, 6.2, 6.4_
   - _Depends: 3.2, 4.1_
-- [ ] 4.3 LLM 編成と解析上限
+- [x] 4.3 LLM 編成と解析上限
   - analyzeTurn（matched_pattern_id によるパターン自動分類、off_pattern は pattern_id=null のフリー質問）→ パターン完了判定 → aggregatePatternCoverage → proposeNextQuestions（next_pattern 1 件保証は既存契約）→ question_proposal insert
   - `llm:<sessionId>` 上限 150 の事前チェック、到達時は analysis_capped_at 設定・解析停止・転写永続化は継続
   - 観測可能な完了: 論理ターン投入で coverage と新 3 候補が生成され、上限到達後はセグメントだけが増え続ける

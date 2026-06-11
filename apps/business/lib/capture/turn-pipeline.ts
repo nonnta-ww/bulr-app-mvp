@@ -32,12 +32,13 @@
 import 'server-only';
 
 import { nanoid } from 'nanoid';
-import { and, desc, eq, inArray, isNull, max, or } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, max, or, sql } from 'drizzle-orm';
 
 import { db, schema } from '@bulr/db';
 import { createLlmContext } from '@bulr/ai';
 import { loadRecentTurns } from '@bulr/db/queries';
 import { buildLlmContext } from '@/lib/queries/build-llm-context';
+import { checkRateLimit } from '@bulr/lib';
 import { match } from './proposal-matcher';
 import type { LogicalTurn } from './segmenter';
 import type { TickConsumer } from './segmenter-tick';
@@ -295,11 +296,38 @@ async function processTurn(
         schema.interviewTurn.turn_fingerprint,
       ],
     })
-    .returning({ id: schema.interviewTurn.id });
+    .returning(); // full row — sequence_no needed for Prepare-2
 
   // fingerprint 衝突で no-op → このターンは既に別経路で処理済み
   // （正常系では step 1 で事前検出されているが、最終防衛線として処理）
   if (insertedRows.length === 0) return;
+
+  const insertedTurn = insertedRows[0]!;
+
+  // -----------------------------------------------------------------
+  // [TASK 4.3] Rate-limit increment（同一 tx 内でアトミック）
+  //
+  // ターン 1 件の処理（analyzeTurn + optional aggregate + propose）を 1 単位として
+  // llm:<sessionId> カウンタをインクリメントする。
+  // cap gate は writeBackLogicalTurns の先頭で事前チェック済みのため、
+  // ここでは超過判定を行わず純粋にインクリメントのみを行う。
+  // -----------------------------------------------------------------
+  await tx.execute<{ count: number }>(sql`
+    INSERT INTO rate_limit (key, count, window_start)
+    VALUES (${'llm:' + sessionId}, 1, now())
+    ON CONFLICT (key) DO UPDATE SET
+      count = CASE
+        WHEN rate_limit.window_start + (${86_400_000} * INTERVAL '1 millisecond') > now()
+        THEN rate_limit.count + 1
+        ELSE 1
+      END,
+      window_start = CASE
+        WHEN rate_limit.window_start + (${86_400_000} * INTERVAL '1 millisecond') > now()
+        THEN rate_limit.window_start
+        ELSE now()
+      END
+    RETURNING count
+  `);
 
   // -----------------------------------------------------------------
   // Step 8: Segment claim（interview_turn insert 後、FK 制約を満たしてから実行）
@@ -318,14 +346,192 @@ async function processTurn(
     );
 
   // -----------------------------------------------------------------
-  // [TASK 4.3 接続点]
+  // [TASK 4.3] Prepare-1a: 前パターンからの遷移集約
   //
-  // ここに以下の処理を追加する（task 4.3 の実装範囲）:
-  //   1. `llm:<sessionId>` レート制限チェック（上限 150、超過時は analysis_capped_at を設定）
-  //   2. aggregatePatternCoverage（effectivePatternId が変化した場合）
-  //   3. proposeNextQuestions
-  //   4. question_proposal insert
+  // 直前ターンのパターンが現在ターンと異なる場合（パターン遷移）、
+  // 前パターンの全ターンを集約して pattern_coverage を upsert する。
+  // 単発失敗は try/catch で吸収し、ターン insert は維持する。
   // -----------------------------------------------------------------
+  let transitionCoverage: typeof schema.patternCoverage.$inferSelect | null = null;
+  try {
+    const [previousTurn] = await tx
+      .select()
+      .from(schema.interviewTurn)
+      .where(
+        and(
+          eq(schema.interviewTurn.session_id, sessionId),
+          lt(schema.interviewTurn.sequence_no, insertedTurn.sequence_no),
+        ),
+      )
+      .orderBy(desc(schema.interviewTurn.sequence_no))
+      .limit(1);
+
+    const transitionDetected =
+      previousTurn?.pattern_id != null && previousTurn.pattern_id !== effectivePatternId;
+
+    if (transitionDetected && previousTurn?.pattern_id) {
+      const [previousPattern] = await tx
+        .select()
+        .from(schema.assessmentPattern)
+        .where(eq(schema.assessmentPattern.id, previousTurn.pattern_id))
+        .limit(1);
+
+      if (previousPattern) {
+        const previousPatternTurns = await tx
+          .select()
+          .from(schema.interviewTurn)
+          .where(
+            and(
+              eq(schema.interviewTurn.session_id, sessionId),
+              eq(schema.interviewTurn.pattern_id, previousTurn.pattern_id),
+            ),
+          )
+          .orderBy(asc(schema.interviewTurn.sequence_no));
+
+        const llmEvaluation = await llm.aggregatePatternCoverage({
+          turns: previousPatternTurns,
+          pattern: previousPattern,
+        });
+
+        const [tc] = await tx
+          .insert(schema.patternCoverage)
+          .values({
+            session_id: sessionId,
+            pattern_id: previousTurn.pattern_id,
+            level_reached: llmEvaluation.level_reached,
+            stuck_type: llmEvaluation.stuck_type,
+            llm_evaluation: llmEvaluation,
+            manual_evaluation: null,
+            turn_ids: previousPatternTurns.map((t) => t.id),
+            finalized_at: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [schema.patternCoverage.session_id, schema.patternCoverage.pattern_id],
+            set: {
+              level_reached: llmEvaluation.level_reached,
+              stuck_type: llmEvaluation.stuck_type,
+              llm_evaluation: llmEvaluation,
+              turn_ids: previousPatternTurns.map((t) => t.id),
+              finalized_at: new Date(),
+            },
+          })
+          .returning();
+        transitionCoverage = tc ?? null;
+      }
+    }
+  } catch (e) {
+    console.error('[turn-pipeline] Prepare-1a transition aggregateCov failed', e);
+  }
+
+  // -----------------------------------------------------------------
+  // [TASK 4.3] Prepare-1b: 同一パターン完了集約
+  //
+  // analyzeTurn が完了シグナル（level_reached_estimate=4 または stuck_signal 非 null）を
+  // 返し、effectivePatternId が解決されている場合に pattern_coverage を upsert する。
+  // 完了判定: analysisResult.level_reached_estimate === 4 || analysisResult.stuck_signal != null
+  // （design.md TurnPipeline / turns/next Prepare-1b と同一判定）
+  // -----------------------------------------------------------------
+  let coverage: typeof schema.patternCoverage.$inferSelect | null = null;
+  try {
+    const completionSignaled =
+      analysisResult.level_reached_estimate === 4 || analysisResult.stuck_signal != null;
+
+    if (completionSignaled && effectivePatternId) {
+      const [currentPattern] = await tx
+        .select()
+        .from(schema.assessmentPattern)
+        .where(eq(schema.assessmentPattern.id, effectivePatternId))
+        .limit(1);
+
+      if (currentPattern) {
+        const patternTurns = await tx
+          .select()
+          .from(schema.interviewTurn)
+          .where(
+            and(
+              eq(schema.interviewTurn.session_id, sessionId),
+              eq(schema.interviewTurn.pattern_id, effectivePatternId),
+            ),
+          )
+          .orderBy(asc(schema.interviewTurn.sequence_no));
+
+        const llmEvaluation = await llm.aggregatePatternCoverage({
+          turns: patternTurns,
+          pattern: currentPattern,
+        });
+
+        const [c] = await tx
+          .insert(schema.patternCoverage)
+          .values({
+            session_id: sessionId,
+            pattern_id: effectivePatternId,
+            level_reached: llmEvaluation.level_reached,
+            stuck_type: llmEvaluation.stuck_type,
+            llm_evaluation: llmEvaluation,
+            manual_evaluation: null,
+            turn_ids: patternTurns.map((t) => t.id),
+            finalized_at: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [schema.patternCoverage.session_id, schema.patternCoverage.pattern_id],
+            set: {
+              level_reached: llmEvaluation.level_reached,
+              stuck_type: llmEvaluation.stuck_type,
+              llm_evaluation: llmEvaluation,
+              turn_ids: patternTurns.map((t) => t.id),
+              finalized_at: new Date(),
+            },
+          })
+          .returning();
+        coverage = c ?? null;
+      }
+    }
+  } catch (e) {
+    console.error('[turn-pipeline] Prepare-1b completion aggregateCov failed', e);
+  }
+
+  // -----------------------------------------------------------------
+  // [TASK 4.3] Prepare-2: 次の質問候補生成（常に実行）
+  //
+  // proposeNextQuestions は完了シグナルの有無に関わらず常に呼ぶ（3.2: 質問候補 3 件常時表示）。
+  // next_pattern 1 件保証は proposeNextQuestions 既存関数の契約を継承（3.4）。
+  // coverage が更新された場合のみ llm コンテキストを再構築する（QW6: DB 負荷最小化）。
+  //
+  // prepared_for_turn_no = insertedTurn.sequence_no + 1（Req 3.2: 次のターン向け）
+  // -----------------------------------------------------------------
+  try {
+    const coverageWasUpdated = transitionCoverage !== null || coverage !== null;
+    const llmForProposals = coverageWasUpdated
+      ? createLlmContext(await buildLlmContext({ session, userId: session.interviewer_id }))
+      : llm;
+
+    const [countRow] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.interviewTurn)
+      .where(eq(schema.interviewTurn.session_id, sessionId));
+    const turnCount = countRow?.count ?? 0;
+
+    const elapsedMs = session.started_at ? Date.now() - session.started_at.getTime() : 0;
+    const elapsedMinutes = Math.floor(elapsedMs / 60000);
+
+    const proposals = await llmForProposals.proposeNextQuestions({
+      sessionState: { turnCount, elapsedMinutes },
+    });
+
+    await tx.insert(schema.questionProposal).values({
+      session_id: sessionId,
+      prepared_for_turn_no: insertedTurn.sequence_no + 1,
+      candidate_1_text: proposals.candidates[0]?.text ?? '',
+      candidate_1_intent: proposals.candidates[0]?.intent ?? 'deep_dive',
+      candidate_2_text: proposals.candidates[1]?.text ?? '',
+      candidate_2_intent: proposals.candidates[1]?.intent ?? 'deep_dive',
+      candidate_3_text: proposals.candidates[2]?.text ?? '',
+      candidate_3_intent: proposals.candidates[2]?.intent ?? 'next_pattern',
+      selected_index: null,
+    });
+  } catch (e) {
+    console.error('[turn-pipeline] Prepare-2 proposeNextQ failed', e);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -360,6 +566,38 @@ export async function writeBackLogicalTurns(
   if (!session) return;
 
   const userId = session.interviewer_id;
+
+  // ---------------------------------------------------------------------------
+  // [TASK 4.3] Cap gate: llm:<sessionId> 上限 150 の事前チェック（Req 4.5）
+  //
+  // バッチ全体の LLM 処理を開始する前に read-only で現在のカウントを確認する。
+  // 上限到達（count >= 150）の場合:
+  //   - analysis_capped_at を設定（既に設定済みの場合は no-op）
+  //   - 全 LLM 解析をスキップして早期リターン
+  //   - transcript_segment の永続化は呼び出し元（webhook/chunk ルート）が行うため継続
+  //
+  // 観測可能な完了（Req 4.5）:
+  //   上限到達後はセグメントだけが増え続け、interview_turn / coverage / proposal は生成されない。
+  // ---------------------------------------------------------------------------
+  const llmCapCount = await checkRateLimit(`llm:${sessionId}`, {
+    limit: 150,
+    windowMs: 86_400_000,
+  });
+  if (llmCapCount >= 150) {
+    // analysis_capped_at が未設定の場合のみ更新（冪等）
+    if (!session.analysis_capped_at) {
+      await tx
+        .update(schema.interviewSession)
+        .set({ analysis_capped_at: new Date() })
+        .where(
+          and(
+            eq(schema.interviewSession.id, sessionId),
+            isNull(schema.interviewSession.analysis_capped_at),
+          ),
+        );
+    }
+    return; // 全 LLM 解析をスキップ
+  }
 
   // LLM コンテキストをバッチ先頭で一度だけビルド（全ターンで再利用）
   // buildLlmContext は module-level db で読み取り専用クエリを行う（tx と別接続だが許容）

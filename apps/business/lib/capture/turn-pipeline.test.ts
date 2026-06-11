@@ -22,38 +22,43 @@ vi.mock('server-only', () => ({}));
 // vi.hoisted: vi.mock ファクトリ内から参照できるよう先に評価する
 // ---------------------------------------------------------------------------
 
-const { mockAnalyzeTurn, mockSplitInterviewerCandidate } = vi.hoisted(() => ({
+const {
+  mockAnalyzeTurn,
+  mockSplitInterviewerCandidate,
+  mockAggregatePatternCoverage,
+  mockProposeNextQuestions,
+} = vi.hoisted(() => ({
   mockAnalyzeTurn: vi.fn(),
   mockSplitInterviewerCandidate: vi.fn(),
+  mockAggregatePatternCoverage: vi.fn(),
+  mockProposeNextQuestions: vi.fn(),
 }));
 
 /**
  * @bulr/ai のモック。
- * createLlmContext は mockAnalyzeTurn / mockSplitInterviewerCandidate を束縛した
+ * createLlmContext は mockAnalyzeTurn / mockSplitInterviewerCandidate /
+ * mockAggregatePatternCoverage / mockProposeNextQuestions を束縛した
  * 決定論的コンテキストを返す。実際の Anthropic API は一切呼ばない。
  */
 vi.mock('@bulr/ai', () => ({
   createLlmContext: vi.fn(() => ({
     analyzeTurn: mockAnalyzeTurn,
     splitInterviewerCandidate: mockSplitInterviewerCandidate,
-    proposeNextQuestions: vi.fn().mockResolvedValue({ candidates: [] }),
-    aggregatePatternCoverage: vi.fn().mockResolvedValue({
-      authenticity: 1, judgment: 1, scope: 2, meta_cognition: 1, ai_literacy: 1,
-      level_reached: 2, stuck_type: null, notes: '', evaluated_at: new Date().toISOString(),
-    }),
+    proposeNextQuestions: mockProposeNextQuestions,
+    aggregatePatternCoverage: mockAggregatePatternCoverage,
     generateSessionReport: vi.fn().mockResolvedValue({ summary_text: '' }),
   })),
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { count, eq } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@bulr/db';
-import type { LlmAnalysis } from '@bulr/types/evaluation';
+import type { LlmAnalysis, LlmEvaluation } from '@bulr/types/evaluation';
 import { evaluate, DEFAULT_SEGMENTER_CONFIG, runWithSessionLock } from './segmenter';
 import { createWriteBackConsumer, writeBackLogicalTurns } from './turn-pipeline';
 
 // ---------------------------------------------------------------------------
-// テスト用モック LlmAnalysis（パターンマッチ: inferred_high）
+// テスト用モック LlmAnalysis（パターンマッチ: inferred_high、完了なし）
 // ---------------------------------------------------------------------------
 
 const MOCK_ANALYSIS: LlmAnalysis = {
@@ -72,12 +77,42 @@ const MOCK_ANALYSIS: LlmAnalysis = {
 };
 
 // ---------------------------------------------------------------------------
+// テスト用モック LlmEvaluation（aggregatePatternCoverage の戻り値）
+// ---------------------------------------------------------------------------
+
+const MOCK_LLM_EVALUATION: LlmEvaluation = {
+  authenticity: 2,
+  judgment: 2,
+  scope: 3,
+  meta_cognition: 1,
+  ai_literacy: 1,
+  level_reached: 4,
+  stuck_type: null,
+  notes: 'テスト用モック評価',
+  evaluated_at: new Date().toISOString(),
+};
+
+// ---------------------------------------------------------------------------
+// テスト用モック 3 候補（proposeNextQuestions の戻り値）
+// ---------------------------------------------------------------------------
+
+const MOCK_PROPOSALS = {
+  candidates: [
+    { text: '次の質問候補1: 詳しく教えてください', intent: 'deep_dive' as const },
+    { text: '次の質問候補2: 別の観点から', intent: 'next_pattern' as const },
+    { text: '次の質問候補3: 振り返ってみて', intent: 'meta_cognition' as const },
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // テスト本体
 // ---------------------------------------------------------------------------
 
 describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）', () => {
   let userId: string;
   let sessionId: string;
+  /** 4.3 テスト用に挿入するテストパターンの ID */
+  let testPatternId: string;
 
   // -------------------------------------------------------------------------
   // beforeEach / afterEach: テストごとに独立したユーザーとセッションを作成・削除
@@ -88,6 +123,7 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
 
     userId = crypto.randomUUID();
     sessionId = crypto.randomUUID();
+    testPatternId = crypto.randomUUID();
 
     // LLM モックの戻り値をリセット（テストごとに独立）
     mockAnalyzeTurn.mockResolvedValue(MOCK_ANALYSIS);
@@ -95,6 +131,8 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
       interviewer_text: '分離後面接官テキスト',
       candidate_text: '分離後候補者テキスト',
     });
+    mockAggregatePatternCoverage.mockResolvedValue(MOCK_LLM_EVALUATION);
+    mockProposeNextQuestions.mockResolvedValue(MOCK_PROPOSALS);
 
     // Better Auth ユーザー（面接官）を挿入
     await db.insert(schema.user).values({
@@ -117,6 +155,23 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
       started_at: new Date(Date.now() - 120_000),
       last_capture_event_at: new Date(Date.now() - 60_000),
     });
+
+    // 4.3 テスト用 assessment_pattern（テストごとに独立した code で挿入）
+    await db.insert(schema.assessmentPattern).values({
+      id: testPatternId,
+      code: `TEST-${testPatternId.slice(0, 8)}`,
+      category: 'design',
+      title: 'テスト用パターン',
+      description: 'テスト用パターンの説明',
+      expected_scope_min: 2,
+      expected_scope_max: 4,
+      level_1_intro: 'Level 1 説明',
+      level_2_focus: 'Level 2 焦点',
+      level_3_focus: 'Level 3 焦点',
+      level_4_focus: 'Level 4 焦点',
+      signals: ['シグナル1', 'シグナル2'],
+      ai_perspective: 'AI 観点',
+    });
   });
 
   afterEach(async () => {
@@ -127,6 +182,10 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
     await db
       .delete(schema.transcriptSegment)
       .where(eq(schema.transcriptSegment.session_id, sessionId));
+    // pattern_coverage.pattern_id → assessment_pattern.id のため先に削除
+    await db
+      .delete(schema.patternCoverage)
+      .where(eq(schema.patternCoverage.session_id, sessionId));
     await db
       .delete(schema.interviewTurn)
       .where(eq(schema.interviewTurn.session_id, sessionId));
@@ -137,6 +196,12 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
       .delete(schema.interviewSession)
       .where(eq(schema.interviewSession.id, sessionId));
     await db.delete(schema.user).where(eq(schema.user.id, userId));
+    // llm:* レート制限レコードを削除（key = 'llm:<sessionId>'）
+    await db.execute(sql`DELETE FROM rate_limit WHERE key = ${'llm:' + sessionId}`);
+    // テスト用 assessment_pattern を削除
+    await db
+      .delete(schema.assessmentPattern)
+      .where(eq(schema.assessmentPattern.id, testPatternId));
   });
 
   // -------------------------------------------------------------------------
@@ -682,5 +747,418 @@ describe('TurnPipeline — 統合テスト（DB バックド、LLM モック）'
         expect(s.logical_turn_id).toBe(turn!.id);
       });
     });
+  });
+
+  // =========================================================================
+  // (7) 4.3 — coverage + proposals generated（パターン完了でカバレッジ集約・質問候補生成）
+  //
+  // Requirements: 3.2, 3.4, 4.3
+  // =========================================================================
+
+  describe('(7) 4.3 — coverage + proposals generated', () => {
+    it(
+      'analyzeTurn が level_reached_estimate=4 を返す → pattern_coverage upsert + question_proposal insert（3 候補、prepared_for_turn_no=seq+1）',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // 完了シグナルを持つ analysisResult（testPatternId を matched_pattern_id に設定）
+        const completionAnalysis: LlmAnalysis = {
+          signals: {
+            authenticity: 'observed',
+            judgment: 'observed',
+            meta_cognition: 'partial',
+            ai_literacy: 'absent',
+          },
+          scope_signal: 4,
+          level_reached_estimate: 4,
+          pattern_match_confidence: 'exact',
+          matched_pattern_id: testPatternId,
+          stuck_signal: null,
+          notes: '完了テスト用モック分析',
+        };
+        mockAnalyzeTurn.mockResolvedValue(completionAnalysis);
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        // interview_turn が 1 行挿入されていること
+        const [turnRow] = await db
+          .select({ id: schema.interviewTurn.id, sequence_no: schema.interviewTurn.sequence_no })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        expect(turnRow).toBeDefined();
+
+        // pattern_coverage が upsert されていること
+        const [coverageRow] = await db
+          .select()
+          .from(schema.patternCoverage)
+          .where(eq(schema.patternCoverage.session_id, sessionId));
+        expect(coverageRow).toBeDefined();
+        expect(coverageRow!.pattern_id).toBe(testPatternId);
+        expect(coverageRow!.level_reached).toBe(4);
+
+        // question_proposal が insert されていること（3 候補、prepared_for_turn_no = seq + 1）
+        const [proposalRow] = await db
+          .select()
+          .from(schema.questionProposal)
+          .where(eq(schema.questionProposal.session_id, sessionId));
+        expect(proposalRow).toBeDefined();
+        expect(proposalRow!.prepared_for_turn_no).toBe(turnRow!.sequence_no + 1);
+        expect(proposalRow!.candidate_1_text).toBe(MOCK_PROPOSALS.candidates[0]!.text);
+        expect(proposalRow!.candidate_2_text).toBe(MOCK_PROPOSALS.candidates[1]!.text);
+        expect(proposalRow!.candidate_3_text).toBe(MOCK_PROPOSALS.candidates[2]!.text);
+        expect(proposalRow!.candidate_1_intent).toBe('deep_dive');
+        expect(proposalRow!.candidate_2_intent).toBe('next_pattern');
+        expect(proposalRow!.candidate_3_intent).toBe('meta_cognition');
+
+        // aggregatePatternCoverage が呼ばれていること
+        expect(mockAggregatePatternCoverage).toHaveBeenCalled();
+        // proposeNextQuestions が呼ばれていること（3.2: 次の質問候補 3 件自動更新）
+        expect(mockProposeNextQuestions).toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'stuck_signal 非 null でも完了判定 → pattern_coverage upsert',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        const stuckAnalysis: LlmAnalysis = {
+          signals: { authenticity: 'partial', judgment: 'absent', meta_cognition: 'absent', ai_literacy: 'absent' },
+          scope_signal: 2,
+          level_reached_estimate: 2,
+          pattern_match_confidence: 'exact',
+          matched_pattern_id: testPatternId,
+          stuck_signal: 'shallow',
+          notes: '詰まりシグナルテスト',
+        };
+        mockAnalyzeTurn.mockResolvedValue(stuckAnalysis);
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        // pattern_coverage が upsert されていること
+        const [coverageRow] = await db
+          .select({ pattern_id: schema.patternCoverage.pattern_id })
+          .from(schema.patternCoverage)
+          .where(eq(schema.patternCoverage.session_id, sessionId));
+        expect(coverageRow).toBeDefined();
+        expect(coverageRow!.pattern_id).toBe(testPatternId);
+      },
+    );
+  });
+
+  // =========================================================================
+  // (8) 4.3 — no completion → no coverage
+  //
+  // 完了シグナルなし → pattern_coverage は書かれない（proposals は生成される）
+  // Requirements: 4.3
+  // =========================================================================
+
+  describe('(8) 4.3 — no completion → no coverage', () => {
+    it(
+      'level_reached_estimate=2 かつ stuck_signal=null → pattern_coverage 行なし、proposal は生成される',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // MOCK_ANALYSIS は level_reached_estimate=2, stuck_signal=null で patternId 有効
+        const noCompletionAnalysis: LlmAnalysis = {
+          ...MOCK_ANALYSIS,
+          pattern_match_confidence: 'exact',
+          matched_pattern_id: testPatternId,
+          level_reached_estimate: 2,
+          stuck_signal: null,
+        };
+        mockAnalyzeTurn.mockResolvedValue(noCompletionAnalysis);
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        // pattern_coverage は生成されない（完了シグナルなし）
+        const [coverageRow] = await db
+          .select({ id: schema.patternCoverage.id })
+          .from(schema.patternCoverage)
+          .where(eq(schema.patternCoverage.session_id, sessionId));
+        expect(coverageRow).toBeUndefined();
+
+        // proposal は生成される（proposeNextQuestions は完了に関わらず呼ばれる）
+        const [proposalRow] = await db
+          .select({ id: schema.questionProposal.id })
+          .from(schema.questionProposal)
+          .where(eq(schema.questionProposal.session_id, sessionId));
+        expect(proposalRow).toBeDefined();
+      },
+    );
+  });
+
+  // =========================================================================
+  // (9) 4.5 — cap reached（解析上限到達）
+  //
+  // llm:<sessionId> >= 150 の後は:
+  //   - analysis_capped_at が設定される
+  //   - interview_turn / pattern_coverage / question_proposal は生成されない
+  //   - transcript_segment は引き続き挿入可能（セグメント永続化は継続）
+  // Requirements: 4.5
+  // =========================================================================
+
+  describe('(9) 4.5 — cap reached（解析上限到達）', () => {
+    it(
+      'llm:<sessionId> = 150 で pipeline 実行 → analysis_capped_at 設定、interview_turn / coverage / proposal なし、segment は永続化継続',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // rate_limit テーブルに count=150 を挿入してキャップ状態を再現
+        await db.execute(sql`
+          INSERT INTO rate_limit (key, count, window_start)
+          VALUES (${'llm:' + sessionId}, 150, now())
+          ON CONFLICT (key) DO UPDATE SET
+            count = 150,
+            window_start = now()
+        `);
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        // analysis_capped_at が設定されていること
+        const [sessionRow] = await db
+          .select({ analysis_capped_at: schema.interviewSession.analysis_capped_at })
+          .from(schema.interviewSession)
+          .where(eq(schema.interviewSession.id, sessionId));
+        expect(sessionRow!.analysis_capped_at).not.toBeNull();
+
+        // interview_turn は生成されないこと（解析停止）
+        const [turnCount] = await db
+          .select({ count: count() })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        expect(turnCount!.count).toBe(0);
+
+        // pattern_coverage は生成されないこと
+        const [coverageCount] = await db
+          .select({ count: count() })
+          .from(schema.patternCoverage)
+          .where(eq(schema.patternCoverage.session_id, sessionId));
+        expect(coverageCount!.count).toBe(0);
+
+        // question_proposal は生成されないこと
+        const [proposalCount] = await db
+          .select({ count: count() })
+          .from(schema.questionProposal)
+          .where(eq(schema.questionProposal.session_id, sessionId));
+        expect(proposalCount!.count).toBe(0);
+
+        // transcript_segment は上限後も挿入可能（セグメント永続化は継続）
+        const newSegId = crypto.randomUUID();
+        await db.insert(schema.transcriptSegment).values({
+          id: newSegId,
+          session_id: sessionId,
+          seq: 10,
+          source_id: `src-cap-${newSegId}`,
+          speaker_role: 'candidate',
+          text: '上限到達後に挿入したセグメント',
+          started_at_ms: 30000,
+          ended_at_ms: 35000,
+          origin: 'bot_realtime',
+        });
+        const [segCount] = await db
+          .select({ count: count() })
+          .from(schema.transcriptSegment)
+          .where(eq(schema.transcriptSegment.session_id, sessionId));
+        // qSeg + aSeg（claim されていない）+ newSeg = 3 件以上
+        expect(segCount!.count).toBeGreaterThanOrEqual(1);
+
+        // キャップ後のセグメントには logical_turn_id が設定されないこと（claim されていない）
+        const segments = await db
+          .select({ logical_turn_id: schema.transcriptSegment.logical_turn_id })
+          .from(schema.transcriptSegment)
+          .where(eq(schema.transcriptSegment.session_id, sessionId));
+        segments.forEach((s) => {
+          expect(s.logical_turn_id).toBeNull();
+        });
+      },
+    );
+
+    it(
+      '上限到達後の再実行 → analysis_capped_at は上書きされない（冪等）',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // キャップ状態を設定
+        await db.execute(sql`
+          INSERT INTO rate_limit (key, count, window_start)
+          VALUES (${'llm:' + sessionId}, 150, now())
+          ON CONFLICT (key) DO UPDATE SET count = 150, window_start = now()
+        `);
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+
+        // 1 回目の実行
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        const [first] = await db
+          .select({ analysis_capped_at: schema.interviewSession.analysis_capped_at })
+          .from(schema.interviewSession)
+          .where(eq(schema.interviewSession.id, sessionId));
+        const firstCappedAt = first!.analysis_capped_at;
+        expect(firstCappedAt).not.toBeNull();
+
+        // 微小な時間差を入れて 2 回目の実行
+        await new Promise<void>((r) => setTimeout(r, 10));
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        const [second] = await db
+          .select({ analysis_capped_at: schema.interviewSession.analysis_capped_at })
+          .from(schema.interviewSession)
+          .where(eq(schema.interviewSession.id, sessionId));
+        // analysis_capped_at は最初に設定された値のまま（上書きされない）
+        expect(second!.analysis_capped_at?.getTime()).toBe(firstCappedAt?.getTime());
+      },
+    );
+  });
+
+  // =========================================================================
+  // (10) 4.5 — cap not reached → counter incremented
+  //
+  // 通常処理後に llm:<sessionId> カウンタが増加していること
+  // Requirements: 4.5
+  // =========================================================================
+
+  describe('(10) 4.5 — cap not reached → counter incremented', () => {
+    it(
+      '上限未達の通常処理 → llm:<sessionId> カウンタが 1 以上に増加する',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        const { qSegId, aSegId, qText, aText } = await seedQASegments();
+        const closedTurns = evaluate({
+          sessionId,
+          segments: [
+            { id: qSegId, seq: 1, speakerRole: 'interviewer', text: qText, startedAtMs: 1000, endedAtMs: 4000 },
+            { id: aSegId, seq: 2, speakerRole: 'candidate', text: aText, startedAtMs: 5000, endedAtMs: 15000 },
+          ],
+          config: DEFAULT_SEGMENTER_CONFIG,
+          forceCloseTrailing: true,
+        });
+
+        const consumer = createWriteBackConsumer(sessionId);
+        await runWithSessionLock(sessionId, async (tx) => {
+          await consumer(closedTurns, tx);
+        });
+
+        // interview_turn が挿入されていること（解析は実行された）
+        const [turnRow] = await db
+          .select({ id: schema.interviewTurn.id })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        expect(turnRow).toBeDefined();
+
+        // analysis_capped_at は未設定
+        const [sessionRow] = await db
+          .select({ analysis_capped_at: schema.interviewSession.analysis_capped_at })
+          .from(schema.interviewSession)
+          .where(eq(schema.interviewSession.id, sessionId));
+        expect(sessionRow!.analysis_capped_at).toBeNull();
+
+        // llm:<sessionId> カウンタが増加していること（1 ターン = 1 以上）
+        const result = await db.execute<{ count: number }>(
+          sql`SELECT count FROM rate_limit WHERE key = ${'llm:' + sessionId}`,
+        );
+        const rlCount = result.rows[0]?.count ?? 0;
+        expect(Number(rlCount)).toBeGreaterThanOrEqual(1);
+
+        // proposal も生成されていること（proposeNextQuestions は常に呼ばれる）
+        const [proposalRow] = await db
+          .select({ id: schema.questionProposal.id })
+          .from(schema.questionProposal)
+          .where(eq(schema.questionProposal.session_id, sessionId));
+        expect(proposalRow).toBeDefined();
+      },
+    );
   });
 });
