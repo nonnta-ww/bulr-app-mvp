@@ -28,7 +28,7 @@
   - 観測可能な完了: 単体テストで正規署名/トークンが通過し、不正・欠落が 401 相当で拒否される
   - _Requirements: 7.2_
   - _Boundary: WebhookIngestion_
-- [ ] 2.3 status webhook 受信ルート
+- [x] 2.3 status webhook 受信ルート
   - bot.in_call_recording → recording、bot.fatal → failed（失敗理由保存）、bot.call_ended / done → stopped 遷移と終了通知フラグ記録（finalize 起動への結線は 7.1 で完成させる no-op フックとして用意）
   - metadata.sessionId と bot_id の DB 突合不一致は 200 + 破棄、aborted セッションのイベント破棄
   - 観測可能な完了: 各イベント投入で capture_status が定義どおり遷移し、不整合 payload が副作用なく破棄される
