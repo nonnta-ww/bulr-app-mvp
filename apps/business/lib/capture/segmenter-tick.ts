@@ -110,15 +110,17 @@ export interface SegmenterTickInput {
  * デフォルト tick コンシューマ（task 3.3 用プレースホルダー）。
  *
  * 確定した論理ターンをログ出力するだけで何もしない。
- * セグメントの claim も interview_turn への書き戻しも行わない（task 4.2 が担う）。
+ * セグメントの claim も interview_turn への書き戻しも行わない。
  *
- * 冪等性の注意: このプレースホルダーはセグメントを claim しないため、
- * 繰り返し tick は同一セグメントを再評価して同じ LogicalTurn を返す。
- * 本当の重複排除は task 4.2 の interview_turn.turn_fingerprint 一意制約が担う。
+ * 注意: これは consumer 未指定時のフォールバック。本番経路では live-state route /
+ * finalize-session が `createWriteBackConsumer(sessionId)`（turn-pipeline.ts）を渡し、
+ * そちらが claim + interview_turn 書き戻し + LLM 編成を行う。
+ * このプレースホルダーはセグメントを claim しないため繰り返し tick は同じ LogicalTurn
+ * を返すが、実際の重複排除は interview_turn.turn_fingerprint 一意制約が担う。
  */
 const defaultTickConsumer: TickConsumer = async (turns) => {
   console.info(
-    `[segmenter-tick] tick closed ${turns.length} turn(s) — write-back wired in task 4.2`,
+    `[segmenter-tick] tick closed ${turns.length} turn(s) — using no-op default consumer`,
   );
 };
 
