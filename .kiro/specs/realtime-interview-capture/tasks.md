@@ -17,7 +17,7 @@
   - _Requirements: 1.7, 7.6_
 
 - [ ] 2. ボット連携の縦切り（Recall 接続〜ライブ転写永続化）
-- [ ] 2.1 (P) Recall API アダプタ
+- [x] 2.1 (P) Recall API アダプタ
   - createBot（記録中と分かるボット表示名、transcript provider 設定、realtime_endpoints 指定）/ leaveBot / getRecordingDownloadUrl と Result 型エラー envelope
   - 会議 URL の Zoom / Google Meet / Microsoft Teams 形式 Zod 検証
   - 観測可能な完了: fetch モック単体テストで 3 操作とエラー分類（invalid_meeting_url / rate_limited / api_error / network）が検証される
