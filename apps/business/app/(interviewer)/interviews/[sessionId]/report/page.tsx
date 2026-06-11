@@ -7,9 +7,10 @@
  */
 
 import { notFound, redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { db, getInterviewSession } from '@bulr/db';
-import { interviewSession } from '@bulr/db/schema';
+import { interviewSession, transcriptSegment } from '@bulr/db/schema';
+import type { TranscriptSegmentData } from '../../_components/report/transcript-tab';
 import ReactMarkdown from 'react-markdown';
 
 import { requireUser } from '@bulr/auth/server';
@@ -50,10 +51,26 @@ export default async function ReportPage({ params }: Props) {
     notFound();
   }
 
-  const [{ report, allTurns, allPatterns }, sessionResult] = await Promise.all([
+  const [{ report, allTurns, allPatterns }, sessionResult, rawSegments] = await Promise.all([
     getReportData(sessionId),
     getInterviewSession(sessionId),
+    // transcript_segment を時系列順（started_at_ms 昇順、タイブレーク seq 昇順）で取得
+    // 所有者ゲートは上記の interviewer_id チェック済みのため追加アクセス制御は不要
+    // 管理者向けアクセスは別アプリ（apps/admin）で提供（本境界外）
+    db
+      .select({
+        seq: transcriptSegment.seq,
+        speakerRole: transcriptSegment.speaker_role,
+        speakerLabel: transcriptSegment.speaker_label,
+        text: transcriptSegment.text,
+        startedAtMs: transcriptSegment.started_at_ms,
+      })
+      .from(transcriptSegment)
+      .where(eq(transcriptSegment.session_id, sessionId))
+      .orderBy(asc(transcriptSegment.started_at_ms), asc(transcriptSegment.seq)),
   ]);
+
+  const transcriptSegments: TranscriptSegmentData[] = rawSegments;
 
   if (!sessionResult) {
     notFound();
@@ -89,6 +106,7 @@ export default async function ReportPage({ params }: Props) {
           heatmapData={report.heatmap_data}
           allPatterns={allPatterns}
           allTurns={allTurns}
+          transcriptSegments={transcriptSegments}
         />
 
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
