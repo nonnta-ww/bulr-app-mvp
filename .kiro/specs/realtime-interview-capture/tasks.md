@@ -35,7 +35,7 @@
   - _Requirements: 1.4, 5.2, 7.6_
   - _Depends: 1.2, 2.2_
   - _Boundary: WebhookIngestion status 系_
-- [ ] 2.4 (P) transcript webhook 受信ルート
+- [x] 2.4 (P) transcript webhook 受信ルート
   - `transcript.data`（final のみ購読）を Zod 検証し transcript_segment へ冪等 insert（重複 source_id は no-op、順序逆転許容）
   - 参加者メタデータと面接官照合で speaker_role（interviewer / candidate / unknown）を正規化、last_capture_event_at 更新
   - 観測可能な完了: 統合テストで同一イベント二重投入が 1 行のままになり、話者ラベルが正しく付与される
