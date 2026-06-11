@@ -5,6 +5,12 @@
  * タブの選択状態と、開いているパターン詳細の状態を保持する。
  *
  * 設計: docs/superpowers/specs/2026-05-18-heatmap-redesign-design.md §3, §12
+ *
+ * タブ構成:
+ *  - 観察 (observation)
+ *  - カバレッジ (coverage)
+ *  - 全文トランスクリプト (transcript) — transcript_segment 由来、所有者のみ閲覧可（page.tsx でゲート済み）
+ *    管理者向けアクセスは別アプリ（apps/admin）で提供される（本境界外）
  */
 
 import './report-print.css';
@@ -17,16 +23,18 @@ import { VerdictSummary } from './verdict-summary';
 import { ObservationTab } from './observation-tab';
 import { CoverageTab } from './coverage-tab';
 import { PatternDetailPanel } from './pattern-detail-panel';
+import { TranscriptTab, type TranscriptSegmentData } from './transcript-tab';
 
-type TabKey = 'observation' | 'coverage';
+type TabKey = 'observation' | 'coverage' | 'transcript';
 
 interface Props {
   heatmapData: HeatmapData;
   allPatterns: AssessmentPattern[];
   allTurns: InterviewTurn[];
+  transcriptSegments: TranscriptSegmentData[];
 }
 
-export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
+export function ReportView({ heatmapData, allPatterns, allTurns, transcriptSegments }: Props) {
   const [tab, setTab] = useState<TabKey>('observation');
   const [openPatternId, setOpenPatternId] = useState<string | null>(null);
 
@@ -55,6 +63,9 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
         </TabButton>
         <TabButton id="tab-coverage" controls="tabpanel-coverage" active={tab === 'coverage'} onClick={() => setTab('coverage')}>
           カバレッジ
+        </TabButton>
+        <TabButton id="tab-transcript" controls="tabpanel-transcript" active={tab === 'transcript'} onClick={() => setTab('transcript')}>
+          全文トランスクリプト
         </TabButton>
       </div>
 
@@ -85,6 +96,16 @@ export function ReportView({ heatmapData, allPatterns, allTurns }: Props) {
             allPatterns={allPatterns}
             onSelectPattern={setOpenPatternId}
           />
+        </div>
+        <div
+          data-report-tab-body="transcript"
+          role="tabpanel"
+          id="tabpanel-transcript"
+          aria-labelledby="tab-transcript"
+          tabIndex={0}
+          style={{ display: tab === 'transcript' ? 'block' : 'none' }}
+        >
+          <TranscriptTab segments={transcriptSegments} />
         </div>
       </div>
 

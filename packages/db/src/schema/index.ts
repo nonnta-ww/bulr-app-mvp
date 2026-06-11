@@ -19,3 +19,5 @@ export * from './invitation';
 export * from './entry';
 export * from './mock-interview';
 export * from './self-analysis';
+export * from './transcript-segment';
+export * from './capture-recording';

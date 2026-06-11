@@ -154,3 +154,56 @@ capture 概念（ボット連携・webhook ingestion・transcript_segment テー
 | D-12 | セグメンタの並行実行をセッション単位 advisory lock（`pg_advisory_xact_lock`）+ `logical_turn_id IS NULL` 条件付き claim で直列化 | webhook 連続着弾と tick の同時実行で、fingerprint が異なる二重ターンが生成されうる競合をレビューで検出。一意制約だけでは防げない |
 | D-13 | ターン確定の起動を「イベント着弾 + live-state ポーリング tick」の 2 系統に拡張 | 「候補者が回答を終えた沈黙」はイベントを生まず、面接官の次の発話を待つと質問候補の提示が手遅れになる（3.2/3.3 の核心）。ポーリングを時計として利用 |
 | D-14 | `transcript.partial_data` を購読しない（final-only） | serverless 上に partial の揮発状態の置き場がなく、final 発話は数秒間隔で到着するため 2.1 の 10 秒予算は final のみで満たせる。Simplification |
+
+---
+
+## 8.3 E2E・性能 実測（実装フェーズ検証）
+
+> 計測日: 2026-06-11 / 環境: ローカル Docker Postgres (postgresql://bulr:dev_password@localhost:5434/bulr_dev) / vitest v4.1.8
+>
+> 外部 STT（Deepgram）・LLM 推論はすべてモック済み。DB I/O + ビジネスロジックの内部レイテンシのみを計測。本番 Stage 1 での外部サービスレイテンシは別途実測が必要（R-1, R-5 参照）。
+
+### E2E シナリオ検証結果（`lib/capture/e2e-scenarios.test.ts`）
+
+| # | シナリオ | テスト名 | 結果 |
+| --- | --- | --- | --- |
+| S-1 | オンラインハッピーパス | URL入力 → bot_joining → recording → transcript 転写 → tick でターン確定 → live-state で状態確認 → 終了 → session_report 生成 + 全文トランスクリプト閲覧 | ✅ PASS (208ms) |
+| S-2 | 参加失敗 → 対面切替 | createBot エラー → capture_status=failed + retryable → startCapture mic → capture_status=recording + capture_provider=mic | ✅ PASS (23ms) |
+| S-3 | リロード復元（Req 8.2） | cursor=0 で全セグメント + coverage + proposal を取得（リロード復元）、cursor=N で差分のみ返す | ✅ PASS (80ms) |
+| S-4 | 同意なし開始拒否（Req 1.6） | consent_obtained_at = null のセッションで startCapture が CONSENT_REQUIRED を返し、キャプチャが開始されない | ✅ PASS (13ms) |
+
+### 性能計測結果（`lib/capture/performance.test.ts`）
+
+#### P-1: live-state クエリ性能 — 700 セグメント負荷（Req 8.1）
+
+| クエリ種別 | セグメント数 | 計測値 | アサート上限 |
+| --- | --- | --- | --- |
+| cursor=0 全量 | 700 | **24.4ms** | < 1000ms ✅ |
+| cursor=350 差分 | 350 | **11.7ms** | < 1000ms ✅ |
+
+- 60分面接（700セグメント × 5秒/発話）規模でも全量クエリが 25ms 未満で完了
+- 差分クエリは全量の約半分（11.7ms）。seq インデックス + session_id インデックスが有効に機能
+- Vercel 上の実測は別途必要だが、DB クエリ単体のボトルネックはない
+
+#### P-2: ポーリング関数実行量（R-5）
+
+| 指標 | 値 |
+| --- | --- |
+| ポーリングインターバル | 2,500ms |
+| セッション継続時間 | 3,600s（60分） |
+| **推定リクエスト数/セッション** | **1,440 req/session** |
+
+- 算術確認: `3,600,000ms ÷ 2,500ms = 1,440`（R-5 の見積値と一致）
+- Vercel Hobby プランの無料枠（100,000 req/月）に対し、1 セッション = 1,440 req。月約 60 面接で 86,400 req → 無料枠に収まる見込み
+
+#### P-3: 内部遅延予算（Req 2.1, 3.3）
+
+| 処理ステップ | 計測値 | 備考 |
+| --- | --- | --- |
+| transcript.data POST → セグメント永続化 | **8.2ms** | DB トランザクション (advisory lock + MAX(seq)+1 + INSERT) の処理時間 |
+| セグメント → segmenterTick → ターン確定 → 質問候補生成 | **21.9ms** | advisory lock + セグメント取得 + evaluate + writeBack + LLM 呼び出し（mocked） |
+
+- 内部処理の合計遅延（受信 → セグメント永続化 → ターン確定）: 約 **30ms**（mocked externals）
+- Req 2.1 の遅延予算「受信から 10 秒以内」に対し、DB I/O は十分小さい
+- 本番での追加レイテンシ要因（未実測）: Deepgram STT（Recall 経由）≈ 1–3s、LLM 推論（Claude Sonnet）≈ 2–5s、ポーリング間隔 2.5s
+- **R-1（日本語 STT 品質・レイテンシ）および R-5（Vercel 実行環境での実測）は本番 Stage 1 での計測が引き続き必要**

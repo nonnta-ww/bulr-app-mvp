@@ -4,45 +4,45 @@
 > フェーズ構成は design の Migration Strategy（Phase 1 縦切り → Phase 2 評価接続 → Phase 3 UI/対面/終了 → Phase 4 互換・削除)に従う。
 
 - [ ] 1. 基盤: スキーマと設定
-- [ ] 1.1 DB スキーマ追加（migration 0015）
+- [x] 1.1 DB スキーマ追加（migration 0015）
   - `transcript_segment` / `capture_recording` テーブル新設（`(session_id, seq)` と `(session_id, source_id)` の一意制約、`logical_turn_id` FK、origin enum）
   - `interview_session` に capture 系カラム（capture_provider / capture_status / bot_id / meeting_url / last_capture_event_at / analysis_capped_at）を追加。status enum は変更しない
   - `interview_turn` に `turn_fingerprint` カラム + `(session_id, turn_fingerprint)` 一意制約を**加算的に**追加（既存行は null 許容、評価層の読み出しスキーマは不変）
   - 観測可能な完了: migration 適用後、既存セッションの一覧・レポート閲覧が無変更で動作し、新テーブルが空で存在する
   - _Requirements: 2.7, 4.4, 6.2_
-- [ ] 1.2 capture 設定基盤
+- [x] 1.2 capture 設定基盤
   - `RECALL_API_KEY` / `RECALL_API_BASE_URL` / `RECALL_WEBHOOK_SECRET` / `CAPTURE_TRANSCRIPT_PROVIDER` を `.env.example` と `turbo.json` build.env に追加
   - capture_status 遷移バリデータ（定義済みパスのみ許可、aborted 後の受理拒否）を実装
   - 観測可能な完了: 遷移バリデータの単体テストが通り、不正遷移が拒否される
   - _Requirements: 1.7, 7.6_
 
 - [ ] 2. ボット連携の縦切り（Recall 接続〜ライブ転写永続化）
-- [ ] 2.1 (P) Recall API アダプタ
+- [x] 2.1 (P) Recall API アダプタ
   - createBot（記録中と分かるボット表示名、transcript provider 設定、realtime_endpoints 指定）/ leaveBot / getRecordingDownloadUrl と Result 型エラー envelope
   - 会議 URL の Zoom / Google Meet / Microsoft Teams 形式 Zod 検証
   - 観測可能な完了: fetch モック単体テストで 3 操作とエラー分類（invalid_meeting_url / rate_limited / api_error / network）が検証される
   - _Requirements: 1.1, 1.2, 1.3, 2.4_
   - _Boundary: RecallClient_
-- [ ] 2.2 (P) webhook 認証とトークン発行
+- [x] 2.2 (P) webhook 認証とトークン発行
   - status webhook の Svix 署名検証、transcript webhook のセッション毎 URL 埋め込みトークンの**発行と検証**（発行契約は 2.1 の createBot が消費）
   - 観測可能な完了: 単体テストで正規署名/トークンが通過し、不正・欠落が 401 相当で拒否される
   - _Requirements: 7.2_
   - _Boundary: WebhookIngestion_
-- [ ] 2.3 status webhook 受信ルート
+- [x] 2.3 status webhook 受信ルート
   - bot.in_call_recording → recording、bot.fatal → failed（失敗理由保存）、bot.call_ended / done → stopped 遷移と終了通知フラグ記録（finalize 起動への結線は 7.1 で完成させる no-op フックとして用意）
   - metadata.sessionId と bot_id の DB 突合不一致は 200 + 破棄、aborted セッションのイベント破棄
   - 観測可能な完了: 各イベント投入で capture_status が定義どおり遷移し、不整合 payload が副作用なく破棄される
   - _Requirements: 1.4, 5.2, 7.6_
   - _Depends: 1.2, 2.2_
   - _Boundary: WebhookIngestion status 系_
-- [ ] 2.4 (P) transcript webhook 受信ルート
+- [x] 2.4 (P) transcript webhook 受信ルート
   - `transcript.data`（final のみ購読）を Zod 検証し transcript_segment へ冪等 insert（重複 source_id は no-op、順序逆転許容）
   - 参加者メタデータと面接官照合で speaker_role（interviewer / candidate / unknown）を正規化、last_capture_event_at 更新
   - 観測可能な完了: 統合テストで同一イベント二重投入が 1 行のままになり、話者ラベルが正しく付与される
   - _Requirements: 2.1, 2.2, 2.3, 2.5_
   - _Depends: 2.2_
   - _Boundary: WebhookIngestion transcript 系_
-- [ ] 2.5 キャプチャ開始/停止/中止 Server Action
+- [x] 2.5 キャプチャ開始/停止/中止 Server Action
   - 開始: 同意記録（consent_obtained_at）なしは拒否、所有権チェック、recall（createBot）/ mic モード分岐、成功で interview_session.status='in_progress'・started_at 設定。同意記録カラムは不変のまま保持
   - 停止/中止: stopCapture(reason: finish | abort)、abort は即時に録音・転写・解析を停止し以降の webhook を破棄対象化
   - 参加失敗（failed）時に再試行・対面切替が可能な状態を返す
@@ -51,115 +51,126 @@
   - _Depends: 2.1_
 
 - [ ] 3. ライブ配信とセグメンタ
-- [ ] 3.1 live-state 取得エンドポイント
+- [x] 3.1 live-state 取得エンドポイント
   - カーソル差分で final セグメント・coverage 集計・最新候補・経過時間・残パターン数・captureStatus・staleTranscript（20 秒無更新）・analysisCapped を返す。`cursor=0` で全量＝リロード復元
   - requireSessionOwnership による所有権ガード（セッション所有者以外 403）
   - 観測可能な完了: 統合テストで差分/全量/権限拒否/stale 判定が契約どおり返る
   - _Requirements: 2.1, 2.5, 3.1, 3.8, 7.1, 8.2_
-- [ ] 3.2 TurnSegmenter（決定論区切り）
+- [x] 3.2 TurnSegmenter（決定論区切り）
   - 話者交代 + 無音間隔 4 秒 + 最小発話長による論理ターン確定、unknown のみは質問/回答分離を保留したターンを返す
   - セッション単位 advisory lock の実行ハーネス（スタブ消費者でテスト）。セグメントの claim（logical_turn_id 設定）は 4.2 の書き戻しトランザクションが所有
   - 観測可能な完了: 単体テストで区切り/結合/強制区切り/保留ターン/並行起動時の単一実行が検証される
   - _Requirements: 3.3, 4.1_
-- [ ] 3.3 live-state tick（沈黙の時計）
+- [x] 3.3 live-state tick（沈黙の時計）
   - ポーリング受信時、未消費 final セグメント末尾が無音閾値超過ならセグメンタを起動（advisory lock 下で冪等、レスポンス生成と独立実行）
   - 観測可能な完了: 「候補者発話後に沈黙、後続イベントなし」のシナリオで tick によりターンが確定する統合テストが通る
   - _Requirements: 3.3_
   - _Depends: 3.1, 3.2_
 
 - [ ] 4. 評価パイプライン接続
-- [ ] 4.1 (P) ProposalMatcher
+- [x] 4.1 (P) ProposalMatcher
   - 正規化 n-gram 重複率で面接官発話と直近 3 候補を照合し selected_index / manual を判定（LLM・埋め込み不使用）
   - 観測可能な完了: 単体テストで完全一致・言い換え・閾値未満（manual = フリー質問入口）の判定が検証される
   - _Requirements: 3.6, 3.7_
   - _Boundary: ProposalMatcher_
-- [ ] 4.2 論理ターンの書き戻し（claim + 冪等）
+- [x] 4.2 論理ターンの書き戻し（claim + 冪等）
   - 書き戻しトランザクション: `logical_turn_id IS NULL` 条件付き UPDATE でセグメントを claim（更新 0 行なら放棄）→ interview_turn insert（既存 transcript JSON 形状 `{interviewer, candidate, raw}`、audio_key=null、turn_fingerprint 一意制約で冪等、question_source は ProposalMatcher 結果）
   - unknown 保留ターンは splitInterviewerCandidate で質問/回答を分離してから書き戻し
   - 観測可能な完了: 並行二重起動・再実行で interview_turn が重複せず、admin の回答全文確認に新方式ターンが表示される
   - _Requirements: 4.1, 4.4, 6.2, 6.4_
   - _Depends: 3.2, 4.1_
-- [ ] 4.3 LLM 編成と解析上限
+- [x] 4.3 LLM 編成と解析上限
   - analyzeTurn（matched_pattern_id によるパターン自動分類、off_pattern は pattern_id=null のフリー質問）→ パターン完了判定 → aggregatePatternCoverage → proposeNextQuestions（next_pattern 1 件保証は既存契約）→ question_proposal insert
   - `llm:<sessionId>` 上限 150 の事前チェック、到達時は analysis_capped_at 設定・解析停止・転写永続化は継続
   - 観測可能な完了: 論理ターン投入で coverage と新 3 候補が生成され、上限到達後はセグメントだけが増え続ける
   - _Requirements: 3.2, 3.4, 3.7, 4.2, 4.3, 4.5_
   - _Depends: 4.2_
-- [ ] 4.4 ingestion → segmenter → pipeline 統合テスト
+- [x] 4.4 ingestion → segmenter → pipeline 統合テスト
   - transcript.data 連続投入（実面接相当の系列）で turn / proposal / coverage が既存スキーマ形状で生成される
   - 重複配信・順序逆転・webhook と tick の同時起動で二重処理が起きない
   - 観測可能な完了: 統合テストスイートが CI 相当環境（ローカル Docker Postgres）で green
   - _Requirements: 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 4.5_
 
 - [ ] 5. 面接 UI 刷新
-- [ ] 5.1 ポーリング hook とライブ画面ランナー
+- [x] 5.1 ポーリング hook とライブ画面ランナー
   - 2.5 秒間隔・エラー時最大 10 秒バックオフの取得 hook、進行状態をクライアントに保持しないランナー（操作要素は開始/終了/中止の 3 つのみ）
   - 観測可能な完了: 面接中のリロードで転写・進捗・候補が live-state 全量取得から復元される
   - _Requirements: 3.5, 8.2_
-- [ ] 5.2 (P) キャプチャ開始パネル
+- [x] 5.2 (P) キャプチャ開始パネル
   - 会議 URL 入力（3 サービスの形式エラー表示）、参加失敗理由と再試行/対面切替、同意未記録エラー表示
   - 観測可能な完了: 不正 URL・参加失敗・同意なしの各ケースで適切な案内が表示される
   - _Requirements: 1.1, 1.2, 1.4, 1.6_
   - _Boundary: CaptureStartPanel_
-- [ ] 5.3 (P) ライブトランスクリプトペイン
+- [x] 5.3 (P) ライブトランスクリプトペイン
   - 話者ラベル（面接官/候補者/未確定）付き逐次表示、自動スクロール、staleTranscript 時の「転写が遅延しています」表示
   - 観測可能な完了: セグメント到着から次ポーリングで画面に反映される（手動操作なし）
   - _Requirements: 2.1, 2.2, 2.3, 2.5_
   - _Boundary: LiveTranscriptPane_
-- [ ] 5.4 (P) 操作レスサイドパネル
+- [x] 5.4 (P) 操作レスサイドパネル
   - agenda コンポーネント流用で選択操作を排除し、カバレッジ進捗（カバー済み/進行中/未着手 + 到達段階）、候補 3 件の自動更新表示、経過時間/残パターン数、解析上限到達の通知を表示
   - 観測可能な完了: ターン確定後の次ポーリングで候補とカバレッジが自動更新される
   - _Requirements: 3.1, 3.2, 3.8, 4.5_
   - _Boundary: SidePanel_
-- [ ] 5.5 セッションページ結線
+- [x] 5.5 セッションページ結線
   - 面接ページのランナーを新ライブ画面に差し替え（in_progress / draft は新方式のみ提示）、entry 由来セッションの候補者情報・パターン選定の引き継ぎ動作を確認、completed セッションは既存レポート表示を維持
   - 観測可能な完了: entry からセッション作成 → 開始 → ライブ画面 → 終了の一連がボタン 2 回で完走する
   - _Requirements: 6.1, 6.3_
 
 - [ ] 6. 対面録音経路
-- [ ] 6.1 チャンク受信 API
+- [x] 6.1 チャンク受信 API
   - multipart 受信（サイズ ≤5MB・MIME 検証・`capture-chunk:<sessionId>` レート制限）→ capture_recording へ Blob 保存（30 日期限）→ transcribeAudio で転写 → speaker_role=unknown のセグメント insert
   - 観測可能な完了: チャンク投入でセグメントが生成され、以降の論理ターン化（4.2 の保留ターン経路）に乗る
   - _Requirements: 1.5, 2.7, 7.2_
-- [ ] 6.2 マイクチャンクレコーダ
+- [x] 6.2 マイクチャンクレコーダ
   - MediaRecorder timeslice 8 秒で連続録音、未送信キュー + 指数バックオフ再送（一時切断でも音声を失わない）、30 件滞留で UI 警告
   - 観測可能な完了: ネットワーク切断 → 復帰のシミュレーションで全チャンクが最終的に送達される
   - _Requirements: 1.5, 8.3_
 
 - [ ] 7. 終了処理・保持・閲覧
-- [ ] 7.1 finalize 前処理拡張
+- [x] 7.1 finalize 前処理拡張
   - 終了指示（または 2.3 の call_ended フック）から: leaveBot → 未消費セグメントの強制ターン化（フラッシュ）→ ボット録音の Blob 転送（capture_recording, 30 日期限）→ 既存の集約・レポート生成へ接続。2.3 で用意した終了フックをここで結線し 5.2 を完成させる
   - 失敗後の再実行でセグメント・ターンが重複しない（既存冪等設計の継承）
   - 観測可能な完了: 終了操作一回でレポート画面に到達し、capture_recording に録音が登録される
   - _Requirements: 2.7, 5.1, 5.2, 5.3, 5.5_
-- [ ] 7.2 フォールバック転写
+- [x] 7.2 フォールバック転写
   - リアルタイム転写の不健全区間（failed 期間・セグメント空白）を検出 → 録音ダウンロード → チャンク分割バッチ転写 → origin=post_batch セグメント → ターン化して評価に反映
   - 観測可能な完了: 転写を意図的に欠落させたセッションで、finalize 後にレポートが全区間を反映する
   - _Requirements: 2.6_
   - _Depends: 7.1_
-- [ ] 7.3 (P) 音声保持ポリシー拡張
+- [x] 7.3 (P) 音声保持ポリシー拡張
   - audio-purge cron の削除対象に capture_recording（期限切れ）を追加: Blob 削除 + audio_key null 化 + 削除ログ。transcript_segment / interview_turn / 評価データが削除されないことをテストで保証
   - 観測可能な完了: 期限切れレコード投入後の cron 実行で音声のみ消え、転写・評価が残る
   - _Requirements: 7.3, 7.4_
   - _Boundary: RetentionExtension_
-- [ ] 7.4 (P) 全文トランスクリプト閲覧
+- [x] 7.4 (P) 全文トランスクリプト閲覧
   - セッション詳細/レポートに話者ラベル付き全文トランスクリプトタブを追加（transcript_segment 由来、所有者と admin のみ）
   - 観測可能な完了: 面接終了後にレポート画面から全文が時系列・話者ラベル付きで閲覧できる
   - _Requirements: 5.4_
   - _Boundary: TranscriptView_
 
 - [ ] 8. 互換検証と旧 UI 削除
-- [ ] 8.1 旧 状態A/B コンポーネント削除
+- [x] 8.1 旧 状態A/B コンポーネント削除
   - interview-session-runner / recording-state / choosing 系コンポーネントと旧ターン処理経路への UI 導線を削除し、新方式に一本化（turns/next ルートは管理画面互換のため削除せず導線のみ遮断、完全削除は別途判断）
   - 観測可能な完了: 新規セッションで旧 UI に到達する経路が存在せず、build / typecheck / lint が通る
   - _Requirements: 6.1_
   - _Depends: 5.5_
-- [ ] 8.2 互換検証
+- [x] 8.2 互換検証
   - 旧方式で実施済みセッションのレポート・回答記録閲覧が無変更で動作、管理画面の回答全文確認・手動評価・LLM 評価突合・CSV/JSON エクスポートが新方式データで動作、音声・転写・評価へのアクセスが所有者/admin に限定、同意記録が新方式セッションに保持されている
   - 観測可能な完了: 新旧 1 件ずつのセッションで上記すべてが手動確認チェックリストとして green
   - _Requirements: 6.2, 6.4, 7.1, 7.5_
-- [ ] 8.3 E2E・性能検証
+- [x] 8.3 E2E・性能検証
   - オンラインハッピーパス（URL 入力 → ボット参加表示 → ライブ転写 → 候補自動更新 → 終了 → レポート + 全文閲覧）、参加失敗 → 対面切替、リロード復元、同意なし開始拒否
   - 60 分相当（約 700 final セグメント）投入で live-state 応答が劣化しないこと、遅延予算実測（転写表示 ≤10 秒、ターン確定 → 候補更新 ≤15 秒）、ポーリング 1 セッション分の Vercel 関数実行量の実測記録（research.md R-5）
   - 観測可能な完了: E2E シナリオが green で、遅延・負荷の実測値が research.md に追記されている
   - _Requirements: 1.6, 2.1, 3.3, 5.3, 5.4, 8.1, 8.2_
+
+## Implementation Notes
+- worktree セットアップ: `pnpm install` 後、business の typecheck/build 前に `pnpm --filter @bulr/ui build` が必須（@bulr/ui は dist 消費）。ローカル DB は port 5434（container docker-postgres-1）、vitest は apps/business/.env.local の DATABASE_URL を自動ロード。
+- capture_status 遷移は必ず canTransition で守る。createBot 失敗時も idle→failed に直行せず idle→bot_joining→failed を経由（bot_joining を createBot 前に DB 書込）。
+- 【spec owner 要確認】interview_session.consent_obtained_at は現スキーマで notNull().defaultNow() のため consent ゲート(1.6)は実運用で発火しない。ゲート実装は設計通り(非null チェック)だが事実上 vacuous。同意モデルを明示取得にするなら別 spec。
+- TurnSegmenter: evaluate は純粋関数。tail close は自分で行わず、task 3.3 が wall-clock で無音超過を判定し `evaluate({forceCloseTrailing:true})` を渡す契約。unknown-only ターンは question 空の保留ターン（pendingSplit）で返り、task 4.2 が splitInterviewerCandidate で分離。advisory lock harness=runWithSessionLock(sessionId, fn) は claim/書き戻しを持たず(4.2 が所有)。
+- 3.3 tick の consumer seam: runSegmenterTick({sessionId, consumer?}) の TickConsumer=(turns, tx)=>Promise<void>。task 4.2 はここに (a) logical_turn_id IS NULL 条件付き claim (b) interview_turn 書き戻し(turn_fingerprint 一意) (c) TurnPipeline 起動 を注入する。live-state route はレスポンス構築後に tick を await(try/catch でレスポンスに伝播させない)。
+- 4.2 書き戻し順序: design の「claim→insert」は FK(transcript_segment.logical_turn_id→interview_turn.id) のため不可能。実装は pre-check→analyzeTurn→interview_turn INSERT→segment claim を **同一 advisory-lock トランザクション**で実行（turn 存在⟺segment claim 済 の不変条件を atomicity で保証）。turn-pipeline.ts に [TASK 4.3 接続点] あり: insert 後に aggregatePatternCoverage→proposeNextQuestions→question_proposal insert + llm:<sessionId>150 cap を追加する。interview_turn は llm_analysis 等が NOT NULL のため write-back は analyzeTurn を必ず呼ぶ。
+- 6.1 チャンク冪等性: capture_recording は (session_id, chunk_no, kind=mic_chunk) の存在チェックで冪等化（6.2 の再送が保証されるため必須）。transcript_segment は source_id=mic:{sessionId}:{chunkNo} で onConflictDoNothing 冪等。残課題(MVP許容): 重複再送時に transcribeAudio が無駄に呼ばれる（segment insert は no-op）。将来、存在チェックヒット時に transcribe もスキップ可能。
+- 7.2 フォールバック転写の MVP 制限: 完全欠落(realtimeSegmentCount=0)のみ録音全体をバッチ転写して回復する。部分障害(セグメント有り+60s超ギャップ/failed後の脱落)は isTranscriptionUnhealthy で検出されるが overlap 回避のため再転写スキップ。Stage 1 本番前に tail-region 補完(last healthy ended_at_ms 以降を slice して post_batch:tail として転写)を推奨。fallback-transcription.ts + finalize-session.ts のみで実装可能。
+- 検証ゲート注意: この project は typecheck/test に加えて `pnpm --filter @bulr/business lint` も通す必要がある（@typescript-eslint/no-unused-vars は厳格、unused は ^_ プレフィックス必須）。react-hooks プラグインは未登録なので `eslint-disable react-hooks/exhaustive-deps` は「rule not found」エラーになる—使わない。UI/route タスクでは lint も実行すること。

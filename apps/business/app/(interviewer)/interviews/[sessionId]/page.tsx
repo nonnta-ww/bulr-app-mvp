@@ -1,19 +1,25 @@
 /**
  * 面接中ページ（Server Component）
  *
- * Requirements: 5.1, 5.2, 5.3, 5.6, 6.1, 20.5
+ * draft / in_progress セッション: LiveCaptureRunner（新方式のみ）を表示する（Req 6.1）。
+ * completed セッション: 既存レポートページへリダイレクト（互換維持）。
+ *
+ * 設計方針:
+ * - Server Component で DB / 認証を処理し、平易な props として client runner に渡す。
+ * - 進行状態（capture_status 等）のポーリングは LiveCaptureRunner 内の useLiveState が担う。
+ * - エントリー由来のセッション（session-from-entry）は SessionHeader が候補者情報を表示する。
+ *   planned_pattern_codes は live-state ポーリング（/api/interview/sessions/{id}/live-state）
+ *   経由でランナーに届くため、ページから直接渡す必要はない（Req 6.3）。
+ *
+ * Requirements: 6.1, 6.3
  */
 
 import { notFound, redirect } from 'next/navigation';
-import { inArray } from 'drizzle-orm';
 
-import { db, getInterviewSession } from '@bulr/db';
-import { assessmentPattern } from '@bulr/db/schema';
-import type { AssessmentPattern } from '@bulr/db/schema';
-import { loadSessionWithTurns } from '@bulr/db/queries';
+import { getInterviewSession, loadSessionWithTurns } from '@bulr/db/queries';
 import { requireUser } from '@bulr/auth/server';
 
-import { InterviewSessionRunner } from '../_components/interview-session-runner';
+import { LiveCaptureRunner } from '../_components/live/live-capture-runner';
 import { SessionHeader } from './_components/session-header';
 
 // ---------------------------------------------------------------------------
@@ -39,52 +45,47 @@ export default async function InterviewSessionPage({ params }: Props) {
     redirect('/sign-in');
   }
 
-  // セッション + ターンをロード（userId でスコープ済み）
-  const data = await loadSessionWithTurns(sessionId, user.id);
+  // セッション + ターンをロード（userId でスコープ済み = 所有権チェック）
+  // 新方式では turns / proposals は LiveCaptureRunner + useLiveState が管理するが、
+  // loadSessionWithTurns は所有権チェック + status の取得に引き続き使用する。
+  const sessionData = await loadSessionWithTurns(sessionId, user.id);
 
-  if (!data) {
+  if (!sessionData) {
     notFound();
   }
 
-  const { session, candidate, turns, latestProposal, proposals } = data;
+  const { session } = sessionData;
 
-  // SessionHeader 用にセッション拡張データを取得（Stage 1/2 分岐表示）
+  // 完了済みの場合はレポートページへリダイレクト（既存互換）
+  if (session.status === 'completed') {
+    redirect('/interviews/' + sessionId + '/report');
+  }
+
+  // SessionHeader 用 + capture 系カラム（capture_status / consent_obtained_at / meeting_url）取得
   const interviewSessionResult = await getInterviewSession(sessionId);
 
   if (!interviewSessionResult) {
     notFound();
   }
 
-  // 完了済みの場合はレポートページへリダイレクト
-  if (session.status === 'completed') {
-    redirect('/interviews/' + sessionId + '/report');
-  }
+  // 同意取得済みフラグ（Req 1.6）
+  // consent_obtained_at は DB 上 notNull だが、型上 null チェックを行って CaptureStartPanel に渡す
+  const consentObtained =
+    interviewSessionResult.session.consent_obtained_at !== null;
 
-  // 計画されたアセスメントパターンを planned_pattern_codes で取得
-  // Req 5.3 (patternTitle 表示), 5.6 (進捗計算用)
-  let plannedPatterns: AssessmentPattern[] = [];
-  if (session.planned_pattern_codes.length > 0) {
-    const rows = await db
-      .select()
-      .from(assessmentPattern)
-      .where(inArray(assessmentPattern.code, session.planned_pattern_codes));
-    // planned_pattern_codes の順序を保持して並べ替え
-    const byCode = new Map(rows.map((p) => [p.code, p]));
-    plannedPatterns = session.planned_pattern_codes
-      .map((code) => byCode.get(code))
-      .filter((p): p is AssessmentPattern => p !== undefined);
-  }
+  // 前回試行した会議 URL（CaptureStartPanel の初期値、失敗後のリトライに使う）
+  const initialMeetingUrl = interviewSessionResult.session.meeting_url ?? null;
 
   return (
     <div className="flex flex-col gap-4">
+      {/* SessionHeader: 候補者名・役職を表示（Stage 1 / Stage 2 分岐。エントリー由来の場合も対応）（Req 6.3） */}
       <SessionHeader session={interviewSessionResult} />
-      <InterviewSessionRunner
-        session={session}
-        turns={turns}
-        latestProposal={latestProposal}
-        candidate={candidate}
-        plannedPatterns={plannedPatterns}
-        proposals={proposals}
+
+      {/* LiveCaptureRunner: 新キャプチャ方式のみ提供（旧 状態A/B UI は提供しない）（Req 6.1） */}
+      <LiveCaptureRunner
+        sessionId={sessionId}
+        consentObtained={consentObtained}
+        initialMeetingUrl={initialMeetingUrl}
       />
     </div>
   );

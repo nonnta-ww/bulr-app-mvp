@@ -22,7 +22,11 @@
         "CANDIDATE_BASE_URL",
         "CRON_SECRET",
         "VERCEL_URL",
-        "VERCEL_ENV"
+        "VERCEL_ENV",
+        "RECALL_API_KEY",
+        "RECALL_API_BASE_URL",
+        "RECALL_WEBHOOK_SECRET",
+        "CAPTURE_TRANSCRIPT_PROVIDER"
       ]
     },
     "dev": {
@@ -31,7 +35,7 @@
       "persistent": true
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck", "^build"]
     },
     "lint": {
       "dependsOn": ["^lint"]
