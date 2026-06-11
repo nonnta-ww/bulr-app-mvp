@@ -51,7 +51,7 @@
   - _Depends: 2.1_
 
 - [ ] 3. ライブ配信とセグメンタ
-- [ ] 3.1 live-state 取得エンドポイント
+- [x] 3.1 live-state 取得エンドポイント
   - カーソル差分で final セグメント・coverage 集計・最新候補・経過時間・残パターン数・captureStatus・staleTranscript（20 秒無更新）・analysisCapped を返す。`cursor=0` で全量＝リロード復元
   - requireSessionOwnership による所有権ガード（セッション所有者以外 403）
   - 観測可能な完了: 統合テストで差分/全量/権限拒否/stale 判定が契約どおり返る

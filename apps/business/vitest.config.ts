@@ -37,6 +37,12 @@ function loadDotEnvLocal(): Record<string, string> {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // Next.js の `@/*` エイリアスを vitest でも解決する（tsconfig.json paths と対応）
+      "@": resolve(__dirname),
+    },
+  },
   test: {
     environment: "node",
     include: ["lib/**/*.test.ts", "app/**/*.test.ts"],
