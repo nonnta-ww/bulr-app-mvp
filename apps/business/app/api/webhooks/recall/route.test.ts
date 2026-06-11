@@ -4,6 +4,7 @@
  * - 実際の Docker Postgres に対して seed/teardown を行う
  * - Svix 署名の正規構築・不正検証を含む
  * - 各イベント種別の capture_status 遷移と副作用なし破棄を検証する
+ * - task 7.1: bot.call_ended / bot.done が finalizeSession を起動することを検証する
  *
  * Requirements: 1.4, 5.2, 7.6
  * Design: WebhookIngestion (API Contract / Event Contract / Implementation Notes)
@@ -12,6 +13,23 @@
 // `server-only` はNext.jsビルド時専用の副作用パッケージ。
 // vitest Node環境では空モックに置換する。
 vi.mock('server-only', () => ({}));
+
+// ---------------------------------------------------------------------------
+// vi.hoisted: finalizeSession モック（vi.mock ファクトリ内から参照できるよう先に評価）
+// ---------------------------------------------------------------------------
+
+const { mockFinalizeSession } = vi.hoisted(() => ({
+  mockFinalizeSession: vi.fn(),
+}));
+
+/**
+ * finalizeSession のモック。
+ * task 7.1 で結線された終了フックが呼ばれることを検証するために使用する。
+ * 実際の finalize 処理（DB 書き込み等）はここでは実行しない。
+ */
+vi.mock('../../../../lib/capture/finalize-session', () => ({
+  finalizeSession: mockFinalizeSession,
+}));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createHmac, randomBytes } from 'node:crypto';
@@ -107,6 +125,13 @@ describe('POST /api/webhooks/recall', () => {
     userId = crypto.randomUUID();
     sessionId = crypto.randomUUID();
     botId = `bot-${crypto.randomUUID()}`;
+
+    // finalizeSession モックをリセットしてデフォルト応答を設定
+    mockFinalizeSession.mockReset();
+    mockFinalizeSession.mockResolvedValue({
+      ok: true,
+      redirect: `/interviews/${sessionId}/report`,
+    });
 
     // Better Auth ユーザーを挿入（FK 参照元）
     await db.insert(schema.user).values({
@@ -335,5 +360,51 @@ describe('POST /api/webhooks/recall', () => {
 
     expect(res.status).toBe(200);
     expect(await readCaptureStatus()).toBe('stopped');
+  });
+
+  // -------------------------------------------------------------------------
+  // (h) task 7.1 — bot.call_ended フックが finalizeSession を起動する (Req 5.2)
+  //
+  // bot.call_ended イベント受信後、fire-and-forget で finalizeSession が
+  // { sessionId, userId: <interviewer_id> } で呼ばれることを検証する。
+  // Webhook 応答（200）はファイナライズの完了を待たない（best-effort）。
+  // -------------------------------------------------------------------------
+  it('(h) bot.call_ended: finalizeSession が sessionId と interviewer_id で呼ばれる', async () => {
+    await seedSession('recording');
+
+    const body = makeStatusPayload('bot.call_ended', botId, sessionId);
+    const req = makeSignedRequest(body, rawKey);
+    const res = await POST(req);
+
+    // Webhook は即時 200 を返す（finalize 完了を待たない）
+    expect(res.status).toBe(200);
+
+    // fire-and-forget なので、finalizeSession が呼ばれるまで少し待つ
+    await vi.waitFor(() => {
+      expect(mockFinalizeSession).toHaveBeenCalledWith({
+        sessionId,
+        userId,
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // (h-2) bot.done も同様に finalizeSession を起動する (Req 5.2)
+  // -------------------------------------------------------------------------
+  it('(h-2) bot.done: finalizeSession が呼ばれる', async () => {
+    await seedSession('recording');
+
+    const body = makeStatusPayload('bot.done', botId, sessionId);
+    const req = makeSignedRequest(body, rawKey);
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+
+    await vi.waitFor(() => {
+      expect(mockFinalizeSession).toHaveBeenCalledWith({
+        sessionId,
+        userId,
+      });
+    });
   });
 });

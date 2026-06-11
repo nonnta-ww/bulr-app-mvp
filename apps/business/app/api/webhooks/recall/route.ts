@@ -25,6 +25,7 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '@bulr/db';
 import { verifyStatusSignature } from '../../../../lib/capture/recall-webhook-verify';
 import { canTransition, type CaptureStatus } from '../../../../lib/capture/capture-status';
+import { finalizeSession } from '../../../../lib/capture/finalize-session';
 
 // ---------------------------------------------------------------------------
 // Zod スキーマ: Recall status webhook payload
@@ -57,16 +58,43 @@ const SUBSCRIBED_EVENTS = new Set([
 ] as const);
 
 // ---------------------------------------------------------------------------
-// no-op finalize フック（task 7.1 で結線する）
+// finalize フック（task 7.1 で結線済み）
 //
-// bot.call_ended / bot.done 受信時に呼ばれる終了通知フック。
-// 現時点は console ログのみ。task 7.1 がこの関数の本体を実装する。
+// bot.call_ended / bot.done 受信時にサーバー起点で finalizeSession を呼ぶ。
+// fire-and-forget（void 呼び出し）— finalize の失敗は Webhook の 200 応答に影響しない。
+// at-least-once 再配信: 失敗しても次の redelivery で再試行される（設計原則）。
+//
+// Requirements: 5.2（会議終了検知 → 自動停止 + 通知）
+// Design: FinalizeExtension（会議終了検知時は同じ処理をサーバー起点で実行）
 // ---------------------------------------------------------------------------
 
-function triggerFinalizeOnCallEnded(sessionId: string): void {
-  console.info(
-    `[webhook/recall] finalize hook (wired in 7.1): sessionId=${sessionId}`,
-  );
+async function triggerFinalizeOnCallEnded(
+  sessionId: string,
+  interviewerId: string,
+): Promise<void> {
+  try {
+    console.info(
+      `[webhook/recall] finalize triggered by call_ended: sessionId=${sessionId}`,
+    );
+    const result = await finalizeSession({ sessionId, userId: interviewerId });
+    if (result.ok) {
+      console.info(
+        `[webhook/recall] finalize completed: sessionId=${sessionId}`,
+      );
+    } else {
+      console.error(
+        `[webhook/recall] finalize failed: ` +
+          `sessionId=${sessionId}, error=${result.error}`,
+      );
+    }
+  } catch (e) {
+    // 想定外の例外も吸収してWebhookの200応答を守る（best-effort）
+    console.error(
+      `[webhook/recall] finalize threw unexpectedly (webhook still returns 200): ` +
+        `sessionId=${sessionId}`,
+      e,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -241,8 +269,8 @@ export async function POST(request: Request): Promise<Response> {
         `sessionId=${sessionId} (event=${event})`,
     );
 
-    // no-op finalize フック（task 7.1 で実装）
-    triggerFinalizeOnCallEnded(sessionId);
+    // fire-and-forget: finalize の完了を待たずに即時 200 を返す（design.md: at-least-once）
+    void triggerFinalizeOnCallEnded(sessionId, session.interviewer_id);
   }
 
   // ------------------------------------------------------------------
