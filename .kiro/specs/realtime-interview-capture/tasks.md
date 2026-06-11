@@ -117,7 +117,7 @@
   - _Requirements: 6.1, 6.3_
 
 - [ ] 6. 対面録音経路
-- [ ] 6.1 チャンク受信 API
+- [x] 6.1 チャンク受信 API
   - multipart 受信（サイズ ≤5MB・MIME 検証・`capture-chunk:<sessionId>` レート制限）→ capture_recording へ Blob 保存（30 日期限）→ transcribeAudio で転写 → speaker_role=unknown のセグメント insert
   - 観測可能な完了: チャンク投入でセグメントが生成され、以降の論理ターン化（4.2 の保留ターン経路）に乗る
   - _Requirements: 1.5, 2.7, 7.2_
@@ -171,3 +171,4 @@
 - TurnSegmenter: evaluate は純粋関数。tail close は自分で行わず、task 3.3 が wall-clock で無音超過を判定し `evaluate({forceCloseTrailing:true})` を渡す契約。unknown-only ターンは question 空の保留ターン（pendingSplit）で返り、task 4.2 が splitInterviewerCandidate で分離。advisory lock harness=runWithSessionLock(sessionId, fn) は claim/書き戻しを持たず(4.2 が所有)。
 - 3.3 tick の consumer seam: runSegmenterTick({sessionId, consumer?}) の TickConsumer=(turns, tx)=>Promise<void>。task 4.2 はここに (a) logical_turn_id IS NULL 条件付き claim (b) interview_turn 書き戻し(turn_fingerprint 一意) (c) TurnPipeline 起動 を注入する。live-state route はレスポンス構築後に tick を await(try/catch でレスポンスに伝播させない)。
 - 4.2 書き戻し順序: design の「claim→insert」は FK(transcript_segment.logical_turn_id→interview_turn.id) のため不可能。実装は pre-check→analyzeTurn→interview_turn INSERT→segment claim を **同一 advisory-lock トランザクション**で実行（turn 存在⟺segment claim 済 の不変条件を atomicity で保証）。turn-pipeline.ts に [TASK 4.3 接続点] あり: insert 後に aggregatePatternCoverage→proposeNextQuestions→question_proposal insert + llm:<sessionId>150 cap を追加する。interview_turn は llm_analysis 等が NOT NULL のため write-back は analyzeTurn を必ず呼ぶ。
+- 6.1 チャンク冪等性: capture_recording は (session_id, chunk_no, kind=mic_chunk) の存在チェックで冪等化（6.2 の再送が保証されるため必須）。transcript_segment は source_id=mic:{sessionId}:{chunkNo} で onConflictDoNothing 冪等。残課題(MVP許容): 重複再送時に transcribeAudio が無駄に呼ばれる（segment insert は no-op）。将来、存在チェックヒット時に transcribe もスキップ可能。
