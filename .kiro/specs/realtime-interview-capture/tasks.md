@@ -56,7 +56,7 @@
   - requireSessionOwnership による所有権ガード（セッション所有者以外 403）
   - 観測可能な完了: 統合テストで差分/全量/権限拒否/stale 判定が契約どおり返る
   - _Requirements: 2.1, 2.5, 3.1, 3.8, 7.1, 8.2_
-- [ ] 3.2 TurnSegmenter（決定論区切り）
+- [x] 3.2 TurnSegmenter（決定論区切り）
   - 話者交代 + 無音間隔 4 秒 + 最小発話長による論理ターン確定、unknown のみは質問/回答分離を保留したターンを返す
   - セッション単位 advisory lock の実行ハーネス（スタブ消費者でテスト）。セグメントの claim（logical_turn_id 設定）は 4.2 の書き戻しトランザクションが所有
   - 観測可能な完了: 単体テストで区切り/結合/強制区切り/保留ターン/並行起動時の単一実行が検証される
@@ -168,3 +168,4 @@
 - worktree セットアップ: `pnpm install` 後、business の typecheck/build 前に `pnpm --filter @bulr/ui build` が必須（@bulr/ui は dist 消費）。ローカル DB は port 5434（container docker-postgres-1）、vitest は apps/business/.env.local の DATABASE_URL を自動ロード。
 - capture_status 遷移は必ず canTransition で守る。createBot 失敗時も idle→failed に直行せず idle→bot_joining→failed を経由（bot_joining を createBot 前に DB 書込）。
 - 【spec owner 要確認】interview_session.consent_obtained_at は現スキーマで notNull().defaultNow() のため consent ゲート(1.6)は実運用で発火しない。ゲート実装は設計通り(非null チェック)だが事実上 vacuous。同意モデルを明示取得にするなら別 spec。
+- TurnSegmenter: evaluate は純粋関数。tail close は自分で行わず、task 3.3 が wall-clock で無音超過を判定し `evaluate({forceCloseTrailing:true})` を渡す契約。unknown-only ターンは question 空の保留ターン（pendingSplit）で返り、task 4.2 が splitInterviewerCandidate で分離。advisory lock harness=runWithSessionLock(sessionId, fn) は claim/書き戻しを持たず(4.2 が所有)。
