@@ -132,7 +132,7 @@
   - 失敗後の再実行でセグメント・ターンが重複しない（既存冪等設計の継承）
   - 観測可能な完了: 終了操作一回でレポート画面に到達し、capture_recording に録音が登録される
   - _Requirements: 2.7, 5.1, 5.2, 5.3, 5.5_
-- [ ] 7.2 フォールバック転写
+- [x] 7.2 フォールバック転写
   - リアルタイム転写の不健全区間（failed 期間・セグメント空白）を検出 → 録音ダウンロード → チャンク分割バッチ転写 → origin=post_batch セグメント → ターン化して評価に反映
   - 観測可能な完了: 転写を意図的に欠落させたセッションで、finalize 後にレポートが全区間を反映する
   - _Requirements: 2.6_
@@ -172,3 +172,4 @@
 - 3.3 tick の consumer seam: runSegmenterTick({sessionId, consumer?}) の TickConsumer=(turns, tx)=>Promise<void>。task 4.2 はここに (a) logical_turn_id IS NULL 条件付き claim (b) interview_turn 書き戻し(turn_fingerprint 一意) (c) TurnPipeline 起動 を注入する。live-state route はレスポンス構築後に tick を await(try/catch でレスポンスに伝播させない)。
 - 4.2 書き戻し順序: design の「claim→insert」は FK(transcript_segment.logical_turn_id→interview_turn.id) のため不可能。実装は pre-check→analyzeTurn→interview_turn INSERT→segment claim を **同一 advisory-lock トランザクション**で実行（turn 存在⟺segment claim 済 の不変条件を atomicity で保証）。turn-pipeline.ts に [TASK 4.3 接続点] あり: insert 後に aggregatePatternCoverage→proposeNextQuestions→question_proposal insert + llm:<sessionId>150 cap を追加する。interview_turn は llm_analysis 等が NOT NULL のため write-back は analyzeTurn を必ず呼ぶ。
 - 6.1 チャンク冪等性: capture_recording は (session_id, chunk_no, kind=mic_chunk) の存在チェックで冪等化（6.2 の再送が保証されるため必須）。transcript_segment は source_id=mic:{sessionId}:{chunkNo} で onConflictDoNothing 冪等。残課題(MVP許容): 重複再送時に transcribeAudio が無駄に呼ばれる（segment insert は no-op）。将来、存在チェックヒット時に transcribe もスキップ可能。
+- 7.2 フォールバック転写の MVP 制限: 完全欠落(realtimeSegmentCount=0)のみ録音全体をバッチ転写して回復する。部分障害(セグメント有り+60s超ギャップ/failed後の脱落)は isTranscriptionUnhealthy で検出されるが overlap 回避のため再転写スキップ。Stage 1 本番前に tail-region 補完(last healthy ended_at_ms 以降を slice して post_batch:tail として転写)を推奨。fallback-transcription.ts + finalize-session.ts のみで実装可能。

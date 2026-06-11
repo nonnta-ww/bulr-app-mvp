@@ -29,6 +29,7 @@ const {
   mockGetRecordingDownloadUrl,
   mockCreateRecallClient,
   mockUploadToBlob,
+  mockTranscribeAudio,
 } = vi.hoisted(() => {
   const mockLeaveBot = vi.fn();
   const mockGetRecordingDownloadUrl = vi.fn();
@@ -46,6 +47,7 @@ const {
       createBot: vi.fn(),
     })),
     mockUploadToBlob: vi.fn(),
+    mockTranscribeAudio: vi.fn(),
   };
 });
 
@@ -53,9 +55,11 @@ const {
  * @bulr/ai のモック。
  * createLlmContext は mock 関数を束縛した決定論コンテキストを返す。
  * aggregateHeatmap は決定論的関数なのでスタブで代替する。
+ * transcribeAudio はフォールバック転写（2.6）のモック。
  */
 vi.mock('@bulr/ai', () => ({
   aggregateHeatmap: vi.fn().mockReturnValue({ heatmap: 'stub' }),
+  transcribeAudio: mockTranscribeAudio,
   createLlmContext: vi.fn(() => ({
     analyzeTurn: mockAnalyzeTurn,
     splitInterviewerCandidate: mockSplitInterviewerCandidate,
@@ -166,6 +170,11 @@ describe('finalizeSession', () => {
       audioKey: FAKE_AUDIO_KEY,
       audioExpiresAt: FAKE_AUDIO_EXPIRES_AT,
     });
+
+    // transcribeAudio モックのデフォルト設定（フォールバック転写 2.6 用）
+    mockTranscribeAudio.mockResolvedValue(
+      'フォールバック転写テスト: 分散システムの設計について教えてください。一貫性とパフォーマンスのバランスが重要です。',
+    );
 
     // グローバル fetch モック（録音ファイルダウンロード用）
     const fakeAudioBytes = new Uint8Array([0x49, 0x44, 0x33]).buffer; // fake audio bytes
@@ -511,6 +520,270 @@ describe('finalizeSession', () => {
         expect(reportCount1).toBe(1);
 
         // status は 'completed' のまま
+        const session = await db.query.interviewSession.findFirst({
+          where: eq(schema.interviewSession.id, sessionId),
+        });
+        expect(session?.status).toBe('completed');
+      },
+    );
+  });
+
+  // =========================================================================
+  // (6) フォールバック転写 — 2.6 headline
+  //
+  // リアルタイムセグメントがゼロ（= 意図的に欠落させたセッション）で
+  // ボット録音が利用可能な場合、finalizeSession を呼んだとき:
+  // - post_batch origin の transcript_segment が挿入される
+  // - その post_batch セグメントから interview_turn が生成される
+  // - session_report が存在する（全区間がレポートに反映）
+  // - status='completed'
+  //
+  // Requirements: 2.6
+  // =========================================================================
+
+  describe('(6) fallback transcription — unhealthy session (2.6 headline)', () => {
+    it(
+      'リアルタイムセグメントゼロのセッションで post_batch セグメントとターンが生成される',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // ゼロセグメントのセッション（リアルタイム転写が完全に欠落したシナリオ）
+        await db.insert(schema.interviewSession).values({
+          id: sessionId,
+          interviewer_id: userId,
+          status: 'in_progress',
+          role: 'backend',
+          planned_pattern_codes: [],
+          capture_status: 'stopped', // failed でなくても zero-segment で不健全判定される
+          capture_provider: 'recall',
+          bot_id: botId,
+          started_at: new Date(Date.now() - 30 * 60 * 1000), // 30分前に開始
+        });
+
+        // transcript_segment は一件もない（= 意図的に欠落させた状態）
+
+        // finalizeSession を呼ぶ
+        const result = await finalizeSession({ sessionId, userId });
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.redirect).toBe(`/interviews/${sessionId}/report`);
+
+        // transcribeAudio が呼ばれたこと（フォールバック転写の証拠）
+        expect(mockTranscribeAudio).toHaveBeenCalled();
+
+        // post_batch origin のセグメントが存在すること
+        const [postBatchCountRow] = await db
+          .select({ c: count() })
+          .from(schema.transcriptSegment)
+          .where(
+            and(
+              eq(schema.transcriptSegment.session_id, sessionId),
+              eq(schema.transcriptSegment.origin, 'post_batch'),
+            ),
+          );
+        expect(Number(postBatchCountRow?.c)).toBeGreaterThan(0);
+
+        // post_batch セグメントから interview_turn が生成されていること
+        const [turnCountRow] = await db
+          .select({ c: count() })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        expect(Number(turnCountRow?.c)).toBeGreaterThan(0);
+
+        // session_report が存在する（全区間がレポートに反映された証拠）
+        const report = await db.query.sessionReport.findFirst({
+          where: eq(schema.sessionReport.session_id, sessionId),
+        });
+        expect(report).toBeDefined();
+        expect(report?.summary_text).toBe('テスト用サマリー');
+
+        // status が completed になっている
+        const session = await db.query.interviewSession.findFirst({
+          where: eq(schema.interviewSession.id, sessionId),
+        });
+        expect(session?.status).toBe('completed');
+      },
+    );
+  });
+
+  // =========================================================================
+  // (7) 健全セッション → フォールバックなし
+  //
+  // リアルタイムセグメントが連続していて（ギャップなし・failed なし）
+  // 健全なセッションでは、finalizeSession がフォールバック転写を行わないこと。
+  // transcribeAudio は呼ばれない。
+  //
+  // Requirements: 2.6 (否定ケース)
+  // =========================================================================
+
+  describe('(7) healthy session — no fallback', () => {
+    it(
+      '健全なリアルタイムセグメントがある場合は post_batch セグメントが挿入されず transcribeAudio も呼ばれない',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        await db.insert(schema.interviewSession).values({
+          id: sessionId,
+          interviewer_id: userId,
+          status: 'in_progress',
+          role: 'backend',
+          planned_pattern_codes: [],
+          capture_status: 'stopped', // 健全: failed でない
+          capture_provider: 'recall',
+          bot_id: botId,
+          started_at: new Date(0),
+        });
+
+        // 連続したリアルタイムセグメント（ギャップは 1000ms < UNHEALTHY_GAP_THRESHOLD 60000ms）
+        await db.insert(schema.transcriptSegment).values([
+          {
+            session_id: sessionId,
+            seq: 1,
+            source_id: `${botId}:healthy:0.0`,
+            speaker_role: 'interviewer',
+            speaker_label: 'Interviewer',
+            text: '健全なセッションの質問: 分散システムの設計について教えてください。',
+            started_at_ms: 0,
+            ended_at_ms: 5000,
+            origin: 'bot_realtime',
+            logical_turn_id: null,
+          },
+          {
+            session_id: sessionId,
+            seq: 2,
+            source_id: `${botId}:healthy:6.0`,
+            speaker_role: 'candidate',
+            speaker_label: 'Candidate',
+            text: '健全なセッションの回答: 一貫性とパフォーマンスのトレードオフを意識しています。CAP定理に基づいて設計しています。',
+            started_at_ms: 6000, // gap = 1000ms: 健全
+            ended_at_ms: 30000,
+            origin: 'bot_realtime',
+            logical_turn_id: null,
+          },
+        ]);
+
+        const result = await finalizeSession({ sessionId, userId });
+        expect(result.ok).toBe(true);
+
+        // transcribeAudio が呼ばれないこと（フォールバック不要）
+        expect(mockTranscribeAudio).not.toHaveBeenCalled();
+
+        // post_batch セグメントが存在しないこと
+        const [postBatchCountRow] = await db
+          .select({ c: count() })
+          .from(schema.transcriptSegment)
+          .where(
+            and(
+              eq(schema.transcriptSegment.session_id, sessionId),
+              eq(schema.transcriptSegment.origin, 'post_batch'),
+            ),
+          );
+        expect(Number(postBatchCountRow?.c)).toBe(0);
+
+        // session_report は生成される（通常フローで）
+        const report = await db.query.sessionReport.findFirst({
+          where: eq(schema.sessionReport.session_id, sessionId),
+        });
+        expect(report).toBeDefined();
+      },
+    );
+  });
+
+  // =========================================================================
+  // (8) 冪等再実行 — フォールバック転写の重複防止
+  //
+  // 不健全セッションで finalizeSession を 2 回実行しても:
+  // - post_batch セグメントが重複しない（source_id の onConflictDoNothing）
+  // - interview_turn が重複しない（fingerprint 一意制約）
+  // - session_report は 1 件のまま（upsert）
+  //
+  // Requirements: 2.6, 5.5
+  // =========================================================================
+
+  describe('(8) idempotent fallback re-run', () => {
+    it(
+      'フォールバック転写セッションを 2 回実行しても post_batch セグメントとターンが重複しない',
+      async () => {
+        if (!process.env['DATABASE_URL']) {
+          console.warn('DATABASE_URL not set, skipping DB integration test');
+          return;
+        }
+
+        // ゼロセグメントの不健全セッション
+        await db.insert(schema.interviewSession).values({
+          id: sessionId,
+          interviewer_id: userId,
+          status: 'in_progress',
+          role: 'backend',
+          planned_pattern_codes: [],
+          capture_status: 'stopped',
+          capture_provider: 'recall',
+          bot_id: botId,
+          started_at: new Date(Date.now() - 30 * 60 * 1000),
+        });
+
+        // 1 回目の実行
+        const result1 = await finalizeSession({ sessionId, userId });
+        expect(result1.ok).toBe(true);
+
+        // 1 回目後の状態を記録
+        const [postBatchCountRow1] = await db
+          .select({ c: count() })
+          .from(schema.transcriptSegment)
+          .where(
+            and(
+              eq(schema.transcriptSegment.session_id, sessionId),
+              eq(schema.transcriptSegment.origin, 'post_batch'),
+            ),
+          );
+        const postBatchCount1 = Number(postBatchCountRow1?.c);
+        expect(postBatchCount1).toBeGreaterThan(0); // 1 回目でセグメントが挿入された
+
+        const [turnCountRow1] = await db
+          .select({ c: count() })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        const turnCount1 = Number(turnCountRow1?.c);
+        expect(turnCount1).toBeGreaterThan(0); // 1 回目でターンが生成された
+
+        // 2 回目の実行
+        const result2 = await finalizeSession({ sessionId, userId });
+        expect(result2.ok).toBe(true);
+
+        // post_batch セグメント数は増えない（onConflictDoNothing で冪等）
+        const [postBatchCountRow2] = await db
+          .select({ c: count() })
+          .from(schema.transcriptSegment)
+          .where(
+            and(
+              eq(schema.transcriptSegment.session_id, sessionId),
+              eq(schema.transcriptSegment.origin, 'post_batch'),
+            ),
+          );
+        expect(Number(postBatchCountRow2?.c)).toBe(postBatchCount1);
+
+        // interview_turn 数は増えない（fingerprint 一意制約）
+        const [turnCountRow2] = await db
+          .select({ c: count() })
+          .from(schema.interviewTurn)
+          .where(eq(schema.interviewTurn.session_id, sessionId));
+        expect(Number(turnCountRow2?.c)).toBe(turnCount1);
+
+        // session_report は 1 件のまま（upsert）
+        const [reportCountRow] = await db
+          .select({ c: count() })
+          .from(schema.sessionReport)
+          .where(eq(schema.sessionReport.session_id, sessionId));
+        expect(Number(reportCountRow?.c)).toBe(1);
+
+        // status は completed のまま
         const session = await db.query.interviewSession.findFirst({
           where: eq(schema.interviewSession.id, sessionId),
         });

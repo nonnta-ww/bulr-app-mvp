@@ -6,24 +6,26 @@
  *  2. /api/webhooks/recall の bot.call_ended フック（サーバー起点、ユーザーセッションなし）
  *
  * 前処理順（design.md FinalizeExtension）:
- *  ① leaveBot（5.1）       — best-effort（失敗してもレポート生成へ進む）
- *  ② 未消費セグメントのフラッシュ（5.3）— runWithSessionLock + evaluate(forceCloseTrailing) + writeBack
- *  ③ ボット録音の Blob 転送（2.7）   — best-effort、idempotency guard あり
- *  ④ 既存集約 → generateSessionReport → session_report upsert → status='completed'（5.3）
+ *  ① leaveBot（5.1）                   — best-effort（失敗してもレポート生成へ進む）
+ *  ② 未消費セグメントのフラッシュ（5.3）  — runWithSessionLock + evaluate(forceCloseTrailing) + writeBack
+ *  ③ フォールバック転写（2.6）            — 不健全区間の録音バッチ転写 → post_batch セグメント → ターン化
+ *  ④ ボット録音の Blob 転送（2.7）        — best-effort、idempotency guard あり
+ *  ⑤ 既存集約 → generateSessionReport → session_report upsert → status='completed'（5.3）
  *
  * 冪等性（5.5）:
  *  - フラッシュ: turn_fingerprint 一意制約 + segment claim により重複ターンなし
+ *  - フォールバック転写: post_batch の (session_id, source_id) 一意制約 + onConflictDoNothing
  *  - ボット録音: 既存 bot_full 行チェックによりスキップ
  *  - session_report upsert: onConflictDoUpdate により冪等
  *  - status='completed': update は冪等
  *
- * Requirements: 2.7, 5.1, 5.2, 5.3, 5.5
+ * Requirements: 2.6, 2.7, 5.1, 5.2, 5.3, 5.5
  * Design: FinalizeExtension（/api/interview/finalize 改修）/ System Flows（面接終了とフォールバック）
  */
 
 import 'server-only';
 
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, ne } from 'drizzle-orm';
 
 import { db, schema } from '@bulr/db';
 import { aggregateHeatmap, createLlmContext } from '@bulr/ai';
@@ -37,6 +39,7 @@ import {
   type SegmentInput,
 } from './segmenter';
 import { createWriteBackConsumer } from './turn-pipeline';
+import { isTranscriptionUnhealthy, runFallbackTranscription } from './fallback-transcription';
 
 // ---------------------------------------------------------------------------
 // 公開型
@@ -64,7 +67,7 @@ export type FinalizeSessionResult =
 /**
  * 面接終了処理のコアロジック。
  *
- * ① leaveBot → ② セグメントフラッシュ → ③ ボット録音 Blob 転送 → ④ 集約・レポート生成
+ * ① leaveBot → ② セグメントフラッシュ → ③ フォールバック転写 → ④ ボット録音 Blob 転送 → ⑤ 集約・レポート生成
  *
  * 失敗時は error 情報を含む FinalizeSessionResult を返す（throw しない）。
  * 呼び出し元はステータスコードをそのままレスポンスに使用できる。
@@ -158,7 +161,56 @@ export async function finalizeSession(
   }
 
   // ------------------------------------------------------------------
-  // ③ ボット録音 Blob 転送（design.md: 2.7）
+  // ③ フォールバック転写（design.md: 2.6）
+  //
+  // capture_provider='recall' かつ bot_id がある場合のみ評価する。
+  // リアルタイム転写が不健全（failed / セグメントゼロ / 大きなギャップ）だった場合、
+  // ボット録音をダウンロードし transcribeAudio でバッチ転写 → post_batch セグメント挿入
+  // → ターン化（第 2 フラッシュ）を行い、集約・レポート生成に反映する（2.6）。
+  // best-effort: 失敗しても既存ターンベースでレポート生成へ続行（5.5）。
+  // ------------------------------------------------------------------
+  if (session.capture_provider === 'recall' && session.bot_id) {
+    try {
+      // post_batch を除くリアルタイムセグメントを取得して不健全判定に使用する
+      const realtimeSegments = await db
+        .select({
+          started_at_ms: schema.transcriptSegment.started_at_ms,
+          ended_at_ms: schema.transcriptSegment.ended_at_ms,
+        })
+        .from(schema.transcriptSegment)
+        .where(
+          and(
+            eq(schema.transcriptSegment.session_id, sessionId),
+            ne(schema.transcriptSegment.origin, 'post_batch'),
+          ),
+        )
+        .orderBy(asc(schema.transcriptSegment.started_at_ms));
+
+      const unhealthy = isTranscriptionUnhealthy(session, realtimeSegments);
+
+      if (unhealthy) {
+        const insertedCount = await runFallbackTranscription({
+          sessionId,
+          session,
+          realtimeSegmentCount: realtimeSegments.length,
+        });
+        if (insertedCount > 0) {
+          console.info(
+            `[finalize-session] fallback transcription inserted ${insertedCount} post_batch segment(s): ` +
+              `sessionId=${sessionId}`,
+          );
+        }
+      }
+    } catch (e) {
+      console.warn(
+        `[finalize-session] fallback transcription threw (continuing): sessionId=${sessionId}`,
+        e,
+      );
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // ④ ボット録音 Blob 転送（design.md: 2.7）
   //
   // capture_provider='recall' かつ bot_id がある場合のみ実行する。
   // 冪等ガード: 既に bot_full 行が存在する場合はスキップ（再実行で重複しない、5.5）。
@@ -224,9 +276,10 @@ export async function finalizeSession(
   }
 
   // ------------------------------------------------------------------
-  // ④ 既存集約・レポート生成（finalize/route.ts から移植・不変）
+  // ⑤ 既存集約・レポート生成（finalize/route.ts から移植・不変）
   //
   // Requirements 11.2-11.8 に対応する既存ロジックをそのまま維持する。
+  // フォールバック転写（③）で追加された interview_turn もここで集約される。
   // ------------------------------------------------------------------
 
   // LLM コンテキストのビルド
