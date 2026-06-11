@@ -10,7 +10,7 @@
   - `interview_turn` に `turn_fingerprint` カラム + `(session_id, turn_fingerprint)` 一意制約を**加算的に**追加（既存行は null 許容、評価層の読み出しスキーマは不変）
   - 観測可能な完了: migration 適用後、既存セッションの一覧・レポート閲覧が無変更で動作し、新テーブルが空で存在する
   - _Requirements: 2.7, 4.4, 6.2_
-- [ ] 1.2 capture 設定基盤
+- [x] 1.2 capture 設定基盤
   - `RECALL_API_KEY` / `RECALL_API_BASE_URL` / `RECALL_WEBHOOK_SECRET` / `CAPTURE_TRANSCRIPT_PROVIDER` を `.env.example` と `turbo.json` build.env に追加
   - capture_status 遷移バリデータ（定義済みパスのみ許可、aborted 後の受理拒否）を実装
   - 観測可能な完了: 遷移バリデータの単体テストが通り、不正遷移が拒否される
@@ -163,3 +163,6 @@
   - 60 分相当（約 700 final セグメント）投入で live-state 応答が劣化しないこと、遅延予算実測（転写表示 ≤10 秒、ターン確定 → 候補更新 ≤15 秒）、ポーリング 1 セッション分の Vercel 関数実行量の実測記録（research.md R-5）
   - 観測可能な完了: E2E シナリオが green で、遅延・負荷の実測値が research.md に追記されている
   - _Requirements: 1.6, 2.1, 3.3, 5.3, 5.4, 8.1, 8.2_
+
+## Implementation Notes
+- worktree セットアップ: `pnpm install` 後、business の typecheck/build 前に `pnpm --filter @bulr/ui build` が必須（@bulr/ui は dist 消費）。ローカル DB は port 5434（container docker-postgres-1）、vitest は apps/business/.env.local の DATABASE_URL を自動ロード。
