@@ -85,7 +85,7 @@
   - 観測可能な完了: 論理ターン投入で coverage と新 3 候補が生成され、上限到達後はセグメントだけが増え続ける
   - _Requirements: 3.2, 3.4, 3.7, 4.2, 4.3, 4.5_
   - _Depends: 4.2_
-- [ ] 4.4 ingestion → segmenter → pipeline 統合テスト
+- [x] 4.4 ingestion → segmenter → pipeline 統合テスト
   - transcript.data 連続投入（実面接相当の系列）で turn / proposal / coverage が既存スキーマ形状で生成される
   - 重複配信・順序逆転・webhook と tick の同時起動で二重処理が起きない
   - 観測可能な完了: 統合テストスイートが CI 相当環境（ローカル Docker Postgres）で green
