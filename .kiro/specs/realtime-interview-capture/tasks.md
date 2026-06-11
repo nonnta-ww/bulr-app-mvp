@@ -42,7 +42,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.5_
   - _Depends: 2.2_
   - _Boundary: WebhookIngestion transcript 系_
-- [ ] 2.5 キャプチャ開始/停止/中止 Server Action
+- [x] 2.5 キャプチャ開始/停止/中止 Server Action
   - 開始: 同意記録（consent_obtained_at）なしは拒否、所有権チェック、recall（createBot）/ mic モード分岐、成功で interview_session.status='in_progress'・started_at 設定。同意記録カラムは不変のまま保持
   - 停止/中止: stopCapture(reason: finish | abort)、abort は即時に録音・転写・解析を停止し以降の webhook を破棄対象化
   - 参加失敗（failed）時に再試行・対面切替が可能な状態を返す
@@ -166,3 +166,5 @@
 
 ## Implementation Notes
 - worktree セットアップ: `pnpm install` 後、business の typecheck/build 前に `pnpm --filter @bulr/ui build` が必須（@bulr/ui は dist 消費）。ローカル DB は port 5434（container docker-postgres-1）、vitest は apps/business/.env.local の DATABASE_URL を自動ロード。
+- capture_status 遷移は必ず canTransition で守る。createBot 失敗時も idle→failed に直行せず idle→bot_joining→failed を経由（bot_joining を createBot 前に DB 書込）。
+- 【spec owner 要確認】interview_session.consent_obtained_at は現スキーマで notNull().defaultNow() のため consent ゲート(1.6)は実運用で発火しない。ゲート実装は設計通り(非null チェック)だが事実上 vacuous。同意モデルを明示取得にするなら別 spec。
