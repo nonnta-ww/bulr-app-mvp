@@ -1,0 +1,22 @@
+{
+  "feature_name": "realtime-interview-capture",
+  "created_at": "2026-06-10T22:52:44Z",
+  "updated_at": "2026-06-11T00:20:00Z",
+  "language": "ja",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

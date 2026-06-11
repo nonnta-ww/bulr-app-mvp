@@ -44,6 +44,12 @@ bulr は2フェーズで進行する。
 
 - [x] candidate-self-analysis — skill-survey 回答をもとに候補者の強み・弱みを可視化し、自然言語サマリ＋成長アクション提案を返す自己分析機能。集計は決定論的（構造化）、要約・成長アクションは LLM（ハイブリッド）。入力は skill-survey 回答のみ（mock-interview は含めない）。数値スコア・他者比較は出さない。Dependencies: skill-survey, candidate-auth-onboarding
 
+### Wave 7 — B2B コア回帰（リアルタイム面接キャプチャ）
+
+競合（BrightHire / Metaview）比較で判明したキャプチャ層のギャップ解消。面接中の面接官操作をゼロにし、Stage 1 検証（実面接利用）を可能にする。
+
+- [ ] realtime-interview-capture — ミーティングボット（Zoom / Meet / Teams 自動参加、対面はブラウザ連続録音）＋リアルタイム文字起こし・話者分離＋操作不要サイドパネル（カバレッジ進捗＋質問候補 3 件の自動更新）。状態A/B ターン録音 UI を廃止し、評価パイプライン（5次元・pattern_coverage・session_report）の入力をライブトランスクリプトに差し替える。Dependencies: session-from-entry
+
 ### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
 
 スカウト層（候補者プール検索＋企業のスカウト課金）／L3 年収査定（bulr 自身のデータ蓄積後）／マッチング／模擬面接の音声対応／マルチテナント本格化。
