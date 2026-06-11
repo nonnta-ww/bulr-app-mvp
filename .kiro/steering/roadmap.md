@@ -48,6 +48,8 @@ bulr は2フェーズで進行する。
 
 競合（BrightHire / Metaview）比較で判明したキャプチャ層のギャップ解消。面接中の面接官操作をゼロにし、Stage 1 検証（実面接利用）を可能にする。
 
+> Wave 7 着手前の MVP は tag `v0-mvp` / branch `legacy/mvp-v0` として保存（フォークはしない）。経緯と方針は `docs/superpowers/specs/2026-06-11-wave7-inplace-evolution-and-mvp-snapshot.md` を参照。
+
 - [ ] realtime-interview-capture — ミーティングボット（Zoom / Meet / Teams 自動参加、対面はブラウザ連続録音）＋リアルタイム文字起こし・話者分離＋操作不要サイドパネル（カバレッジ進捗＋質問候補 3 件の自動更新）。状態A/B ターン録音 UI を廃止し、評価パイプライン（5次元・pattern_coverage・session_report）の入力をライブトランスクリプトに差し替える。Dependencies: session-from-entry
 
 ### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
