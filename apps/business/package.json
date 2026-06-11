@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3021",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@bulr/ai": "workspace:*",
@@ -41,6 +42,7 @@
     "@types/nodemailer": "^6.4.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5.4"
+    "typescript": "^5.4",
+    "vitest": "^4.1.0"
   }
 }
