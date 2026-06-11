@@ -23,7 +23,7 @@
   - 観測可能な完了: fetch モック単体テストで 3 操作とエラー分類（invalid_meeting_url / rate_limited / api_error / network）が検証される
   - _Requirements: 1.1, 1.2, 1.3, 2.4_
   - _Boundary: RecallClient_
-- [ ] 2.2 (P) webhook 認証とトークン発行
+- [x] 2.2 (P) webhook 認証とトークン発行
   - status webhook の Svix 署名検証、transcript webhook のセッション毎 URL 埋め込みトークンの**発行と検証**（発行契約は 2.1 の createBot が消費）
   - 観測可能な完了: 単体テストで正規署名/トークンが通過し、不正・欠落が 401 相当で拒否される
   - _Requirements: 7.2_
