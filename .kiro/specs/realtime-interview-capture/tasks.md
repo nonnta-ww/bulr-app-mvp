@@ -121,7 +121,7 @@
   - multipart 受信（サイズ ≤5MB・MIME 検証・`capture-chunk:<sessionId>` レート制限）→ capture_recording へ Blob 保存（30 日期限）→ transcribeAudio で転写 → speaker_role=unknown のセグメント insert
   - 観測可能な完了: チャンク投入でセグメントが生成され、以降の論理ターン化（4.2 の保留ターン経路）に乗る
   - _Requirements: 1.5, 2.7, 7.2_
-- [ ] 6.2 マイクチャンクレコーダ
+- [x] 6.2 マイクチャンクレコーダ
   - MediaRecorder timeslice 8 秒で連続録音、未送信キュー + 指数バックオフ再送（一時切断でも音声を失わない）、30 件滞留で UI 警告
   - 観測可能な完了: ネットワーク切断 → 復帰のシミュレーションで全チャンクが最終的に送達される
   - _Requirements: 1.5, 8.3_
