@@ -61,7 +61,7 @@
   - セッション単位 advisory lock の実行ハーネス（スタブ消費者でテスト）。セグメントの claim（logical_turn_id 設定）は 4.2 の書き戻しトランザクションが所有
   - 観測可能な完了: 単体テストで区切り/結合/強制区切り/保留ターン/並行起動時の単一実行が検証される
   - _Requirements: 3.3, 4.1_
-- [ ] 3.3 live-state tick（沈黙の時計）
+- [x] 3.3 live-state tick（沈黙の時計）
   - ポーリング受信時、未消費 final セグメント末尾が無音閾値超過ならセグメンタを起動（advisory lock 下で冪等、レスポンス生成と独立実行）
   - 観測可能な完了: 「候補者発話後に沈黙、後続イベントなし」のシナリオで tick によりターンが確定する統合テストが通る
   - _Requirements: 3.3_
@@ -169,3 +169,4 @@
 - capture_status 遷移は必ず canTransition で守る。createBot 失敗時も idle→failed に直行せず idle→bot_joining→failed を経由（bot_joining を createBot 前に DB 書込）。
 - 【spec owner 要確認】interview_session.consent_obtained_at は現スキーマで notNull().defaultNow() のため consent ゲート(1.6)は実運用で発火しない。ゲート実装は設計通り(非null チェック)だが事実上 vacuous。同意モデルを明示取得にするなら別 spec。
 - TurnSegmenter: evaluate は純粋関数。tail close は自分で行わず、task 3.3 が wall-clock で無音超過を判定し `evaluate({forceCloseTrailing:true})` を渡す契約。unknown-only ターンは question 空の保留ターン（pendingSplit）で返り、task 4.2 が splitInterviewerCandidate で分離。advisory lock harness=runWithSessionLock(sessionId, fn) は claim/書き戻しを持たず(4.2 が所有)。
+- 3.3 tick の consumer seam: runSegmenterTick({sessionId, consumer?}) の TickConsumer=(turns, tx)=>Promise<void>。task 4.2 はここに (a) logical_turn_id IS NULL 条件付き claim (b) interview_turn 書き戻し(turn_fingerprint 一意) (c) TurnPipeline 起動 を注入する。live-state route はレスポンス構築後に tick を await(try/catch でレスポンスに伝播させない)。

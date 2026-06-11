@@ -24,7 +24,22 @@
  *   - not_started: pattern_coverage 行が存在しない
  *   - in_progress: 将来拡張用予約（現フェーズでは使用しない）
  *
- * Requirements: 2.1, 2.5, 3.1, 3.8, 7.1, 8.2
+ * セグメンタ tick（Req 3.3）:
+ *   GET に副作用を持たせる例外。capture_status === 'recording' の場合、
+ *   レスポンス構築後に runSegmenterTick() を呼び出す（沈黙時計）。
+ *
+ *   設計上の順序:
+ *     1. レスポンスを構築（DB 読み込み → LiveState 構築）
+ *     2. tick を実行（try/catch で失敗を吸収）
+ *     3. レスポンスを返す
+ *
+ *   tick はレスポンス生成と独立して実行し（1 で構築済みのレスポンスを返す）、
+ *   tick の失敗はレスポンスに影響を与えない（design.md: "応答遅延を避けるため tick は
+ *   レスポンス生成と独立に実行する"）。
+ *   tick の結果（確定ターン）は次回以降のポーリングで task 4.2 が永続化したあとに
+ *   レスポンスに反映される。
+ *
+ * Requirements: 2.1, 2.5, 3.1, 3.3, 3.8, 7.1, 8.2
  * Design: LiveStateAPI (API Contract / LiveState interface / Requirements Traceability)
  * _Boundary: LiveStateAPI_
  */
@@ -39,6 +54,7 @@ import { and, asc, desc, eq, gt, inArray } from 'drizzle-orm';
 import { db, schema } from '@bulr/db';
 import { requireUser, requireSessionOwnership } from '@bulr/auth/server';
 import { LiveStateSchema } from '@/lib/capture/live-state';
+import { runSegmenterTick } from '@/lib/capture/segmenter-tick';
 
 // ---------------------------------------------------------------------------
 // Zod: cursor クエリパラメータ検証
@@ -253,7 +269,7 @@ export async function GET(
   ).length;
 
   // ------------------------------------------------------------------
-  // 8. Zod バリデーションして 200 レスポンス
+  // 8. Zod バリデーションして 200 レスポンスを構築
   //    バリデーション失敗は実装バグを示すため 500 で上位に伝播させる
   // ------------------------------------------------------------------
   const liveState = LiveStateSchema.parse({
@@ -268,5 +284,27 @@ export async function GET(
     nextCursor,
   });
 
-  return NextResponse.json(liveState);
+  const response = NextResponse.json(liveState);
+
+  // ------------------------------------------------------------------
+  // 9. セグメンタ tick（Req 3.3 — GET への例外的副作用）
+  //
+  //    設計上の順序: レスポンスを先に構築（上の #8）→ tick を実行 → レスポンスを返す。
+  //    これにより tick の結果がこのポーリングのレスポンスに混入しない
+  //    （確定ターンは task 4.2 が永続化したあとの「次回以降のポーリング」で反映される）。
+  //
+  //    tick は try/catch で囲み、失敗してもレスポンスには影響させない。
+  //    recording 以外は runSegmenterTick 内部で no-op になるが、
+  //    呼び出し条件を recording に限定することで余分な DB 読み込みを省く。
+  // ------------------------------------------------------------------
+  if (isActiveRecording) {
+    try {
+      await runSegmenterTick({ sessionId });
+    } catch (tickError) {
+      // tick の失敗はレスポンスに伝播させない（設計: "応答遅延を避けるため tick はレスポンス生成と独立"）
+      console.error('[live-state] segmenter tick failed:', tickError);
+    }
+  }
+
+  return response;
 }
