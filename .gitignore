@@ -1,6 +1,9 @@
 # Claude Code machine-local settings
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+# エージェントが作る git worktree の実体（git worktree 管理下）と残骸ディレクトリ
+.claude/worktrees/
+.claire/
 
 # OS
 .DS_Store
