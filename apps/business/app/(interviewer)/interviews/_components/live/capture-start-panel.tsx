@@ -163,27 +163,36 @@ export function CaptureStartPanel({
   // -------------------------------------------------------------------------
 
   return (
-    <section className="capture-start-panel" aria-label="キャプチャ開始">
+    <section
+      className="capture-start-panel flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+      aria-label="キャプチャ開始"
+    >
       {/* ── 同意未記録エラー（Req 1.6） ─────────────────────────────────── */}
       {!consentObtained && (
-        <div role="alert" className="consent-error">
+        <div
+          role="alert"
+          className="consent-error rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
           {CONSENT_ERROR}
         </div>
       )}
 
       {/* ── ボット参加失敗エラー（Req 1.4） ──────────────────────────────── */}
       {captureStatus === 'failed' && joinFailureCode !== undefined && (
-        <div role="alert" className="join-failure-error">
-          <p className="join-failure-message">
+        <div
+          role="alert"
+          className="join-failure-error rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          <p className="join-failure-message mb-2">
             {getJoinFailureMessage(joinFailureCode)}
           </p>
-          <div className="join-failure-actions">
+          <div className="join-failure-actions flex gap-2">
             {/* 再試行: 現在の URL で recall を再試行する */}
             <button
               type="button"
               onClick={handleRetry}
               disabled={!consentObtained}
-              className="retry-button"
+              className="retry-button inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               再試行
             </button>
@@ -192,7 +201,7 @@ export function CaptureStartPanel({
               type="button"
               onClick={handleMicStart}
               disabled={!consentObtained}
-              className="switch-to-mic-button"
+              className="switch-to-mic-button inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               対面録音に切替
             </button>
@@ -203,11 +212,16 @@ export function CaptureStartPanel({
       {/* ── 会議 URL 入力フォーム（Req 1.1, 1.2） ────────────────────────── */}
       <form
         onSubmit={handleRecallSubmit}
-        className="meeting-url-form"
+        className="meeting-url-form flex flex-col gap-3"
         noValidate
       >
         <div className="meeting-url-field">
-          <label htmlFor="meeting-url">会議 URL</label>
+          <label
+            htmlFor="meeting-url"
+            className="block text-sm font-medium text-gray-700"
+          >
+            会議 URL
+          </label>
           <input
             id="meeting-url"
             type="text"
@@ -218,14 +232,14 @@ export function CaptureStartPanel({
             aria-describedby={
               urlFormatError !== null ? 'url-format-error' : undefined
             }
-            className="meeting-url-input"
+            className="meeting-url-input mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:opacity-50"
           />
           {/* クライアント URL フォーマットエラー（UX フィードバック専用） */}
           {urlFormatError !== null && (
             <p
               id="url-format-error"
               role="alert"
-              className="url-format-error"
+              className="url-format-error mt-1 text-xs text-red-600"
             >
               {urlFormatError}
             </p>
@@ -235,19 +249,19 @@ export function CaptureStartPanel({
         <button
           type="submit"
           disabled={!consentObtained}
-          className="start-recall-button"
+          className="start-recall-button inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           オンライン会議を録音開始
         </button>
       </form>
 
       {/* ── 対面録音（主要パス）（Req 1.5） ──────────────────────────────── */}
-      <div className="mic-option">
+      <div className="mic-option border-t border-gray-200 pt-4">
         <button
           type="button"
           onClick={handleMicStart}
           disabled={!consentObtained}
-          className="start-mic-button"
+          className="start-mic-button inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           対面録音で開始
         </button>

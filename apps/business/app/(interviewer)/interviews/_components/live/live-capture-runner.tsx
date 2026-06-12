@@ -143,15 +143,17 @@ export function LiveCaptureRunner({
 
   if (isIdleState(captureStatus)) {
     return (
-      <div className="live-capture-runner" data-capture-status={captureStatus}>
-        {/* Req 3.5 制御要素 1/3: キャプチャ開始（CaptureStartPanel が recall / mic を提供） */}
-        <CaptureStartPanel
-          consentObtained={consentObtained}
-          captureStatus={captureStatus as 'idle' | 'failed'}
-          onStartRecall={handleStartRecall}
-          onStartMic={handleStartMic}
-          lastMeetingUrl={initialMeetingUrl ?? undefined}
-        />
+      <div className="live-capture-runner py-6" data-capture-status={captureStatus}>
+        <div className="mx-auto max-w-xl">
+          {/* Req 3.5 制御要素 1/3: キャプチャ開始（CaptureStartPanel が recall / mic を提供） */}
+          <CaptureStartPanel
+            consentObtained={consentObtained}
+            captureStatus={captureStatus as 'idle' | 'failed'}
+            onStartRecall={handleStartRecall}
+            onStartMic={handleStartMic}
+            lastMeetingUrl={initialMeetingUrl ?? undefined}
+          />
+        </div>
       </div>
     );
   }
@@ -162,31 +164,43 @@ export function LiveCaptureRunner({
 
   if (isActiveState(captureStatus)) {
     return (
-      <div className="live-capture-runner" data-capture-status={captureStatus}>
+      <div className="live-capture-runner p-4" data-capture-status={captureStatus}>
         {/* ライブコンテンツ: 転写ペイン（左） + サイドパネル（右） */}
         <div className="live-capture-runner__content flex gap-4">
           {/* LiveTranscriptPane: 話者ラベル付きセグメント表示 + 遅延通知（Req 2.1, 2.2, 2.3, 2.5） */}
-          <LiveTranscriptPane
-            segments={segments}
-            staleTranscript={staleTranscript}
-          />
+          <div className="min-w-0 flex-1">
+            <LiveTranscriptPane
+              segments={segments}
+              staleTranscript={staleTranscript}
+            />
+          </div>
 
           {/* SidePanel: カバレッジ進捗 + 質問候補 + 経過時間 + 解析上限通知（Req 3.1, 3.2, 3.8, 4.5） */}
-          <SidePanel
-            coverage={coverage}
-            currentProposal={currentProposal}
-            elapsedSeconds={elapsedSeconds}
-            remainingPlannedPatterns={remainingPlannedPatterns}
-            analysisCapped={analysisCapped}
-          />
+          <div className="w-80 shrink-0">
+            <SidePanel
+              coverage={coverage}
+              currentProposal={currentProposal}
+              elapsedSeconds={elapsedSeconds}
+              remainingPlannedPatterns={remainingPlannedPatterns}
+              analysisCapped={analysisCapped}
+            />
+          </div>
         </div>
 
         {/* Req 3.5 制御要素 2/3・3/3: 面接終了・中止 */}
-        <div className="capture-controls">
-          <button type="button" onClick={handleFinish}>
+        <div className="capture-controls mt-4 flex gap-3">
+          <button
+            type="button"
+            onClick={handleFinish}
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
             面接終了
           </button>
-          <button type="button" onClick={handleAbort}>
+          <button
+            type="button"
+            onClick={handleAbort}
+            className="inline-flex items-center justify-center rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          >
             中止
           </button>
         </div>

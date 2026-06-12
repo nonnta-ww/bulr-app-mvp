@@ -45,6 +45,13 @@ const SPEAKER_ROLE_LABELS: Record<LiveSegment['speakerRole'], string> = {
 /** staleTranscript 時の遅延通知文言（Req 2.5） */
 const STALE_TRANSCRIPT_MESSAGE = '転写が遅延しています';
 
+/** 話者ロール → スピーカーチップの Tailwind カラークラス（Req 2.2, 2.3） */
+const SPEAKER_ROLE_CHIP_CLASSES: Record<LiveSegment['speakerRole'], string> = {
+  interviewer: 'bg-blue-100 text-blue-800',
+  candidate: 'bg-green-100 text-green-800',
+  unknown: 'bg-gray-100 text-gray-600',
+} as const;
+
 // ---------------------------------------------------------------------------
 // Props 型
 // ---------------------------------------------------------------------------
@@ -102,14 +109,14 @@ export function LiveTranscriptPane({
 
   return (
     <section
-      className="live-transcript-pane"
+      className="live-transcript-pane flex h-full flex-col gap-2 overflow-y-auto"
       aria-label="ライブトランスクリプト"
     >
       {/* ── 転写遅延インジケータ（Req 2.5） ──────────────────────────────── */}
       {staleTranscript && (
         <div
           role="status"
-          className="live-transcript-pane__stale-notice"
+          className="live-transcript-pane__stale-notice rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
         >
           {STALE_TRANSCRIPT_MESSAGE}
         </div>
@@ -117,13 +124,13 @@ export function LiveTranscriptPane({
 
       {/* ── トランスクリプトセグメントリスト（Req 2.1, 2.2, 2.3） ────────── */}
       <ol
-        className="live-transcript-pane__segments"
+        className="live-transcript-pane__segments flex flex-col gap-2"
         aria-label="トランスクリプト"
       >
         {segments.map((segment) => (
           <li
             key={segment.seq}
-            className={`live-transcript-pane__segment live-transcript-pane__segment--${segment.speakerRole}`}
+            className={`live-transcript-pane__segment live-transcript-pane__segment--${segment.speakerRole} flex flex-col gap-1 rounded-md border border-gray-100 bg-white p-2`}
             data-seq={segment.seq}
             data-speaker-role={segment.speakerRole}
           >
@@ -132,7 +139,7 @@ export function LiveTranscriptPane({
              * 面接官/候補者とラベル付け。Req 2.3: unknown は「未確定」と表示。
              */}
             <span
-              className="live-transcript-pane__speaker-role-label"
+              className={`live-transcript-pane__speaker-role-label inline-block rounded px-2 py-0.5 text-xs font-medium ${SPEAKER_ROLE_CHIP_CLASSES[segment.speakerRole]}`}
               aria-label="話者"
             >
               {SPEAKER_ROLE_LABELS[segment.speakerRole]}
@@ -144,7 +151,7 @@ export function LiveTranscriptPane({
              */}
             {segment.speakerLabel !== null && (
               <span
-                className="live-transcript-pane__speaker-name-label"
+                className="live-transcript-pane__speaker-name-label text-xs text-gray-500"
                 aria-label="参加者名"
               >
                 {segment.speakerLabel}
@@ -152,7 +159,7 @@ export function LiveTranscriptPane({
             )}
 
             {/* 転写テキスト */}
-            <span className="live-transcript-pane__segment-text">
+            <span className="live-transcript-pane__segment-text text-sm text-gray-800">
               {segment.text}
             </span>
           </li>
