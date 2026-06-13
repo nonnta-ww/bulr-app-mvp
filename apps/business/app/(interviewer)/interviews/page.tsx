@@ -94,12 +94,38 @@ export default async function InterviewsPage() {
         {/* ヘッダー */}
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">面接セッション一覧</h1>
+          <Link
+            href="/interviews/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            新規面接セッション作成
+          </Link>
         </div>
 
         {/* セッション一覧 */}
         {rows.length === 0 ? (
           <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
-            <p className="text-gray-500">まだ面接セッションがありません。</p>
+            <p className="mb-4 text-gray-500">まだ面接セッションがありません。</p>
+            <Link
+              href="/interviews/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              新規面接セッションを作成
+            </Link>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">

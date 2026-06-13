@@ -17,6 +17,7 @@ type Props = {
 
 const NAV_ITEMS = [
   { href: '/interviews', label: '面接セッション', match: /^\/interviews(\/|$)/, icon: ClipboardIcon },
+  { href: '/openings', label: '募集', match: /^\/openings(\/|$)/, icon: BriefcaseIcon },
   { href: '/settings', label: '設定', match: /^\/settings(\/|$)/, icon: GearIcon },
 ] as const;
 
@@ -115,6 +116,26 @@ function ClipboardIcon() {
       <path d="M16 6h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2" />
       <path d="M9 14h6" />
       <path d="M9 17h4" />
+    </svg>
+  );
+}
+
+function BriefcaseIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <path d="M2 13h20" />
     </svg>
   );
 }
