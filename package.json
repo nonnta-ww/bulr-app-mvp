@@ -21,7 +21,7 @@
   "pnpm": {
     "overrides": {
       "postcss": ">=8.5.10",
-      "esbuild": ">=0.25.0",
+      "esbuild": ">=0.28.1",
       "react-is": "^19.0.0"
     }
   },

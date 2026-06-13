@@ -185,12 +185,22 @@ export default async function OpeningDetailPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* entries プレースホルダ（Wave 3 entry-flow で実装予定） */}
+        {/* エントリーセクション */}
         <section className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-2 text-lg font-semibold text-gray-900">エントリー</h2>
-          <p className="text-sm text-gray-400">
-            ※ エントリー一覧は Wave 3 entry-flow で実装予定です。
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">エントリー</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                この募集に応募した候補者の一覧を確認し、面接セッションを作成できます。
+              </p>
+            </div>
+            <Link
+              href={`/openings/${openingId}/entries`}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              エントリー一覧を見る →
+            </Link>
+          </div>
         </section>
       </div>
     </main>
