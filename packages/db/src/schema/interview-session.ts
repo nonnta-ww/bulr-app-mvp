@@ -18,6 +18,7 @@ export const captureStatus = pgEnum('capture_status', [
   'idle',
   'bot_joining',
   'recording',
+  'paused',
   'stopping',
   'stopped',
   'failed',

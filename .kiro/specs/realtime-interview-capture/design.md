@@ -298,14 +298,15 @@ flowchart TD
 
 | Field | Detail |
 | --- | --- |
-| Intent | キャプチャの開始・終了・中止を司る唯一の状態遷移入口 |
-| Requirements | 1.1–1.7, 5.1, 6.3, 7.6 |
+| Intent | キャプチャの開始・終了・中止・一時停止/再開を司る唯一の状態遷移入口 |
+| Requirements | 1.1–1.7, 5.1, 6.3, 7.6, 7.7, 9.1–9.6 |
 
 **Responsibilities & Constraints**
 
-- `capture_status` 遷移の唯一の書き込み主体（webhook による外部起因遷移を除く）: `idle → bot_joining → recording → stopping → stopped` / `failed` / `aborted`
+- `capture_status` 遷移の唯一の書き込み主体（webhook による外部起因遷移を除く）: `idle → bot_joining → recording → stopping → stopped` / `failed` / `aborted`、および一時停止 `recording ⇄ paused`（再開）/ `paused → stopping`（終了）/ `paused → aborted`（中止）（9.1, 9.4, 9.6）
 - 前提条件: `consent_obtained_at` 非 null（1.6）、セッション所有権、`status in ('draft','in_progress')`
 - 開始成功時に `interview_session.status = 'in_progress'`、`started_at` 設定（1.7）
+- 中止（abort）時は `interview_session.status = 'abandoned'` も併せて更新する（7.7 — 一覧で「中断」と表示。finish は status を変更せず finalize が `completed` にする）
 
 ##### Service Interface
 
@@ -317,15 +318,21 @@ interface CaptureOrchestrator {
     Promise<ActionResult<{ captureStatus: CaptureStatus; botId?: string }>>;
   stopCapture(input: { sessionId: string; reason: 'finish' | 'abort' }):
     Promise<ActionResult<{ captureStatus: CaptureStatus }>>;
+  // 一時停止/再開（A案, Req 9）。ボットには触れない（通話に残す）。
+  pauseCapture(input: { sessionId: string }):
+    Promise<ActionResult<{ captureStatus: CaptureStatus }>>;
+  resumeCapture(input: { sessionId: string }):
+    Promise<ActionResult<{ captureStatus: CaptureStatus }>>;
 }
 
 type CaptureStatus =
-  | 'idle' | 'bot_joining' | 'recording'
+  | 'idle' | 'bot_joining' | 'recording' | 'paused'
   | 'stopping' | 'stopped' | 'failed' | 'aborted';
 ```
 
 - Preconditions: authedAction + requireSessionOwnership。meetingUrl は Zoom / Meet / Teams の URL 形式 Zod 検証（1.2, 7.2）
-- Postconditions: `reason='abort'` の場合、以降の webhook 受信は破棄され解析は再開しない（7.6）
+- Postconditions: `reason='abort'` の場合、以降の webhook 受信は破棄され解析は再開しない（7.6）。`paused` の場合も WebhookIngestion / ChunkIngestion がセグメントを破棄し、status webhook も破棄して勝手な再開を防ぐ（9.2, 9.5）
+- 解析停止: segmenter-tick は `capture_status==='recording'` のみ起動するため、`paused` では自然に解析が止まる（9.3）。再開時は `last_capture_event_at` を now にリセットし staleTranscript の誤検知を防ぐ
 - Invariants: 1 セッションに同時アクティブなキャプチャは 1 つ（`bot_id` 非 null かつ status 進行中の場合は再開始を拒否）
 
 **Implementation Notes**

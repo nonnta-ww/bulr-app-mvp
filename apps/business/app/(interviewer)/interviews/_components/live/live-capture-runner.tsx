@@ -18,6 +18,10 @@
 
 import { startCapture as defaultStartCapture } from '../../[sessionId]/_actions/start-capture';
 import { stopCapture as defaultStopCapture } from '../../[sessionId]/_actions/stop-capture';
+import {
+  pauseCapture as defaultPauseCapture,
+  resumeCapture as defaultResumeCapture,
+} from '../../[sessionId]/_actions/pause-capture';
 import { useLiveState } from './use-live-state';
 import { CaptureStartPanel } from './capture-start-panel';
 import { LiveTranscriptPane } from './live-transcript-pane';
@@ -34,6 +38,7 @@ type StartCaptureMode =
 
 type StartCaptureInput = { sessionId: string; mode: StartCaptureMode };
 type StopCaptureInput = { sessionId: string; reason: 'finish' | 'abort' };
+type PauseCaptureInput = { sessionId: string };
 
 export interface LiveCaptureRunnerProps {
   sessionId: string;
@@ -58,6 +63,16 @@ export interface LiveCaptureRunnerProps {
    * 本番では import デフォルト値を使用。テストでは mock を注入する。
    */
   stopCapture?: (input: StopCaptureInput) => Promise<unknown>;
+  /**
+   * pauseCapture Server Action（一時停止）。
+   * 本番では import デフォルト値を使用。テストでは mock を注入する。
+   */
+  pauseCapture?: (input: PauseCaptureInput) => Promise<unknown>;
+  /**
+   * resumeCapture Server Action（再開）。
+   * 本番では import デフォルト値を使用。テストでは mock を注入する。
+   */
+  resumeCapture?: (input: PauseCaptureInput) => Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +89,7 @@ function isActiveState(status: LiveState['captureStatus']): boolean {
   return (
     status === 'bot_joining' ||
     status === 'recording' ||
+    status === 'paused' ||
     status === 'stopping'
   );
 }
@@ -99,6 +115,8 @@ export function LiveCaptureRunner({
   initialMeetingUrl,
   startCapture = defaultStartCapture as (input: StartCaptureInput) => Promise<unknown>,
   stopCapture = defaultStopCapture as (input: StopCaptureInput) => Promise<unknown>,
+  pauseCapture = defaultPauseCapture as (input: PauseCaptureInput) => Promise<unknown>,
+  resumeCapture = defaultResumeCapture as (input: PauseCaptureInput) => Promise<unknown>,
 }: LiveCaptureRunnerProps) {
   // Req 8.2: useLiveState の返却値のみで描画。useReducer 進行ステートマシンは持たない。
   const liveState = useLiveState(sessionId);
@@ -137,6 +155,16 @@ export function LiveCaptureRunner({
     await stopCapture({ sessionId, reason: 'abort' });
   }
 
+  /** 一時停止（A案: recording → paused） */
+  async function handlePause() {
+    await pauseCapture({ sessionId });
+  }
+
+  /** 再開（A案: paused → recording） */
+  async function handleResume() {
+    await resumeCapture({ sessionId });
+  }
+
   // -------------------------------------------------------------------------
   // レンダリング: idle / failed → CaptureStartPanel（Req 1.4, 1.5, 1.6, 6.1）
   // -------------------------------------------------------------------------
@@ -163,8 +191,37 @@ export function LiveCaptureRunner({
   // -------------------------------------------------------------------------
 
   if (isActiveState(captureStatus)) {
+    const isPaused = captureStatus === 'paused';
+    const canPause = captureStatus === 'recording';
+
     return (
       <div className="live-capture-runner p-4" data-capture-status={captureStatus}>
+        {/* 一時停止中バナー（A案）: 録音・文字起こし・解析が止まっていることを明示 */}
+        {isPaused && (
+          <div
+            role="status"
+            className="mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+            <span>
+              一時停止中です。録音・文字起こし・AI 解析を停止しています（この間の発言は記録されません）。「再開」で続行できます。
+            </span>
+          </div>
+        )}
+
         {/* ライブコンテンツ: 転写ペイン（左） + サイドパネル（右） */}
         <div className="live-capture-runner__content flex gap-4">
           {/* LiveTranscriptPane: 話者ラベル付きセグメント表示 + 遅延通知（Req 2.1, 2.2, 2.3, 2.5） */}
@@ -187,8 +244,30 @@ export function LiveCaptureRunner({
           </div>
         </div>
 
-        {/* Req 3.5 制御要素 2/3・3/3: 面接終了・中止 */}
+        {/* 制御要素: 一時停止/再開（A案）・面接終了・中止 */}
         <div className="capture-controls mt-4 flex gap-3">
+          {/* 一時停止/再開: recording のとき「一時停止」、paused のとき「再開」を表示 */}
+          {isPaused ? (
+            <button
+              type="button"
+              onClick={handleResume}
+              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              再開
+            </button>
+          ) : (
+            canPause && (
+              <button
+                type="button"
+                onClick={handlePause}
+                className="inline-flex items-center justify-center rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              >
+                一時停止
+              </button>
+            )
+          )}
+
+          {/* Req 3.5 制御要素 2/3: 面接終了 */}
           <button
             type="button"
             onClick={handleFinish}
@@ -196,6 +275,8 @@ export function LiveCaptureRunner({
           >
             面接終了
           </button>
+
+          {/* Req 3.5 制御要素 3/3: 中止 */}
           <button
             type="button"
             onClick={handleAbort}

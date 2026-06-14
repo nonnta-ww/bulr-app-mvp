@@ -24,7 +24,7 @@ import type { LiveSegment } from '../../../../../lib/capture/live-state';
 // モジュールモック（vi.mock はファイル先頭に巻き上げられる）
 //
 // - use-live-state: フックが返す状態をテストごとに制御するためにモック
-// - start-capture / stop-capture: 'use server' / server-only import を回避するためにモック
+// - start-capture / stop-capture / pause-capture: 'use server' / server-only import を回避するためにモック
 // ---------------------------------------------------------------------------
 
 vi.mock('./use-live-state', () => ({
@@ -37,6 +37,11 @@ vi.mock('../../[sessionId]/_actions/start-capture', () => ({
 
 vi.mock('../../[sessionId]/_actions/stop-capture', () => ({
   stopCapture: vi.fn(),
+}));
+
+vi.mock('../../[sessionId]/_actions/pause-capture', () => ({
+  pauseCapture: vi.fn(),
+  resumeCapture: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -170,9 +175,10 @@ describe('LiveCaptureRunner', () => {
       );
 
       // recording 状態: LiveTranscriptPane + SidePanel には操作ボタンなし。
-      // capture-controls に finish + abort の 2 ボタンのみ。
+      // capture-controls に 一時停止 + finish + abort の 3 ボタン。
       const buttons = screen.getAllByRole('button');
-      expect(buttons).toHaveLength(2);
+      expect(buttons).toHaveLength(3);
+      expect(screen.getByRole('button', { name: /一時停止/ })).toBeTruthy();
       // 開始系ボタン（CaptureStartPanel）が存在しない
       expect(screen.queryByRole('button', { name: /オンライン会議を録音開始/i })).toBeNull();
       expect(screen.queryByRole('button', { name: /対面録音で開始/i })).toBeNull();
@@ -261,6 +267,55 @@ describe('LiveCaptureRunner', () => {
         sessionId: 'session-abort',
         reason: 'abort',
       });
+    });
+
+    it('recording 中に「一時停止」クリックで pauseCapture({ sessionId }) が呼ばれる', async () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording' }),
+      );
+
+      const mockPause = vi.fn().mockResolvedValue({ ok: true, data: {} });
+      render(
+        <LiveCaptureRunner
+          sessionId="session-pause"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+          pauseCapture={mockPause as never}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: /一時停止/ }));
+
+      expect(mockPause).toHaveBeenCalledTimes(1);
+      expect(mockPause).toHaveBeenCalledWith({ sessionId: 'session-pause' });
+    });
+
+    it('paused 中は「再開」ボタンが表示され、クリックで resumeCapture({ sessionId }) が呼ばれる', async () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'paused' }),
+      );
+
+      const mockResume = vi.fn().mockResolvedValue({ ok: true, data: {} });
+      render(
+        <LiveCaptureRunner
+          sessionId="session-resume"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+          resumeCapture={mockResume as never}
+        />,
+      );
+
+      // 一時停止中バナーが出る
+      expect(screen.getByRole('status')).toHaveTextContent('一時停止中');
+      // recording 用の「一時停止」ボタンは出ない
+      expect(screen.queryByRole('button', { name: /一時停止/ })).toBeNull();
+
+      await userEvent.click(screen.getByRole('button', { name: /再開/ }));
+
+      expect(mockResume).toHaveBeenCalledTimes(1);
+      expect(mockResume).toHaveBeenCalledWith({ sessionId: 'session-resume' });
     });
 
     it('「対面録音で開始」クリックで startCapture({ sessionId, mode:{kind:"mic"} }) が呼ばれる', async () => {

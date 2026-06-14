@@ -7,17 +7,27 @@
  * 遷移グラフ（design.md: CaptureOrchestrator Responsibilities & Constraints）:
  *   idle       → bot_joining, recording
  *   bot_joining → recording, failed, aborted
- *   recording  → stopping, stopped, failed, aborted
+ *   recording  → paused, stopping, stopped, failed, aborted
+ *   paused     → recording, stopping, aborted   （一時停止からの再開/終了/中止）
  *   stopping   → stopped, aborted
  *   failed     → bot_joining, recording   （リカバリ可能。task 2.5）
  *   stopped    → （ターミナル）
  *   aborted    → （ターミナル。Req 7.6 — 中止後の受理拒否）
+ *
+ * paused（一時停止）について:
+ *   - 緊急停止用の aborted とは別物。録音ボットは通話に残したまま、停止中の
+ *     トランスクリプトは破棄し AI 解析を止める「再開可能な一時停止」状態。
+ *   - 停止中の発言破棄: WebhookIngestion / ChunkIngestion が capture_status='paused'
+ *     のセグメントを永続化しない。
+ *   - 解析停止: segmenter-tick は capture_status==='recording' のみ起動するため、
+ *     paused では自然に解析が止まる。
  */
 
 export type CaptureStatus =
   | "idle"
   | "bot_joining"
   | "recording"
+  | "paused"
   | "stopping"
   | "stopped"
   | "failed"
@@ -27,7 +37,9 @@ export type CaptureStatus =
 export const ALLOWED_TRANSITIONS: Record<CaptureStatus, CaptureStatus[]> = {
   idle: ["bot_joining", "recording"],
   bot_joining: ["recording", "failed", "aborted"],
-  recording: ["stopping", "stopped", "failed", "aborted"],
+  recording: ["paused", "stopping", "stopped", "failed", "aborted"],
+  // paused は再開可能（recording へ戻る）。一時停止中の終了/中止も許可する。
+  paused: ["recording", "stopping", "aborted"],
   stopping: ["stopped", "aborted"],
   // failed はリカバリ可能（再試行 or 対面切替。design.md task 2.5 参照）
   failed: ["bot_joining", "recording"],
