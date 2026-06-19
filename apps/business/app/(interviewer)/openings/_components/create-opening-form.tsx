@@ -14,18 +14,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from '@bulr/ui';
+import Link from 'next/link';
+
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@bulr/ui';
 
 import { createOpening } from '../_actions/create-opening';
+
+const FIELD_CLASS =
+  'w-full rounded-lg border border-hairline bg-canvas px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-navy focus:bg-card focus:ring-1 focus:ring-navy disabled:opacity-50';
 
 const formSchema = z.object({
   title: z
@@ -76,12 +72,15 @@ export function CreateOpeningForm() {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>タイトル <span className="text-red-500">*</span></FormLabel>
+              <FormLabel className="mb-2 block text-sm font-medium text-body">
+                募集タイトル
+              </FormLabel>
               <FormControl>
-                <Input
+                <input
                   type="text"
-                  placeholder="例：フロントエンドエンジニア（シニア）"
+                  placeholder="例: シニアフロントエンドエンジニア"
                   disabled={isPending}
+                  className={FIELD_CLASS}
                   {...field}
                 />
               </FormControl>
@@ -96,13 +95,15 @@ export function CreateOpeningForm() {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>説明（任意）</FormLabel>
+              <FormLabel className="mb-2 block text-sm font-medium text-body">
+                募集内容・求める人物像
+              </FormLabel>
               <FormControl>
                 <textarea
-                  placeholder="募集要件や仕事内容を入力してください"
-                  rows={6}
+                  placeholder="ポジションの役割、期待する成果、必要な技術スタックなどを記述してください。"
+                  rows={8}
                   disabled={isPending}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`${FIELD_CLASS} resize-y leading-relaxed`}
                   {...field}
                 />
               </FormControl>
@@ -117,13 +118,11 @@ export function CreateOpeningForm() {
           name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ステータス</FormLabel>
+              <FormLabel className="mb-2 block text-sm font-medium text-body">
+                公開ステータス
+              </FormLabel>
               <FormControl>
-                <select
-                  disabled={isPending}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  {...field}
-                >
+                <select disabled={isPending} className={FIELD_CLASS} {...field}>
                   <option value="draft">下書き</option>
                   <option value="open">公開中</option>
                   <option value="closed">終了</option>
@@ -138,13 +137,22 @@ export function CreateOpeningForm() {
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
         )}
 
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="w-full bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {isPending ? '作成中...' : '募集を作成'}
-        </Button>
+        {/* フッターアクション */}
+        <div className="-mx-8 flex items-center justify-end gap-3 border-t border-hairline px-8 pt-6 md:-mx-10 md:px-10">
+          <Link
+            href="/openings"
+            className="rounded-lg border border-hairline bg-card px-5 py-2.5 text-sm font-medium text-body transition-colors hover:bg-canvas"
+          >
+            キャンセル
+          </Link>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="rounded-lg bg-navy px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy-soft disabled:opacity-50"
+          >
+            {isPending ? '作成中...' : '作成する'}
+          </button>
+        </div>
       </form>
     </Form>
   );

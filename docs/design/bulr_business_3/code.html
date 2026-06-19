@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business - エントリー一覧</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed-dim": "#c1c5e0",
+                      "tertiary-container": "#271901",
+                      "on-secondary-container": "#5b6479",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-container": "#d9e2fb",
+                      "surface-bright": "#fcf8fa",
+                      "secondary-fixed": "#d9e2fb",
+                      "background": "#F7F8FA",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "secondary": "#5A6378",
+                      "inverse-on-surface": "#f3f0f2",
+                      "on-primary-fixed-variant": "#41465c",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#564425",
+                      "error-container": "#ffdad6",
+                      "tertiary-fixed-dim": "#ddc39b",
+                      "on-primary-fixed": "#161a2f",
+                      "surface-container-low": "#f6f3f5",
+                      "surface-container": "#f0edef",
+                      "on-surface": "#11162A",
+                      "surface-dim": "#dcd9db",
+                      "on-secondary-fixed-variant": "#3e475b",
+                      "outline": "#E6E9F0",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#46464d",
+                      "tertiary": "#000000",
+                      "surface-container-highest": "#e5e2e4",
+                      "secondary-fixed-dim": "#bdc6de",
+                      "on-background": "#11162A",
+                      "on-tertiary-fixed": "#271901",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e5e2e4",
+                      "on-secondary-fixed": "#121b2d",
+                      "primary": "#11162A",
+                      "inverse-primary": "#c1c5e0",
+                      "surface-container-high": "#eae7e9",
+                      "on-primary-container": "#7e839c",
+                      "primary-container": "#161a2f",
+                      "on-tertiary-container": "#97815d",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#fadfb5",
+                      "outline-variant": "#c7c5cd",
+                      "surface-tint": "#595d75",
+                      "surface": "#FFFFFF",
+                      "inverse-surface": "#313032",
+                      "primary-fixed": "#dde1fd",
+                      "accent": "#C9803B",
+                      "accent-light": "rgba(201, 128, 59, 0.12)",
+                      "success": "#1FA971",
+                      "success-light": "rgba(31, 169, 113, 0.12)",
+                      "destructive": "#D33C3C",
+                      "destructive-light": "rgba(211, 60, 60, 0.12)",
+                      "primary-light": "rgba(17, 22, 42, 0.12)",
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1280px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "40px",
+                      "unit": "4px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Noto Sans JP", "sans-serif"],
+                      "body-md": ["Noto Sans JP", "sans-serif"],
+                      "headline-lg": ["Noto Sans JP", "sans-serif"],
+                      "headline-sm": ["Noto Sans JP", "sans-serif"],
+                      "headline-md": ["Noto Sans JP", "sans-serif"],
+                      "label-md": ["Noto Sans JP", "sans-serif"],
+                      "body-lg": ["Noto Sans JP", "sans-serif"],
+                      "display-lg": ["Noto Sans JP", "sans-serif"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                      "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        body { background-color: #F7F8FA; color: #11162A; }
+      </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface border-r border-outline flat no shadows h-screen w-64 flex flex-col fixed left-0 top-0 flex flex-col h-full py-margin-desktop px-4 hidden md:flex z-10">
+<div class="mb-8 px-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden border border-outline">
+<img alt="bulr logo" class="w-full h-full object-cover" data-alt="A minimalist and sleek logo design for 'bulr business', a high-end B2B SaaS platform. The logo features a geometric, abstract monogram 'B' in a deep premium navy blue against a crisp white background. The aesthetic is extremely clean, professional, and corporate, conveying trust and precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1u0L83fkqliZolRMxr86Ky2IRX40ar9aXkXQqlRLuiwKVrNXTMSusd18fGOgFXB116bJtKhlU5hFDGneJVy4BTvlIfjY1ylosNNQ8t2mf8GNJZpnqjItWZMFSl4GIErw5YFUNp9vnf9lKyDvXP3x8YXqjvt8nF2RTpBgHdvTCiuMlBToEIUU5PY3sPGHcfvoMyo9onrED5351RS8Dz1uAdX0Axpa-_poXYBomrRrTkDFDRAGghEOsWuShlRFhoxYqpwXwHDYFugQ"/>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">bulr business</h1>
+<p class="font-label-md text-label-md text-secondary mt-0.5">High-end B2B SaaS</p>
+</div>
+</div>
+<button class="mb-8 w-full bg-surface border border-outline text-secondary hover:bg-surface-container py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Session
+        </button>
+<div class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container hover:text-on-surface transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">video_chat</span>
+                面接セッション
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-on-primary font-medium opacity-90 transition-all duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">work</span>
+                募集
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container hover:text-on-surface transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                設定
+            </a>
+</div>
+<div class="mt-auto pt-6 border-t border-outline flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container hover:text-on-surface transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+                User Profile
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container hover:text-on-surface transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- TopAppBar (Mobile Only - Simplified for desktop focus in prompt, but maintaining structural requirement if requested) -->
+<header class="md:hidden w-full h-16 sticky top-0 bg-surface flex items-center justify-between px-margin-mobile border-b border-outline z-20">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">bulr business</h1>
+<div class="flex items-center gap-4 text-secondary">
+<span class="material-symbols-outlined">menu</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+<!-- Breadcrumb -->
+<nav class="flex items-center text-secondary font-label-md text-label-md mb-8">
+<a class="hover:text-primary transition-colors" href="#">募集</a>
+<span class="mx-2 text-outline-variant">/</span>
+<a class="hover:text-primary transition-colors" href="#">バックエンドエンジニア</a>
+<span class="mx-2 text-outline-variant">/</span>
+<span class="text-primary font-medium">エントリー</span>
+</nav>
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">エントリー一覧</h2>
+<p class="font-body-md text-body-md text-secondary mt-2">バックエンドエンジニア職への応募者を確認・管理します。</p>
+</div>
+<button class="bg-surface border border-outline text-secondary hover:bg-surface-container py-2 px-4 rounded-lg flex items-center gap-2 transition-colors font-label-md text-label-md h-fit">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                フィルター
+            </button>
+</div>
+<!-- Data Table Card -->
+<div class="bg-surface border border-outline rounded-lg overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline bg-surface-container-low">
+<th class="py-4 px-6 font-label-md text-label-md text-secondary font-medium w-1/3">候補者名</th>
+<th class="py-4 px-6 font-label-md text-label-md text-secondary font-medium w-1/4">ステータス</th>
+<th class="py-4 px-6 font-label-md text-label-md text-secondary font-medium w-1/4">エントリー日時</th>
+<th class="py-4 px-6 font-label-md text-label-md text-secondary font-medium w-[100px] text-right">アクション</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">佐</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">佐藤 健太</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">k.sato@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent-light text-accent">
+                                    提出済み
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/24 10:30
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">高</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">高橋 由美</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">y.takahashi@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success-light text-success">
+                                    確認済み
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/23 15:45
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">鈴</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">鈴木 大輔</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">d.suzuki@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">
+                                    進行中
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/22 09:15
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">田</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">田中 理恵</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">r.tanaka@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive-light text-destructive">
+                                    不採用
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/20 14:20
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">伊</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">伊藤 誠</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">m.ito@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent-light text-accent">
+                                    提出済み
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/19 11:05
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-label-md text-label-md">渡</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-primary">渡辺 香織</div>
+<div class="font-label-md text-label-md text-secondary mt-0.5">k.watanabe@example.com</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success-light text-success">
+                                    確認済み
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-secondary">
+                                2023/10/18 16:50
+                            </td>
+<td class="py-4 px-6 text-right">
+<a class="font-label-md text-label-md text-primary hover:text-accent transition-colors" href="#">詳細</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer area -->
+<div class="px-6 py-4 border-t border-outline flex items-center justify-between bg-surface-bright">
+<span class="font-label-md text-label-md text-secondary">全 24 件中 1-6 件を表示</span>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded flex items-center justify-center border border-outline text-secondary hover:bg-surface-container disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center border border-outline text-secondary hover:bg-surface-container">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -77,16 +77,18 @@ export default async function InterviewSessionPage({ params }: Props) {
   const initialMeetingUrl = interviewSessionResult.session.meeting_url ?? null;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* SessionHeader: 候補者名・役職を表示（Stage 1 / Stage 2 分岐。エントリー由来の場合も対応）（Req 6.3） */}
-      <SessionHeader session={interviewSessionResult} />
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
+        {/* SessionHeader: 候補者名・役職を表示（Stage 1 / Stage 2 分岐。エントリー由来の場合も対応）（Req 6.3） */}
+        <SessionHeader session={interviewSessionResult} />
 
-      {/* LiveCaptureRunner: 新キャプチャ方式のみ提供（旧 状態A/B UI は提供しない）（Req 6.1） */}
-      <LiveCaptureRunner
-        sessionId={sessionId}
-        consentObtained={consentObtained}
-        initialMeetingUrl={initialMeetingUrl}
-      />
-    </div>
+        {/* LiveCaptureRunner: 新キャプチャ方式のみ提供（旧 状態A/B UI は提供しない）（Req 6.1） */}
+        <LiveCaptureRunner
+          sessionId={sessionId}
+          consentObtained={consentObtained}
+          initialMeetingUrl={initialMeetingUrl}
+        />
+      </div>
+    </main>
   );
 }

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>新規募集を作成 - bulr business</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#121b2d",
+                        "on-tertiary-fixed": "#271901",
+                        "secondary-container": "#d9e2fb",
+                        "on-primary-fixed": "#161a2f",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#f0edef",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#7e839c",
+                        "tertiary": "#000000",
+                        "outline-variant": "#c7c5cd",
+                        "primary": "#000000",
+                        "outline": "#77767d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#1c1b1d",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "on-tertiary-container": "#97815d",
+                        "surface": "#fcf8fa",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-background": "#1c1b1d",
+                        "secondary-fixed": "#d9e2fb",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#313032",
+                        "secondary": "#555e73",
+                        "surface-bright": "#fcf8fa",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "on-primary-fixed-variant": "#41465c",
+                        "surface-variant": "#e5e2e4",
+                        "surface-tint": "#595d75",
+                        "primary-fixed": "#dde1fd",
+                        "primary-container": "#161a2f",
+                        "on-surface-variant": "#46464d",
+                        "tertiary-fixed": "#fadfb5",
+                        "surface-container-low": "#f6f3f5",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "tertiary-container": "#271901",
+                        "on-secondary-container": "#5b6479",
+                        "background": "#fcf8fa",
+                        "inverse-primary": "#c1c5e0",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "surface-container-highest": "#e5e2e4",
+                        "surface-container-high": "#eae7e9",
+                        "brand-navy": "#11162A",
+                        "brand-copper": "#C9803B",
+                        "brand-border": "#E6E9F0",
+                        "brand-bg": "#F7F8FA"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Noto Sans", "sans-serif"],
+                        "label-md": ["Noto Sans", "sans-serif"],
+                        "headline-lg-mobile": ["Noto Sans", "sans-serif"],
+                        "headline-sm": ["Noto Sans", "sans-serif"],
+                        "headline-lg": ["Noto Sans", "sans-serif"],
+                        "body-lg": ["Noto Sans", "sans-serif"],
+                        "headline-md": ["Noto Sans", "sans-serif"],
+                        "display-lg": ["Noto Sans", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg text-on-surface font-body-md antialiased overflow-x-hidden min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-surface-container-lowest h-screen w-64 fixed left-0 top-0 border-r border-brand-border dark:border-on-surface-variant flex flex-col h-full py-margin-desktop px-gutter justify-between z-50 hidden md:flex">
+<div>
+<!-- Brand -->
+<div class="mb-12 flex items-center gap-3">
+<div class="w-8 h-8 rounded-md bg-brand-navy flex items-center justify-center text-white font-bold">b</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim leading-none tracking-tight">bulr business</h1>
+<span class="font-label-md text-label-md text-on-surface-variant mt-1 block">Enterprise Tier</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">chat_bubble</span>
+<span class="group-hover:text-primary transition-colors">面接セッション</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed-dim font-semibold border-r-2 border-brand-copper bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined filled text-[20px] text-brand-copper">work</span>
+<span>募集</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">settings</span>
+<span class="group-hover:text-primary transition-colors">設定</span>
+</a>
+</div>
+</div>
+<!-- Footer Actions -->
+<div>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">logout</span>
+<span class="group-hover:text-primary transition-colors">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-transparent w-full h-16 flex items-center justify-between px-margin-desktop sticky top-0 z-40">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-secondary-container dark:text-on-secondary-fixed-variant">募集</span>
+<span class="material-symbols-outlined text-[16px] text-on-secondary-container">chevron_right</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary dark:text-primary-fixed font-medium">新規作成</span>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full text-on-secondary-container hover:text-primary hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-secondary-container hover:text-primary hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<button class="w-8 h-8 rounded-full border border-brand-border overflow-hidden active:scale-95 duration-200 ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user in a modern office environment, soft high-key lighting, minimalist background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFXjtGxwuLWTEpYsCgPqiARuRM_gEiKkjYULJFDaaXSn-pVcgF4yzyAQDPsH8_FYEdPz_H0-yNQSayMjhXJ4BxmeepZKEdwWQJ1gP8bD4f97ZiggGcSTGulC48-t6IiG94bnDLgEdrPL9sh8IkEowPErkXtx_yy9JY1FOyZeFjiqW6xoKpjfHUCEq79OQL9PB-HraMbXCOFhzgWcM1oU0fhcVVmOACg1C2LhRYabNsgPMKc6nc1-LNfzte1AoAkcF1mCsi1pIu3mg"/>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 p-6 md:p-10 flex justify-center items-start">
+<!-- Form Card -->
+<div class="w-full max-w-[640px] bg-white border border-brand-border rounded-lg mt-8 md:mt-12 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
+<div class="p-8 md:p-10">
+<h2 class="font-headline-md text-headline-md text-primary mb-8 tracking-tight">新規募集を作成</h2>
+<form class="space-y-8">
+<!-- Title Input -->
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant" for="job-title">募集タイトル</label>
+<input class="w-full px-4 py-3 rounded-lg border border-brand-border focus:border-brand-copper focus:ring-0 outline-none transition-colors font-body-md text-body-md text-primary placeholder:text-outline-variant bg-surface-bright" id="job-title" name="job-title" placeholder="例: シニアフロントエンドエンジニア" type="text"/>
+</div>
+<!-- Description Textarea -->
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant" for="job-description">募集内容・求める人物像</label>
+<textarea class="w-full px-4 py-3 rounded-lg border border-brand-border focus:border-brand-copper focus:ring-0 outline-none transition-colors font-body-md text-body-md text-primary placeholder:text-outline-variant bg-surface-bright resize-y" id="job-description" name="job-description" placeholder="ポジションの役割、期待する成果、必要な技術スタックなどを記述してください。
+
+【必須要件】
+・Reactを用いた実務経験3年以上
+・TypeScriptの深い理解
+
+【歓迎要件】
+・UI/UXデザインへの関心
+・パフォーマンスチューニングの経験" rows="8"></textarea>
+</div>
+</form>
+</div>
+<!-- Actions Footer -->
+<div class="px-8 md:px-10 py-6 bg-surface-bright border-t border-brand-border flex items-center justify-end gap-4">
+<button class="px-6 py-2.5 rounded-lg border border-brand-border text-secondary hover:bg-surface transition-colors font-label-md text-label-md font-medium tracking-wide" type="button">
+                        キャンセル
+                    </button>
+<button class="px-6 py-2.5 rounded-lg bg-brand-navy text-white hover:opacity-90 transition-opacity font-label-md text-label-md font-medium tracking-wide shadow-sm" type="submit">
+                        作成する
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -13,15 +13,16 @@ interface Props {
   onSelect: (patternId: string) => void;
 }
 
+// docs/design のヒートマップに合わせた copper 濃淡スケール（低 → 高）
 const CELL_COLOR_BY_LEVEL: Record<0 | 1 | 2 | 3 | 4, string> = {
-  0: 'bg-gray-100 text-gray-300 cursor-default',
-  1: 'bg-red-300 text-red-900',
-  2: 'bg-amber-200 text-amber-900',
-  3: 'bg-emerald-300 text-emerald-900',
-  4: 'bg-emerald-500 text-white',
+  0: 'bg-canvas text-muted cursor-default',
+  1: 'bg-[#f0e3cf] text-[#8a6a37]',
+  2: 'bg-[#e2c596] text-[#6b4a1f]',
+  3: 'bg-[#d09a55] text-white',
+  4: 'bg-[#a8702f] text-white',
 };
 
-const STUCK_COLOR = 'bg-gray-400 text-white';
+const STUCK_COLOR = 'bg-slate-400 text-white';
 
 export function CoverageCell({ pattern, fallbackCode, onSelect }: Props) {
   if (!pattern) {

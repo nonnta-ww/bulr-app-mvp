@@ -10,6 +10,8 @@ import { desc, eq, count, sql } from 'drizzle-orm';
 import { db } from '@bulr/db';
 import { interviewSession, interviewTurn, candidate, entry, opening, candidateProfile } from '@bulr/db/schema';
 import { requireUser } from '@bulr/auth/server';
+import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Icon } from '@/components/ui/icon';
 
 // ---------------------------------------------------------------------------
 // ステータスラベルマッピング
@@ -22,11 +24,11 @@ const STATUS_LABEL: Record<string, string> = {
   abandoned: '中断',
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-600',
-  in_progress: 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
-  abandoned: 'bg-red-100 text-red-600',
+const STATUS_TONE: Record<string, BadgeTone> = {
+  draft: 'neutral',
+  in_progress: 'warning',
+  completed: 'success',
+  abandoned: 'muted',
 };
 
 // ---------------------------------------------------------------------------
@@ -89,97 +91,112 @@ export default async function InterviewsPage() {
   );
 
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-[1280px]">
         {/* ヘッダー */}
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">面接セッション一覧</h1>
+        <div className="mb-10 flex items-end justify-between">
+          <div>
+            <h1 className="mb-2 text-3xl font-semibold tracking-tight text-ink">面接セッション</h1>
+            <p className="text-sm text-body">現在の面接セッションの進行状況を管理します。</p>
+          </div>
           <Link
             href="/interviews/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-navy-soft"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Icon name="add" size={18} />
             新規面接セッション作成
           </Link>
         </div>
 
         {/* セッション一覧 */}
         {rows.length === 0 ? (
-          <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
-            <p className="mb-4 text-gray-500">まだ面接セッションがありません。</p>
+          <div className="rounded-xl border border-hairline bg-card px-8 py-16 text-center">
+            <p className="mb-4 text-body">まだ面接セッションがありません。</p>
             <Link
               href="/interviews/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-navy-soft"
             >
               新規面接セッションを作成
             </Link>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-600">候補者名</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">応募職種</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">ステータス</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">開始日時</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">完了日時</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-600">ターン数</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">アクション</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map(({ session, candidateName, appliedRole }) => {
-                  const turns = turnCountMap.get(session.id) ?? 0;
-                  const href =
-                    session.status === 'completed'
-                      ? `/interviews/${session.id}/report`
-                      : `/interviews/${session.id}`;
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-hairline bg-sidebar text-[11px] font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-4 font-medium">候補者名</th>
+                    <th className="px-6 py-4 font-medium">応募職種</th>
+                    <th className="px-6 py-4 font-medium">ステータス</th>
+                    <th className="px-6 py-4 font-medium">開始日時</th>
+                    <th className="px-6 py-4 font-medium">完了日時</th>
+                    <th className="px-6 py-4 text-right font-medium">ターン数</th>
+                    <th className="w-28 px-6 py-4 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline text-sm">
+                  {rows.map(({ session, candidateName, appliedRole }) => {
+                    const turns = turnCountMap.get(session.id) ?? 0;
+                    const href =
+                      session.status === 'completed'
+                        ? `/interviews/${session.id}/report`
+                        : `/interviews/${session.id}`;
 
-                  return (
-                    <tr key={session.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{candidateName}</td>
-                      <td className="px-4 py-3 text-gray-600">{appliedRole}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[session.status] ?? 'bg-gray-100 text-gray-600'}`}
-                        >
-                          {STATUS_LABEL[session.status] ?? session.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {formatDate(session.started_at)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {formatDate(session.completed_at)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-600">{turns}</td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={href}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {session.status === 'completed' ? 'レポートを見る' : '開く'}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={session.id} className="transition-colors hover:bg-canvas">
+                        <td className="px-6 py-4 font-medium text-ink">{candidateName}</td>
+                        <td className="px-6 py-4 text-body">{appliedRole}</td>
+                        <td className="px-6 py-4">
+                          <Badge tone={STATUS_TONE[session.status] ?? 'neutral'}>
+                            {STATUS_LABEL[session.status] ?? session.status}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 tabular-nums text-body">
+                          {formatDate(session.started_at)}
+                        </td>
+                        <td className="px-6 py-4 tabular-nums text-body">
+                          {formatDate(session.completed_at)}
+                        </td>
+                        <td className="px-6 py-4 text-right tabular-nums text-body">{turns}</td>
+                        <td className="px-6 py-4 text-right">
+                          <Link
+                            href={href}
+                            className="text-sm font-medium text-copper hover:underline"
+                          >
+                            {session.status === 'completed' ? 'レポート' : '開く'}
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* フッター */}
+            <div className="flex items-center justify-between border-t border-hairline px-6 py-4">
+              <span className="text-sm text-body">
+                全{rows.length}件中 1-{rows.length}件を表示
+              </span>
+              <div className="flex items-center gap-1 text-muted">
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-canvas disabled:opacity-40"
+                  aria-label="前のページ"
+                >
+                  <Icon name="chevron_left" size={20} />
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-canvas disabled:opacity-40"
+                  aria-label="次のページ"
+                >
+                  <Icon name="chevron_right" size={20} />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

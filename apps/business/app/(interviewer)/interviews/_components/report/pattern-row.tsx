@@ -21,20 +21,20 @@ export function PatternRow({ pattern, variant, onSelect }: Props) {
     <button
       type="button"
       onClick={() => onSelect(pattern.pattern_id)}
-      className="grid w-full grid-cols-[44px_1fr_auto] items-center gap-2 rounded border border-gray-100 bg-white px-2 py-1.5 text-left text-xs transition hover:border-sky-200 hover:bg-sky-50"
+      className="grid w-full grid-cols-[44px_1fr_auto] items-center gap-2 rounded-lg border border-hairline bg-card px-2 py-1.5 text-left text-xs transition hover:border-copper/40 hover:bg-copper-soft/40"
     >
       <span
-        className={`rounded px-1 py-0.5 text-center text-[10px] font-bold text-white ${
-          variant === 'reached' ? 'bg-cyan-700' : 'bg-gray-500'
+        className={`rounded px-1 py-0.5 text-center font-mono text-[10px] font-bold text-white ${
+          variant === 'reached' ? 'bg-navy' : 'bg-slate-400'
         }`}
       >
         {pattern.pattern_code}
       </span>
-      <span className="truncate text-gray-700">{pattern.pattern_title}</span>
+      <span className="truncate text-body">{pattern.pattern_title}</span>
       {variant === 'reached' ? (
         <MiniDots pattern={pattern} />
       ) : (
-        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
+        <span className="rounded bg-canvas px-1.5 py-0.5 text-[10px] text-muted">
           {pattern.stuck_type ? STUCK_TYPE_LABEL[pattern.stuck_type] : '—'}
         </span>
       )}

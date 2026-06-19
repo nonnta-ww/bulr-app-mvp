@@ -12,27 +12,20 @@ import Link from 'next/link';
 import { and, desc, eq } from 'drizzle-orm';
 
 import { requireCompanyUser, AuthError } from '@bulr/auth/server';
-import { db } from '@bulr/db';
+import { db, getEntriesByOpeningId } from '@bulr/db';
 import { opening, invitation } from '@bulr/db/schema';
+
+import { Badge } from '@/components/ui/badge';
+import { Icon } from '@/components/ui/icon';
+import {
+  ENTRY_STATUS_LABEL,
+  ENTRY_STATUS_TONE,
+  OPENING_STATUS_LABEL,
+  OPENING_STATUS_TONE,
+} from '@/lib/status';
 
 import { CopyUrlButton } from '../_components/copy-url-button';
 import { CreateInvitationButton } from './_components/create-invitation-button';
-
-// ---------------------------------------------------------------------------
-// ステータスラベル・バッジマッピング
-// ---------------------------------------------------------------------------
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: '下書き',
-  open: '公開中',
-  closed: '終了',
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-600',
-  open: 'bg-green-100 text-green-700',
-  closed: 'bg-red-100 text-red-600',
-};
 
 // ---------------------------------------------------------------------------
 // 日時フォーマット (Asia/Tokyo)
@@ -89,119 +82,179 @@ export default async function OpeningDetailPage({ params }: PageProps) {
     .where(eq(invitation.openingId, openingId))
     .orderBy(desc(invitation.createdAt));
 
+  // エントリー一覧取得（右カラムのサマリー用）
+  const entries = await getEntriesByOpeningId(openingId);
+
   const candidateBaseUrl = process.env.CANDIDATE_BASE_URL ?? '';
 
+  const entryDateFormat = new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tokyo',
+  });
+
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-[1280px]">
         {/* パンくず */}
-        <nav className="text-sm text-gray-500">
-          <Link href="/openings" className="hover:text-blue-600 hover:underline">
-            募集一覧
+        <nav className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <Link href="/openings" className="hover:text-ink">
+            募集
           </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{ownedOpening.title}</span>
+          <span className="text-hairline-strong">/</span>
+          <span className="text-ink">{ownedOpening.title}</span>
         </nav>
 
-        {/* opening 基本情報 */}
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">{ownedOpening.title}</h1>
-            <span
-              className={`mt-1 inline-block shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[ownedOpening.status] ?? 'bg-gray-100 text-gray-600'}`}
+        {/* タイトル + ステータス */}
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-ink">
+              {ownedOpening.title}
+            </h1>
+            <Badge
+              tone={OPENING_STATUS_TONE[ownedOpening.status] ?? 'neutral'}
+              dot={ownedOpening.status === 'open'}
+              className="mt-1.5"
             >
-              {STATUS_LABEL[ownedOpening.status] ?? ownedOpening.status}
-            </span>
+              {OPENING_STATUS_LABEL[ownedOpening.status] ?? ownedOpening.status}
+            </Badge>
           </div>
-          {ownedOpening.description ? (
-            <p className="whitespace-pre-wrap text-sm text-gray-700">{ownedOpening.description}</p>
-          ) : (
-            <p className="text-sm text-gray-400">説明はありません。</p>
-          )}
-        </section>
+        </div>
 
-        {/* 招待リンクセクション */}
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-gray-900">招待リンク</h2>
-            <CreateInvitationButton openingId={openingId} />
-          </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
+          {/* 左カラム */}
+          <div className="space-y-6">
+            {/* 募集概要 */}
+            <section className="rounded-xl border border-hairline bg-card p-6">
+              <h2 className="mb-4 border-b border-hairline pb-3 text-base font-semibold text-ink">
+                募集概要
+              </h2>
+              {ownedOpening.description ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">
+                  {ownedOpening.description}
+                </p>
+              ) : (
+                <p className="text-sm text-muted">説明はありません。</p>
+              )}
+            </section>
 
-          {invitations.length === 0 ? (
-            <p className="text-sm text-gray-500">招待リンクがまだ発行されていません。</p>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                    <th className="px-4 py-3 font-medium text-gray-600">招待 URL</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">発行日時</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">使用状態</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {invitations.map((inv) => {
-                    const url = `${candidateBaseUrl}/invitations/${inv.token}`;
-                    return (
-                      <tr key={inv.id} className="hover:bg-gray-50">
-                        <td className="max-w-xs truncate px-4 py-3 font-mono text-xs text-gray-700">
-                          {url}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {formatDateTime(inv.createdAt)}
-                        </td>
-                        <td className="px-4 py-3">
-                          {inv.consumedAt == null ? (
-                            <span className="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                              未使用
-                            </span>
-                          ) : (
-                            <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                              使用済み
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <CopyUrlButton url={url} />
-                        </td>
+            {/* 招待リンク */}
+            <section className="rounded-xl border border-hairline bg-card p-6">
+              <div className="mb-4 flex items-center justify-between gap-4 border-b border-hairline pb-3">
+                <h2 className="text-base font-semibold text-ink">招待リンク</h2>
+                <CreateInvitationButton openingId={openingId} />
+              </div>
+
+              {invitations.length === 0 ? (
+                <p className="text-sm text-muted">招待リンクがまだ発行されていません。</p>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-hairline">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-hairline bg-sidebar text-left text-[11px] font-medium uppercase tracking-wider text-muted">
+                        <th className="px-4 py-3 font-medium">招待 URL</th>
+                        <th className="px-4 py-3 font-medium">発行日時</th>
+                        <th className="px-4 py-3 font-medium">状態</th>
+                        <th className="w-16 px-4 py-3 font-medium"></th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                    </thead>
+                    <tbody className="divide-y divide-hairline">
+                      {invitations.map((inv) => {
+                        const url = `${candidateBaseUrl}/invitations/${inv.token}`;
+                        const consumed = inv.consumedAt != null;
+                        return (
+                          <tr key={inv.id} className="transition-colors hover:bg-canvas">
+                            <td
+                              className={`max-w-xs truncate px-4 py-3 font-mono text-xs ${consumed ? 'text-muted line-through' : 'text-body'}`}
+                            >
+                              {url}
+                            </td>
+                            <td className="px-4 py-3 tabular-nums text-body">
+                              {formatDateTime(inv.createdAt)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge tone={consumed ? 'muted' : 'success'}>
+                                {consumed ? '使用済み' : '未使用'}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <CopyUrlButton url={url} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-          {invitations.length > 0 && (
-            <div className="mt-3 text-right">
-              <Link
-                href={`/openings/${openingId}/invitations`}
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                招待リンク一覧を見る →
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {/* エントリーセクション */}
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">エントリー</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                この募集に応募した候補者の一覧を確認し、面接セッションを作成できます。
-              </p>
-            </div>
-            <Link
-              href={`/openings/${openingId}/entries`}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              エントリー一覧を見る →
-            </Link>
+              {invitations.length > 0 && (
+                <div className="mt-3 text-right">
+                  <Link
+                    href={`/openings/${openingId}/invitations`}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-copper hover:underline"
+                  >
+                    すべて見る
+                    <Icon name="arrow_forward" size={16} />
+                  </Link>
+                </div>
+              )}
+            </section>
           </div>
-        </section>
+
+          {/* 右カラム: エントリー */}
+          <aside>
+            <section className="rounded-xl border border-hairline bg-card p-6">
+              <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
+                <h2 className="text-base font-semibold text-ink">エントリー</h2>
+                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-navy px-2 text-xs font-bold text-white">
+                  {entries.length}
+                </span>
+              </div>
+
+              {entries.length === 0 ? (
+                <p className="py-4 text-sm text-muted">まだエントリーはありません。</p>
+              ) : (
+                <ul className="space-y-2">
+                  {entries.map(({ entry, candidateProfile }) => (
+                    <li key={entry.id}>
+                      <Link
+                        href={`/openings/${openingId}/entries/${entry.id}`}
+                        className="block rounded-lg border border-hairline px-4 py-3 transition-colors hover:border-hairline-strong hover:bg-canvas"
+                      >
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="font-medium text-ink">
+                            {candidateProfile.displayName}
+                          </span>
+                          <Badge tone={ENTRY_STATUS_TONE[entry.status]}>
+                            {ENTRY_STATUS_LABEL[entry.status]}
+                          </Badge>
+                        </div>
+                        <span className="flex items-center gap-1 text-xs tabular-nums text-muted">
+                          <Icon name="calendar_today" size={14} />
+                          {entryDateFormat.format(entry.createdAt)}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-4 border-t border-hairline pt-4 text-center">
+                <Link
+                  href={`/openings/${openingId}/entries`}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-copper hover:underline"
+                >
+                  エントリー一覧へ
+                  <Icon name="arrow_forward" size={16} />
+                </Link>
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
   );

@@ -78,10 +78,10 @@ export function CreateSessionForm({ entryId, recommendedPatternCodes, allPattern
   }
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm">
-      <h2 className="mb-1 text-lg font-semibold text-gray-900">面接パターンを選択</h2>
-      <p className="mb-4 text-sm text-gray-500">
-        面接で使用するパターンを選択してください。推奨パターンが初期選択されていますが、自由に変更できます。
+    <div className="rounded-xl border border-hairline bg-card p-6">
+      <h2 className="mb-1 text-base font-semibold text-ink">面接セッションを作成</h2>
+      <p className="mb-4 text-sm text-muted">
+        面接で使用するパターンを選択してください。推奨パターンが初期選択されています。
       </p>
 
       {/* パターン一覧チェックボックス */}
@@ -90,18 +90,26 @@ export function CreateSessionForm({ entryId, recommendedPatternCodes, allPattern
           const isChecked = selectedCodes.includes(pattern.code);
           return (
             <li key={pattern.code}>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+              <label
+                className={
+                  'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ' +
+                  (isChecked
+                    ? 'border-navy bg-nav-active/40'
+                    : 'border-hairline hover:bg-canvas')
+                }
+              >
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600"
+                  className="mt-0.5 h-4 w-4 rounded border-hairline-strong accent-navy"
                   checked={isChecked}
                   onChange={() => handleToggle(pattern.code)}
                   disabled={isPending}
                 />
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{pattern.title}</span>
-                    <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="font-mono text-xs font-bold text-navy">{pattern.code}</span>
+                    <span className="text-sm font-medium text-ink">{pattern.title}</span>
+                    <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
                       {pattern.category}
                     </span>
                   </div>
@@ -113,8 +121,8 @@ export function CreateSessionForm({ entryId, recommendedPatternCodes, allPattern
       </ul>
 
       {/* 選択中パターン数 */}
-      <p className="mb-4 text-sm text-gray-600">
-        選択中: <span className="font-semibold">{selectedCodes.length}</span> パターン
+      <p className="mb-4 text-sm text-body">
+        選択中: <span className="font-semibold text-ink">{selectedCodes.length}</span> パターン
       </p>
 
       {/* エラーメッセージ */}
@@ -129,9 +137,9 @@ export function CreateSessionForm({ entryId, recommendedPatternCodes, allPattern
         type="button"
         onClick={handleSubmit}
         disabled={isPending}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-lg bg-navy px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-navy-soft disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? '作成中...' : '面接セッションを作成'}
+        {isPending ? '作成中...' : 'このエントリーから面接を開始'}
       </button>
     </div>
   );

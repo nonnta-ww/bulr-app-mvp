@@ -31,9 +31,9 @@ export function VerdictSummary({ heatmapData }: Props) {
   return (
     <div
       data-report-sticky
-      className="sticky top-0 z-10 -mx-4 mb-4 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+      className="sticky top-0 z-10 -mx-4 mb-4 border-b border-hairline bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:-mx-6 md:px-6"
     >
-      <h3 className="mb-2 text-sm font-bold text-gray-900">
+      <h3 className="mb-2 text-sm font-bold text-ink">
         {overall.reached_count} パターン到達 / {totalPatterns - overall.reached_count} パターン詰まり・未到達
       </h3>
 
@@ -47,19 +47,19 @@ export function VerdictSummary({ heatmapData }: Props) {
             const level = d.key === 'scope' ? scoreLevelScope(d.value) : scoreLevel03(d.value);
             return (
               <div key={d.key} className="flex items-center gap-2 text-xs">
-                <span className="w-16 text-right text-gray-500">{DIMENSION_LABEL[d.key]}</span>
-                <div className="relative h-2 flex-1 overflow-visible rounded bg-gray-100">
+                <span className="w-16 text-right text-muted">{DIMENSION_LABEL[d.key]}</span>
+                <div className="relative h-2 flex-1 overflow-visible rounded bg-canvas">
                   <div
                     className={`h-full rounded ${BAR_COLOR_CLASS[level]}`}
                     style={{ width: `${fillPct.toFixed(1)}%` }}
                   />
                   <div
-                    className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-gray-500"
+                    className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-ink"
                     style={{ left: `${benchPct.toFixed(1)}%` }}
                     aria-label={`benchmark ${benchmark}`}
                   />
                 </div>
-                <span className="w-8 text-right font-semibold tabular-nums text-gray-700">
+                <span className="w-8 text-right font-semibold tabular-nums text-ink">
                   {d.value.toFixed(1)}
                 </span>
               </div>
@@ -68,12 +68,12 @@ export function VerdictSummary({ heatmapData }: Props) {
         </div>
 
         {/* 警告サイド */}
-        <div className="border-l border-gray-100 pl-3 text-xs">
+        <div className="border-l border-hairline pl-3 text-xs">
           <SideRow num={overall.stuck_count} label="件 詰まり" alert={overall.stuck_count > 0} />
           <SideRow num={overall.not_experienced_count} label="件 経験なし" />
           <SideRow num={overall.undeveloped_count} label="件 未深掘り" />
           <SideRow num={free_question_count} label="件 フリー質問" />
-          <p className="mt-1 border-t border-gray-100 pt-1 text-[10px] text-gray-400">
+          <p className="mt-1 border-t border-hairline pt-1 text-[10px] text-muted">
             縦線 = ベンチマーク
             <br />
             0–3 軸: 2.0 / 射程: 3.0 / AI: 1.5
@@ -88,11 +88,11 @@ function SideRow({ num, label, alert = false }: { num: number; label: string; al
   return (
     <div className="my-0.5 flex items-baseline gap-1">
       <span
-        className={`w-4 text-right font-bold tabular-nums ${alert ? 'text-red-600' : 'text-gray-700'}`}
+        className={`w-4 text-right font-bold tabular-nums ${alert ? 'text-red-600' : 'text-ink'}`}
       >
         {num}
       </span>
-      <span className="text-gray-500">{label}</span>
+      <span className="text-muted">{label}</span>
     </div>
   );
 }

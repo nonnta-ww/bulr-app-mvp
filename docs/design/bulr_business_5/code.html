@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html class="antialiased font-sans" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e5e2e4",
+                        "on-tertiary-fixed": "#271901",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#fcf8fa",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f3f0f2",
+                        "secondary": "#555e73",
+                        "inverse-surface": "#313032",
+                        "surface-container-low": "#f6f3f5",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "surface-dim": "#dcd9db",
+                        "on-secondary-fixed": "#121b2d",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#f0edef",
+                        "outline": "#77767d",
+                        "secondary-container": "#d9e2fb",
+                        "on-primary-container": "#7e839c",
+                        "surface-bright": "#fcf8fa",
+                        "on-background": "#1c1b1d",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "primary": "#000000",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#000000",
+                        "inverse-primary": "#c1c5e0",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#97815d",
+                        "on-primary-fixed": "#161a2f",
+                        "surface-tint": "#595d75",
+                        "surface-container-high": "#eae7e9",
+                        "on-surface": "#1c1b1d",
+                        "tertiary-fixed": "#fadfb5",
+                        "secondary-fixed": "#d9e2fb",
+                        "on-secondary-container": "#5b6479",
+                        "on-surface-variant": "#46464d",
+                        "surface-variant": "#e5e2e4",
+                        "tertiary-container": "#271901",
+                        "primary-fixed": "#dde1fd",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#fcf8fa",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#41465c",
+                        "primary-container": "#161a2f",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "outline-variant": "#c7c5cd",
+                        "tertiary-fixed-dim": "#ddc39b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["'Noto Sans JP'", "sans-serif"],
+                        "label-md": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-sm": ["'Noto Sans JP'", "sans-serif"],
+                        "body-md": ["'Noto Sans JP'", "sans-serif"],
+                        "body-lg": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-lg-mobile": ["'Noto Sans JP'", "sans-serif"],
+                        "display-lg": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-lg": ["'Noto Sans JP'", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F7F8FA;
+        }
+        
+        /* Material Symbols Setup */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans text-on-surface">
+<!-- TopNavBar -->
+<header class="w-full bg-transparent top-0 absolute z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-container-max mx-auto w-full">
+<div class="text-headline-md font-headline-md font-black tracking-tight text-primary">
+                bulr
+            </div>
+<nav class="hidden md:flex items-center space-x-8">
+<!-- Navigation is suppressed for this public landing page as per instructions -->
+</nav>
+<div class="flex items-center space-x-4">
+<a class="text-on-secondary-container text-body-md font-body-md hover:text-tertiary transition-colors duration-300" href="#">
+                    ログイン
+                </a>
+</div>
+</div>
+</header>
+<!-- Main Content Area - Centered Layout -->
+<main class="flex-grow flex items-center justify-center px-margin-mobile md:px-margin-desktop py-24">
+<div class="w-full max-w-2xl bg-white border border-[#E6E9F0] rounded-lg p-10 md:p-16 flex flex-col items-center text-center">
+<h1 class="text-[#11162A] font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-6">
+                面接官の隣に座る、AI 面接アシスタント
+            </h1>
+<p class="text-[#5A6378] font-body-lg text-body-lg mb-12 max-w-xl">
+                エンジニア採用面接で、候補者の実務判断力を引き出す。
+            </p>
+<button class="bg-[#11162A] hover:bg-[#1f284c] text-white font-body-md text-body-md py-3 px-8 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#11162A]">
+                サインイン
+            </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full bg-surface border-t border-[#E6E9F0] mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop py-12 max-w-container-max mx-auto w-full gap-6">
+<div class="font-headline-sm text-headline-sm text-primary">
+                bulr
+            </div>
+<div class="flex flex-wrap justify-center gap-6 md:gap-8">
+<a class="font-label-md text-label-md text-[#5A6378] hover:text-tertiary transition-colors focus:outline-none" href="#">利用規約</a>
+<a class="font-label-md text-label-md text-[#5A6378] hover:text-tertiary transition-colors focus:outline-none" href="#">プライバシーポリシー</a>
+<a class="font-label-md text-label-md text-[#5A6378] hover:text-tertiary transition-colors focus:outline-none" href="#">お問い合わせ</a>
+</div>
+<div class="font-label-md text-label-md text-[#5A6378]">
+                © 2024 bulr. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

@@ -6,6 +6,7 @@
  * - 旧「補足情報」セクションは削除（フリー質問数はスティッキーに統合済み）
  */
 
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { asc, eq } from 'drizzle-orm';
 import { db, getInterviewSession } from '@bulr/db';
@@ -78,10 +79,10 @@ export default async function ReportPage({ params }: Props) {
 
   if (!report) {
     return (
-      <main className="bg-gray-50 px-4 py-8">
+      <main className="px-6 py-8 md:px-10">
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
-            <p className="text-gray-600">
+          <div className="rounded-xl border border-hairline bg-card px-8 py-16 text-center">
+            <p className="text-body">
               レポートはまだ生成されていません。面接終了ボタンを押してください。
             </p>
           </div>
@@ -90,12 +91,28 @@ export default async function ReportPage({ params }: Props) {
     );
   }
 
+  const candidateName =
+    sessionResult.kind === 'stage2'
+      ? sessionResult.candidateProfile.displayName
+      : sessionResult.candidate.name;
+
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-5xl space-y-6">
+        {/* パンくず */}
+        <nav className="flex items-center gap-2 text-sm text-muted">
+          <Link href="/interviews" className="hover:text-ink">
+            面接セッション
+          </Link>
+          <span className="text-hairline-strong">/</span>
+          <span className="text-body">{candidateName}</span>
+          <span className="text-hairline-strong">/</span>
+          <span className="text-ink">レポート</span>
+        </nav>
+
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">面接レポート</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">面接レポート</h1>
+          <p className="mt-1 text-sm text-muted">
             生成日時：{formatDate(report.generated_at)}
           </p>
         </div>
@@ -109,9 +126,9 @@ export default async function ReportPage({ params }: Props) {
           transcriptSegments={transcriptSegments}
         />
 
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-800">AIサマリー</h2>
-          <div className="prose prose-sm max-w-none text-gray-700 prose-headings:text-gray-900 prose-h2:mt-6 prose-h2:mb-2 prose-h3:mt-4 prose-h3:mb-1 prose-ul:my-2 prose-li:my-0.5">
+        <section className="rounded-xl border border-hairline bg-card p-6">
+          <h2 className="mb-4 text-base font-semibold text-ink">AI サマリー</h2>
+          <div className="prose prose-sm max-w-none text-body prose-headings:text-ink prose-h2:mt-6 prose-h2:mb-2 prose-h3:mt-4 prose-h3:mb-1 prose-ul:my-2 prose-li:my-0.5">
             <ReactMarkdown>{report.summary_text}</ReactMarkdown>
           </div>
         </section>
