@@ -26,6 +26,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "better-auth": "^1.6.0",
     "drizzle-orm": "^0.45.0",
+    "material-symbols": "0.45.2",
     "nanoid": "^5",
     "next": "^16.0.0",
     "nodemailer": "^9.0.1",

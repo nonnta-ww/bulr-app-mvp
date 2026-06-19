@@ -163,6 +163,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.0
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.28.17)(pg@8.20.0)
+      material-symbols:
+        specifier: 0.45.2
+        version: 0.45.2
       nanoid:
         specifier: ^5
         version: 5.1.11
@@ -2655,6 +2658,9 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  material-symbols@0.45.2:
+    resolution: {integrity: sha512-TxcmySpXFc+03tgyl0Z6J1Yvn5/eY9b9vnizJu5Xg3RrrL5jFLp3KlZKq5k2ttKj3SqH/omofH7BwZMO/zk1mw==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -5177,6 +5183,8 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  material-symbols@0.45.2: {}
 
   math-intrinsics@1.1.0: {}
 
