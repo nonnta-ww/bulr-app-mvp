@@ -23,6 +23,7 @@ import {
   resumeCapture as defaultResumeCapture,
 } from '../../[sessionId]/_actions/pause-capture';
 import { useLiveState } from './use-live-state';
+import { useMicCapture } from './use-mic-capture';
 import { CaptureStartPanel } from './capture-start-panel';
 import { LiveTranscriptPane } from './live-transcript-pane';
 import { SidePanel } from './side-panel';
@@ -122,6 +123,7 @@ export function LiveCaptureRunner({
   const liveState = useLiveState(sessionId);
   const {
     captureStatus,
+    captureProvider,
     segments,
     staleTranscript,
     analysisCapped,
@@ -130,6 +132,14 @@ export function LiveCaptureRunner({
     elapsedSeconds,
     remainingPlannedPatterns,
   } = liveState;
+
+  // 対面(mic)モードかつ recording のときだけクライアントでマイクを録音し
+  // /api/interview/capture/chunks へチャンクを送る（recall は webhook 経由のため不要）。
+  // paused / 終了状態では active=false となり、フックがマイクを停止・解放する。
+  const { micError, backlogWarning } = useMicCapture({
+    sessionId,
+    active: captureProvider === 'mic' && captureStatus === 'recording',
+  });
 
   // -------------------------------------------------------------------------
   // ハンドラ
@@ -218,6 +228,28 @@ export function LiveCaptureRunner({
             </svg>
             <span>
               一時停止中です。録音・文字起こし・AI 解析を停止しています（この間の発言は記録されません）。「再開」で続行できます。
+            </span>
+          </div>
+        )}
+
+        {/* 対面マイク取得失敗（権限拒否・非対応）: 操作が必要なため alert で強調 */}
+        {micError && (
+          <div
+            role="alert"
+            className="mb-4 flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            <span>{micError}</span>
+          </div>
+        )}
+
+        {/* 未送信チャンクの滞留（ネットワーク不安定）: 録音は継続しているため status で通知 */}
+        {!micError && backlogWarning && (
+          <div
+            role="status"
+            className="mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
+            <span>
+              ネットワークが不安定で音声の送信が遅れています。録音は継続しています（接続が回復すると自動で送信されます）。
             </span>
           </div>
         )}

@@ -115,6 +115,17 @@ export const LiveStateSchema = z.object({
   captureStatus: z.enum(LIVE_STATE_CAPTURE_STATUS_VALUES),
 
   /**
+   * キャプチャ方式（capture_provider）。
+   * - 'mic'    : 対面マイク録音。クライアントが MicChunkRecorder で連続録音し
+   *              /api/interview/capture/chunks へチャンクを POST する必要がある。
+   * - 'recall' : オンライン会議ボット。転写は webhook 経由で届くためクライアント録音は不要。
+   * - null     : 未開始（idle）。
+   *
+   * 後方互換のためデフォルト null（古いレスポンス／キャッシュに欠落していても parse 可能）。
+   */
+  captureProvider: z.enum(['recall', 'mic']).nullable().default(null),
+
+  /**
    * トランスクリプトが停滞しているかどうか。
    * capture_status === 'recording' かつ last_capture_event_at が 20 秒超過 or null の場合 true。
    * UI に「転写が遅延しています」を表示するフラグ。

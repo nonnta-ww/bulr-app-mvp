@@ -31,6 +31,12 @@ vi.mock('./use-live-state', () => ({
   useLiveState: vi.fn(),
 }));
 
+// use-mic-capture: マイク録音の副作用（getUserMedia / MediaRecorder）を回避し、
+// 返却値（micError / backlogWarning）と呼び出し引数（active）を制御するためにモック
+vi.mock('./use-mic-capture', () => ({
+  useMicCapture: vi.fn(() => ({ micError: null, backlogWarning: false })),
+}));
+
 vi.mock('../../[sessionId]/_actions/start-capture', () => ({
   startCapture: vi.fn(),
 }));
@@ -50,6 +56,7 @@ vi.mock('../../[sessionId]/_actions/pause-capture', () => ({
 
 import { LiveCaptureRunner } from './live-capture-runner';
 import { useLiveState } from './use-live-state';
+import { useMicCapture } from './use-mic-capture';
 
 // ---------------------------------------------------------------------------
 // ヘルパー
@@ -60,6 +67,7 @@ type HookResult = ReturnType<typeof useLiveState>;
 function makeDefaultHookResult(overrides?: Partial<HookResult>): HookResult {
   return {
     captureStatus: 'idle',
+    captureProvider: null,
     segments: [] as LiveSegment[],
     coverage: [],
     currentProposal: null,
@@ -91,6 +99,7 @@ function makeLiveSegment(seq: number): LiveSegment {
 
 beforeEach(() => {
   vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult());
+  vi.mocked(useMicCapture).mockReturnValue({ micError: null, backlogWarning: false });
 });
 
 afterEach(() => {
@@ -337,6 +346,108 @@ describe('LiveCaptureRunner', () => {
       expect(mockStart).toHaveBeenCalledWith(
         expect.objectContaining({ sessionId: 'session-start', mode: { kind: 'mic' } }),
       );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 対面マイク録音の結線 (Req 1.5, 8.3)
+  // -------------------------------------------------------------------------
+
+  describe('対面マイク録音の結線 (Req 1.5, 8.3)', () => {
+    it('mic モード × recording のとき useMicCapture が active=true で呼ばれる', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'mic' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="mic-session"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(useMicCapture).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: 'mic-session', active: true }),
+      );
+    });
+
+    it('recall モードでは useMicCapture が active=false で呼ばれる（クライアント録音しない）', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'recall' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="recall-session"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(useMicCapture).toHaveBeenCalledWith(
+        expect.objectContaining({ active: false }),
+      );
+    });
+
+    it('paused（mic）では useMicCapture が active=false で呼ばれる（マイク停止）', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'paused', captureProvider: 'mic' }),
+      );
+
+      render(
+        <LiveCaptureRunner
+          sessionId="paused-session"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(useMicCapture).toHaveBeenCalledWith(
+        expect.objectContaining({ active: false }),
+      );
+    });
+
+    it('micError があるとき alert バナーを表示する', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'mic' }),
+      );
+      vi.mocked(useMicCapture).mockReturnValue({
+        micError: 'マイクにアクセスできませんでした。',
+        backlogWarning: false,
+      });
+
+      render(
+        <LiveCaptureRunner
+          sessionId="mic-session"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.getByRole('alert')).toHaveTextContent('マイクにアクセスできませんでした');
+    });
+
+    it('backlogWarning があるとき status バナーを表示する', () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'mic' }),
+      );
+      vi.mocked(useMicCapture).mockReturnValue({ micError: null, backlogWarning: true });
+
+      render(
+        <LiveCaptureRunner
+          sessionId="mic-session"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      expect(screen.getByText(/音声の送信が遅れています/)).toBeInTheDocument();
     });
   });
 
