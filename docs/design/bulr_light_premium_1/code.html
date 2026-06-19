@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>面接レポート — ヒートマップタブ - bulr</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-container": "#7e839c",
+            "on-error-container": "#93000a",
+            "primary": "#000000",
+            "background": "#fcf8fa",
+            "surface-bright": "#fcf8fa",
+            "on-background": "#1c1b1d",
+            "secondary-fixed-dim": "#bdc6de",
+            "on-error": "#ffffff",
+            "on-primary": "#ffffff",
+            "outline-variant": "#c7c5cd",
+            "on-tertiary-fixed": "#271901",
+            "on-secondary-fixed": "#121b2d",
+            "surface": "#fcf8fa",
+            "tertiary-fixed-dim": "#ddc39b",
+            "surface-container-highest": "#e5e2e4",
+            "error": "#ba1a1a",
+            "on-secondary-fixed-variant": "#3e475b",
+            "primary-fixed": "#dde1fd",
+            "on-tertiary-fixed-variant": "#564425",
+            "inverse-surface": "#313032",
+            "surface-dim": "#dcd9db",
+            "error-container": "#ffdad6",
+            "surface-container-high": "#eae7e9",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed-variant": "#41465c",
+            "secondary": "#555e73",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-fixed": "#fadfb5",
+            "surface-tint": "#595d75",
+            "secondary-container": "#d9e2fb",
+            "primary-fixed-dim": "#c1c5e0",
+            "primary-container": "#161a2f",
+            "outline": "#77767d",
+            "surface-container-low": "#f6f3f5",
+            "on-primary-fixed": "#161a2f",
+            "on-tertiary-container": "#97815d",
+            "on-secondary-container": "#5b6479",
+            "tertiary": "#000000",
+            "inverse-on-surface": "#f3f0f2",
+            "tertiary-container": "#271901",
+            "surface-variant": "#e5e2e4",
+            "surface-container": "#f0edef",
+            "on-surface": "#1c1b1d",
+            "on-tertiary": "#ffffff",
+            "inverse-primary": "#c1c5e0",
+            "on-surface-variant": "#46464d",
+            "secondary-fixed": "#d9e2fb"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "24px",
+            "unit": "4px",
+            "container-max": "1280px",
+            "margin-desktop": "40px",
+            "margin-mobile": "16px"
+          },
+          "fontFamily": {
+            "label-md": ["Noto Sans"],
+            "headline-lg-mobile": ["Noto Sans"],
+            "body-md": ["Noto Sans"],
+            "headline-lg": ["Noto Sans"],
+            "body-lg": ["Noto Sans"],
+            "headline-sm": ["Noto Sans"],
+            "headline-md": ["Noto Sans"],
+            "display-lg": ["Noto Sans"]
+          },
+          "fontSize": {
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom utility classes based on Style Guidance */
+    .border-hairline { border-width: 1px; }
+    .bg-surface-level-0 { background-color: #F7F8FA; }
+    .bg-surface-level-1 { background-color: #FFFFFF; }
+    .border-surface-level-1 { border-color: #E6E9F0; }
+    .btn-primary { background-color: #11162A; color: #FFFFFF; }
+    .btn-secondary { background-color: #FFFFFF; border-color: #E6E9F0; color: #5A6378; }
+    .text-copper { color: #C9803B; }
+    .bg-copper { background-color: #C9803B; }
+    
+    /* Heatmap Colors */
+    .bg-heatmap-0 { background-color: #EDF0F5; } /* Base gray */
+    .bg-heatmap-1 { background-color: #E2D7C1; } /* Light tint */
+    .bg-heatmap-2 { background-color: #D6BD8A; } /* Medium tint */
+    .bg-heatmap-3 { background-color: #C9803B; } /* Copper full */
+    .bg-heatmap-4 { background-color: #A05F25; } /* Darker copper */
+    .bg-heatmap-5 { background-color: #7A4213; } /* Darkest copper */
+
+    /* Tooltip styles */
+    .group:hover .tooltip { display: block; }
+  </style>
+</head>
+<body class="bg-surface-level-0 text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar (Web only, standard display) -->
+<header class="bg-surface dark:bg-surface-container docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows hidden md:flex">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-16">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-on-surface tracking-tight">bulr</span>
+<!-- Search Bar placeholder -->
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary text-sm">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-surface-level-1 rounded-lg text-body-md focus:outline-none focus:border-[#C9803B] transition-colors" placeholder="Search..." type="text"/>
+</div>
+</div>
+<nav class="flex items-center gap-6">
+<a class="text-secondary dark:text-on-surface-variant hover:text-primary dark:hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">ダッシュボード</a>
+<a class="text-primary dark:text-on-surface border-b-2 border-primary font-bold pb-1 font-body-lg text-body-lg" href="#">候補者</a>
+<a class="text-secondary dark:text-on-surface-variant hover:text-primary dark:hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">アセスメント</a>
+<a class="text-secondary dark:text-on-surface-variant hover:text-primary dark:hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">分析</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-secondary hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-secondary hover:text-primary transition-colors">settings</button>
+<button class="btn-primary px-4 py-2 rounded-lg font-label-md scale-98 active:opacity-80">新規作成</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden">
+<img alt="ユーザープロファイル" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user in a well-lit studio. The user is wearing modern business casual attire against a clean, light grey background. The lighting is soft and flattering, creating a premium and trustworthy vibe suitable for a high-end B2B application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO64DWdJXQMFzABwdtjkxdlKi8ck8zOU9cGX2ntjG7WqpnNBPsSIEjgjXTIvxeGlVAt1QJ_NOLv3GLE_W0Sh5nK3w-E0TUiOg3kVLSgO7lEvNNuCp6AOuiZEGQ3nA9muRlw999CNMJr50Uxg3RdKaSHBowBqC-TohDYPXgDOcvotpxwttANmVZYcPxTXy41Oe0EtD9McUnIGmCKUOl14NrQfnbdDh4GMCMe8-MIbSLQbIcJdbUnMZSMI09i78cpFmRfL5MHbpyYcI"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface-container-low docked h-full left-0 w-64 border-r border-outline-variant dark:border-outline flat no shadows flex flex-col p-gutter gap-unit hidden md:flex">
+<div class="mb-8">
+<h2 class="font-headline-sm text-headline-sm text-primary mb-1">候補者レポート</h2>
+<p class="text-label-md text-secondary">エンジニアリング採用</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-all duration-200 cursor-pointer active:scale-95 font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">description</span>
+          要約
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold rounded-lg transition-all duration-200 cursor-pointer active:scale-95 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-lg">grid_view</span>
+          ヒートマップ
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-all duration-200 cursor-pointer active:scale-95 font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">notes</span>
+          全文文字起こし
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-all duration-200 cursor-pointer active:scale-95 font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">download</span>
+          データ書き出し
+        </a>
+</nav>
+<button class="mt-auto btn-secondary border-surface-level-1 border-hairline px-4 py-2 rounded-lg font-label-md w-full text-center hover:bg-surface-container-low transition-colors">
+        フィードバックを送信
+      </button>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-gutter lg:p-10">
+<div class="max-w-container-max mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<div class="flex items-center gap-4 mb-2">
+<h1 class="font-headline-lg text-headline-lg text-primary">佐藤 健太</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-variant text-on-surface-variant border border-outline-variant">
+                完了
+              </span>
+</div>
+<div class="flex items-center gap-4 text-body-md text-secondary">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                2024/06/10
+              </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                42分
+              </div>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="btn-secondary px-4 py-2 rounded-lg font-label-md border-surface-level-1 border-hairline hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span>
+              CSV エクスポート
+            </button>
+<button class="btn-secondary px-4 py-2 rounded-lg font-label-md border-surface-level-1 border-hairline hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">code</span>
+              JSON エクスポート
+            </button>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="border-b border-surface-level-1 flex gap-8">
+<a class="pb-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">サマリー</a>
+<a class="pb-3 text-primary border-b-2 border-primary font-bold font-body-md" href="#">ヒートマップ</a>
+<a class="pb-3 text-secondary hover:text-primary transition-colors font-body-md" href="#">全文書き起こし</a>
+</div>
+<!-- Heatmap Section -->
+<div class="space-y-4">
+<!-- Legend -->
+<div class="flex justify-between items-center text-label-md text-secondary bg-surface-level-1 p-4 rounded-lg border border-surface-level-1">
+<div class="flex items-center gap-3">
+<span>評価: 低</span>
+<div class="flex gap-1">
+<div class="w-6 h-4 rounded-sm bg-heatmap-0"></div>
+<div class="w-6 h-4 rounded-sm bg-heatmap-1"></div>
+<div class="w-6 h-4 rounded-sm bg-heatmap-2"></div>
+<div class="w-6 h-4 rounded-sm bg-heatmap-3"></div>
+<div class="w-6 h-4 rounded-sm bg-heatmap-4"></div>
+</div>
+<span>高</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">info</span>
+<span>詰まりは評価の濃淡を作る情報であり、減点ではありません</span>
+</div>
+</div>
+<!-- Matrix Card -->
+<div class="bg-surface-level-1 border border-surface-level-1 rounded-xl overflow-hidden">
+<div class="overflow-x-auto">
+<div class="tooltip hidden absolute top-full left-1/4 mt-2 w-80 bg-surface-level-1 border border-outline-variant rounded-lg p-4 shadow-sm z-10 text-body-md text-on-surface">
+<p class="mb-2">「インデックスの再構築により、フルスキャンを回避し、レスポンスタイムを大幅に改善しました...」</p>
+<a class="text-copper hover:underline text-label-md font-medium" href="#">この回答へ →</a>
+</div><table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="border-b border-surface-level-1 text-label-md text-secondary bg-surface-container-low">
+<th class="p-4 font-medium w-1/4">パターン</th>
+<th class="p-4 font-medium text-center w-12">真贋</th>
+<th class="p-4 font-medium text-center w-12">判断力</th>
+<th class="p-4 font-medium text-center w-12">射程</th>
+<th class="p-4 font-medium text-center w-12">メタ認知</th>
+<th class="p-4 font-medium text-center w-12">AI活用</th>
+<th class="p-4 font-medium pl-8 w-1/4">到達段階</th>
+</tr>
+</thead>
+<tbody class="text-body-md divide-y divide-surface-level-1">
+<!-- Category: 設計判断 -->
+<tr class="bg-[#F9FAFB]">
+<td class="px-4 py-2 font-bold text-label-md text-on-surface-variant" colspan="7">設計判断</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group relative">
+<td class="p-4 font-medium text-on-surface">D-01 基本設計</td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-4 flex items-center justify-center text-white font-medium mx-auto">4</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 pl-8 flex items-center gap-3 h-[72px]">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group relative">
+<td class="p-4 font-medium text-on-surface">D-03 アーキテクチャ選定</td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-5 flex items-center justify-center text-white font-medium mx-auto">5</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 pl-8 flex items-center gap-3 h-[72px]">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+<span class="text-xs bg-surface-variant text-on-surface-variant px-2 py-1 rounded-full whitespace-nowrap">詰まり: スケーラビリティ</span>
+</td>
+</tr>
+<!-- Category: トラブル対応 -->
+<tr class="bg-[#F9FAFB]">
+<td class="px-4 py-2 font-bold text-label-md text-on-surface-variant" colspan="7">トラブル対応</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group relative">
+<td class="p-4 font-medium text-on-surface">T-01 障害一次対応</td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-1 flex items-center justify-center text-on-surface font-medium mx-auto">1</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-1 flex items-center justify-center text-on-surface font-medium mx-auto">1</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-1 flex items-center justify-center text-on-surface font-medium mx-auto">1</div></td>
+<td class="p-4 pl-8 flex items-center gap-3 h-[72px]">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+</td>
+</tr>
+<tr class="bg-surface-level-0 text-secondary">
+<td class="p-4 font-medium">T-02 ポストモーテム</td>
+<td class="p-4 text-center text-sm italic" colspan="5">未実施</td>
+<td class="p-4 pl-8">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+</td>
+</tr>
+<!-- Category: 性能・規模 -->
+<tr class="bg-[#F9FAFB]">
+<td class="px-4 py-2 font-bold text-label-md text-on-surface-variant" colspan="7">性能・規模</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors group relative cursor-pointer">
+<td class="p-4 font-medium text-on-surface">P-02 クエリ性能劣化</td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-4 flex items-center justify-center text-white font-medium mx-auto">4</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-1 flex items-center justify-center text-on-surface font-medium mx-auto">1</div></td>
+<td class="p-4 pl-8 flex items-center gap-3 h-[72px]">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+</td>
+<!-- Tooltip -->
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group relative">
+<td class="p-4 font-medium text-on-surface">P-05 スケーリング戦略</td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-3 flex items-center justify-center text-white font-medium mx-auto">3</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-1 flex items-center justify-center text-on-surface font-medium mx-auto">1</div></td>
+<td class="p-4 text-center"><div class="w-8 h-8 rounded-md bg-heatmap-2 flex items-center justify-center text-white font-medium mx-auto">2</div></td>
+<td class="p-4 pl-8 flex items-center gap-3 h-[72px]">
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-copper"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-sm bg-surface-variant"></div>
+</div>
+<span class="text-xs bg-surface-variant text-on-surface-variant px-2 py-1 rounded-full whitespace-nowrap">詰まり: 経験なし</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -57,9 +57,12 @@ export function ResumePreviewButton({ entryId, openingId }: Props) {
         type="button"
         disabled={isPending}
         onClick={handleClick}
-        className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-hairline bg-card px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? '取得中...' : '履歴書を表示'}
+        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+          visibility
+        </span>
+        {isPending ? '取得中...' : '表示'}
       </button>
       {error && (
         <p role="alert" className="text-xs text-red-600">

@@ -61,46 +61,44 @@ export function TranscriptTab({ segments }: Props) {
 
   if (sorted.length === 0) {
     return (
-      <div className="py-12 text-center text-sm text-gray-400">
+      <div className="py-12 text-center text-sm text-muted">
         トランスクリプトがありません
       </div>
     );
   }
 
   return (
-    <ul className="space-y-3" aria-label="全文トランスクリプト">
+    <ul className="space-y-4" aria-label="全文トランスクリプト">
       {sorted.map((seg) => {
         const roleLabel = SPEAKER_ROLE_LABEL[seg.speakerRole];
         return (
           <li key={seg.seq} className="flex gap-3 text-sm">
             {/* タイムスタンプ */}
-            <span className="shrink-0 w-12 pt-0.5 text-xs font-mono text-gray-400 select-none">
+            <span className="w-12 shrink-0 select-none pt-0.5 font-mono text-xs tabular-nums text-muted">
               {formatTimestamp(seg.startedAtMs)}
             </span>
 
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               {/* 話者ラベル行 */}
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="mb-1 flex items-center gap-2">
                 <span
                   className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold leading-tight ${
                     seg.speakerRole === 'interviewer'
-                      ? 'bg-cyan-100 text-cyan-800'
+                      ? 'bg-nav-active text-nav-active-ink'
                       : seg.speakerRole === 'candidate'
-                        ? 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-emerald-50 text-emerald-700'
                         : 'bg-gray-100 text-gray-500'
                   }`}
                 >
                   {roleLabel}
                 </span>
                 {seg.speakerLabel !== null && (
-                  <span className="text-xs text-gray-400 truncate">
-                    {seg.speakerLabel}
-                  </span>
+                  <span className="truncate text-xs text-muted">{seg.speakerLabel}</span>
                 )}
               </div>
 
               {/* 転写テキスト */}
-              <p className="text-gray-800 leading-relaxed break-words">{seg.text}</p>
+              <p className="break-words leading-relaxed text-ink">{seg.text}</p>
             </div>
           </li>
         );

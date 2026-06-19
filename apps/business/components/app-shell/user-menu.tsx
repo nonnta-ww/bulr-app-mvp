@@ -57,7 +57,7 @@ export function UserMenu({ email, collapsed }: Props) {
   const initial = email.charAt(0).toUpperCase();
 
   return (
-    <div ref={containerRef} className="relative mt-auto border-t border-gray-100 p-3">
+    <div ref={containerRef} className="relative mt-auto border-t border-hairline p-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -66,14 +66,14 @@ export function UserMenu({ email, collapsed }: Props) {
         aria-label="ユーザーメニュー"
         className={
           (collapsed ? 'justify-center ' : '') +
-          'flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-gray-100'
+          'flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-black/5'
         }
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-medium text-white">
           {initial}
         </span>
         {!collapsed && (
-          <span className="truncate text-sm text-gray-700" title={email}>
+          <span className="truncate text-sm text-body" title={email}>
             {email}
           </span>
         )}

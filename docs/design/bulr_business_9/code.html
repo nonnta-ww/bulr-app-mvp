@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business サインイン</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Noto Sans JP -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#5b6479",
+                        "primary": "#000000",
+                        "outline": "#77767d",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#eae7e9",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#271901",
+                        "surface-bright": "#fcf8fa",
+                        "outline-variant": "#c7c5cd",
+                        "tertiary-container": "#271901",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#fadfb5",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "surface": "#fcf8fa",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#161a2f",
+                        "secondary-fixed": "#d9e2fb",
+                        "background": "#fcf8fa",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "tertiary": "#000000",
+                        "on-surface-variant": "#46464d",
+                        "on-error": "#ffffff",
+                        "secondary": "#555e73",
+                        "surface-container": "#f0edef",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d9e2fb",
+                        "surface-container-highest": "#e5e2e4",
+                        "surface-tint": "#595d75",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-container": "#97815d",
+                        "on-background": "#1c1b1d",
+                        "primary-container": "#161a2f",
+                        "on-primary-fixed-variant": "#41465c",
+                        "on-surface": "#1c1b1d",
+                        "primary-fixed": "#dde1fd",
+                        "on-secondary-fixed": "#121b2d",
+                        "surface-variant": "#e5e2e4",
+                        "on-primary-container": "#7e839c",
+                        "surface-container-low": "#f6f3f5",
+                        "inverse-surface": "#313032",
+                        "inverse-primary": "#c1c5e0",
+                        // Brand specific colors based on prompt
+                        "brand-bg": "#F7F8FA",
+                        "brand-surface": "#FFFFFF",
+                        "brand-border": "#E6E9F0",
+                        "brand-text-primary": "#11162A",
+                        "brand-text-secondary": "#5A6378",
+                        "brand-copper": "#C9803B"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "sans": ['"Noto Sans JP"', 'sans-serif'],
+                        "display-lg": ['"Noto Sans JP"', 'sans-serif'],
+                        "headline-lg-mobile": ['"Noto Sans JP"', 'sans-serif'],
+                        "headline-sm": ['"Noto Sans JP"', 'sans-serif'],
+                        "headline-lg": ['"Noto Sans JP"', 'sans-serif'],
+                        "body-md": ['"Noto Sans JP"', 'sans-serif'],
+                        "label-md": ['"Noto Sans JP"', 'sans-serif'],
+                        "headline-md": ['"Noto Sans JP"', 'sans-serif'],
+                        "body-lg": ['"Noto Sans JP"', 'sans-serif']
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #F7F8FA; /* Level 0 */
+        }
+        
+        /* Input focus state */
+        input:focus {
+            outline: none;
+            border-color: #C9803B !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 antialiased">
+<!-- TopNavBar Structural Container (TopNavBar JSON mapping - semantic mapping: excluded due to transactional intent) -->
+<!-- As per instructions: "Automatic Suppression: You MUST exclude the navigation shell if the page intent is Linear/Transactional: Login..." -->
+<main class="w-full max-w-[400px]">
+<!-- Sign-in Card -->
+<div class="bg-[#FFFFFF] border border-[#E6E9F0] rounded-lg p-8">
+<!-- Logo / Wordmark -->
+<div class="flex justify-center mb-8">
+<!-- Assuming 'bulr' is a text wordmark based on prompt -->
+<span class="text-2xl font-bold tracking-tighter text-[#11162A]">bulr</span>
+</div>
+<!-- Heading -->
+<h1 class="text-[#11162A] font-headline-md text-headline-md text-center mb-8">
+                bulr にサインイン
+            </h1>
+<!-- Form -->
+<form action="#" class="space-y-6" method="POST">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-[#5A6378]" for="email">
+                        メールアドレス
+                    </label>
+<input class="w-full px-4 py-3 bg-[#FFFFFF] border border-[#E6E9F0] rounded-lg text-[#11162A] font-body-md text-body-md placeholder:text-[#5A6378]/50 transition-colors duration-200" id="email" name="email" placeholder="you@company.co.jp" required="" type="email"/>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-[#11162A] text-white py-3 px-4 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-[#C9803B] focus:ring-offset-2 focus:ring-offset-[#FFFFFF]" type="submit">
+                    ログインリンクを送信
+                </button>
+<!-- Helper Text -->
+<p class="font-body-md text-body-md text-[#5A6378] text-center mt-6">
+                    入力したメールアドレスにログイン用リンクをお送りします（有効期限15分）
+                </p>
+</form>
+</div>
+</main>
+</body></html>

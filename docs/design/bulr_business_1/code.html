@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Interview Report - bulr business</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-tint": "#595d75",
+                        "on-primary-fixed-variant": "#41465c",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#161a2f",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "on-secondary-fixed": "#121b2d",
+                        "surface-variant": "#e5e2e4",
+                        "primary-fixed": "#dde1fd",
+                        "secondary": "#555e73",
+                        "surface": "#fcf8fa",
+                        "surface-container": "#f0edef",
+                        "surface-bright": "#fcf8fa",
+                        "tertiary": "#000000",
+                        "on-primary-container": "#7e839c",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "on-tertiary-container": "#97815d",
+                        "surface-container-high": "#eae7e9",
+                        "secondary-fixed": "#d9e2fb",
+                        "outline-variant": "#c7c5cd",
+                        "background": "#f7f8fa",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#dcd9db",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "inverse-on-surface": "#f3f0f2",
+                        "primary": "#11162a",
+                        "on-error": "#ffffff",
+                        "on-background": "#1c1b1d",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "tertiary-container": "#271901",
+                        "inverse-primary": "#c1c5e0",
+                        "on-tertiary-fixed": "#271901",
+                        "tertiary-fixed": "#fadfb5",
+                        "surface-container-low": "#f6f3f5",
+                        "surface-container-highest": "#e5e2e4",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#46464d",
+                        "on-secondary-container": "#5b6479",
+                        "error": "#d33c3c",
+                        "inverse-surface": "#313032",
+                        "on-surface": "#1c1b1d",
+                        "secondary-container": "#d9e2fb",
+                        "outline": "#77767d",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#ffffff",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        
+                        // Custom Brand Accents
+                        "copper": {
+                            "amber": "#C9803B",
+                            "l1": "#f5e8da",
+                            "l2": "#e8c59f",
+                            "l3": "#dba263",
+                            "l4": "#C9803B"
+                        },
+                        "custom-gray": {
+                            "unread": "#EDF0F5",
+                            "stuck": "#C9CFDB",
+                            "border": "#E6E9F0",
+                            "text": "#5A6378"
+                        }
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Noto Sans JP"],
+                        "label-md": ["Noto Sans JP"],
+                        "headline-lg-mobile": ["Noto Sans JP"],
+                        "body-lg": ["Noto Sans JP"],
+                        "headline-lg": ["Noto Sans JP"],
+                        "headline-sm": ["Noto Sans JP"],
+                        "body-md": ["Noto Sans JP"],
+                        "display-lg": ["Noto Sans JP"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #F7F8FA; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+        /* Custom scrollbar for drawer */
+        .drawer-scroll::-webkit-scrollbar { width: 4px; }
+        .drawer-scroll::-webkit-scrollbar-track { background: transparent; }
+        .drawer-scroll::-webkit-scrollbar-thumb { background: #E6E9F0; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-primary flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="docked full-height left-0 w-64 border-r border-custom-gray-border bg-surface flex flex-col h-screen fixed left-0 top-0 overflow-y-auto flat no shadows z-40">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="font-bold text-lg leading-none tracking-tighter">b</span>
+</div>
+<div>
+<h1 class="font-headline-md text-[18px] font-bold text-primary leading-tight tracking-tight">bulr business</h1>
+<p class="font-label-md text-custom-gray-text">Engineering Hiring</p>
+</div>
+</div>
+<button class="w-full bg-primary text-white hover:bg-opacity-90 transition-colors py-2 px-4 rounded-lg font-label-md flex items-center justify-center gap-2 mb-8">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                新規募集作成
+            </button>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-custom-gray-text hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">video_chat</span>
+<span class="font-label-md">面接セッション</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-fixed font-bold border-r-2 border-primary bg-primary text-white scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="font-label-md">募集</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-custom-gray-text hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">設定</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-6 border-t border-custom-gray-border">
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-3 text-custom-gray-text hover:bg-surface-container transition-colors px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md">user@example.com</span>
+</a>
+<a class="flex items-center gap-3 text-custom-gray-text hover:bg-surface-container transition-colors px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md">ログアウト</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar (Simulated / Minimal) -->
+<header class="h-16 flex items-center px-8 border-b border-custom-gray-border bg-surface shrink-0">
+<div class="flex items-center gap-2 text-custom-gray-text font-label-md">
+<span>面接セッション</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>佐藤 健太</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-bold">レポート</span>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-8 flex gap-6 relative">
+<div class="flex-1 flex flex-col max-w-container-max mx-auto w-full">
+<!-- Page Header & Info Strip -->
+<div class="mb-6 flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary mb-1">面接レポート</h2>
+<p class="font-label-md text-custom-gray-text">生成日時：2026/06/15 14:32</p>
+</div>
+<div class="bg-white border border-custom-gray-border rounded-lg px-4 py-2 flex items-center gap-4 text-sm font-body-md text-primary shadow-sm">
+<span class="font-bold">佐藤 健太</span>
+<div class="w-px h-4 bg-custom-gray-border"></div>
+<span class="text-custom-gray-text">バックエンドエンジニア（決済基盤）</span>
+<div class="w-px h-4 bg-custom-gray-border"></div>
+<span class="text-custom-gray-text">bulr Inc.</span>
+</div>
+</div>
+<!-- MAIN WHITE CARD -->
+<div class="bg-white border border-custom-gray-border rounded-lg flex-1 flex flex-col overflow-hidden">
+<!-- STICKY VERDICT SUMMARY -->
+<div class="p-6 border-b border-custom-gray-border bg-surface-lowest flex justify-between items-start sticky top-0 z-10">
+<div class="flex-1">
+<h3 class="font-headline-sm text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-copper-amber">assessment</span>
+                                8 パターン到達 <span class="text-custom-gray-text font-normal text-sm mx-2">/</span> 4 パターン詰まり・未到達
+                            </h3>
+<div class="flex gap-6 w-full max-w-2xl">
+<!-- Dimension Bars -->
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex items-center text-xs text-custom-gray-text justify-between"><span class="w-16">真贋</span><div class="flex-1 h-1.5 bg-custom-gray-unread mx-2 rounded-full overflow-hidden"><div class="h-full bg-copper-amber w-[80%] rounded-full"></div></div><span>4.0</span></div>
+<div class="flex items-center text-xs text-custom-gray-text justify-between"><span class="w-16">判断力</span><div class="flex-1 h-1.5 bg-custom-gray-unread mx-2 rounded-full overflow-hidden"><div class="h-full bg-copper-amber w-[60%] rounded-full"></div></div><span>3.0</span></div>
+<div class="flex items-center text-xs text-custom-gray-text justify-between"><span class="w-16">射程</span><div class="flex-1 h-1.5 bg-custom-gray-unread mx-2 rounded-full overflow-hidden"><div class="h-full bg-copper-amber w-[40%] rounded-full"></div></div><span>2.0</span></div>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex items-center text-xs text-custom-gray-text justify-between"><span class="w-16">メタ認知</span><div class="flex-1 h-1.5 bg-custom-gray-unread mx-2 rounded-full overflow-hidden"><div class="h-full bg-copper-amber w-[60%] rounded-full"></div></div><span>3.0</span></div>
+<div class="flex items-center text-xs text-custom-gray-text justify-between"><span class="w-16">AI活用</span><div class="flex-1 h-1.5 bg-custom-gray-unread mx-2 rounded-full overflow-hidden"><div class="h-full bg-copper-amber w-[20%] rounded-full"></div></div><span>1.0</span></div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2 text-right border-l border-custom-gray-border pl-6">
+<div class="flex items-center justify-end gap-2 text-error font-body-md font-medium">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+                                2 件 詰まり
+                            </div>
+<div class="flex items-center justify-end gap-2 text-custom-gray-text font-body-md">
+<span class="material-symbols-outlined text-[16px]">help_outline</span>
+                                1 件 経験なし
+                            </div>
+<div class="flex items-center justify-end gap-2 text-custom-gray-text font-body-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+                                1 件 時間切れ
+                            </div>
+</div>
+</div>
+<!-- TAB BAR -->
+<div class="flex border-b border-custom-gray-border px-6">
+<button class="px-6 py-3 font-label-md text-custom-gray-text hover:text-primary transition-colors">観察</button>
+<button class="px-6 py-3 font-label-md text-primary border-b-2 border-primary font-bold">カバレッジ</button>
+<button class="px-6 py-3 font-label-md text-custom-gray-text hover:text-primary transition-colors">全文トランスクリプト</button>
+</div>
+<!-- COVERAGE CONTENT -->
+<div class="p-6 overflow-y-auto flex-1">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+<!-- Category 1 -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-body-md font-bold text-primary">設計判断</span>
+<div class="flex gap-2 text-xs">
+<span class="text-primary font-medium">3 / 4</span>
+<span class="text-custom-gray-text">+ 1 詰まり</span>
+</div>
+</div>
+<div class="h-1 w-full bg-custom-gray-unread rounded-full mb-3 overflow-hidden flex">
+<div class="h-full bg-primary w-[75%]"></div>
+<div class="h-full bg-copper-amber opacity-50 w-[25%]"></div>
+</div>
+<div class="grid grid-cols-6 gap-2">
+<div class="aspect-square bg-copper-l4 rounded border border-copper-l4 flex items-center justify-center text-white text-xs font-mono cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-primary transition-all">D1</div>
+<div class="aspect-square bg-copper-l3 rounded border border-copper-l3 flex items-center justify-center text-white text-xs font-mono cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-primary transition-all">D2</div>
+<div class="aspect-square bg-custom-gray-stuck rounded border border-custom-gray-border flex items-center justify-center text-custom-gray-text text-xs font-mono cursor-pointer ring-2 ring-offset-1 ring-primary">D3</div>
+<div class="aspect-square bg-copper-l2 rounded border border-copper-l2 flex items-center justify-center text-primary text-xs font-mono cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-primary transition-all">D4</div>
+</div>
+</div>
+<!-- Category 2 -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-body-md font-bold text-primary">トラブル対応</span>
+<div class="flex gap-2 text-xs">
+<span class="text-primary font-medium">2 / 3</span>
+</div>
+</div>
+<div class="h-1 w-full bg-custom-gray-unread rounded-full mb-3 overflow-hidden flex">
+<div class="h-full bg-primary w-[66%]"></div>
+</div>
+<div class="grid grid-cols-6 gap-2">
+<div class="aspect-square bg-copper-l4 rounded border border-copper-l4 flex items-center justify-center text-white text-xs font-mono">T1</div>
+<div class="aspect-square bg-custom-gray-unread rounded border border-custom-gray-border flex items-center justify-center text-custom-gray-text text-xs font-mono">T2</div>
+<div class="aspect-square bg-copper-l1 rounded border border-copper-l1 flex items-center justify-center text-primary text-xs font-mono">T3</div>
+</div>
+</div>
+</div>
+</div>
+<!-- LEGEND ROW -->
+<div class="p-4 border-t border-custom-gray-border bg-surface-lowest flex justify-between items-center text-xs">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-custom-gray-unread border border-custom-gray-border"></div><span class="text-custom-gray-text">未到達</span></div>
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-custom-gray-stuck border border-custom-gray-border"></div><span class="text-custom-gray-text">詰まり</span></div>
+<div class="w-px h-3 bg-custom-gray-border mx-2"></div>
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-copper-l1"></div><span class="text-custom-gray-text">L1</span></div>
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-copper-l2"></div><span class="text-custom-gray-text">L2</span></div>
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-copper-l3"></div><span class="text-custom-gray-text">L3</span></div>
+<div class="flex items-center gap-1"><div class="w-3 h-3 rounded bg-copper-l4"></div><span class="text-custom-gray-text">L4</span></div>
+</div>
+<p class="text-custom-gray-text italic">※ 詰まりは評価の濃淡を作る情報であり、減点ではありません。</p>
+</div>
+</div>
+<div class="text-center mt-4">
+<p class="text-xs text-custom-gray-text">bulr は観察と根拠を提示します。採用判断は面接官が行います。</p>
+</div>
+</div>
+<!-- DRILLDOWN DRAWER -->
+<div class="w-[320px] bg-white border border-custom-gray-border rounded-lg shadow-sm flex flex-col overflow-hidden shrink-0">
+<div class="p-4 border-b border-custom-gray-border flex justify-between items-start bg-surface-lowest">
+<div>
+<span class="text-copper-amber font-mono text-xs font-bold mb-1 block">D3</span>
+<h4 class="font-body-md font-bold text-primary leading-tight">クエリ性能劣化の原因特定</h4>
+</div>
+<button class="text-custom-gray-text hover:text-primary p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="p-4 flex-1 overflow-y-auto drawer-scroll">
+<!-- Tinted info block -->
+<div class="bg-[#F9FAFB] border border-custom-gray-border rounded-md p-3 mb-6">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-bold text-primary">到達段階 L3</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-error-container text-error border border-red-200">
+                                詰まり: 一般論への退避
+                            </span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-3">
+<div class="text-xs"><span class="text-custom-gray-text block mb-0.5">真贋</span><span class="font-medium">2</span>/3</div>
+<div class="text-xs"><span class="text-custom-gray-text block mb-0.5">判断力</span><span class="font-medium">1</span>/3</div>
+</div>
+</div>
+<!-- Related Turns -->
+<h5 class="text-xs font-bold text-custom-gray-text mb-3 uppercase tracking-wider">関連ターン</h5>
+<div class="flex flex-col gap-3">
+<div class="bg-[#F7F8FA] rounded-md p-3 border border-[#E6E9F0]">
+<div class="flex gap-2 mb-1">
+<span class="text-[10px] font-bold text-primary bg-white border border-custom-gray-border px-1.5 py-0.5 rounded">Q3</span>
+<span class="text-xs font-medium text-primary">N+1問題の発見プロセスについて</span>
+</div>
+<p class="text-xs text-custom-gray-text line-clamp-3">具体的なログ調査の手順を聞いたところ、一般的なORMの仕組みについての説明に終始し、実際のトラブルシューティング経験を引き出せませんでした。</p>
+</div>
+<div class="bg-[#F7F8FA] rounded-md p-3 border border-[#E6E9F0]">
+<div class="flex gap-2 mb-1">
+<span class="text-[10px] font-bold text-primary bg-white border border-custom-gray-border px-1.5 py-0.5 rounded">Q4</span>
+<span class="text-xs font-medium text-primary">インデックス設計の妥当性</span>
+</div>
+<p class="text-xs text-custom-gray-text line-clamp-3">複合インデックスの順序について質問した際、回答に詰まる場面がありました。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

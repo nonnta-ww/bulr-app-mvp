@@ -10,6 +10,8 @@ import { desc, eq } from 'drizzle-orm';
 import { db } from '@bulr/db';
 import { opening } from '@bulr/db/schema';
 import { requireCompanyUser, AuthError } from '@bulr/auth/server';
+import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Icon } from '@/components/ui/icon';
 
 // ---------------------------------------------------------------------------
 // ステータスラベルマッピング
@@ -21,10 +23,10 @@ const STATUS_LABEL: Record<string, string> = {
   closed: '終了',
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-600',
-  open: 'bg-green-100 text-green-700',
-  closed: 'bg-red-100 text-red-600',
+const STATUS_TONE: Record<string, BadgeTone> = {
+  draft: 'neutral',
+  open: 'success',
+  closed: 'muted',
 };
 
 // ---------------------------------------------------------------------------
@@ -63,59 +65,58 @@ export default async function OpeningsPage() {
     .orderBy(desc(opening.createdAt));
 
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-[1280px]">
         {/* ヘッダー */}
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">募集一覧</h1>
+        <div className="mb-10 flex items-end justify-between">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">募集</h1>
           <Link
             href="/openings/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-navy-soft"
           >
-            + 新規募集を作成
+            <Icon name="add" size={18} />
+            新規募集を作成
           </Link>
         </div>
 
         {/* 一覧 */}
         {openings.length === 0 ? (
-          <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
-            <p className="text-gray-500">まだ募集がありません。</p>
+          <div className="rounded-xl border border-hairline bg-card px-8 py-16 text-center">
+            <p className="text-body">まだ募集がありません。</p>
             <Link
               href="/openings/new"
-              className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="mt-4 inline-block rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-navy-soft"
             >
               最初の募集を作成する
             </Link>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-            <table className="w-full border-collapse text-sm">
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card">
+            <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-600">タイトル</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">ステータス</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">作成日</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">アクション</th>
+                <tr className="border-b border-hairline bg-sidebar text-[11px] font-medium uppercase tracking-wider text-muted">
+                  <th className="px-6 py-4 font-medium">タイトル</th>
+                  <th className="px-6 py-4 font-medium">ステータス</th>
+                  <th className="px-6 py-4 font-medium">作成日</th>
+                  <th className="w-24 px-6 py-4 text-right font-medium">アクション</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-hairline text-sm">
                 {openings.map((o) => (
-                  <tr key={o.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{o.title}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[o.status] ?? 'bg-gray-100 text-gray-600'}`}
-                      >
+                  <tr key={o.id} className="transition-colors hover:bg-canvas">
+                    <td className="px-6 py-4 font-medium text-ink">{o.title}</td>
+                    <td className="px-6 py-4">
+                      <Badge tone={STATUS_TONE[o.status] ?? 'neutral'} dot={o.status === 'open'}>
                         {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(o.createdAt)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4 tabular-nums text-body">{formatDate(o.createdAt)}</td>
+                    <td className="px-6 py-4 text-right">
                       <Link
                         href={`/openings/${o.id}`}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                        className="text-sm font-medium text-copper hover:underline"
                       >
-                        詳細を見る
+                        詳細
                       </Link>
                     </td>
                   </tr>

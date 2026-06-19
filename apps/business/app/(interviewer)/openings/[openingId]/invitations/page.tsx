@@ -15,6 +15,8 @@ import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { opening, invitation } from '@bulr/db/schema';
 
+import { Badge } from '@/components/ui/badge';
+
 import { CopyUrlButton } from '../../_components/copy-url-button';
 import { CreateInvitationButton } from '../_components/create-invitation-button';
 
@@ -76,83 +78,77 @@ export default async function InvitationsPage({ params }: PageProps) {
   const candidateBaseUrl = process.env.CANDIDATE_BASE_URL ?? '';
 
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-[1280px]">
         {/* パンくず */}
-        <nav className="text-sm text-gray-500">
-          <Link href="/openings" className="hover:text-blue-600 hover:underline">
-            募集一覧
+        <nav className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <Link href="/openings" className="hover:text-ink">
+            募集
           </Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={`/openings/${openingId}`}
-            className="hover:text-blue-600 hover:underline"
-          >
+          <span className="text-hairline-strong">/</span>
+          <Link href={`/openings/${openingId}`} className="hover:text-ink">
             {ownedOpening.title}
           </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">招待リンク一覧</span>
+          <span className="text-hairline-strong">/</span>
+          <span className="text-ink">招待リンク</span>
         </nav>
 
         {/* ヘッダー */}
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">招待リンク一覧</h1>
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">招待リンク</h1>
           <CreateInvitationButton openingId={openingId} />
         </div>
 
         {/* 招待一覧 */}
         {invitations.length === 0 ? (
-          <div className="rounded-xl bg-white px-8 py-16 text-center shadow-sm">
-            <p className="text-gray-500">招待リンクがまだ発行されていません。</p>
+          <div className="rounded-xl border border-hairline bg-card px-8 py-16 text-center">
+            <p className="text-body">招待リンクがまだ発行されていません。</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-600">招待 URL</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">発行日時</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">使用状態</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {invitations.map((inv) => {
-                  const url = `${candidateBaseUrl}/invitations/${inv.token}`;
-                  return (
-                    <tr key={inv.id} className="hover:bg-gray-50">
-                      <td className="max-w-xs truncate px-4 py-3 font-mono text-xs text-gray-700">
-                        {url}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {formatDateTime(inv.createdAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {inv.consumedAt == null ? (
-                          <div>
-                            <span className="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                              未使用
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-hairline bg-sidebar text-[11px] font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-4 font-medium">招待 URL</th>
+                    <th className="px-6 py-4 font-medium">発行日時</th>
+                    <th className="px-6 py-4 font-medium">状態</th>
+                    <th className="w-16 px-6 py-4 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline text-sm">
+                  {invitations.map((inv) => {
+                    const url = `${candidateBaseUrl}/invitations/${inv.token}`;
+                    const consumed = inv.consumedAt != null;
+                    return (
+                      <tr key={inv.id} className="transition-colors hover:bg-canvas">
+                        <td
+                          className={`max-w-md truncate px-6 py-4 font-mono text-xs ${consumed ? 'text-muted line-through' : 'text-body'}`}
+                        >
+                          {url}
+                        </td>
+                        <td className="px-6 py-4 tabular-nums text-body">
+                          {formatDateTime(inv.createdAt)}
+                          {consumed && (
+                            <span className="mt-0.5 block text-xs text-muted">
+                              使用: {formatDateTime(inv.consumedAt)}
                             </span>
-                          </div>
-                        ) : (
-                          <div>
-                            <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                              使用済み
-                            </span>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                              {formatDateTime(inv.consumedAt)}
-                            </p>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <CopyUrlButton url={url} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge tone={consumed ? 'muted' : 'success'}>
+                            {consumed ? '使用済み' : '未使用'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <CopyUrlButton url={url} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

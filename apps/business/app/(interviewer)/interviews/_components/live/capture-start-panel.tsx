@@ -164,14 +164,21 @@ export function CaptureStartPanel({
 
   return (
     <section
-      className="capture-start-panel flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+      className="capture-start-panel flex flex-col gap-5 rounded-xl border border-hairline bg-card p-6"
       aria-label="キャプチャ開始"
     >
+      <div className="flex items-center gap-2 border-b border-hairline pb-4">
+        <span className="material-symbols-outlined text-muted" style={{ fontSize: 22 }}>
+          videocam
+        </span>
+        <h2 className="text-base font-semibold text-ink">キャプチャ方法</h2>
+      </div>
+
       {/* ── 同意未記録エラー（Req 1.6） ─────────────────────────────────── */}
       {!consentObtained && (
         <div
           role="alert"
-          className="consent-error rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          className="consent-error rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {CONSENT_ERROR}
         </div>
@@ -181,18 +188,18 @@ export function CaptureStartPanel({
       {captureStatus === 'failed' && joinFailureCode !== undefined && (
         <div
           role="alert"
-          className="join-failure-error rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          className="join-failure-error rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           <p className="join-failure-message mb-2">
             {getJoinFailureMessage(joinFailureCode)}
           </p>
-          <div className="join-failure-actions flex gap-2">
+          <div className="join-failure-actions flex gap-4 text-sm font-medium">
             {/* 再試行: 現在の URL で recall を再試行する */}
             <button
               type="button"
               onClick={handleRetry}
               disabled={!consentObtained}
-              className="retry-button inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="retry-button text-copper hover:underline disabled:cursor-not-allowed disabled:opacity-50"
             >
               再試行
             </button>
@@ -201,7 +208,7 @@ export function CaptureStartPanel({
               type="button"
               onClick={handleMicStart}
               disabled={!consentObtained}
-              className="switch-to-mic-button inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="switch-to-mic-button text-copper hover:underline disabled:cursor-not-allowed disabled:opacity-50"
             >
               対面録音に切替
             </button>
@@ -212,16 +219,17 @@ export function CaptureStartPanel({
       {/* ── 会議 URL 入力フォーム（Req 1.1, 1.2） ────────────────────────── */}
       <form
         onSubmit={handleRecallSubmit}
-        className="meeting-url-form flex flex-col gap-3"
+        className="meeting-url-form flex flex-col gap-3 rounded-lg border border-hairline p-4"
         noValidate
       >
         <div className="meeting-url-field">
-          <label
-            htmlFor="meeting-url"
-            className="block text-sm font-medium text-gray-700"
-          >
-            会議 URL
+          <label htmlFor="meeting-url" className="flex items-center gap-1.5 text-sm font-medium text-ink">
+            <span className="material-symbols-outlined text-copper" style={{ fontSize: 18 }}>
+              videocam
+            </span>
+            オンライン面接
           </label>
+          <p className="mt-2 mb-1 text-xs text-muted">会議 URL</p>
           <input
             id="meeting-url"
             type="text"
@@ -229,39 +237,55 @@ export function CaptureStartPanel({
             onChange={(e) => setMeetingUrl(e.target.value)}
             placeholder="https://zoom.us/j/... または Google Meet / Teams の URL"
             disabled={!consentObtained}
+            aria-label="会議 URL"
             aria-describedby={
               urlFormatError !== null ? 'url-format-error' : undefined
             }
-            className="meeting-url-input mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:opacity-50"
+            className="meeting-url-input w-full rounded-lg border border-hairline bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-navy focus:bg-card focus:ring-1 focus:ring-navy disabled:bg-canvas disabled:text-muted disabled:opacity-50"
           />
           {/* クライアント URL フォーマットエラー（UX フィードバック専用） */}
           {urlFormatError !== null && (
             <p
               id="url-format-error"
               role="alert"
-              className="url-format-error mt-1 text-xs text-red-600"
+              className="url-format-error mt-1.5 text-xs text-red-600"
             >
               {urlFormatError}
             </p>
           )}
+          <p className="mt-2 flex items-center gap-1 text-xs text-muted">
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              info
+            </span>
+            bulr 記録ボットが会議に参加します（参加者に表示されます）
+          </p>
         </div>
         {/* Req 3.5 制御要素 1/3: オンライン会議の録音開始 */}
         <button
           type="submit"
           disabled={!consentObtained}
-          className="start-recall-button inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="start-recall-button inline-flex items-center justify-center gap-1.5 rounded-lg bg-navy px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy-soft focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           オンライン会議を録音開始
         </button>
       </form>
 
       {/* ── 対面録音（主要パス）（Req 1.5） ──────────────────────────────── */}
-      <div className="mic-option border-t border-gray-200 pt-4">
+      <div className="mic-option flex flex-col items-center gap-3 rounded-lg border border-hairline p-6 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas text-muted">
+          <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
+            mic
+          </span>
+        </span>
+        <div>
+          <p className="text-sm font-medium text-ink">対面面接</p>
+          <p className="mt-0.5 text-xs text-muted">この端末のマイクで録音します</p>
+        </div>
         <button
           type="button"
           onClick={handleMicStart}
           disabled={!consentObtained}
-          className="start-mic-button inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="start-mic-button inline-flex items-center justify-center rounded-lg border border-hairline bg-card px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-canvas focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           対面録音で開始
         </button>

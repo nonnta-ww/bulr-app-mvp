@@ -42,50 +42,50 @@ export async function EntryContextSection({ session }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-gray-800">エントリー情報</h2>
+    <section className="rounded-xl border border-hairline bg-card p-6">
+      <h2 className="mb-4 text-base font-semibold text-ink">エントリー情報</h2>
 
       {/* 基本情報: opening / company / candidateProfile（要件 6.1） */}
       <dl className="mb-6 space-y-2">
         <div className="flex gap-4">
-          <dt className="w-36 shrink-0 text-sm font-medium text-gray-500">候補者名</dt>
-          <dd className="text-sm text-gray-900">{candidateProfile.displayName}</dd>
+          <dt className="w-36 shrink-0 text-sm font-medium text-muted">候補者名</dt>
+          <dd className="text-sm text-ink">{candidateProfile.displayName}</dd>
         </div>
         <div className="flex gap-4">
-          <dt className="w-36 shrink-0 text-sm font-medium text-gray-500">募集ポジション</dt>
-          <dd className="text-sm text-gray-900">{opening.title}</dd>
+          <dt className="w-36 shrink-0 text-sm font-medium text-muted">募集ポジション</dt>
+          <dd className="text-sm text-ink">{opening.title}</dd>
         </div>
         <div className="flex gap-4">
-          <dt className="w-36 shrink-0 text-sm font-medium text-gray-500">企業名</dt>
-          <dd className="text-sm text-gray-900">{company.name}</dd>
+          <dt className="w-36 shrink-0 text-sm font-medium text-muted">企業名</dt>
+          <dd className="text-sm text-ink">{company.name}</dd>
         </div>
       </dl>
 
       {/* スキルアンケートサマリー（要件 6.2 / 6.4） */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-gray-700">スキルアンケート</h3>
+        <h3 className="mb-3 text-sm font-semibold text-body">スキルアンケート</h3>
         {skillSurveyResponse === null ? (
           // 要件 6.4: skill_survey_response_id が NULL の場合
-          <p className="text-sm text-gray-400">スキルアンケート回答なし</p>
+          <p className="text-sm text-muted">スキルアンケート回答なし</p>
         ) : surveySummary === null || surveySummary.categories.length === 0 ? (
           // 回答はあるが回答データが取得できなかった場合
-          <p className="text-sm text-gray-400">スキルアンケート回答なし</p>
+          <p className="text-sm text-muted">スキルアンケート回答なし</p>
         ) : (
           // 要件 6.2: 回答カテゴリ・スキル一覧のサマリーを表示
           <div className="space-y-3">
             {surveySummary.categories.map((category) => (
-              <div key={category.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p className="mb-1.5 text-xs font-semibold text-gray-700">
+              <div key={category.id} className="rounded-lg border border-hairline bg-canvas p-3">
+                <p className="mb-1.5 text-xs font-semibold text-body">
                   {category.name}
                   {category.subcategory && (
-                    <span className="ml-1.5 font-normal text-gray-500">
+                    <span className="ml-1.5 font-normal text-muted">
                       / {category.subcategory}
                     </span>
                   )}
                 </p>
                 <ul className="space-y-0.5">
                   {category.questions.map((q) => (
-                    <li key={q.id} className="text-xs text-gray-600">
+                    <li key={q.id} className="text-xs text-body">
                       · {q.body}
                     </li>
                   ))}

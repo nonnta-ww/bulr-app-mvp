@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr - 面接キャプチャ開始</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#271901",
+                        "on-primary-fixed": "#161a2f",
+                        "primary-container": "#161a2f",
+                        "on-tertiary-fixed": "#271901",
+                        "inverse-surface": "#313032",
+                        "outline-variant": "#c7c5cd",
+                        "background": "#fcf8fa",
+                        "secondary-container": "#d9e2fb",
+                        "primary": "#000000",
+                        "surface-tint": "#595d75",
+                        "inverse-on-surface": "#f3f0f2",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "surface": "#fcf8fa",
+                        "outline": "#77767d",
+                        "on-background": "#1c1b1d",
+                        "on-tertiary-container": "#97815d",
+                        "surface-dim": "#dcd9db",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f6f3f5",
+                        "on-secondary-container": "#5b6479",
+                        "secondary-fixed": "#d9e2fb",
+                        "secondary": "#555e73",
+                        "on-surface-variant": "#46464d",
+                        "on-primary-fixed-variant": "#41465c",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "primary-fixed": "#dde1fd",
+                        "inverse-primary": "#c1c5e0",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "tertiary": "#000000",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fcf8fa",
+                        "surface-container-high": "#eae7e9",
+                        "error": "#ba1a1a",
+                        "surface-container": "#f0edef",
+                        "on-surface": "#1c1b1d",
+                        "on-primary-container": "#7e839c",
+                        "surface-variant": "#e5e2e4",
+                        "surface-container-highest": "#e5e2e4",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#121b2d",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#fadfb5",
+                        "premium-navy": "#11162A",
+                        "premium-navy-hover": "#1c2445",
+                        "premium-copper": "#C9803B",
+                        "premium-copper-hover": "#b06e30",
+                        "premium-surface": "#FFFFFF",
+                        "premium-bg": "#F7F8FA",
+                        "premium-border": "#E6E9F0",
+                        "premium-text-secondary": "#5A6378",
+                        "premium-chip-bg": "#EDF0F5",
+                        "success-green": "#1FA971"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "md": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-sm": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-lg": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-md": ["'Noto Sans JP'", "sans-serif"],
+                        "headline-lg-mobile": ["'Noto Sans JP'", "sans-serif"],
+                        "body-lg": ["'Noto Sans JP'", "sans-serif"],
+                        "display-lg": ["'Noto Sans JP'", "sans-serif"],
+                        "body-md": ["'Noto Sans JP'", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #F7F8FA;
+            color: #11162A;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar for an airy feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E6E9F0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c7c5cd;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen bg-premium-bg">
+<!-- Persistent Left Sidebar (SideNavBar) -->
+<nav class="hidden md:flex flex-col py-6 px-4 gap-4 h-screen w-64 sticky top-0 left-0 bg-surface-container-low dark:bg-surface-dim border-r border-premium-border">
+<!-- Brand Logo -->
+<div class="px-3 mb-8">
+<span class="font-headline-md text-headline-md font-black text-premium-navy tracking-tight">bulr</span>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-1">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2.5 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg active:scale-[0.98] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">video_camera_front</span>
+<span class="font-label-md text-label-md">面接セッション</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container rounded-lg hover:text-primary dark:hover:text-primary-fixed-dim transition-colors active:scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span class="font-label-md text-label-md">募集</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container rounded-lg hover:text-primary dark:hover:text-primary-fixed-dim transition-colors active:scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-md text-label-md">設定</span>
+</a>
+</div>
+<!-- Bottom User Section -->
+<div class="mt-auto pt-4 border-t border-premium-border flex items-center justify-between px-2">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-8 h-8 rounded-full bg-premium-navy text-white flex items-center justify-center font-label-md text-label-md flex-shrink-0">
+                    VP
+                </div>
+<span class="font-label-md text-label-md text-premium-text-secondary truncate">vpoe@example.com</span>
+</div>
+<button class="text-premium-text-secondary hover:text-premium-navy transition-colors">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative w-full">
+<!-- Top App Bar (Mobile Only Navigation Substitute) -->
+<header class="md:hidden flex justify-between items-center h-16 px-4 bg-premium-surface border-b border-premium-border sticky top-0 z-10">
+<span class="font-headline-md text-headline-md font-black text-premium-navy tracking-tight">bulr</span>
+<button class="text-premium-navy">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto px-4 md:px-margin-desktop py-8 md:py-12">
+<!-- Breadcrumb -->
+<div class="max-w-[640px] mx-auto mb-8">
+<nav class="flex items-center gap-2 font-body-md text-body-md text-premium-text-secondary">
+<a class="hover:text-premium-navy transition-colors" href="#">面接セッション</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-premium-navy font-medium">佐藤 健太</span>
+</nav>
+</div>
+<!-- Centered Column (Max-width 640px) -->
+<div class="max-w-[640px] mx-auto flex flex-col gap-8">
+<!-- Section 1: Header -->
+<section class="flex flex-col gap-3">
+<div class="flex items-start justify-between">
+<div>
+<h1 class="font-headline-md text-headline-md text-premium-navy mb-1">佐藤 健太</h1>
+<p class="font-body-md text-body-md text-premium-text-secondary">バックエンドエンジニア</p>
+</div>
+<div class="px-2.5 py-1 bg-premium-chip-bg text-premium-navy font-label-md text-[11px] font-medium rounded-full border border-premium-border flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">link</span>
+                            エントリー連携済み
+                        </div>
+</div>
+<div class="flex items-center gap-2 font-body-md text-body-md text-premium-text-secondary bg-white py-2 px-3 rounded-md border border-premium-border w-fit">
+<span class="material-symbols-outlined text-[18px] text-success-green icon-fill">check_circle</span>
+<span>録音同意: 取得済み (ja-v1, 2026/06/08)</span>
+</div>
+</section>
+<!-- Section 2: Card 'キャプチャ方法' -->
+<section class="bg-premium-surface border border-premium-border rounded-lg p-6 flex flex-col gap-5">
+<h2 class="font-headline-sm text-headline-sm text-premium-navy">キャプチャ方法</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Option A: Online (Selected, Error State) -->
+<div class="relative flex flex-col border border-premium-copper bg-orange-50/30 rounded-md p-4 cursor-pointer">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-4 h-4 rounded-full border-4 border-premium-copper flex-shrink-0"></div>
+<span class="font-body-md text-body-md font-medium text-premium-navy">オンライン面接</span>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-premium-text-secondary">会議URL</label>
+<input class="w-full bg-white border border-error text-premium-navy font-body-md text-body-md rounded focus:ring-0 focus:border-error px-3 py-2 outline-none" readonly="" type="text" value="https://meet.google.com/abc-defg-hij"/>
+<div class="flex items-start gap-1.5 mt-1 text-error">
+<span class="material-symbols-outlined text-[16px] mt-0.5">error</span>
+<span class="font-label-md text-label-md">ボットが会議に参加できませんでした（入室が拒否されました）</span>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<button class="font-label-md text-label-md text-premium-copper hover:text-premium-copper-hover hover:underline transition-all">再試行</button>
+<button class="font-label-md text-label-md text-premium-copper hover:text-premium-copper-hover hover:underline transition-all">対面録音に切り替え</button>
+</div>
+<p class="font-label-md text-[11px] text-premium-text-secondary mt-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                                    bulr 記録ボットが会議に参加します（参加者に表示されます）
+                                </p>
+</div>
+</div>
+<!-- Option B: In-person (Unselected) -->
+<div class="relative flex flex-col border border-premium-border hover:border-outline-variant bg-white rounded-md p-4 cursor-pointer transition-colors">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-4 h-4 rounded-full border border-premium-border flex-shrink-0"></div>
+<span class="font-body-md text-body-md text-premium-text-secondary">対面面接</span>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center py-6 text-premium-text-secondary">
+<span class="material-symbols-outlined text-[32px] mb-2 opacity-50">mic</span>
+<span class="font-label-md text-label-md text-center">この端末のマイクで録音します</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Card '予定パターン' -->
+<section class="bg-premium-surface border border-premium-border rounded-lg p-6 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-premium-navy">予定パターン (12)</h2>
+<button class="text-premium-copper hover:text-premium-copper-hover transition-colors font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                            編集
+                        </button>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-navy font-body-md text-body-md rounded-md border border-transparent">D-03 アーキ選定</span>
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-navy font-body-md text-body-md rounded-md border border-transparent">T-01 障害一次対応</span>
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-navy font-body-md text-body-md rounded-md border border-transparent">P-02 クエリ性能</span>
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-navy font-body-md text-body-md rounded-md border border-transparent">C-01 チームビルディング</span>
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-navy font-body-md text-body-md rounded-md border border-transparent">T-02 CI/CD</span>
+<span class="px-3 py-1.5 bg-premium-chip-bg text-premium-text-secondary font-body-md text-body-md rounded-md border border-premium-border bg-white">+9 その他</span>
+</div>
+</section>
+<!-- Section 4: Primary Action -->
+<section class="pt-4">
+<button class="w-full bg-premium-navy hover:bg-premium-navy-hover text-white font-headline-sm text-headline-sm py-4 rounded-lg flex items-center justify-center gap-2 transition-colors active:scale-[0.99] duration-150 shadow-sm opacity-50 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined">radio_button_checked</span>
+                        キャプチャを開始
+                    </button>
+<p class="text-center font-label-md text-[11px] text-premium-text-secondary mt-3">エラーを解決してから開始してください</p>
+</section>
+</div>
+</div>
+</main>
+</body></html>

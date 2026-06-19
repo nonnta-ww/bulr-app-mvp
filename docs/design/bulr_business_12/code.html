@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business - 面接レポート 全文書き起こし</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#595d75",
+                    "surface-variant": "#e5e2e4",
+                    "on-secondary-fixed-variant": "#3e475b",
+                    "on-secondary-fixed": "#121b2d",
+                    "on-error-container": "#93000a",
+                    "primary-container": "#161a2f",
+                    "on-primary-fixed-variant": "#41465c",
+                    "surface-bright": "#fcf8fa",
+                    "surface": "#fcf8fa",
+                    "surface-container": "#f0edef",
+                    "primary-fixed": "#dde1fd",
+                    "secondary": "#555e73",
+                    "surface-container-high": "#eae7e9",
+                    "secondary-fixed": "#d9e2fb",
+                    "primary-fixed-dim": "#c1c5e0",
+                    "on-tertiary-container": "#97815d",
+                    "tertiary": "#000000",
+                    "on-primary-container": "#7e839c",
+                    "secondary-fixed-dim": "#bdc6de",
+                    "inverse-on-surface": "#f3f0f2",
+                    "primary": "#000000",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#dcd9db",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#E6E9F0", /* Aligned with design guidelines */
+                    "background": "#F7F8FA", /* Updated base background */
+                    "surface-container-low": "#f6f3f5",
+                    "surface-container-highest": "#e5e2e4",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5A6378", /* Secondary text */
+                    "tertiary-fixed": "#fadfb5",
+                    "tertiary-container": "#271901",
+                    "inverse-primary": "#c1c5e0",
+                    "on-tertiary-fixed": "#271901",
+                    "on-background": "#11162A", /* Primary text navy */
+                    "on-tertiary-fixed-variant": "#564425",
+                    "outline": "#D1D5DB",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#d9e2fb",
+                    "on-surface": "#11162A",
+                    "on-secondary-container": "#5b6479",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#313032",
+                    "tertiary-fixed-dim": "#ddc39b",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#161a2f",
+                    "brand-primary": "#11162A",
+                    "brand-accent": "#C9803B",
+                    "brand-success": "#1FA971"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "8px",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "40px",
+                    "container-max": "1280px",
+                    "unit": "4px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Noto Sans JP", "sans-serif"],
+                    "label-md": ["Noto Sans JP", "sans-serif"],
+                    "headline-lg-mobile": ["Noto Sans JP", "sans-serif"],
+                    "body-lg": ["Noto Sans JP", "sans-serif"],
+                    "headline-lg": ["Noto Sans JP", "sans-serif"],
+                    "headline-sm": ["Noto Sans JP", "sans-serif"],
+                    "body-md": ["Noto Sans JP", "sans-serif"],
+                    "display-lg": ["Noto Sans JP", "sans-serif"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface-container-lowest h-screen w-64 border-r border-outline-variant flex flex-col p-4 gap-4 flex-shrink-0">
+<div class="flex items-center gap-3 px-2 mb-4">
+<div class="w-8 h-8 rounded bg-brand-primary text-white flex items-center justify-center font-bold">b</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-brand-primary">bulr business</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">B2B SaaS Platform</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-container text-on-primary-container font-medium rounded-lg active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">video_chat</span>
+<span class="font-body-md text-body-md">面接セッション</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 rounded-lg active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="font-body-md text-body-md">募集</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 rounded-lg active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">設定</span>
+</a>
+</nav>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md text-body-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Header Section -->
+<header class="bg-surface border-b border-outline-variant px-10 py-6 flex-shrink-0">
+<!-- Breadcrumbs -->
+<nav aria-label="Breadcrumb" class="flex text-label-md text-on-surface-variant mb-4 font-label-md">
+<ol class="inline-flex items-center space-x-1 md:space-x-2">
+<li class="inline-flex items-center hover:text-brand-primary cursor-pointer">面接セッション</li>
+<li><span class="mx-2 material-symbols-outlined text-sm">chevron_right</span></li>
+<li aria-current="page" class="text-brand-primary font-medium">佐藤 健太</li>
+</ol>
+</nav>
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-4 mb-2">
+<h1 class="font-headline-lg text-headline-lg text-brand-primary">佐藤 健太</h1>
+<span class="px-2 py-1 rounded bg-[#E8F6F0] text-brand-success text-label-md font-label-md border border-[#A1E3C8]">完了</span>
+</div>
+<div class="flex items-center gap-6 text-body-md font-body-md text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                            2024/06/10
+                        </div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                            42分
+                        </div>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-surface border border-brand-primary text-brand-primary rounded-lg font-body-md text-body-md hover:bg-surface-container-low transition-colors">
+                        CSV エクスポート
+                    </button>
+<button class="px-4 py-2 bg-surface border border-brand-primary text-brand-primary rounded-lg font-body-md text-body-md hover:bg-surface-container-low transition-colors">
+                        JSON エクスポート
+                    </button>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex gap-8 mt-8 border-b border-outline-variant w-full">
+<button class="pb-3 px-1 text-on-surface-variant font-body-md text-body-md hover:text-brand-primary transition-colors">サマリー</button>
+<button class="pb-3 px-1 text-on-surface-variant font-body-md text-body-md hover:text-brand-primary transition-colors">ヒートマップ</button>
+<button class="pb-3 px-1 text-brand-primary font-body-md text-body-md font-medium border-b-2 border-brand-primary">全文書き起こし</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-auto p-10 flex gap-8">
+<!-- Left: Transcript Pane -->
+<div class="flex-1 max-w-3xl space-y-6">
+<!-- Turn 1 -->
+<div class="flex gap-4">
+<div class="w-16 flex-shrink-0 text-right pt-1">
+<span class="text-label-md font-label-md text-on-surface-variant">面接官</span>
+</div>
+<div class="flex-1 bg-surface border border-outline-variant rounded-lg p-5">
+<p class="font-body-md text-body-md leading-relaxed text-brand-primary">
+                            これまでのご経歴で、マイクロサービスアーキテクチャの導入や運用に関わられたご経験についてお聞かせいただけますか？特に、サービス分割の粒度についてどのように考えておられるか興味があります。
+                        </p>
+</div>
+</div>
+<!-- Turn 2 (Highlighted) -->
+<div class="flex gap-4">
+<div class="w-16 flex-shrink-0 text-right pt-1">
+<span class="text-label-md font-label-md text-brand-accent">候補者</span>
+</div>
+<div class="flex-1 bg-surface border border-outline-variant rounded-lg p-5 border-l-4 border-l-brand-accent relative">
+<div class="absolute -top-3 right-4 bg-surface border border-brand-accent text-brand-accent px-2 py-0.5 rounded text-label-md font-label-md bg-white">
+                            判断力 3/3 の根拠
+                        </div>
+<p class="font-body-md text-body-md leading-relaxed text-brand-primary">
+                            はい、前職のECプラットフォームリプレイス案件で、モノリスからマイクロサービスへの移行を主導しました。サービス分割の粒度については、「ドメイン駆動設計の境界づけられたコンテキスト」をベースにしつつも、初期フェーズでは意図的に少し大きめのサービス（マクロサービス）として切り出すアプローチを取りました。あまりに細かく分割しすぎると、分散トランザクションの複雑性やネットワークレイテンシのオーバーヘッドが開発初期のベロシティを著しく下げるリスクがあると判断したためです。
+                        </p>
+</div>
+</div>
+<!-- Turn 3 -->
+<div class="flex gap-4">
+<div class="w-16 flex-shrink-0 text-right pt-1">
+<span class="text-label-md font-label-md text-on-surface-variant">面接官</span>
+</div>
+<div class="flex-1 bg-surface border border-outline-variant rounded-lg p-5">
+<p class="font-body-md text-body-md leading-relaxed text-brand-primary">
+                            なるほど。その際、サービス間の非同期通信基盤として何を選定されましたか？例えばKafkaとRabbitMQの比較などは行いましたか？
+                        </p>
+</div>
+</div>
+<!-- Turn 4 -->
+<div class="flex gap-4">
+<div class="w-16 flex-shrink-0 text-right pt-1">
+<span class="text-label-md font-label-md text-brand-accent">候補者</span>
+</div>
+<div class="flex-1 bg-surface border border-outline-variant rounded-lg p-5">
+<p class="font-body-md text-body-md leading-relaxed text-brand-primary">
+                            はい、両方検証しました。結果としてKafkaを選定しています。RabbitMQはルーティングの柔軟性が高く、複雑なパブリッシュ/サブスクライブ要件には適していましたが、我々の要件では「イベントソーシング」的な使い方、つまり過去のイベントの再生（リプレイ）機能と、高スループットでのログ集約が重視されました。Kafkaの追記型ログアーキテクチャがこの要件に非常にマッチしていたのが決定打です。
+                        </p>
+</div>
+</div>
+</div>
+<!-- Right: Sticky Mini-Column -->
+<div class="w-64 flex-shrink-0">
+<div class="sticky top-0 bg-surface border border-outline-variant rounded-lg p-5">
+<h3 class="font-headline-sm text-headline-sm text-brand-primary mb-4 pb-2 border-b border-outline-variant">カバーされたパターン</h3>
+<ul class="space-y-3 font-body-md text-body-md text-on-surface-variant">
+<li>
+<a class="flex items-center gap-2 hover:text-brand-primary transition-colors group" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant group-hover:bg-brand-primary transition-colors"></span>
+                                D-01 経歴サマリ
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-2 hover:text-brand-primary transition-colors group" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant group-hover:bg-brand-primary transition-colors"></span>
+                                D-03 アーキ選定
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-2 hover:text-brand-primary transition-colors group" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant group-hover:bg-brand-primary transition-colors"></span>
+                                T-01 障害一次対応
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-2 hover:text-brand-primary transition-colors group" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant group-hover:bg-brand-primary transition-colors"></span>
+                                P-02 クエリ性能
+                            </a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+</body></html>

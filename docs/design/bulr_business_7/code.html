@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>募集 - bulr business</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#77767d",
+                        "primary-fixed": "#dde1fd",
+                        "on-secondary-container": "#5b6479",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#161a2f",
+                        "surface-container-high": "#eae7e9",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e5e2e4",
+                        "on-primary-container": "#7e839c",
+                        "inverse-on-surface": "#f3f0f2",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#313032",
+                        "on-surface": "#1c1b1d",
+                        "on-secondary-fixed": "#121b2d",
+                        "tertiary-container": "#271901",
+                        "primary": "#000000",
+                        "on-error": "#ffffff",
+                        "background": "#fcf8fa",
+                        "secondary": "#555e73",
+                        "on-surface-variant": "#46464d",
+                        "tertiary-fixed": "#fadfb5",
+                        "outline-variant": "#E6E9F0", /* Mapped to hairline border */
+                        "surface-container": "#f0edef",
+                        "surface-bright": "#fcf8fa",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#595d75",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "primary-container": "#161a2f",
+                        "on-error-container": "#93000a",
+                        "surface": "#fcf8fa",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d9e2fb",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "secondary-container": "#d9e2fb",
+                        "on-tertiary-fixed": "#271901",
+                        "on-primary-fixed-variant": "#41465c",
+                        "surface-dim": "#dcd9db",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#c1c5e0",
+                        "on-background": "#1c1b1d",
+                        "tertiary": "#000000",
+                        "surface-variant": "#e5e2e4",
+                        "on-tertiary-container": "#97815d",
+                        "surface-container-low": "#f6f3f5",
+                        
+                        /* Brand Specific additions mapped from prompt */
+                        "brand-navy": "#11162A",
+                        "brand-copper": "#C9803B",
+                        "brand-bg": "#F7F8FA",
+                        "brand-border": "#E6E9F0",
+                        "brand-success": "#1FA971"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Noto Sans JP", "sans-serif"],
+                        "label-md": ["Noto Sans JP", "sans-serif"],
+                        "headline-sm": ["Noto Sans JP", "sans-serif"],
+                        "body-lg": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg": ["Noto Sans JP", "sans-serif"],
+                        "body-md": ["Noto Sans JP", "sans-serif"],
+                        "headline-md": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg-mobile": ["Noto Sans JP", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F7F8FA; /* Strict enforcement of app background */
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-on-surface">
+<!-- App Layout -->
+<div class="flex min-h-screen">
+<!-- SideNavBar Component -->
+<aside class="bg-surface dark:bg-surface-container-lowest h-screen w-64 fixed left-0 top-0 border-r border-brand-border flex flex-col h-full py-margin-desktop px-gutter justify-between z-50">
+<div>
+<!-- Header -->
+<div class="mb-10 pl-2">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim tracking-tight">bulr business</h1>
+<p class="font-label-md text-label-md text-secondary mt-1">Enterprise Tier</p>
+</div>
+<!-- Navigation Tabs -->
+<nav class="space-y-2">
+<!-- Inactive Tab -->
+<a class="flex items-center px-3 py-2.5 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary group-hover:text-primary transition-colors" data-icon="chat_bubble">chat_bubble</span>
+                        面接セッション
+                    </a>
+<!-- Active Tab (募集) -->
+<a class="flex items-center px-3 py-2.5 rounded-lg text-primary dark:text-primary-fixed-dim font-semibold bg-surface-container-low dark:bg-surface-container-high transition-colors font-body-md text-body-md border-r-2 border-brand-copper opacity-100 group" href="#">
+<span class="material-symbols-outlined mr-3 text-primary" data-icon="work" style="font-variation-settings: 'FILL' 1;">work</span>
+                        募集
+                    </a>
+<!-- Inactive Tab -->
+<a class="flex items-center px-3 py-2.5 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary group-hover:text-primary transition-colors" data-icon="settings">settings</span>
+                        設定
+                    </a>
+</nav>
+</div>
+<!-- Footer Tab -->
+<div>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="logout">logout</span>
+                    Logout
+                </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar Placeholder (Hidden on this specific view as per simplified design, but space is maintained via padding) -->
+<div class="h-16 w-full flex items-center justify-end px-margin-desktop">
+<!-- User Profile / Actions could go here -->
+</div>
+<!-- Page Content -->
+<div class="flex-1 px-margin-desktop pb-margin-desktop max-w-[1280px] w-full mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-center mb-8 mt-4">
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">募集</h2>
+<button class="bg-[#11162A] text-white px-5 py-2.5 rounded-lg font-label-md text-label-md tracking-wider flex items-center transition-opacity hover:opacity-90">
+<span class="material-symbols-outlined text-[18px] mr-1.5 font-bold" data-icon="add">add</span>
+                        新規募集を作成
+                    </button>
+</div>
+<!-- Main Data Card -->
+<div class="bg-white border border-[#E6E9F0] rounded-lg">
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[#E6E9F0] bg-[#F7F8FA]/50 rounded-t-lg">
+<div class="col-span-5 font-label-md text-label-md text-[#5A6378]">タイトル</div>
+<div class="col-span-2 font-label-md text-label-md text-[#5A6378]">ステータス</div>
+<div class="col-span-3 font-label-md text-label-md text-[#5A6378]">作成日</div>
+<div class="col-span-2 font-label-md text-label-md text-[#5A6378] text-right">アクション</div>
+</div>
+<!-- Table Body (List) -->
+<div class="divide-y divide-[#E6E9F0]">
+<!-- Row 1 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#F7F8FA] transition-colors group">
+<div class="col-span-5">
+<span class="font-headline-sm text-headline-sm text-[#11162A]">バックエンドエンジニア（決済基盤）</span>
+</div>
+<div class="col-span-2 flex items-center">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md bg-[#1FA971]/10 text-[#1FA971]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1FA971] mr-1.5"></span>
+                                    公開中
+                                </span>
+</div>
+<div class="col-span-3 font-body-md text-body-md text-[#5A6378]">
+                                2024/05/12
+                            </div>
+<div class="col-span-2 text-right">
+<a class="font-label-md text-label-md text-[#C9803B] hover:text-[#11162A] transition-colors" href="#">詳細</a>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#F7F8FA] transition-colors group">
+<div class="col-span-5">
+<span class="font-headline-sm text-headline-sm text-[#11162A]">SRE / プラットフォーム</span>
+</div>
+<div class="col-span-2 flex items-center">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md bg-[#1FA971]/10 text-[#1FA971]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1FA971] mr-1.5"></span>
+                                    公開中
+                                </span>
+</div>
+<div class="col-span-3 font-body-md text-body-md text-[#5A6378]">
+                                2024/05/15
+                            </div>
+<div class="col-span-2 text-right">
+<a class="font-label-md text-label-md text-[#C9803B] hover:text-[#11162A] transition-colors" href="#">詳細</a>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#F7F8FA] transition-colors group">
+<div class="col-span-5">
+<span class="font-headline-sm text-headline-sm text-[#11162A]">モバイルエンジニア（iOS/Android）</span>
+</div>
+<div class="col-span-2 flex items-center">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md bg-[#F0EDEF] text-[#5A6378]">
+                                    下書き
+                                </span>
+</div>
+<div class="col-span-3 font-body-md text-body-md text-[#5A6378]">
+                                2024/06/01
+                            </div>
+<div class="col-span-2 text-right">
+<a class="font-label-md text-label-md text-[#C9803B] hover:text-[#11162A] transition-colors" href="#">詳細</a>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#F7F8FA] transition-colors group">
+<div class="col-span-5">
+<span class="font-headline-sm text-headline-sm text-[#5A6378]">フロントエンドエンジニア</span>
+</div>
+<div class="col-span-2 flex items-center">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md bg-[#E5E2E4] text-[#46464D]">
+                                    終了
+                                </span>
+</div>
+<div class="col-span-3 font-body-md text-body-md text-[#5A6378]">
+                                2023/12/20
+                            </div>
+<div class="col-span-2 text-right">
+<a class="font-label-md text-label-md text-[#C9803B] hover:text-[#11162A] transition-colors" href="#">詳細</a>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#F7F8FA] transition-colors group">
+<div class="col-span-5">
+<span class="font-headline-sm text-headline-sm text-[#11162A]">データサイエンティスト</span>
+</div>
+<div class="col-span-2 flex items-center">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md bg-[#1FA971]/10 text-[#1FA971]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1FA971] mr-1.5"></span>
+                                    公開中
+                                </span>
+</div>
+<div class="col-span-3 font-body-md text-body-md text-[#5A6378]">
+                                2024/05/20
+                            </div>
+<div class="col-span-2 text-right">
+<a class="font-label-md text-label-md text-[#C9803B] hover:text-[#11162A] transition-colors" href="#">詳細</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

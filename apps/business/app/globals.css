@@ -1,2 +1,85 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
+
+/**
+ * bulr business デザインシステム
+ *
+ * docs/design 配下のビジネス向けデザインを Tailwind v4 のテーマトークンとして定義。
+ * - ブランドカラー: navy(#11162A) / copper(#C9803B)
+ * - 面: canvas(ページ背景) / card(白カード) / sidebar
+ * - 罫線: hairline(#E6E9F0)
+ * - テキスト: ink(見出し) / body(本文) / muted(補助)
+ */
+@theme {
+  --color-navy: #11162a;
+  --color-navy-soft: #1c2440;
+  --color-copper: #c9803b;
+  --color-copper-soft: #f4ead9;
+
+  --color-canvas: #f7f8fa;
+  --color-card: #ffffff;
+  --color-sidebar: #fcf8fa;
+
+  --color-hairline: #e6e9f0;
+  --color-hairline-strong: #d7dbe6;
+
+  --color-ink: #11162a;
+  --color-body: #46464d;
+  --color-muted: #77767d;
+
+  --color-nav-active: #d9e2fb;
+  --color-nav-active-ink: #161a2f;
+
+  --font-sans:
+    'Noto Sans JP', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-xl: 0.75rem;
+}
+
+html,
+body {
+  background-color: var(--color-canvas);
+}
+
+body {
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols（デザインで多用されるアイコンフォント） */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* 数字の桁揃え（日時・スコア等） */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business - 面接ライブ画面</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#fadfb5",
+                        "on-surface": "#1c1b1d",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "surface-variant": "#e5e2e4",
+                        "on-tertiary-fixed": "#271901",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "surface-container": "#f0edef",
+                        "primary-fixed": "#dde1fd",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c1c5e0",
+                        "surface-container-high": "#eae7e9",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#d9e2fb",
+                        "surface-bright": "#fcf8fa",
+                        "on-secondary-container": "#5b6479",
+                        "inverse-surface": "#313032",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-container": "#97815d",
+                        "outline": "#77767d",
+                        "secondary-fixed": "#d9e2fb",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fcf8fa",
+                        "primary-container": "#161a2f",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#46464d",
+                        "secondary": "#555e73",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#41465c",
+                        "tertiary-container": "#271901",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "on-primary-fixed": "#161a2f",
+                        "on-secondary-fixed": "#121b2d",
+                        "background": "#fcf8fa",
+                        "outline-variant": "#c7c5cd",
+                        "on-background": "#1c1b1d",
+                        "tertiary": "#000000",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "primary": "#000000",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#7e839c",
+                        "surface-container-highest": "#e5e2e4",
+                        "inverse-on-surface": "#f3f0f2",
+                        "surface-container-low": "#f6f3f5",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#595d75",
+                        "brand-navy": "#11162A",
+                        "brand-copper": "#C9803B",
+                        "brand-border": "#E6E9F0",
+                        "brand-text-muted": "#5A6378",
+                        "brand-bg-muted": "#F7F8FA"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Noto Sans"],
+                        "label-md": ["Noto Sans"],
+                        "headline-md": ["Noto Sans"],
+                        "display-lg": ["Noto Sans"],
+                        "headline-lg-mobile": ["Noto Sans"],
+                        "body-md": ["Noto Sans"],
+                        "body-lg": ["Noto Sans"],
+                        "headline-sm": ["Noto Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Noto Sans', sans-serif; background-color: #F7F8FA; }
+        .recording-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(201, 128, 59, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmerEffect 2s infinite linear;
+        }
+        @keyframes shimmerEffect { 0% { background-position: -100% 0; } 100% { background-position: 100% 0; } }
+        /* Scrollbar hidden for transcript */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-on-surface h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar Semantic Shell -->
+<header class="bg-surface-container-lowest text-primary docked full-width top-0 sticky border-b border-brand-border flat no shadows flex justify-between items-center h-16 px-gutter w-full shrink-0 z-50">
+<div class="flex items-center space-x-6">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">bulr business</span>
+<nav class="hidden md:flex space-x-4 h-full items-center">
+<a class="text-secondary font-label-md text-label-md hover:text-on-surface transition-opacity duration-200" href="#">Dashboard</a>
+<a class="text-secondary font-label-md text-label-md hover:text-on-surface transition-opacity duration-200" href="#">Analytics</a>
+<a class="text-secondary font-label-md text-label-md hover:text-on-surface transition-opacity duration-200" href="#">Team</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-on-surface transition-opacity duration-200">notifications</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-on-surface transition-opacity duration-200">help_outline</span>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-brand-border" data-alt="A clean, professional, head-and-shoulders portrait of a modern business executive against a solid light gray background. High-key lighting, corporate minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCD8EA6443CX6MRzQGKO1UaZIXuWIhNwEpgq1rjCwn0L8MY5MXWkf13jqLY2UvGWUk308Zk7EOeBbHWNVLJo2LGuOa4te9mT8nNJXeNggzysWe773jgGCmfvDQGzFvkA_GpjQhzdyIvOjtZgsa9spPXDq5MJ2PPDqBaMHJWodT_NoXCeo1fekr0hAd2bcO1lInGRymQ50Wcvkde2RDMykOrcHV4yYx1N6Qq0dosBxe0ksovRxeR4w_UzvrEC-u6_i9hHMxKGFysDwk"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col md:flex-row w-full max-w-container-max mx-auto overflow-hidden">
+<!-- Left Column (60%): Live Transcript Stream -->
+<section class="w-full md:w-[60%] flex flex-col h-full bg-surface-container-lowest border-r border-brand-border">
+<!-- Status Bar -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-brand-border shrink-0">
+<div class="flex items-center space-x-3">
+<div class="w-2.5 h-2.5 rounded-full bg-error recording-pulse"></div>
+<span class="font-body-md text-body-md font-medium text-on-surface">録音中 24:18</span>
+</div>
+<div class="flex items-center space-x-2 text-[#B98215] bg-[#FDF8EB] px-3 py-1 rounded-full border border-[#F3E3B9]">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-label-md text-label-md">文字起こしが遅延しています…</span>
+</div>
+</div>
+<!-- Transcript Area -->
+<div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 no-scrollbar flex flex-col justify-end">
+<!-- Speaker Turn: Candidate -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="flex items-center space-x-2 mb-1">
+<span class="font-label-md text-label-md text-brand-copper font-medium">候補者</span>
+<span class="font-label-md text-[10px] text-brand-text-muted">24:10</span>
+</div>
+<div class="bg-surface-container-lowest border border-brand-border p-4 rounded-lg rounded-tl-sm text-brand-navy font-body-md text-body-md leading-relaxed shadow-sm">
+                        前職では、主にマイクロサービスアーキテクチャの導入推進を担当していました。特に決済基盤の分離においては、非同期処理の設計に苦心しました。
+                    </div>
+</div>
+<!-- Speaker Turn: Interviewer -->
+<div class="flex flex-col items-end self-end max-w-[85%]">
+<div class="flex items-center space-x-2 mb-1">
+<span class="font-label-md text-[10px] text-brand-text-muted">24:12</span>
+<span class="font-label-md text-label-md text-brand-text-muted font-medium">面接官</span>
+</div>
+<div class="bg-brand-bg-muted border border-brand-border p-4 rounded-lg rounded-tr-sm text-brand-navy font-body-md text-body-md leading-relaxed">
+                        なるほど。その非同期処理の設計において、具体的にどのような技術スタックを選定されたのでしょうか？
+                    </div>
+</div>
+<!-- Speaker Turn: Candidate -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="flex items-center space-x-2 mb-1">
+<span class="font-label-md text-label-md text-brand-copper font-medium">候補者</span>
+<span class="font-label-md text-[10px] text-brand-text-muted">24:14</span>
+</div>
+<div class="bg-surface-container-lowest border border-brand-border p-4 rounded-lg rounded-tl-sm text-brand-navy font-body-md text-body-md leading-relaxed shadow-sm">
+                        Kafkaを用いたイベント駆動アーキテクチャを採用しました。当初はRabbitMQも検討したのですが、スループットの要件から...
+                    </div>
+</div>
+<!-- Speaker Turn: Unknown (Generating) -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="flex items-center space-x-2 mb-1">
+<span class="font-label-md text-label-md text-outline font-medium">話者未確定</span>
+<span class="font-label-md text-[10px] text-brand-text-muted">24:18</span>
+</div>
+<div class="border border-dashed border-outline-variant p-4 rounded-lg rounded-tl-sm text-brand-text-muted font-body-md text-body-md leading-relaxed bg-surface-container-lowest/50 animate-pulse">
+                        Kafkaを採用した決め手として、可用性の観点ではどのような議論がありましたか...
+                    </div>
+</div>
+</div>
+</section>
+<!-- Right Column (40%): AI Suggestions & Progress -->
+<section class="w-full md:w-[40%] flex flex-col h-full bg-brand-bg-muted p-6 space-y-6 overflow-y-auto no-scrollbar">
+<!-- 1. AI Suggestions -->
+<div class="flex flex-col space-y-3">
+<h3 class="font-label-md text-label-md text-brand-text-muted uppercase tracking-wider pl-1">次の質問候補</h3>
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-4 shimmer relative overflow-hidden group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-[#FDF8EB] text-brand-copper border border-[#F3E3B9] rounded text-[10px] font-medium">深掘り</span>
+</div>
+<p class="font-body-md text-body-md text-brand-navy">KafkaとRabbitMQの比較において、運用コストや学習コストの面ではどのように評価しましたか？</p>
+</div>
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-4 hover:border-outline-variant transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-brand-bg-muted text-brand-text-muted border border-brand-border rounded text-[10px] font-medium">メタ認知</span>
+</div>
+<p class="font-body-md text-body-md text-brand-navy">その選定を今振り返って、別の選択肢があったと感じる部分はありますか？</p>
+</div>
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-4 hover:border-outline-variant transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-secondary-container/30 text-on-secondary-container border border-secondary-container rounded text-[10px] font-medium">次のパターンへ</span>
+</div>
+<p class="font-body-md text-body-md text-brand-navy">アーキテクチャの話は理解しました。次に、チームのマネジメント経験について伺えますか？</p>
+</div>
+</div>
+<!-- 2. Pattern Progress -->
+<div class="flex flex-col space-y-3 flex-1">
+<div class="flex justify-between items-end pl-1">
+<h3 class="font-label-md text-label-md text-brand-text-muted uppercase tracking-wider">パターン進捗</h3>
+<span class="font-label-md text-label-md font-medium text-brand-navy">7 / 12 パターン消化</span>
+</div>
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-4 space-y-3">
+<!-- Pattern Row: Done -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="font-body-md text-[13px] text-brand-navy">D-01 経歴サマリ</span>
+</div>
+<div class="flex space-x-1">
+<div class="w-2 h-2 bg-brand-copper rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper/30 rounded-sm"></div>
+</div>
+</div>
+<div class="h-px bg-brand-border w-full"></div>
+<!-- Pattern Row: In Progress -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 rounded-full bg-brand-navy"></div>
+<span class="font-body-md text-[13px] text-brand-navy font-medium">D-03 アーキ選定</span>
+</div>
+<div class="flex space-x-1">
+<div class="w-2 h-2 bg-brand-copper rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper rounded-sm"></div>
+<div class="w-2 h-2 bg-brand-copper/30 rounded-sm"></div>
+</div>
+</div>
+<div class="h-px bg-brand-border w-full"></div>
+<!-- Pattern Row: Not Started -->
+<div class="flex items-center justify-between group opacity-60">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="font-body-md text-[13px] text-brand-text-muted">L-02 リーダーシップ</span>
+</div>
+<div class="flex space-x-1">
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+</div>
+</div>
+<!-- Pattern Row: Not Started -->
+<div class="flex items-center justify-between group opacity-60">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="font-body-md text-[13px] text-brand-text-muted">C-01 カルチャーフィット</span>
+</div>
+<div class="flex space-x-1">
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+<div class="w-2 h-2 bg-outline-variant/30 rounded-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Footer Actions -->
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-4 flex flex-col space-y-4 shrink-0 mt-auto">
+<div class="flex justify-between items-center text-brand-navy">
+<span class="font-body-md text-body-md">経過 24:18</span>
+<span class="font-body-md text-body-md">残り 5 パターン</span>
+</div>
+<div class="flex space-x-3 w-full">
+<button class="flex-1 py-2 px-4 border border-error text-error bg-transparent hover:bg-error/5 rounded text-[13px] font-medium transition-colors">
+                        中止
+                    </button>
+<button class="flex-1 py-2 px-4 border border-brand-navy text-brand-navy bg-transparent hover:bg-brand-navy/5 rounded text-[13px] font-medium transition-colors">
+                        面接を終了
+                    </button>
+</div>
+</div>
+</section>
+</main>
+</body></html>

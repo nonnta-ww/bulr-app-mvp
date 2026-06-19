@@ -10,7 +10,8 @@
  */
 
 import { useState } from 'react';
-import { Button } from '@bulr/ui';
+
+import { Icon } from '@/components/ui/icon';
 
 interface CopyUrlButtonProps {
   url: string;
@@ -30,13 +31,19 @@ export function CopyUrlButton({ url }: CopyUrlButtonProps) {
   }
 
   return (
-    <Button
+    <button
       type="button"
       onClick={handleCopy}
-      variant={copied ? 'default' : 'outline'}
-      className={copied ? 'bg-green-600 text-white hover:bg-green-700' : undefined}
+      title={copied ? 'コピーしました' : 'URLをコピー'}
+      aria-label={copied ? 'コピーしました' : 'URLをコピー'}
+      className={
+        'inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors ' +
+        (copied
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
+          : 'border-hairline text-muted hover:border-hairline-strong hover:bg-canvas hover:text-ink')
+      }
     >
-      {copied ? 'コピーしました ✓' : 'URLをコピー'}
-    </Button>
+      <Icon name={copied ? 'check' : 'content_copy'} size={16} />
+    </button>
   );
 }
