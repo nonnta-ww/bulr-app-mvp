@@ -10,7 +10,8 @@
  */
 
 import { useState, useTransition } from 'react';
-import { Button } from '@bulr/ui';
+
+import { Icon } from '@/components/ui/icon';
 import { createInvitation } from '../_actions/create-invitation';
 
 interface CreateInvitationButtonProps {
@@ -34,14 +35,15 @@ export function CreateInvitationButton({ openingId }: CreateInvitationButtonProp
 
   return (
     <div className="space-y-2">
-      <Button
+      <button
         type="button"
         onClick={handleCreate}
         disabled={isPending}
-        className="bg-blue-600 text-white hover:bg-blue-700"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-card px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas disabled:opacity-50"
       >
-        {isPending ? '発行中...' : '招待リンクを発行'}
-      </Button>
+        <Icon name="add_link" size={18} />
+        {isPending ? '発行中...' : '新規招待リンク作成'}
+      </button>
       {errorMessage && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
       )}

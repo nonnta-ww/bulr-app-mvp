@@ -9,6 +9,7 @@
  * Requirements: 3.1, 3.2, 3.3
  */
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
 import { createSession } from '@/lib/actions/create-session';
@@ -32,6 +33,7 @@ type FieldErrors = {
 export function CandidateForm() {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [consented, setConsented] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -77,8 +79,8 @@ export function CandidateForm() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50';
-  const labelClass = 'mb-1 block text-sm font-medium text-gray-700';
+    'w-full rounded-lg border border-hairline bg-canvas px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-navy focus:bg-card focus:ring-1 focus:ring-navy disabled:opacity-50';
+  const labelClass = 'mb-2 block text-sm font-medium text-body';
   const errorClass = 'mt-1 text-xs text-red-600';
 
   return (
@@ -93,7 +95,7 @@ export function CandidateForm() {
       {/* 氏名 */}
       <div>
         <label htmlFor="name" className={labelClass}>
-          氏名 <span className="text-red-500">*</span>
+          候補者名 <span className="text-copper">*</span>
         </label>
         <input
           id="name"
@@ -102,7 +104,7 @@ export function CandidateForm() {
           required
           disabled={isPending}
           className={inputClass}
-          placeholder="山田 太郎"
+          placeholder="例：佐藤 健太"
         />
         {fieldErrors.name && <p className={errorClass}>{fieldErrors.name}</p>}
       </div>
@@ -110,7 +112,7 @@ export function CandidateForm() {
       {/* 応募職種 */}
       <div>
         <label htmlFor="applied_role" className={labelClass}>
-          応募職種 <span className="text-red-500">*</span>
+          応募職種 <span className="text-copper">*</span>
         </label>
         <input
           id="applied_role"
@@ -119,7 +121,7 @@ export function CandidateForm() {
           required
           disabled={isPending}
           className={inputClass}
-          placeholder="バックエンドエンジニア"
+          placeholder="例：バックエンドエンジニア"
         />
         {fieldErrors.applied_role && <p className={errorClass}>{fieldErrors.applied_role}</p>}
       </div>
@@ -127,17 +129,20 @@ export function CandidateForm() {
       {/* 経歴サマリー */}
       <div>
         <label htmlFor="background_summary" className={labelClass}>
-          経歴サマリー <span className="text-red-500">*</span>
+          経歴サマリー <span className="text-copper">*</span>
         </label>
         <textarea
           id="background_summary"
           name="background_summary"
           required
           disabled={isPending}
-          rows={5}
-          className={inputClass}
+          rows={6}
+          className={`${inputClass} resize-y leading-relaxed`}
           placeholder="これまでの経験・スキルを簡潔にまとめてください（5000文字以内）"
         />
+        <p className="mt-1.5 text-xs text-muted">
+          面接の文脈になる経歴を簡潔に。bulr が優先パターンの選定に使います。
+        </p>
         {fieldErrors.background_summary && (
           <p className={errorClass}>{fieldErrors.background_summary}</p>
         )}
@@ -146,7 +151,7 @@ export function CandidateForm() {
       {/* メールアドレス（任意） */}
       <div>
         <label htmlFor="email" className={labelClass}>
-          メールアドレス <span className="text-gray-400 text-xs">（任意）</span>
+          メールアドレス <span className="text-xs text-muted">（任意）</span>
         </label>
         <input
           id="email"
@@ -154,19 +159,46 @@ export function CandidateForm() {
           type="email"
           disabled={isPending}
           className={inputClass}
-          placeholder="candidate@example.com"
+          placeholder="例：candidate@example.com"
         />
         {fieldErrors.email && <p className={errorClass}>{fieldErrors.email}</p>}
       </div>
 
-      {/* 送信ボタン */}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-      >
-        {isPending ? '作成中...' : '面接セッションを開始'}
-      </button>
+      {/* 同意確認 */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-hairline bg-canvas px-4 py-3">
+        <input
+          type="checkbox"
+          checked={consented}
+          onChange={(e) => setConsented(e.target.checked)}
+          disabled={isPending}
+          className="mt-0.5 h-4 w-4 rounded border-hairline-strong accent-navy"
+        />
+        <span className="text-sm">
+          <span className="block font-medium text-ink">
+            候補者から録音・分析の同意を取得済み
+          </span>
+          <span className="mt-0.5 block text-xs text-muted">
+            同意が取れていない場合はセッションを作成しないでください。
+          </span>
+        </span>
+      </label>
+
+      {/* フッターアクション */}
+      <div className="-mx-8 flex items-center justify-end gap-3 border-t border-hairline px-8 pt-6 md:-mx-10 md:px-10">
+        <Link
+          href="/interviews"
+          className="rounded-lg px-5 py-2.5 text-sm font-medium text-body transition-colors hover:bg-canvas"
+        >
+          キャンセル
+        </Link>
+        <button
+          type="submit"
+          disabled={isPending || !consented}
+          className="rounded-lg bg-navy px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy-soft disabled:opacity-50"
+        >
+          {isPending ? '作成中...' : 'セッションを作成'}
+        </button>
+      </div>
     </form>
   );
 }

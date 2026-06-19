@@ -22,25 +22,18 @@ interface SessionHeaderProps {
 // ---------------------------------------------------------------------------
 
 export function SessionHeader({ session }: SessionHeaderProps) {
-  if (session.kind === 'stage2') {
-    return (
-      <header className="rounded-xl bg-white p-6 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {session.candidateProfile.displayName}
-          </h1>
-          <p className="text-sm text-gray-500">{session.opening.title}</p>
-        </div>
-      </header>
-    );
-  }
+  const name =
+    session.kind === 'stage2' ? session.candidateProfile.displayName : session.candidate.name;
+  const role = session.kind === 'stage2' ? session.opening.title : session.session.role;
 
-  // stage1: candidate.name + session.role（applied_role 相当）
   return (
-    <header className="rounded-xl bg-white p-6 shadow-sm">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-gray-900">{session.candidate.name}</h1>
-        <p className="text-sm text-gray-500">{session.session.role}</p>
+    <header className="flex items-center gap-4 rounded-xl border border-hairline bg-card p-6">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-nav-active text-lg font-medium text-nav-active-ink">
+        {name.charAt(0)}
+      </span>
+      <div className="space-y-0.5">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">{name}</h1>
+        <p className="text-sm text-body">{role}</p>
       </div>
     </header>
   );

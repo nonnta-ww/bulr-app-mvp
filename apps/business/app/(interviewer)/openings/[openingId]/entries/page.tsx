@@ -18,25 +18,10 @@ import { and, eq } from 'drizzle-orm';
 import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { db, getEntriesByOpeningId } from '@bulr/db';
 import { opening } from '@bulr/db/schema';
-import type { EntryStatus } from '@bulr/db/schema';
 
-// ---------------------------------------------------------------------------
-// ステータスラベル・バッジマッピング
-// ---------------------------------------------------------------------------
-
-const ENTRY_STATUS_LABEL: Record<EntryStatus, string> = {
-  submitted: '提出済み',
-  reviewed: '確認済み',
-  progressing: '進行中',
-  rejected: '不採用',
-};
-
-const ENTRY_STATUS_BADGE: Record<EntryStatus, string> = {
-  submitted: 'bg-blue-100 text-blue-700',
-  reviewed: 'bg-green-100 text-green-700',
-  progressing: 'bg-yellow-100 text-yellow-700',
-  rejected: 'bg-red-100 text-red-600',
-};
+import { Badge } from '@/components/ui/badge';
+import { Icon } from '@/components/ui/icon';
+import { ENTRY_STATUS_LABEL, ENTRY_STATUS_TONE } from '@/lib/status';
 
 // ---------------------------------------------------------------------------
 // 日時フォーマット (Asia/Tokyo)
@@ -91,76 +76,76 @@ export default async function BusinessEntriesListPage({ params }: PageProps) {
   const entries = await getEntriesByOpeningId(openingId);
 
   return (
-    <main className="bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <main className="px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-[1280px]">
         {/* パンくず */}
-        <nav className="text-sm text-gray-500">
-          <Link href="/openings" className="hover:text-blue-600 hover:underline">
-            募集一覧
+        <nav className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <Link href="/openings" className="hover:text-ink">
+            募集
           </Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={`/openings/${openingId}`}
-            className="hover:text-blue-600 hover:underline"
-          >
+          <span className="text-hairline-strong">/</span>
+          <Link href={`/openings/${openingId}`} className="hover:text-ink">
             {ownedOpening.title}
           </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">エントリー一覧</span>
+          <span className="text-hairline-strong">/</span>
+          <span className="text-ink">エントリー</span>
         </nav>
 
         {/* ヘッダ */}
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            エントリー一覧
-            <span className="ml-2 text-sm font-normal text-gray-500">
-              — {ownedOpening.title}
-            </span>
-          </h1>
+        <div className="mb-8">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-ink">エントリー一覧</h1>
+          <p className="text-sm text-body">
+            {ownedOpening.title} への応募者を確認・管理します。
+          </p>
         </div>
 
         {/* エントリーテーブル */}
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          {entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-              <p className="text-sm text-gray-500">まだエントリーはありません</p>
-              <p className="text-xs text-gray-400">
-                候補者が招待リンクからエントリーを確定すると、ここに表示されます。
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              <table className="w-full border-collapse text-sm">
+        {entries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-hairline bg-card py-16 text-center">
+            <p className="text-sm text-body">まだエントリーはありません</p>
+            <p className="text-xs text-muted">
+              候補者が招待リンクからエントリーを確定すると、ここに表示されます。
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                    <th className="px-4 py-3 font-medium text-gray-600">候補者名</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">ステータス</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">エントリー日時</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">操作</th>
+                  <tr className="border-b border-hairline bg-sidebar text-[11px] font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-4 font-medium">候補者名</th>
+                    <th className="px-6 py-4 font-medium">ステータス</th>
+                    <th className="px-6 py-4 font-medium">エントリー日時</th>
+                    <th className="w-24 px-6 py-4 text-right font-medium">アクション</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-hairline text-sm">
                   {entries.map(({ entry, candidateProfile }) => (
-                    <tr key={entry.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {candidateProfile.displayName}
+                    <tr key={entry.id} className="transition-colors hover:bg-canvas">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-ink">
+                            {candidateProfile.displayName.charAt(0)}
+                          </span>
+                          <span className="font-medium text-ink">
+                            {candidateProfile.displayName}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${ENTRY_STATUS_BADGE[entry.status]}`}
-                        >
+                      <td className="px-6 py-4">
+                        <Badge tone={ENTRY_STATUS_TONE[entry.status]}>
                           {ENTRY_STATUS_LABEL[entry.status]}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-6 py-4 tabular-nums text-body">
                         {formatDateTime(entry.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-right">
                         <Link
                           href={`/openings/${openingId}/entries/${entry.id}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                          className="text-sm font-medium text-copper hover:underline"
                         >
-                          詳細を見る
+                          詳細
                         </Link>
                       </td>
                     </tr>
@@ -168,18 +153,33 @@ export default async function BusinessEntriesListPage({ params }: PageProps) {
                 </tbody>
               </table>
             </div>
-          )}
-        </section>
 
-        {/* 戻りリンク */}
-        <div>
-          <Link
-            href={`/openings/${openingId}`}
-            className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-          >
-            ← {ownedOpening.title} に戻る
-          </Link>
-        </div>
+            {/* フッター */}
+            <div className="flex items-center justify-between border-t border-hairline px-6 py-4">
+              <span className="text-sm text-body">
+                全{entries.length}件中 1-{entries.length}件を表示
+              </span>
+              <div className="flex items-center gap-1 text-muted">
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-canvas disabled:opacity-40"
+                  aria-label="前のページ"
+                >
+                  <Icon name="chevron_left" size={20} />
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-canvas disabled:opacity-40"
+                  aria-label="次のページ"
+                >
+                  <Icon name="chevron_right" size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

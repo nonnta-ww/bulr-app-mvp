@@ -270,19 +270,19 @@ export function LiveCaptureRunner({
           {/* Req 3.5 制御要素 2/3: 面接終了 */}
           <button
             type="button"
-            onClick={handleFinish}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            onClick={handleAbort}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 px-5 py-2.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
           >
-            面接終了
+            中止
           </button>
 
           {/* Req 3.5 制御要素 3/3: 中止 */}
           <button
             type="button"
-            onClick={handleAbort}
-            className="inline-flex items-center justify-center rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            onClick={handleFinish}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy-soft focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-2"
           >
-            中止
+            面接終了
           </button>
         </div>
       </div>
@@ -294,8 +294,11 @@ export function LiveCaptureRunner({
   // -------------------------------------------------------------------------
 
   return (
-    <div className="live-capture-runner" data-capture-status={captureStatus}>
-      <p>
+    <div
+      className="live-capture-runner rounded-xl border border-hairline bg-card p-8 text-center"
+      data-capture-status={captureStatus}
+    >
+      <p className="text-sm text-body">
         {captureStatus === 'stopped' && '面接が終了しました。'}
         {captureStatus === 'aborted' && 'キャプチャを中止しました。'}
       </p>

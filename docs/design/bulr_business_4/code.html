@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business - 面接レポート</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e5e2e4",
+                        "tertiary": "#000000",
+                        "tertiary-container": "#271901",
+                        "secondary-fixed": "#d9e2fb",
+                        "on-background": "#1c1b1d",
+                        "inverse-primary": "#c1c5e0",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "outline": "#77767d",
+                        "primary-container": "#161a2f",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#fadfb5",
+                        "surface-tint": "#595d75",
+                        "primary-fixed": "#dde1fd",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-fixed": "#271901",
+                        "on-surface-variant": "#46464d",
+                        "on-tertiary-container": "#97815d",
+                        "surface-bright": "#fcf8fa",
+                        "on-secondary-fixed": "#121b2d",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1c1b1d",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "inverse-surface": "#313032",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fcf8fa",
+                        "primary": "#000000",
+                        "surface-container-high": "#eae7e9",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "on-primary-fixed-variant": "#41465c",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "background": "#fcf8fa",
+                        "secondary": "#555e73",
+                        "outline-variant": "#c7c5cd",
+                        "surface-container": "#f0edef",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "on-primary-container": "#7e839c",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#d9e2fb",
+                        "inverse-on-surface": "#f3f0f2",
+                        "surface-container-highest": "#e5e2e4",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#5b6479",
+                        "on-primary-fixed": "#161a2f",
+                        "surface-container-low": "#f6f3f5",
+                        "brand-navy": "#11162A",
+                        "brand-copper": "#C9803B",
+                        "brand-border": "#E6E9F0",
+                        "brand-muted": "#5A6378",
+                        "brand-red": "#D33C3C",
+                        "brand-green": "#2E7D32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg": ["Noto Sans JP", "sans-serif"],
+                        "display-lg": ["Noto Sans JP", "sans-serif"],
+                        "label-md": ["Noto Sans JP", "sans-serif"],
+                        "body-md": ["Noto Sans JP", "sans-serif"],
+                        "body-lg": ["Noto Sans JP", "sans-serif"],
+                        "headline-sm": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg-mobile": ["Noto Sans JP", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="bg-surface border-r border-outline-variant h-screen w-64 flex flex-col fixed left-0 top-0 z-40">
+<div class="flex flex-col justify-between py-margin-desktop px-gutter h-full">
+<div>
+<div class="mb-10">
+<h1 class="font-display-lg text-display-lg font-bold text-primary">bulr</h1>
+<span class="font-label-md text-label-md text-on-surface-variant block -mt-2">business</span>
+</div>
+<ul class="space-y-2">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-primary font-bold border-r-2 border-primary hover:bg-surface-container transition-colors opacity-80 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">video_chat</span>
+<span class="font-label-md text-label-md">面接セッション</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="font-label-md text-label-md">募集</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">設定</span>
+</a>
+</li>
+</ul>
+</div>
+<div>
+<ul>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">ログアウト</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar (Minimal for interior page) -->
+<header class="h-16 border-b border-brand-border bg-surface-container-lowest flex items-center justify-between px-margin-desktop sticky top-0 z-30">
+<div class="flex items-center gap-2 text-brand-muted font-body-md text-body-md">
+<a class="hover:text-brand-navy transition-colors" href="#">面接セッション</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-brand-navy transition-colors" href="#">佐藤 健太</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-brand-navy font-medium">レポート</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">help_outline</span></button>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 overflow-y-auto bg-[#F7F8FA] p-margin-desktop space-y-8">
+<div class="max-w-container-max mx-auto w-full space-y-8">
+<!-- 1. Page Header & 2. Info Strip -->
+<div>
+<div class="flex items-baseline justify-between mb-4">
+<h2 class="font-headline-lg text-headline-lg text-brand-navy">面接レポート</h2>
+<span class="font-body-md text-body-md text-brand-muted">生成日時：2026/06/15 14:32</span>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-lowest border border-brand-border rounded-lg px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-muted">person</span>
+<span class="font-headline-sm text-headline-sm font-bold text-brand-navy">佐藤 健太</span>
+</div>
+<div class="h-4 w-px bg-brand-border"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-muted">badge</span>
+<span class="font-body-md text-body-md text-brand-navy">バックエンドエンジニア（決済基盤）</span>
+</div>
+<div class="h-4 w-px bg-brand-border"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-muted">apartment</span>
+<span class="font-body-md text-body-md text-brand-muted">bulr Inc.</span>
+</div>
+</div>
+</div>
+<!-- 3. Main White Card -->
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg overflow-hidden">
+<!-- STICKY BANNER -->
+<div class="p-6 border-b border-brand-border bg-surface-bright flex flex-col md:flex-row gap-8 items-start md:items-stretch">
+<div class="flex-1 space-y-4 w-full">
+<h3 class="font-headline-sm text-headline-sm text-brand-navy font-bold">8 パターン到達 / 4 パターン詰まり・未到達</h3>
+<!-- Dimension Bars -->
+<div class="space-y-3 mt-4">
+<!-- True/False (真贋) -->
+<div class="flex items-center gap-4">
+<span class="w-16 font-label-md text-label-md text-brand-muted text-right">真贋</span>
+<div class="flex-1 h-2 bg-surface-container rounded-full relative">
+<div class="absolute left-1/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-2/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="h-full bg-brand-copper rounded-full" style="width: 80%;"></div>
+</div>
+<span class="w-8 font-label-md text-label-md text-brand-navy font-medium">2.4</span>
+</div>
+<!-- Judgment (判断力) -->
+<div class="flex items-center gap-4">
+<span class="w-16 font-label-md text-label-md text-brand-muted text-right">判断力</span>
+<div class="flex-1 h-2 bg-surface-container rounded-full relative">
+<div class="absolute left-1/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-2/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="h-full bg-brand-copper rounded-full" style="width: 65%;"></div>
+</div>
+<span class="w-8 font-label-md text-label-md text-brand-navy font-medium">1.9</span>
+</div>
+<!-- Range (射程) - Scale 1-5 -->
+<div class="flex items-center gap-4">
+<span class="w-16 font-label-md text-label-md text-brand-muted text-right">射程</span>
+<div class="flex-1 h-2 bg-surface-container rounded-full relative">
+<div class="absolute left-1/5 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-2/5 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-3/5 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-4/5 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="h-full bg-brand-copper rounded-full" style="width: 70%;"></div>
+</div>
+<span class="w-8 font-label-md text-label-md text-brand-navy font-medium">3.5</span>
+</div>
+<!-- Metacognition (メタ認知) -->
+<div class="flex items-center gap-4">
+<span class="w-16 font-label-md text-label-md text-brand-muted text-right">メタ認知</span>
+<div class="flex-1 h-2 bg-surface-container rounded-full relative">
+<div class="absolute left-1/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-2/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="h-full bg-brand-copper rounded-full" style="width: 50%;"></div>
+</div>
+<span class="w-8 font-label-md text-label-md text-brand-navy font-medium">1.5</span>
+</div>
+<!-- AI Utilization (AI活用) -->
+<div class="flex items-center gap-4">
+<span class="w-16 font-label-md text-label-md text-brand-muted text-right">AI活用</span>
+<div class="flex-1 h-2 bg-surface-container rounded-full relative">
+<div class="absolute left-1/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="absolute left-2/3 top-0 bottom-0 w-px bg-brand-border z-10"></div>
+<div class="h-full bg-brand-copper rounded-full" style="width: 90%;"></div>
+</div>
+<span class="w-8 font-label-md text-label-md text-brand-navy font-medium">2.7</span>
+</div>
+</div>
+</div>
+<!-- Right Rail -->
+<div class="w-full md:w-64 flex flex-col justify-between border-l-0 md:border-l border-brand-border pt-4 md:pt-0 md:pl-8">
+<div class="space-y-2">
+<div class="flex justify-between items-center text-brand-red">
+<span class="font-body-md text-body-md">詰まり</span>
+<span class="font-headline-sm text-headline-sm font-bold">2 件</span>
+</div>
+<div class="flex justify-between items-center text-brand-muted">
+<span class="font-body-md text-body-md">経験なし</span>
+<span class="font-headline-sm text-headline-sm font-bold">1 件</span>
+</div>
+<div class="flex justify-between items-center text-brand-muted">
+<span class="font-body-md text-body-md">未深掘り</span>
+<span class="font-headline-sm text-headline-sm font-bold">1 件</span>
+</div>
+<div class="flex justify-between items-center text-brand-muted">
+<span class="font-body-md text-body-md">フリー質問</span>
+<span class="font-headline-sm text-headline-sm font-bold">3 件</span>
+</div>
+</div>
+<p class="font-label-md text-label-md text-outline mt-4 text-right">※ベンチマーク比は参考値です</p>
+</div>
+</div>
+<!-- Tab Bar -->
+<div class="border-b border-brand-border px-6 flex gap-8">
+<button class="py-4 font-headline-sm text-headline-sm text-brand-navy font-bold border-b-2 border-brand-navy">観察</button>
+<button class="py-4 font-body-lg text-body-lg text-brand-muted hover:text-brand-navy transition-colors">カバレッジ</button>
+<button class="py-4 font-body-lg text-body-lg text-brand-muted hover:text-brand-navy transition-colors">全文トランスクリプト</button>
+</div>
+<!-- "観察" Tab Content -->
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Column "詰まり・未到達" -->
+<div class="border-t-2 border-brand-copper pt-4">
+<h4 class="font-headline-sm text-headline-sm text-brand-navy mb-4">詰まり・未到達</h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-muted font-label-md text-label-md bg-surface-bright">D-03 アーキ選定</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-muted font-label-md text-label-md bg-surface-bright">P-02 クエリ性能</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-muted font-label-md text-label-md bg-surface-bright">S-01 認証基盤</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-muted font-label-md text-label-md bg-surface-bright">O-04 障害対応</span>
+</div>
+</div>
+<!-- Column "到達" -->
+<div class="border-t-2 border-brand-green pt-4">
+<h4 class="font-headline-sm text-headline-sm text-brand-navy mb-4">到達</h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">C-01 コーディング</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">C-02 コードレビュー</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">D-01 DB設計</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">A-02 API設計</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">T-01 単体テスト</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">C-05 CI/CD</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">M-01 監視</span>
+<span class="px-3 py-1 rounded-full border border-brand-border text-brand-navy font-label-md text-label-md bg-surface-container-low">T-03 パフォーマンステスト</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. AI Summary Card -->
+<div class="bg-surface-container-lowest border border-brand-border rounded-lg p-8">
+<div class="prose prose-slate max-w-none font-body-md text-body-md text-brand-navy space-y-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-brand-navy border-b border-brand-border pb-2 mb-4">判断力に関する観察</h3>
+<ul class="list-disc pl-5 space-y-2">
+<li>決済システムのトランザクション管理において、楽観的ロックと悲観的ロックの使い分けについて具体的なユースケースを挙げて説明できました。（到達：D-01 DB設計）</li>
+<li>しかし、高負荷時のデッドロック回避策については、一般的なタイムアウト設定以上の具体的なアーキテクチャ提案（例：キューイングによる直列化）には至りませんでした。（詰まり：D-03 アーキ選定）</li>
+<li>既存コードのレビュー課題では、N+1問題を即座に発見し、適切なEager Loadingの実装方針を提示しました。（到達：C-02 コードレビュー）</li>
+</ul>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-brand-navy border-b border-brand-border pb-2 mb-4">技術的射程について</h3>
+<ul class="list-disc pl-5 space-y-2">
+<li>バックエンドの実装からCI/CDパイプラインの構築まで、一連のデリバリープロセスを自立して遂行できる経験が確認できました。</li>
+<li>インフラストラクチャ・アズ・コード（IaC）を用いた環境構築の経験は豊富ですが、大規模なトラフィックを捌くためのキャッシュ戦略（Redis等の活用）については、基礎的な知識に留まっています。（未深掘り：P-02 クエリ性能）</li>
+<li>AIツールの活用（Copilot等）に関しては、定型的なボイラープレート生成だけでなく、複雑なロジックのリファクタリング提案の壁打ち相手として日常的に使用していることが伺えます。（到達：AI活用）</li>
+</ul>
+</div>
+</div>
+<div class="mt-8 pt-4 border-t border-brand-border">
+<p class="font-label-md text-label-md text-brand-muted text-center">
+                            bulr は観察と根拠を提示します。採用判断は面接官が行います。
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

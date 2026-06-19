@@ -15,6 +15,7 @@
 import { useState } from 'react';
 
 import { signIn, emailSchema } from '@bulr/auth/client';
+import { Icon } from '@/components/ui/icon';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -71,43 +72,70 @@ export function SignInForm() {
     }
   }
 
+  // メール送信完了状態（business_8）
   if (status === 'success') {
     return (
-      <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-800">
-        メールを送信しました。受信ボックス（迷惑メールフォルダも）をご確認ください。
+      <div className="rounded-2xl border border-hairline bg-card p-8 shadow-sm">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-canvas text-ink">
+          <Icon name="mail" size={28} />
+        </div>
+        <h1 className="mb-4 text-center text-xl font-bold text-ink">メールを確認してください</h1>
+        <p className="text-center text-sm leading-relaxed text-body">
+          <span className="font-medium text-ink">{email}</span> 宛にログイン用リンクを送信しました。
+          <br />
+          メール内のリンクをクリックしてログインを完了してください。
+        </p>
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => setStatus('idle')}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-copper hover:underline"
+          >
+            メールが届かない場合はこちら
+            <Icon name="arrow_forward" size={18} />
+          </button>
+        </div>
       </div>
     );
   }
 
+  // 入力フォーム状態（business_9）
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="mb-4">
-        <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-          メールアドレス
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          required
+    <div className="rounded-2xl border border-hairline bg-card p-8 shadow-sm">
+      <h1 className="mb-8 text-center text-2xl font-bold text-ink">bulr にサインイン</h1>
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="mb-5">
+          <label htmlFor="email" className="mb-2 block text-sm font-medium text-body">
+            メールアドレス
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.co.jp"
+            required
+            disabled={status === 'submitting'}
+            className="w-full rounded-lg border border-hairline bg-canvas px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-navy focus:bg-card focus:ring-1 focus:ring-navy disabled:opacity-50"
+          />
+        </div>
+
+        {status === 'error' && errorMessage && (
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
+        )}
+
+        <button
+          type="submit"
           disabled={status === 'submitting'}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
-        />
-      </div>
+          className="w-full rounded-lg bg-navy px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-navy-soft focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-2 disabled:opacity-50"
+        >
+          {status === 'submitting' ? '送信中...' : 'ログインリンクを送信'}
+        </button>
 
-      {status === 'error' && errorMessage && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
-      )}
-
-      <button
-        type="submit"
-        disabled={status === 'submitting'}
-        className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-      >
-        {status === 'submitting' ? '送信中...' : 'Magic Link を送信'}
-      </button>
-    </form>
+        <p className="mt-5 text-center text-sm leading-relaxed text-muted">
+          入力したメールアドレスにログイン用リンクをお送りします（有効期限15分）
+        </p>
+      </form>
+    </div>
   );
 }

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr business サインイン - メール確認</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#5b6479",
+                        "primary": "#000000",
+                        "outline": "#77767d",
+                        "on-secondary-fixed-variant": "#3e475b",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#eae7e9",
+                        "primary-fixed-dim": "#c1c5e0",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#271901",
+                        "surface-bright": "#fcf8fa",
+                        "outline-variant": "#c7c5cd",
+                        "tertiary-container": "#271901",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#fadfb5",
+                        "inverse-on-surface": "#f3f0f2",
+                        "on-tertiary-fixed-variant": "#564425",
+                        "surface": "#fcf8fa",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#161a2f",
+                        "secondary-fixed": "#d9e2fb",
+                        "background": "#fcf8fa",
+                        "tertiary-fixed-dim": "#ddc39b",
+                        "tertiary": "#000000",
+                        "on-surface-variant": "#46464d",
+                        "on-error": "#ffffff",
+                        "secondary": "#555e73",
+                        "surface-container": "#f0edef",
+                        "secondary-fixed-dim": "#bdc6de",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d9e2fb",
+                        "surface-container-highest": "#e5e2e4",
+                        "surface-tint": "#595d75",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-container": "#97815d",
+                        "on-background": "#1c1b1d",
+                        "primary-container": "#161a2f",
+                        "on-primary-fixed-variant": "#41465c",
+                        "on-surface": "#1c1b1d",
+                        "primary-fixed": "#dde1fd",
+                        "on-secondary-fixed": "#121b2d",
+                        "surface-variant": "#e5e2e4",
+                        "on-primary-container": "#7e839c",
+                        "surface-container-low": "#f6f3f5",
+                        "inverse-surface": "#313032",
+                        "inverse-primary": "#c1c5e0",
+                        "brand-navy": "#11162A",
+                        "brand-gray": "#5A6378",
+                        "brand-copper": "#C9803B",
+                        "brand-border": "#E6E9F0",
+                        "brand-bg": "#F7F8FA"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "card": "8px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg-mobile": ["Noto Sans JP", "sans-serif"],
+                        "headline-sm": ["Noto Sans JP", "sans-serif"],
+                        "headline-lg": ["Noto Sans JP", "sans-serif"],
+                        "body-md": ["Noto Sans JP", "sans-serif"],
+                        "label-md": ["Noto Sans JP", "sans-serif"],
+                        "headline-md": ["Noto Sans JP", "sans-serif"],
+                        "body-lg": ["Noto Sans JP", "sans-serif"],
+                        "sans": ["Noto Sans JP", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F7F8FA; /* Level 0 Background */
+            font-family: 'Noto Sans JP', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+<!-- Container for centering and max width -->
+<div class="w-full max-w-[400px] flex flex-col items-center justify-center space-y-10">
+<!-- TopNavBar / Wordmark -->
+<!-- Suppressed full nav shell as this is a linear/transactional screen -->
+<header class="w-full flex justify-center items-center">
+<span class="font-display-lg text-display-lg font-black tracking-tight text-brand-navy">
+                bulr
+            </span>
+</header>
+<!-- Main Content Card (Level 1 Surface) -->
+<main class="w-full bg-white border border-brand-border rounded-card p-[32px] md:p-[40px] flex flex-col items-center text-center space-y-6">
+<!-- Icon -->
+<div class="flex items-center justify-center w-16 h-16 rounded-full bg-[#F7F8FA] border border-brand-border mb-2">
+<span aria-hidden="true" class="material-symbols-outlined text-[32px] text-brand-navy" data-icon="mail">mail</span>
+</div>
+<!-- Heading -->
+<h1 class="font-headline-sm text-headline-sm text-brand-navy mb-2">
+                メールを確認してください
+            </h1>
+<!-- Descriptive Text -->
+<p class="font-body-md text-body-md text-brand-gray">
+<span class="font-medium text-brand-navy">you@company.co.jp</span> 宛にログイン用リンクを送信しました。<br class="hidden sm:block"/>メール内のリンクをクリックしてログインを完了してください。
+            </p>
+<!-- Secondary Action -->
+<div class="pt-6 w-full">
+<a class="font-label-md text-label-md text-brand-copper hover:opacity-80 transition-opacity inline-flex items-center gap-1 group" href="#">
+                    メールが届かない場合はこちら
+                    <span aria-hidden="true" class="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+</main>
+</div>
+</body></html>

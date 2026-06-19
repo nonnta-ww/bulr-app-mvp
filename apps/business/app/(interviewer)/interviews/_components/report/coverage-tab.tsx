@@ -46,14 +46,14 @@ export function CoverageTab({ patterns, allPatterns, onSelectPattern }: Props) {
         return (
           <div key={cat}>
             <div className="mb-1 grid grid-cols-[120px_1fr_auto] items-center gap-2 text-xs">
-              <span className="font-bold text-gray-900">{CATEGORY_LABEL[cat]}</span>
-              <div className="h-1 overflow-hidden rounded bg-gray-100">
+              <span className="font-bold text-ink">{CATEGORY_LABEL[cat]}</span>
+              <div className="h-1 overflow-hidden rounded bg-canvas">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400"
+                  className="h-full bg-gradient-to-r from-copper to-[#e2c596]"
                   style={{ width: allInCat.length ? `${(reachedCount / allInCat.length) * 100}%` : '0%' }}
                 />
               </div>
-              <span className="text-gray-500">
+              <span className="text-muted">
                 {reachedCount}/{allInCat.length} 到達
                 {stuckCount > 0 ? ` + ${stuckCount} 詰まり` : ''}
               </span>
@@ -79,15 +79,15 @@ export function CoverageTab({ patterns, allPatterns, onSelectPattern }: Props) {
 
 function Legend() {
   const items = [
-    { color: 'bg-gray-100', label: '未到達' },
-    { color: 'bg-gray-400', label: '詰まり' },
-    { color: 'bg-red-300', label: 'L1' },
-    { color: 'bg-amber-200', label: 'L2' },
-    { color: 'bg-emerald-300', label: 'L3' },
-    { color: 'bg-emerald-500', label: 'L4' },
+    { color: 'bg-canvas border border-hairline', label: '未到達' },
+    { color: 'bg-slate-400', label: '詰まり' },
+    { color: 'bg-[#f0e3cf]', label: 'L1' },
+    { color: 'bg-[#e2c596]', label: 'L2' },
+    { color: 'bg-[#d09a55]', label: 'L3' },
+    { color: 'bg-[#a8702f]', label: 'L4' },
   ];
   return (
-    <div className="flex justify-center gap-3 border-t border-gray-100 pt-2 text-[10px] text-gray-500">
+    <div className="flex justify-center gap-3 border-t border-hairline pt-2 text-[10px] text-muted">
       {items.map((it) => (
         <span key={it.label} className="flex items-center gap-1">
           <span className={`inline-block h-2.5 w-2.5 rounded ${it.color}`} />

@@ -81,7 +81,7 @@ export function AppShell({ email, initialCollapsed, children }: Props) {
   const overlayExpanded = isMobile && mobileOpen;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-canvas">
       <Sidebar collapsed={baseCollapsed} onToggle={handleToggle} email={email} />
       {overlayExpanded && (
         <>
@@ -90,7 +90,7 @@ export function AppShell({ email, initialCollapsed, children }: Props) {
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl">
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar shadow-xl">
             <Sidebar collapsed={false} onToggle={handleToggle} email={email} />
           </div>
         </>

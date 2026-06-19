@@ -51,9 +51,16 @@ const COVERAGE_STATUS_LABELS: Record<PatternCoverageSummary['status'], string> =
 
 /** カバレッジステータス → バッジ CSS クラス（agenda-pattern-row のカラーパレット踏襲） */
 const COVERAGE_STATUS_BADGE_CLASSES: Record<PatternCoverageSummary['status'], string> = {
-  covered: 'bg-green-100 text-green-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  not_started: 'bg-gray-100 text-gray-600',
+  covered: 'bg-emerald-50 text-emerald-700',
+  in_progress: 'bg-nav-active text-nav-active-ink',
+  not_started: 'bg-gray-100 text-gray-500',
+} as const;
+
+/** カバレッジステータス → 行頭ドットの色 */
+const COVERAGE_STATUS_DOT_CLASSES: Record<PatternCoverageSummary['status'], string> = {
+  covered: 'bg-emerald-500',
+  in_progress: 'bg-navy',
+  not_started: 'bg-hairline-strong',
 } as const;
 
 /** 候補 intent → 表示ラベル（next-question-picker の intentLabel と同一） */
@@ -65,9 +72,9 @@ const INTENT_LABELS: Record<string, string> = {
 
 /** 候補 intent → バッジ CSS クラス（next-question-picker の intentBadge と同一） */
 const INTENT_BADGE_CLASSES: Record<string, string> = {
-  deep_dive: 'bg-violet-100 text-violet-800',
-  meta_cognition: 'bg-pink-100 text-pink-800',
-  next_pattern: 'bg-blue-100 text-blue-800',
+  deep_dive: 'bg-copper-soft text-copper',
+  meta_cognition: 'bg-violet-100 text-violet-700',
+  next_pattern: 'bg-nav-active text-nav-active-ink',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -140,53 +147,91 @@ export function SidePanel({
   analysisCapped,
 }: SidePanelProps) {
   return (
-    <aside className="side-panel flex flex-col gap-4 p-3" aria-label="面接サイドパネル">
-
-      {/* ── ヘッダー：経過時間・残りパターン数（Req 3.8） ─────────────────── */}
-      <div className="side-panel__header flex items-center justify-between text-sm text-gray-600">
-        <span className="side-panel__elapsed font-mono" aria-label="経過時間">
-          {formatElapsedTime(elapsedSeconds)}
-        </span>
-        <span
-          className="side-panel__remaining text-xs text-gray-500"
-          data-testid="remaining-patterns"
-          aria-label="残り計画パターン数"
-        >
-          残り {remainingPlannedPatterns} パターン
-        </span>
-      </div>
-
+    <aside className="side-panel flex flex-col gap-4" aria-label="面接サイドパネル">
       {/* ── 解析上限到達通知（Req 4.5） ───────────────────────────────────── */}
       {analysisCapped && (
         <div
           role="status"
-          className="side-panel__analysis-cap-notice rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          className="side-panel__analysis-cap-notice rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700"
         >
           解析上限に達しました。録音・転写は継続、解析は停止しています。
         </div>
       )}
 
+      {/* ── 質問候補（読み取り専用・操作レス）（Req 3.2） ────────────────── */}
+      <section
+        className="side-panel__proposals rounded-xl border border-hairline bg-card p-4"
+        aria-label="次の質問候補"
+        data-testid="proposal-section"
+      >
+        <h4 className="mb-3 text-sm font-semibold text-ink">次の質問候補</h4>
+
+        {currentProposal === null ? (
+          /* currentProposal が null の場合: 準備中状態（Req 3.2） */
+          <p className="side-panel__proposals-empty text-xs text-muted">準備中...</p>
+        ) : (
+          /* 候補 3 件の読み取り専用一覧 — ボタン・選択操作は一切含まない（Req 3.5） */
+          <ol className="side-panel__proposals-list flex flex-col gap-2" aria-label="候補一覧">
+            {currentProposal.candidates.map((candidate, idx) => {
+              const intentLabel = INTENT_LABELS[candidate.intent] ?? candidate.intent;
+              const intentBadgeClass =
+                INTENT_BADGE_CLASSES[candidate.intent] ?? 'bg-gray-100 text-gray-600';
+              return (
+                <li
+                  key={idx}
+                  className="side-panel__proposal-item rounded-lg border border-hairline bg-canvas p-3 text-xs leading-relaxed"
+                >
+                  {/* Intent バッジ（next-question-picker の CandidateRow スタイル踏襲、選択機能なし） */}
+                  <span
+                    className={[
+                      'mb-1.5 inline-block rounded px-2 py-0.5 text-[10px] font-medium',
+                      intentBadgeClass,
+                    ].join(' ')}
+                  >
+                    {intentLabel}
+                  </span>
+
+                  {/* 候補テキスト（読み取り専用） */}
+                  <p className="side-panel__proposal-text mt-0.5 text-ink">{candidate.text}</p>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
       {/* ── カバレッジ進捗（Req 3.1） ────────────────────────────────────── */}
-      <section className="side-panel__coverage" aria-label="カバレッジ進捗">
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          パターン消化状況
-        </h4>
-        <ul
-          className="side-panel__coverage-list flex flex-col gap-1"
-          aria-label="パターン一覧"
-        >
+      <section
+        className="side-panel__coverage rounded-xl border border-hairline bg-card p-4"
+        aria-label="カバレッジ進捗"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-ink">パターン進捗</h4>
+        </div>
+        <ul className="side-panel__coverage-list flex flex-col gap-2.5" aria-label="パターン一覧">
           {coverage.map((item) => (
             <li
               key={item.patternCode}
               className="side-panel__coverage-item flex items-center justify-between text-xs"
             >
-              {/* パターンコード */}
-              <span className="side-panel__pattern-code text-gray-700">
-                {item.patternCode}
+              {/* 行頭ドット + パターンコード */}
+              <span className="flex items-center gap-2">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${COVERAGE_STATUS_DOT_CLASSES[item.status]}`}
+                />
+                <span className="side-panel__pattern-code font-mono text-ink">
+                  {item.patternCode}
+                </span>
               </span>
 
               {/* ステータスチップ + 到達段階 */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                {/* 到達段階（Req 3.1: covered / in_progress のとき非 null） */}
+                {item.levelReached !== null && (
+                  <span className="side-panel__level-reached text-[10px] text-muted">
+                    段階{item.levelReached}
+                  </span>
+                )}
                 <span
                   className={[
                     'side-panel__coverage-status rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -195,69 +240,28 @@ export function SidePanel({
                 >
                   {COVERAGE_STATUS_LABELS[item.status]}
                 </span>
-
-                {/* 到達段階（Req 3.1: covered / in_progress のとき非 null） */}
-                {item.levelReached !== null && (
-                  <span className="side-panel__level-reached text-[10px] text-gray-500">
-                    段階{item.levelReached}
-                  </span>
-                )}
               </div>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* ── 質問候補（読み取り専用・操作レス）（Req 3.2） ────────────────── */}
-      <section
-        className="side-panel__proposals"
-        aria-label="次の質問候補"
-        data-testid="proposal-section"
-      >
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          次の質問候補
-        </h4>
-
-        {currentProposal === null ? (
-          /* currentProposal が null の場合: 準備中状態（Req 3.2） */
-          <p className="side-panel__proposals-empty text-xs text-gray-400">
-            準備中...
-          </p>
-        ) : (
-          /* 候補 3 件の読み取り専用一覧 — ボタン・選択操作は一切含まない（Req 3.5） */
-          <ol
-            className="side-panel__proposals-list flex flex-col gap-2"
-            aria-label="候補一覧"
-          >
-            {currentProposal.candidates.map((candidate, idx) => {
-              const intentLabel = INTENT_LABELS[candidate.intent] ?? candidate.intent;
-              const intentBadgeClass =
-                INTENT_BADGE_CLASSES[candidate.intent] ?? 'bg-gray-100 text-gray-800';
-              return (
-                <li
-                  key={idx}
-                  className="side-panel__proposal-item rounded border border-gray-200 bg-white p-2 text-xs leading-relaxed"
-                >
-                  {/* Intent バッジ（next-question-picker の CandidateRow スタイル踏襲、選択機能なし） */}
-                  <span
-                    className={[
-                      'mb-1 inline-block rounded-full px-2 py-0.5 text-[10px]',
-                      intentBadgeClass,
-                    ].join(' ')}
-                  >
-                    {intentLabel}
-                  </span>
-
-                  {/* 候補テキスト（読み取り専用） */}
-                  <p className="side-panel__proposal-text mt-0.5">
-                    {candidate.text}
-                  </p>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
+      {/* ── フッター：経過時間・残りパターン数（Req 3.8） ─────────────────── */}
+      <div className="side-panel__header flex items-center justify-between rounded-xl border border-hairline bg-card px-4 py-3 text-sm text-body">
+        <span className="side-panel__elapsed flex items-center gap-1.5" aria-label="経過時間">
+          <span className="material-symbols-outlined text-muted" style={{ fontSize: 16 }}>
+            schedule
+          </span>
+          <span className="font-mono tabular-nums">{formatElapsedTime(elapsedSeconds)}</span>
+        </span>
+        <span
+          className="side-panel__remaining text-xs text-muted"
+          data-testid="remaining-patterns"
+          aria-label="残り計画パターン数"
+        >
+          残り {remainingPlannedPatterns} パターン
+        </span>
+      </div>
     </aside>
   );
 }

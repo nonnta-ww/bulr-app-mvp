@@ -28,7 +28,7 @@
     "drizzle-orm": "^0.45.0",
     "nanoid": "^5",
     "next": "^16.0.0",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "^9.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.76.1",

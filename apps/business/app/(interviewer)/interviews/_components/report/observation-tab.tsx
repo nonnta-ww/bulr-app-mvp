@@ -73,13 +73,12 @@ function Column({
   accent: 'reached' | 'stuck';
   children: React.ReactNode;
 }) {
-  const borderClass =
-    accent === 'reached' ? 'border-t-cyan-600' : 'border-t-gray-500';
+  const borderClass = accent === 'reached' ? 'border-t-copper' : 'border-t-slate-400';
   return (
-    <div className={`rounded border-t-2 ${borderClass} bg-gray-50 p-2`}>
+    <div className={`rounded-lg border border-hairline border-t-2 ${borderClass} bg-canvas p-3`}>
       <div className="mb-2 flex items-baseline justify-between text-xs">
-        <span className="font-bold text-gray-900">{title}</span>
-        <span className="text-gray-500">{count}件</span>
+        <span className="font-bold text-ink">{title}</span>
+        <span className="text-muted">{count}件</span>
       </div>
       <div className="flex flex-col gap-1">{children}</div>
     </div>
@@ -87,5 +86,5 @@ function Column({
 }
 
 function EmptyHint({ text }: { text: string }) {
-  return <p className="py-4 text-center text-xs italic text-gray-400">{text}</p>;
+  return <p className="py-4 text-center text-xs italic text-muted">{text}</p>;
 }
