@@ -167,46 +167,90 @@ export class ChunkQueue {
 // MicChunkRecorder — MediaRecorder の薄いアダプタ
 // ---------------------------------------------------------------------------
 
+/** MediaRecorder に渡す mimeType の優先順（lib/audio/recorder.ts と同じ選定方針） */
+const MIME_TYPE_PRIORITY = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'] as const;
+
 /**
- * MicChunkRecorder: MediaRecorder (timeslice 8s) + ChunkQueue による連続録音
+ * このブラウザがサポートする mimeType を優先順で選ぶ。
+ * いずれも未サポートならブラウザ既定（空文字）を使う。
+ */
+function pickSupportedMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  for (const mimeType of MIME_TYPE_PRIORITY) {
+    if (MediaRecorder.isTypeSupported(mimeType)) return mimeType;
+  }
+  return '';
+}
+
+/**
+ * MicChunkRecorder: 8 秒ウィンドウごとの「録音→停止→（次ウィンドウを遅延起動）」+ ChunkQueue
  *
- * MediaRecorder はブラウザ専用 API。このクラスはモジュールレベルでは MediaRecorder を
- * 参照せず、`start()` 呼び出し時に `typeof MediaRecorder` でガードする。
- * → Node.js テスト環境でも import が安全（ChunkQueue のコアはテスト済み）。
+ * ## なぜ timeslice ではなく ウィンドウ録音 なのか
+ * `MediaRecorder.start(timeslice)` の各 dataavailable Blob は **先頭のみ** WebM/EBML
+ * ヘッダ（初期化セグメント）を含み、2 番目以降はヘッダ無しのクラスタ断片になる。
+ * これらの断片を 1 個ずつ独立ファイルとしてバッチ転写（ffmpeg/Whisper）に渡すと、
+ * 先頭チャンク以外は "Invalid data" でデコードできない。
+ * そこで本実装は「1 ウィンドウ = 1 回の完結した録音（start→stop）」とし、各チャンクを
+ * **自己完結した完全な webm** として生成する。stop で集めた断片を 1 つの Blob に結合する。
+ * 8 秒境界で数十 ms 程度の取りこぼしが生じうるが、転写用途では許容する（MVP 判断）。
  *
- * 本番 sender の実装例:
- * ```ts
- * const sender: ChunkSender = async ({ blob, chunkNo }) => {
- *   const form = new FormData();
- *   form.append('sessionId', sessionId);
- *   form.append('chunkNo', String(chunkNo));
- *   form.append('audio', blob, `chunk-${chunkNo}.webm`);
- *   const res = await fetch('/api/interview/capture/chunks', { method: 'POST', body: form });
- *   if (!res.ok) throw new Error(`chunk POST failed: ${res.status}`);
- * };
- * ```
+ * ## 次ウィンドウの遅延起動（NotSupportedError 回避）
+ * MediaRecorder の 'stop' イベントハンドラ内で同期的に新しい MediaRecorder を start() すると、
+ * 一部ブラウザ（Chromium）が `NotSupportedError: Failed to execute 'start'` を投げる。
+ * そのため次ウィンドウの起動は windowTimer 側で stop() を呼んだ後、`setTimeout(0)` で
+ * stop イベント処理の外に逃がして起動する（'stop' ハンドラはチャンク結合・エンキューのみ）。
+ *
+ * ## chunkNo の連番維持
+ * chunkNo はインスタンス生成時に 0 で初期化され、ウィンドウ間・start() で **リセットしない**。
+ * 一時停止→再開でも単調増加で連続するため、サーバー側の `mic:{sessionId}:{chunkNo}`
+ * 冪等キーが再開前後で衝突しない。
+ *
+ * ## エラー処理
+ * ウィンドウ起動に失敗（MediaRecorder 生成 / start() が throw）した場合は onError を呼ぶ。
+ * 'stop' ハンドラや遅延起動はイベント/タイマー文脈で動くため、ここで握りつぶさず
+ * onError 経由で UI（micError）に伝える（未捕捉例外でクラッシュさせない）。
+ *
+ * ## import 安全性
+ * MediaRecorder はブラウザ専用 API。モジュールレベルでは参照せず、`start()` 呼び出し時に
+ * `typeof MediaRecorder` でガードする（Node.js テスト環境でも import が安全）。
  */
 export class MicChunkRecorder {
   // MediaRecorder は browser-only のため、型は DOM lib 経由で解決される。
   // null でガードし、モジュールインポート時には参照しない。
   private recorder: MediaRecorder | null = null;
   private chunkNo = 0;
+  /** stop() 後にウィンドウを再開しないためのフラグ */
+  private stopped = false;
+  /** 現在ウィンドウを閉じるためのタイマー */
+  private windowTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 次ウィンドウの遅延起動タイマー */
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 録音対象ストリーム（ウィンドウ間で再利用） */
+  private stream: MediaStream | null = null;
   private readonly queue: ChunkQueue;
+  private readonly windowMs: number;
+  private readonly onError: ((err: Error) => void) | undefined;
 
   constructor(options: {
     sessionId: string;
     sender: ChunkSender;
     onBacklogWarning?: () => void;
+    /** ウィンドウ起動に失敗したときの通知（UI の micError へ） */
+    onError?: (err: Error) => void;
+    /** 1 チャンクの録音長（ms）。既定 8000。テストで短縮可能 */
+    windowMs?: number;
   }) {
     this.queue = new ChunkQueue({
       sender: options.sender,
       onBacklogWarning: options.onBacklogWarning,
     });
+    this.onError = options.onError;
+    this.windowMs = options.windowMs ?? 8_000;
   }
 
   /**
    * 指定ストリームからの録音を開始する。
-   * timeslice=8000ms で MediaRecorder を起動し、dataavailable ごとにチャンクをエンキューする。
+   * 8 秒ごとに 1 つの完結した webm チャンクを生成し ChunkQueue へエンキューする。
    *
    * @throws {Error} MediaRecorder が利用できない環境（Node.js など）では例外をスローする
    */
@@ -214,26 +258,111 @@ export class MicChunkRecorder {
     if (typeof MediaRecorder === 'undefined') {
       throw new Error('MediaRecorder is not available in this environment');
     }
+    this.stopped = false;
+    this.stream = stream;
+    this.beginWindow();
+  }
 
-    this.chunkNo = 0;
-    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+  /**
+   * 1 ウィンドウ分の録音を開始する。
+   * timeslice なしで start() し、windowMs 後に rotateWindow() で閉じる。
+   * 'stop' イベントは断片の結合・エンキューのみを行う（次ウィンドウ起動はしない）。
+   */
+  private beginWindow(): void {
+    if (this.stopped || this.stream === null) return;
+
+    let recorder: MediaRecorder;
+    const mimeType = pickSupportedMimeType();
+    try {
+      recorder = new MediaRecorder(
+        this.stream,
+        mimeType ? { mimeType } : {},
+      );
+    } catch (err) {
+      this.fail(err);
+      return;
+    }
+
+    const parts: Blob[] = [];
+    const blobType = mimeType || 'audio/webm';
 
     recorder.addEventListener('dataavailable', (event: BlobEvent) => {
       if (event.data.size > 0) {
-        this.chunkNo++;
-        this.queue.enqueue({ blob: event.data, chunkNo: this.chunkNo });
+        parts.push(event.data);
       }
     });
 
-    // timeslice=8000ms: 8 秒ごとに dataavailable イベントが発火する
-    recorder.start(8_000);
+    recorder.addEventListener('stop', () => {
+      // このウィンドウの断片を 1 つの完全なメディアファイルに結合してエンキュー
+      if (parts.length > 0) {
+        const blob = new Blob(parts, { type: blobType });
+        if (blob.size > 0) {
+          this.chunkNo++;
+          this.queue.enqueue({ blob, chunkNo: this.chunkNo });
+        }
+      }
+    });
+
     this.recorder = recorder;
+    try {
+      // timeslice なし: stop() 時に 1 つの完結した webm が得られる
+      recorder.start();
+    } catch (err) {
+      this.fail(err);
+      return;
+    }
+
+    this.windowTimer = setTimeout(() => this.rotateWindow(), this.windowMs);
   }
 
-  /** 録音を停止する */
+  /**
+   * 現在ウィンドウを閉じ、次ウィンドウを遅延起動する。
+   * 次ウィンドウの start() を 'stop' ハンドラの外（setTimeout 0）で行うことで、
+   * Chromium の NotSupportedError（stop ハンドラ内 start）を回避する。
+   */
+  private rotateWindow(): void {
+    const current = this.recorder;
+    if (current && current.state !== 'inactive') {
+      current.stop(); // 'stop' ハンドラが断片を結合・エンキューする
+    }
+    if (!this.stopped) {
+      this.restartTimer = setTimeout(() => this.beginWindow(), 0);
+    }
+  }
+
+  /**
+   * 録音を停止する。
+   * 進行中ウィンドウは stop() され、その末尾分も最終チャンクとしてエンキューされる。
+   */
   stop(): void {
-    this.recorder?.stop();
+    this.stopped = true;
+    if (this.windowTimer !== null) {
+      clearTimeout(this.windowTimer);
+      this.windowTimer = null;
+    }
+    if (this.restartTimer !== null) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    if (this.recorder && this.recorder.state !== 'inactive') {
+      this.recorder.stop();
+    }
     this.recorder = null;
+  }
+
+  /** ウィンドウ起動失敗時: 録音を止め、onError で UI に通知する */
+  private fail(err: unknown): void {
+    this.stopped = true;
+    if (this.windowTimer !== null) {
+      clearTimeout(this.windowTimer);
+      this.windowTimer = null;
+    }
+    if (this.restartTimer !== null) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    this.recorder = null;
+    this.onError?.(err instanceof Error ? err : new Error(String(err)));
   }
 
   /** 現在のキュー内未送信チャンク数 */

@@ -47,6 +47,7 @@ function makeCoverage(patternCode: string): PatternCoverageSummary {
 function makeLiveState(overrides?: Partial<LiveState>): LiveState {
   return {
     captureStatus: 'recording',
+    captureProvider: null,
     staleTranscript: false,
     analysisCapped: false,
     segments: [],

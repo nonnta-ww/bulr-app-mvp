@@ -275,6 +275,8 @@ export async function GET(
   // ------------------------------------------------------------------
   const liveState = LiveStateSchema.parse({
     captureStatus,
+    // 対面(mic)モードのクライアント録音起動判定にクライアントが使用する（recall は webhook 経由のため不要）
+    captureProvider: session.capture_provider,
     staleTranscript,
     analysisCapped,
     segments,

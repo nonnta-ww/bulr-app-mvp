@@ -76,6 +76,7 @@ export interface UseLiveStateOptions {
 
 export interface UseLiveStateResult {
   captureStatus: LiveState['captureStatus'];
+  captureProvider: LiveState['captureProvider'];
   segments: LiveSegment[];
   coverage: PatternCoverageSummary[];
   currentProposal: ProposalView | null;
@@ -96,6 +97,7 @@ type LiveStateInternalState = Omit<UseLiveStateResult, 'refetch'>;
 
 const INITIAL_STATE: LiveStateInternalState = {
   captureStatus: 'idle',
+  captureProvider: null,
   segments: [],
   coverage: [],
   currentProposal: null,
@@ -194,6 +196,7 @@ export function useLiveState(
         // segments を蓄積、他フィールドは最新値で上書き
         setInternalState((prev) => ({
           captureStatus: liveState.captureStatus,
+          captureProvider: liveState.captureProvider,
           segments: [...prev.segments, ...liveState.segments],
           coverage: liveState.coverage,
           currentProposal: liveState.currentProposal,

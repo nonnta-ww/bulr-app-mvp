@@ -20,7 +20,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChunkItem } from './mic-chunk-recorder';
-import { ChunkQueue } from './mic-chunk-recorder';
+import { ChunkQueue, MicChunkRecorder } from './mic-chunk-recorder';
 
 // ---------------------------------------------------------------------------
 // ヘルパー
@@ -473,6 +473,163 @@ describe('ChunkQueue', () => {
         sender: vi.fn(),
       });
       expect(() => recorder.start({} as MediaStream)).toThrow('MediaRecorder is not available');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // chunkNo 連番維持: 一時停止→再開（stop()→start()）で連番がリセットされない
+  // （サーバー側 mic:{sessionId}:{chunkNo} 冪等キーが再開前後で衝突しないため）
+  // -------------------------------------------------------------------------
+
+  describe('ウィンドウ録音 (stop/restart) と chunkNo 連番', () => {
+    // stop() で dataavailable→stop を発火する最小の MediaRecorder スタブ。
+    // new 可能なよう class で定義し、生成のたび instances へ登録する。
+    const instances: FakeMediaRecorder[] = [];
+
+    class FakeMediaRecorder {
+      static isTypeSupported(_mime: string): boolean {
+        return true;
+      }
+      state: 'inactive' | 'recording' = 'inactive';
+      private daCbs: Array<(event: { data: Blob }) => void> = [];
+      private stopCbs: Array<() => void> = [];
+
+      constructor() {
+        instances.push(this);
+      }
+      addEventListener(type: 'dataavailable' | 'stop', cb: (...args: never[]) => void): void {
+        if (type === 'dataavailable') {
+          this.daCbs.push(cb as (event: { data: Blob }) => void);
+        } else {
+          this.stopCbs.push(cb as () => void);
+        }
+      }
+      start(_timeslice?: number): void {
+        this.state = 'recording';
+      }
+      // 実 MediaRecorder と同様: stop() で最終 dataavailable → stop を発火し、
+      // 1 ウィンドウ分の完結した録音（断片の集合）を返す
+      stop(): void {
+        this.state = 'inactive';
+        this.daCbs.forEach((cb) => cb({ data: makeBlob() }));
+        this.stopCbs.forEach((cb) => cb());
+      }
+    }
+
+    beforeEach(() => {
+      instances.length = 0;
+      vi.stubGlobal('MediaRecorder', FakeMediaRecorder);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    // 1,2,3,... と 1 始まりで連続しているか（欠番・重複・リセットが無いこと）
+    function isContiguousFrom1(arr: number[]): boolean {
+      return arr.every((v, i) => v === i + 1);
+    }
+
+    // 次ウィンドウ起動が setTimeout(0) に逃げているため、ウィンドウ経過 + 1ms で
+    // 遅延起動タイマーをフラッシュして進める（0ms 進めでは 0 遅延タイマーが発火しない）
+    async function runWindows(count: number): Promise<void> {
+      for (let i = 0; i < count; i++) {
+        await vi.advanceTimersByTimeAsync(8000);
+        await vi.advanceTimersByTimeAsync(1);
+      }
+    }
+
+    it('ウィンドウごとに 1 チャンク（連番）を生成し、停止指示まで連続録音する', async () => {
+      const sent: number[] = [];
+      const sender = vi.fn().mockImplementation(async (item: ChunkItem) => {
+        sent.push(item.chunkNo);
+      });
+
+      const recorder = new MicChunkRecorder({ sessionId: 's1', sender, windowMs: 8000 });
+      recorder.start({} as MediaStream);
+
+      await runWindows(3);
+
+      // 3 ウィンドウ分のチャンクが 1,2,3,... と連続して生成される
+      expect(sent.length).toBeGreaterThanOrEqual(3);
+      expect(isContiguousFrom1(sent)).toBe(true);
+      // 各ウィンドウで新しい MediaRecorder が生成される（独立した完結 webm）
+      expect(instances.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('一時停止→再開で chunkNo が連番継続する（リセット・重複しない）', async () => {
+      const sent: number[] = [];
+      const sender = vi.fn().mockImplementation(async (item: ChunkItem) => {
+        sent.push(item.chunkNo);
+      });
+
+      const recorder = new MicChunkRecorder({ sessionId: 's1', sender, windowMs: 8000 });
+
+      recorder.start({} as MediaStream);
+      await runWindows(2);
+
+      // 一時停止: 進行中ウィンドウの末尾分も最終チャンクとして送られる
+      recorder.stop();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterPause = [...sent];
+      expect(afterPause.length).toBeGreaterThanOrEqual(1);
+      expect(isContiguousFrom1(afterPause)).toBe(true);
+
+      // 停止後はタイマーを進めても新規チャンクが出ない
+      await vi.advanceTimersByTimeAsync(32000);
+      expect(sent).toEqual(afterPause);
+
+      // 再開 → さらに録音
+      recorder.start({} as MediaStream);
+      await runWindows(2);
+
+      // 連番が 1 始まりで連続したまま伸びる（再開時に 1 へ戻らない＝冪等キー衝突しない）
+      expect(isContiguousFrom1(sent)).toBe(true);
+      expect(sent.length).toBeGreaterThan(afterPause.length);
+      // 再開後の最初のチャンクは「停止前の続き番号」になる
+      expect(sent[afterPause.length]).toBe(afterPause.length + 1);
+    });
+
+    it('start() が NotSupportedError を投げても未捕捉にせず onError で通知する', () => {
+      // 一部ブラウザは MediaRecorder.start() で NotSupportedError を投げる。
+      // これをイベント/タイマー文脈で握りつぶさず onError へ流すことを検証する。
+      class ThrowingMediaRecorder {
+        static isTypeSupported(_mime: string): boolean {
+          return true;
+        }
+        state: 'inactive' | 'recording' = 'inactive';
+        addEventListener(): void {}
+        start(): void {
+          throw new DOMException('start failed', 'NotSupportedError');
+        }
+        stop(): void {}
+      }
+      vi.stubGlobal('MediaRecorder', ThrowingMediaRecorder);
+
+      const onError = vi.fn();
+      const recorder = new MicChunkRecorder({
+        sessionId: 's1',
+        sender: vi.fn(),
+        onError,
+        windowMs: 8000,
+      });
+
+      // start() は内部で try/catch するため throw しない
+      expect(() => recorder.start({} as MediaStream)).not.toThrow();
+      expect(onError).toHaveBeenCalledTimes(1);
+      // 失敗後はタイマーが残らない（暴走しない）
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('stop() 後にタイマーが残らない（ウィンドウが再開しない）', async () => {
+      const sender = vi.fn().mockResolvedValue(undefined);
+      const recorder = new MicChunkRecorder({ sessionId: 's1', sender, windowMs: 8000 });
+
+      recorder.start({} as MediaStream);
+      recorder.stop();
+
+      // 停止直後、保留タイマーが無いことを確認（stop でクリアされている）
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 });

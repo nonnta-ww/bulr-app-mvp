@@ -125,6 +125,13 @@
   - MediaRecorder timeslice 8 秒で連続録音、未送信キュー + 指数バックオフ再送（一時切断でも音声を失わない）、30 件滞留で UI 警告
   - 観測可能な完了: ネットワーク切断 → 復帰のシミュレーションで全チャンクが最終的に送達される
   - _Requirements: 1.5, 8.3_
+- [x] 6.3 マイク録音のクライアント結線（LiveCaptureRunner）
+  - live-state に `captureProvider` を追加し、`useMicCapture` フックで provider==='mic' かつ recording のときのみ getUserMedia → MicChunkRecorder で録音開始。paused / 終了 / unmount で停止しマイクを解放
+  - 各 8 秒チャンクは timeslice ではなく「録音→stop→次ウィンドウ起動」のウィンドウ方式で生成し、自己完結した完全な webm にする（timeslice 断片はヘッダ欠落で Whisper/ffmpeg がデコード不可のため）。次ウィンドウの start() は 'stop' ハンドラ外（setTimeout 0）で行い Chromium の NotSupportedError を回避。mimeType は isTypeSupported で選定
+  - 一時停止→再開でレコーダインスタンスを再利用し chunkNo を連番維持（`mic:{sessionId}:{chunkNo}` 冪等キーの衝突防止のため chunkNo をリセットしない）
+  - マイク権限拒否/非対応/録音起動失敗は alert バナー、未送信滞留(30 件)は status バナーで通知
+  - 観測可能な完了: 対面モードで開始すると transcript_segment が生成され、ターン化 → 質問候補 → ライブ表示まで進む
+  - _Requirements: 1.5, 8.3_
 
 - [ ] 7. 終了処理・保持・閲覧
 - [x] 7.1 finalize 前処理拡張
