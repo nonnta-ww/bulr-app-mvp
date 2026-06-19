@@ -90,11 +90,17 @@ export const stopCapture = authedAction(
     // 4. capture_status を更新
     //    abort の場合: この時点で 'aborted' になるため、以降の webhook は
     //    WebhookIngestion 側で破棄される（design.md: Implementation Notes）
+    //
+    //    abort 時はセッション自体も中断扱いとし interview_session.status を
+    //    'abandoned' に更新する（C案）。一覧で「中断」と正しく表示され、
+    //    in_progress のまま残って実態とズレるのを防ぐ。
+    //    finish の場合は status を変更しない（finalize が 'completed' にする）。
     // -----------------------------------------------------------------------
     await db
       .update(interviewSession)
       .set({
         capture_status: targetStatus,
+        ...(reason === 'abort' ? { status: 'abandoned' as const } : {}),
         updated_at: new Date(),
       })
       .where(eq(interviewSession.id, sessionId));

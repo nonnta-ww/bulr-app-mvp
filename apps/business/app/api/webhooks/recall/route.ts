@@ -186,12 +186,15 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ------------------------------------------------------------------
-  // 7. aborted セッションのイベントは破棄（Req 7.6）
-  //    design.md: "aborted セッションのイベントは破棄"
+  // 7. aborted / paused セッションのイベントは破棄
+  //    - aborted: 中止後の受理拒否（Req 7.6, design.md: "aborted セッションのイベントは破棄"）
+  //    - paused:  一時停止中は bot status イベントを受理しない。特に再配信された
+  //               bot.in_call_recording が paused→recording 遷移（再開）を満たして
+  //               しまうため、勝手に再開されるのを防ぐ。再開はユーザー操作のみ。
   // ------------------------------------------------------------------
-  if (session.capture_status === 'aborted') {
+  if (session.capture_status === 'aborted' || session.capture_status === 'paused') {
     console.info(
-      `[webhook/recall] event discarded for aborted session: sessionId=${sessionId}, event=${event}`,
+      `[webhook/recall] event discarded for ${session.capture_status} session: sessionId=${sessionId}, event=${event}`,
     );
     return NextResponse.json({ ok: true });
   }

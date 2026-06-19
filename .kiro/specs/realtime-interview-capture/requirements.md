@@ -114,6 +114,7 @@
 4. The system shall トランスクリプトと評価データを音声削除後も保持する
 5. The system shall 同意記録（取得日時・同意文バージョン）をセッションに保持する
 6. When 面接官がキャプチャの中止を指示した, the system shall 録音・文字起こし・自動解析を即時停止する
+7. When 面接官がキャプチャの中止を指示した, the system shall セッションを中断扱い（status='abandoned'）に更新し、面接セッション一覧で「中断」と表示する（in_progress のまま残して実態とズレるのを防ぐ）
 
 ### Requirement 8: 信頼性
 
@@ -124,3 +125,18 @@
 1. The system shall 60 分連続のキャプチャを処理できる
 2. If 面接官の画面が一時的に切断・リロードされた, the system shall 録音ボット経由のキャプチャを中断せず、画面再表示時に最新の進捗・トランスクリプト・質問候補を復元して表示する
 3. While 対面録音中, if 端末のネットワークが一時的に切断された, the system shall 切断中の音声を失わずに保持し、再接続後に未送信区間を処理する
+
+### Requirement 9: 面接の一時停止と再開
+
+**Objective:** As a 面接官, I want 面接を一時的に中断して後で同じセッションを続行できること, so that 休憩や録音すべきでない会話の発生時に、緊急停止（中止）せずに面接を続けられる
+
+**背景:** 緊急停止用の「中止」（Req 7.6, 不可逆・再開不可）とは別物の「再開可能な一時停止」。録音ボットは通話に残したまま、一時停止中の発言は記録せず AI 解析を止める（A案: 解析停止＋停止中の発言は破棄）。
+
+#### Acceptance Criteria
+
+1. When 面接官が録音中（recording）に一時停止を指示した, the system shall capture_status を paused に遷移し、録音ボットは通話に残したまま AI 解析を停止する
+2. While 一時停止中（paused）, the system shall 受信したトランスクリプト（ボット経由・対面マイク双方）を永続化せず破棄する
+3. While 一時停止中（paused）, the system shall 自動解析（論理ターン確定・質問候補生成）を停止する
+4. When 面接官が一時停止中に再開を指示した, the system shall capture_status を recording に戻し、同じセッションを続行する（経過時間・トランスクリプト・カバレッジは保持）
+5. While 一時停止中（paused）, if 録音ボットの status イベントが届いた, the system shall それを破棄し、勝手に再開（recording 遷移）しない（再開はユーザー操作のみ）
+6. When 面接官が一時停止中に面接終了または中止を指示した, the system shall それぞれ通常の終了（stopping）・中止（aborted）として処理する

@@ -135,6 +135,20 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ------------------------------------------------------------------
+  // 6.5. aborted / paused セッションは破棄（録音せず no-op で受理）
+  //    - paused:  一時停止中の発言は記録しない（A案: 解析停止＋停止中の発言は破棄）
+  //    - aborted: 中止後の受理拒否（Req 7.6）
+  //    クライアント（MicChunkRecorder）は一時停止中チャンクの送信を止めるが、
+  //    in-flight チャンクや再送に備えてサーバー側でも防御的に破棄する。
+  // ------------------------------------------------------------------
+  if (session!.capture_status === 'paused' || session!.capture_status === 'aborted') {
+    console.info(
+      `[capture/chunks] chunk discarded for ${session!.capture_status} session: sessionId=${sessionId}, chunkNo=${chunkNo}`,
+    );
+    return NextResponse.json({ accepted: true, discarded: true });
+  }
+
+  // ------------------------------------------------------------------
   // 7. レート制限 pre-check（読み取りのみ）
   //    超過していれば 429 を即返却してコスト枯渇攻撃を防ぐ
   // ------------------------------------------------------------------

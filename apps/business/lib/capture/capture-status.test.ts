@@ -29,6 +29,14 @@ describe("canTransition - 許可された遷移", () => {
     ["recording", "failed"],
     // recording → aborted (中止)
     ["recording", "aborted"],
+    // recording → paused (一時停止)
+    ["recording", "paused"],
+    // paused → recording (再開)
+    ["paused", "recording"],
+    // paused → stopping (一時停止中に面接終了)
+    ["paused", "stopping"],
+    // paused → aborted (一時停止中に中止)
+    ["paused", "aborted"],
     // stopping → stopped (ボット退出完了)
     ["stopping", "stopped"],
     // stopping → aborted (中止)
@@ -59,6 +67,14 @@ describe("canTransition - 拒否される遷移", () => {
     ["recording", "bot_joining"],
     // recording → idle (逆行)
     ["recording", "idle"],
+    // paused → idle (逆行)
+    ["paused", "idle"],
+    // paused → bot_joining (逆行)
+    ["paused", "bot_joining"],
+    // paused → stopped (直接完了は不正。一旦 stopping を経由する)
+    ["paused", "stopped"],
+    // paused → failed (一時停止は失敗状態に遷移しない)
+    ["paused", "failed"],
     // stopped → recording (ターミナルから出発不可)
     ["stopped", "recording"],
     // stopped → idle (ターミナルから出発不可)
@@ -86,6 +102,7 @@ describe("canTransition - aborted はターミナル", () => {
     "idle",
     "bot_joining",
     "recording",
+    "paused",
     "stopping",
     "stopped",
     "failed",
@@ -105,6 +122,7 @@ describe("canTransition - stopped はターミナル", () => {
     "idle",
     "bot_joining",
     "recording",
+    "paused",
     "stopping",
     "stopped",
     "failed",
@@ -124,6 +142,7 @@ describe("canTransition - 自己遷移は拒否される", () => {
     "idle",
     "bot_joining",
     "recording",
+    "paused",
     "stopping",
     "stopped",
     "failed",
@@ -173,5 +192,17 @@ describe("ALLOWED_TRANSITIONS", () => {
   it("idle のエントリが bot_joining と recording を含む", () => {
     expect(ALLOWED_TRANSITIONS.idle).toContain("bot_joining");
     expect(ALLOWED_TRANSITIONS.idle).toContain("recording");
+  });
+
+  it("recording のエントリが paused を含む（一時停止可能）", () => {
+    expect(ALLOWED_TRANSITIONS.recording).toContain("paused");
+  });
+
+  it("paused のエントリが recording / stopping / aborted（再開・終了・中止）", () => {
+    expect(ALLOWED_TRANSITIONS.paused).toEqual([
+      "recording",
+      "stopping",
+      "aborted",
+    ]);
   });
 });

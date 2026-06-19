@@ -36,6 +36,7 @@ export const LIVE_STATE_CAPTURE_STATUS_VALUES = [
   'idle',
   'bot_joining',
   'recording',
+  'paused',
   'stopping',
   'stopped',
   'failed',

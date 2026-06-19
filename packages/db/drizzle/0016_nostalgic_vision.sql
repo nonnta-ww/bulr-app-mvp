@@ -1,0 +1,1 @@
+ALTER TYPE "public"."capture_status" ADD VALUE 'paused' BEFORE 'stopping';

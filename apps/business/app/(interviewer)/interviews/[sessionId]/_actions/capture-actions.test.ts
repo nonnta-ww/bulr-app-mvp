@@ -95,6 +95,7 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '@bulr/db';
 import { startCapture } from './start-capture';
 import { stopCapture } from './stop-capture';
+import { pauseCapture, resumeCapture } from './pause-capture';
 
 // ---------------------------------------------------------------------------
 // DB ヘルパー
@@ -455,6 +456,8 @@ describe('startCapture / stopCapture Server Actions', () => {
 
       const dbSession = await readSession(sessionId);
       expect(dbSession?.capture_status).toBe('aborted');
+      // C案: abort 時はセッションも中断扱い（status='abandoned'）になる
+      expect(dbSession?.status).toBe('abandoned');
 
       // leaveBot が bot_id で呼ばれている
       expect(mockLeaveBot).toHaveBeenCalledOnce();
@@ -486,6 +489,8 @@ describe('startCapture / stopCapture Server Actions', () => {
 
       const dbSession = await readSession(sessionId);
       expect(dbSession?.capture_status).toBe('aborted');
+      // C案: abort 時はセッションも中断扱い（status='abandoned'）になる
+      expect(dbSession?.status).toBe('abandoned');
 
       // leaveBot は呼ばれていない
       expect(mockLeaveBot).not.toHaveBeenCalled();
@@ -522,10 +527,87 @@ describe('startCapture / stopCapture Server Actions', () => {
 
       const dbSession = await readSession(sessionId);
       expect(dbSession?.capture_status).toBe('stopping');
+      // finish では status は変更しない（finalize が completed にする）
+      expect(dbSession?.status).toBe('in_progress');
 
       // leaveBot も best-effort 呼び出しされる
       expect(mockLeaveBot).toHaveBeenCalledOnce();
       expect(mockLeaveBot).toHaveBeenCalledWith(BOT_ID);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // 6.5. pauseCapture / resumeCapture（A案: 一時停止/再開）
+  // -----------------------------------------------------------------------
+  describe('pauseCapture / resumeCapture', () => {
+    it('recording セッションを pause すると capture_status が paused になる（ボットは退出させない）', async () => {
+      const BOT_ID = `bot-pause-test-${crypto.randomUUID()}`;
+      await db
+        .update(schema.interviewSession)
+        .set({
+          capture_status: 'recording',
+          capture_provider: 'recall',
+          bot_id: BOT_ID,
+          status: 'in_progress',
+          started_at: new Date(),
+        })
+        .where(eq(schema.interviewSession.id, sessionId));
+
+      const result = await pauseCapture({ sessionId });
+
+      expect(result.ok).toBe(true);
+      const handlerResult = (result as { ok: true; data: { ok: boolean; data?: { captureStatus: string } } }).data;
+      expect(handlerResult.ok).toBe(true);
+      expect(handlerResult.data?.captureStatus).toBe('paused');
+
+      const dbSession = await readSession(sessionId);
+      expect(dbSession?.capture_status).toBe('paused');
+      // status は in_progress のまま（中断ではない）
+      expect(dbSession?.status).toBe('in_progress');
+      // 一時停止ではボットを退出させない
+      expect(mockLeaveBot).not.toHaveBeenCalled();
+    });
+
+    it('paused セッションを resume すると capture_status が recording に戻り last_capture_event_at がリセットされる', async () => {
+      const stalePast = new Date(Date.now() - 60_000);
+      await db
+        .update(schema.interviewSession)
+        .set({
+          capture_status: 'paused',
+          capture_provider: 'recall',
+          bot_id: `bot-resume-test-${crypto.randomUUID()}`,
+          status: 'in_progress',
+          started_at: new Date(),
+          last_capture_event_at: stalePast,
+        })
+        .where(eq(schema.interviewSession.id, sessionId));
+
+      const result = await resumeCapture({ sessionId });
+
+      expect(result.ok).toBe(true);
+      const handlerResult = (result as { ok: true; data: { ok: boolean; data?: { captureStatus: string } } }).data;
+      expect(handlerResult.ok).toBe(true);
+      expect(handlerResult.data?.captureStatus).toBe('recording');
+
+      const dbSession = await readSession(sessionId);
+      expect(dbSession?.capture_status).toBe('recording');
+      // 再開時に last_capture_event_at が now にリセットされている（stale 誤検知防止）
+      expect(dbSession?.last_capture_event_at?.getTime()).toBeGreaterThan(
+        stalePast.getTime(),
+      );
+    });
+
+    it('recording 以外（idle）からの pause は INVALID_STATE_TRANSITION で拒否される', async () => {
+      // beforeEach の idle 状態のまま
+      const result = await pauseCapture({ sessionId });
+
+      expect(result.ok).toBe(true);
+      const handlerResult = (result as { ok: true; data: { ok: boolean; error?: { code: string } } }).data;
+      expect(handlerResult.ok).toBe(false);
+      expect(handlerResult.error?.code).toBe('INVALID_STATE_TRANSITION');
+
+      const dbSession = await readSession(sessionId);
+      expect(dbSession?.capture_status).toBe('idle');
     });
   });
 

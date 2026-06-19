@@ -237,12 +237,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ------------------------------------------------------------------
-  // 6. aborted セッションは破棄（Req 7.6）
-  //    design.md: "aborted セッションのイベントは破棄"
+  // 6. aborted / paused セッションは破棄
+  //    - aborted: 中止後の受理拒否（Req 7.6, design.md: "aborted セッションのイベントは破棄"）
+  //    - paused:  一時停止中の発言は記録しない（A案: 解析停止＋停止中の発言は破棄）
   // ------------------------------------------------------------------
-  if (session.capture_status === 'aborted') {
+  if (session.capture_status === 'aborted' || session.capture_status === 'paused') {
     console.info(
-      `[webhook/recall/transcript] event discarded for aborted session: sessionId=${sessionId}`,
+      `[webhook/recall/transcript] event discarded for ${session.capture_status} session: sessionId=${sessionId}`,
     );
     return NextResponse.json({ ok: true });
   }
