@@ -222,11 +222,15 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
               <h1 className="text-2xl font-semibold tracking-tight text-ink">
                 {candidateProfile.displayName}
               </h1>
-              <p className="mt-0.5 flex items-center gap-2 text-sm text-body">
+              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-body">
                 <span>{opening.title} へのエントリー</span>
                 <Badge tone={ENTRY_STATUS_TONE[entry.status]}>
                   {ENTRY_STATUS_LABEL[entry.status]}
                 </Badge>
+                <span className="flex items-center gap-1 text-xs tabular-nums text-muted">
+                  <Icon name="calendar_today" size={14} />
+                  {formatDateTime(entry.createdAt)}
+                </span>
               </p>
             </div>
           </div>
