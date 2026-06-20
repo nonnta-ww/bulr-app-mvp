@@ -24,11 +24,30 @@
  * Boundary: self-analysis-view
  */
 
-import type { SelfAnalysisRecord } from '@bulr/db';
+import dynamic from 'next/dynamic';
+import type { AggregatedSnapshot, SelfAnalysisRecord } from '@bulr/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@bulr/ui';
 
 import { CoverageBars } from './coverage-bars';
 import { GenerateButton } from './generate-button';
 import { NarrativeSection } from './narrative-section';
+
+// ---------------------------------------------------------------------------
+// Dynamic import — SkillBalanceRadar は recharts を使用するため SSR 無効
+// （coverage-trend-chart と同じ方針）
+// ---------------------------------------------------------------------------
+
+const SkillBalanceRadar = dynamic(
+  () => import('./skill-balance-radar').then((m) => m.SkillBalanceRadar),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-400">
+        読み込み中…
+      </div>
+    ),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // ボタン配色（テーマトークン非依存）
@@ -95,6 +114,33 @@ function VizOnlyBanner() {
 }
 
 // ---------------------------------------------------------------------------
+// サブコンポーネント: 可視化ブロック（熟練度レーダー + カバレッジ表示を併置）
+//
+// 既存のカバレッジ表示（coverage-bars）を維持しつつ、カテゴリ別熟練度レーダーを
+// 併置する（Req 6.1, 6.2）。旧版スナップショット（proficiencyScore を持たない）でも
+// レーダーは空表示にフォールバックし破綻しない（Req 8.2）。
+// ---------------------------------------------------------------------------
+
+function AnalysisVisualization({ snapshot }: { snapshot: AggregatedSnapshot }) {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900">
+            スキルバランス（熟練度）
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SkillBalanceRadar categories={snapshot.categories} />
+        </CardContent>
+      </Card>
+
+      <CoverageBars snapshot={snapshot} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // メインコンポーネント
 // ---------------------------------------------------------------------------
 
@@ -129,8 +175,8 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
   if (record.llmOutput === null) {
     return (
       <div className="space-y-6">
-        {/* 可視化は常に表示（Req 4.1） */}
-        <CoverageBars snapshot={record.aggregatedSnapshot} />
+        {/* 可視化は常に表示（Req 4.1）。熟練度レーダーとカバレッジを併置（Req 6.1, 6.2） */}
+        <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
 
         {/* 失敗バナー */}
         <VizOnlyBanner />
@@ -173,7 +219,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
           <p className="mb-4 text-xs text-gray-500">
             ※ 以下は最後に生成された自己分析です（最新の回答に基づいていない可能性があります）
           </p>
-          <CoverageBars snapshot={record.aggregatedSnapshot} />
+          <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
           <div className="mt-6 space-y-4">
             <NarrativeSection
               title="強み"
@@ -201,8 +247,8 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
   // ---------------------------------------------------------------------------
   return (
     <div className="space-y-6">
-      {/* 可視化（Req 2.1） */}
-      <CoverageBars snapshot={record.aggregatedSnapshot} />
+      {/* 可視化（Req 2.1）。熟練度レーダーとカバレッジを併置（Req 6.1, 6.2） */}
+      <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
 
       {/* 自然言語サマリ + 成長アクション（Req 3.1, 3.2） */}
       <div className="space-y-4">
