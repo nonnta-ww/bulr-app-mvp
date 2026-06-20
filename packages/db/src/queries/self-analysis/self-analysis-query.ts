@@ -6,7 +6,7 @@
  * 全 read 操作は candidateProfileId フィルタで本人所有データのみを返す（Req 6.1, 6.3）。
  */
 
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, max } from 'drizzle-orm';
 
 import { db } from '../../client';
 import type {
@@ -390,4 +390,44 @@ export async function incrementRegenerationCount(
     .update(selfAnalysis)
     .set({ regenerationCount: nextCount, regenerationWindowStart: windowStart, updatedAt: new Date() })
     .where(eq(selfAnalysis.id, id));
+}
+
+// ---------------------------------------------------------------------------
+// 自己分析（診断）統計: skill-survey 一覧の「最終診断日・診断回数」表示用
+// ---------------------------------------------------------------------------
+
+/** survey 単位の診断統計（最終診断日・診断回数） */
+export interface SelfAnalysisSurveyStats {
+  surveyId: string;
+  /** 診断版数（= 異なるアンケート回答に対して生成した self_analysis 行数） */
+  diagnosisCount: number;
+  /** 最後に診断を生成/更新した日時（self_analysis.updated_at の最大値） */
+  lastDiagnosedAt: Date;
+}
+
+/**
+ * 候補者の self_analysis を skillSurveyId 単位で集計し、診断回数と最終診断日時を返す。
+ * 診断が無い survey は結果に含まれない（呼び出し側で「未診断」を表現する）。
+ * 本人 ID でフィルタする（Req 6.1, 6.3）。
+ *
+ * @param candidateProfileId - 認証済み候補者の profile ID（本人のみ）
+ */
+export async function getSelfAnalysisStatsForCandidate(
+  candidateProfileId: string,
+): Promise<SelfAnalysisSurveyStats[]> {
+  const rows = await db
+    .select({
+      surveyId: selfAnalysis.skillSurveyId,
+      diagnosisCount: count(),
+      lastDiagnosedAt: max(selfAnalysis.updatedAt),
+    })
+    .from(selfAnalysis)
+    .where(eq(selfAnalysis.candidateProfileId, candidateProfileId))
+    .groupBy(selfAnalysis.skillSurveyId);
+
+  return rows.map((row) => ({
+    surveyId: row.surveyId,
+    diagnosisCount: Number(row.diagnosisCount),
+    lastDiagnosedAt: row.lastDiagnosedAt as Date,
+  }));
 }
