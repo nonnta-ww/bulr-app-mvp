@@ -19,6 +19,7 @@ import { asc, eq } from 'drizzle-orm';
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db, getLatestResponseByCandidateProfileId, getLatestResponseSubmittedAt } from '@bulr/db';
 import { canReAnswer } from '../../../self-analysis/_lib/cooldown';
+import { resolveCooldownDays } from '../../../self-analysis/_lib/cooldown-config';
 import {
   skillSurvey,
   skillSurveyCategory,
@@ -73,7 +74,7 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
 
   // クールダウン判定（要件 2.1, 2.2）— 提出日時を取得して再回答可否を算出する
   const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfileId, surveyId);
-  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date());
+  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date(), resolveCooldownDays());
 
   // master 木（categories + questions + choices）を組み立てる（form ページと同一スタイル）。
   // choiceLabels（id → label）も同時に構築し、選択肢の表示テキストを解決できるようにする。
