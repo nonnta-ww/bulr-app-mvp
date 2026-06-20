@@ -31,6 +31,21 @@ import { GenerateButton } from './generate-button';
 import { NarrativeSection } from './narrative-section';
 
 // ---------------------------------------------------------------------------
+// ボタン配色（テーマトークン非依存）
+//
+// candidate の globals.css には shadcn の --color-primary 等が未定義のため、
+// @bulr/ui Button の default/outline バリアント（bg-primary / bg-background）は
+// 背景が描画されずテキストに見える。明示的な Tailwind 配色クラスを className で
+// 渡し、cn(tailwind-merge) により variant の配色を上書きして確実にボタンらしく見せる。
+// ---------------------------------------------------------------------------
+
+/** 主要ボタン（塗りつぶし） */
+const PRIMARY_BTN = 'bg-blue-600 text-white hover:bg-blue-700';
+/** 副ボタン（白地・枠線） */
+const SECONDARY_BTN =
+  'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900';
+
+// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -101,7 +116,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
         <GenerateButton
           action="generate"
           label="自己分析を生成する"
-          className="min-w-40"
+          className={`min-w-40 ${PRIMARY_BTN}`}
           surveyId={surveyId}
         />
       </div>
@@ -126,7 +141,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
             action="regenerate"
             label="サマリ再生成"
             variant="outline"
-            className="min-w-36"
+            className={`min-w-36 ${SECONDARY_BTN}`}
             surveyId={surveyId}
           />
         </div>
@@ -148,6 +163,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
           <GenerateButton
             action="generate"
             label="最新のスキルアンケートの回答で診断を生成する"
+            className={PRIMARY_BTN}
             surveyId={surveyId}
           />
         </div>
@@ -216,6 +232,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
         <GenerateButton
           action="generate"
           label="最新のスキルアンケートの回答で診断を生成する"
+          className={PRIMARY_BTN}
           surveyId={surveyId}
         />
       </div>
