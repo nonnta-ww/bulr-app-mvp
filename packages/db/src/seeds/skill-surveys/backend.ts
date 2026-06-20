@@ -2211,6 +2211,135 @@ export const backendSurveySeed: BackendSurveySeedData = {
         },
       ],
     },
+    // ── 深掘り自由記述設問: 各主要カテゴリに1問ずつ追加 (Req 4.1, 4.2, 4.3) ──
+    // 任意回答（is_required=false）。文字数上限は既存 free_text と同等（フォーム/送信側で 2000 字）。
+    // scoringKind は未設定（=null）。熟練度平均には寄与せず、従来どおり広さ/カバレッジ側に属する。
+    {
+      name: 'プログラミング',
+      subcategory: '深掘り',
+      displayOrder: 57,
+      questions: [
+        {
+          text: 'プログラミングにおける技術・設計選択の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'フレームワーク・ライブラリ',
+      subcategory: '深掘り',
+      displayOrder: 58,
+      questions: [
+        {
+          text: 'フレームワーク・ライブラリの選定理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'データベース',
+      subcategory: '深掘り',
+      displayOrder: 59,
+      questions: [
+        {
+          text: 'データベースの設計・技術選択の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'API開発',
+      subcategory: '深掘り',
+      displayOrder: 60,
+      questions: [
+        {
+          text: 'API設計における判断の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'セキュリティ（認証・認可以外）',
+      subcategory: '深掘り',
+      displayOrder: 61,
+      questions: [
+        {
+          text: 'セキュリティ対策の技術・設計選択の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'アーキテクチャ設計',
+      subcategory: '深掘り',
+      displayOrder: 62,
+      questions: [
+        {
+          text: 'アーキテクチャ設計における判断の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'パフォーマンス・チューニング',
+      subcategory: '深掘り',
+      displayOrder: 63,
+      questions: [
+        {
+          text: 'パフォーマンス改善の技術・設計選択の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'テスト',
+      subcategory: '深掘り',
+      displayOrder: 64,
+      questions: [
+        {
+          text: 'テスト戦略における判断の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
+    {
+      name: 'DevOps・インフラ',
+      subcategory: '深掘り',
+      displayOrder: 65,
+      questions: [
+        {
+          text: 'DevOps・インフラの技術・設計選択の理由、または失敗から学んだことがあれば記述してください。',
+          questionType: 'free_text',
+          isRequired: false,
+          displayOrder: 0,
+          choices: [],
+        },
+      ],
+    },
   ],
 };
 
@@ -2281,6 +2410,7 @@ export async function runBackendSkillSurveySeed(db: DB): Promise<void> {
             categoryId,
             body: question.text,
             questionType: question.questionType,
+            scoringKind: question.scoringKind ?? null,
             displayOrder: question.displayOrder,
             isRequired: question.isRequired ?? REQUIRED_QUESTION_BODIES.has(question.text),
           })
@@ -2288,6 +2418,7 @@ export async function runBackendSkillSurveySeed(db: DB): Promise<void> {
             target: [skillSurveyQuestion.categoryId, skillSurveyQuestion.body],
             set: {
               questionType: sql`excluded.question_type`,
+              scoringKind: sql`excluded.scoring_kind`,
               displayOrder: sql`excluded.display_order`,
               isRequired: sql`excluded.is_required`,
               updatedAt: new Date(),
@@ -2306,11 +2437,13 @@ export async function runBackendSkillSurveySeed(db: DB): Promise<void> {
             .values({
               questionId,
               label: choice.text,
+              level: choice.level ?? null,
               displayOrder: choice.displayOrder,
             })
             .onConflictDoUpdate({
               target: [skillSurveyChoice.questionId, skillSurveyChoice.label],
               set: {
+                level: sql`excluded.level`,
                 displayOrder: sql`excluded.display_order`,
               },
             });
