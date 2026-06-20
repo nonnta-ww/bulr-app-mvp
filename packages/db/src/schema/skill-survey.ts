@@ -17,6 +17,8 @@ export const questionType = pgEnum('question_type', [
   'free_text',
 ]);
 
+export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency']);
+
 // --- Tables ---
 
 export const skillSurvey = pgTable('skill_survey', {
@@ -66,6 +68,7 @@ export const skillSurveyQuestion = pgTable(
       .references(() => skillSurveyCategory.id),
     body: text('body').notNull(),
     questionType: questionType('question_type').notNull(),
+    scoringKind: scoreKind('scoring_kind'),
     isRequired: boolean('is_required').notNull().default(false),
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -89,6 +92,7 @@ export const skillSurveyChoice = pgTable(
       .notNull()
       .references(() => skillSurveyQuestion.id),
     label: text('label').notNull(),
+    level: integer('level'),
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -117,3 +121,6 @@ export type NewSkillSurveyChoice = typeof skillSurveyChoice.$inferInsert;
 // QuestionType は pgEnum から派生（DRY 原則: enum 値の単一の真実を pgEnum 側に置く）
 // packages/db のバレルで再 export し、後続 spec は `import type { QuestionType } from '@bulr/db'` する
 export type QuestionType = (typeof questionType.enumValues)[number];
+
+// ScoreKind は scoreKind pgEnum から派生
+export type ScoreKind = (typeof scoreKind.enumValues)[number];
