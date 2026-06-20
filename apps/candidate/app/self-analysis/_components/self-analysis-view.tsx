@@ -147,8 +147,7 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
         <div className="flex justify-center">
           <GenerateButton
             action="generate"
-            label="再生成する"
-            className="min-w-36"
+            label="最新のスキルアンケートの回答で診断を生成する"
             surveyId={surveyId}
           />
         </div>
@@ -208,13 +207,15 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
         />
       </div>
 
-      {/* 再生成ボタン（Complete 状態でも提供、Req 5.2） */}
-      <div className="flex justify-end">
+      {/* 再診断 CTA（Complete 状態でも提供、Req 5.2）。
+          最新のアンケート回答で診断をやり直せることを明示し、塗りつぶしボタンで誘導する。 */}
+      <div className="flex flex-col items-stretch gap-2 border-t border-gray-200 pt-6 sm:items-end">
+        <p className="text-xs text-gray-500">
+          最新のスキルアンケート回答をもとに診断をやり直せます。
+        </p>
         <GenerateButton
           action="generate"
-          label="再生成する"
-          variant="outline"
-          className="min-w-28"
+          label="最新のスキルアンケートの回答で診断を生成する"
           surveyId={surveyId}
         />
       </div>

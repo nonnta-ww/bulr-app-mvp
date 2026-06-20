@@ -5,6 +5,7 @@
  *   - UNAUTHORIZED → /sign-in
  *   - CANDIDATE_PROFILE_MISSING → /onboarding
  * - isActive = true のアンケート一覧を取得
+ * - 本人の診断統計（最終診断日・診断回数）を取得して SurveyList に渡す
  * - SurveyList コンポーネントでカード表示する
  *
  * Requirements: 4.1, 7.1
@@ -14,14 +15,16 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
-import { db } from '@bulr/db';
+import { db, getSelfAnalysisStatsForCandidate } from '@bulr/db';
 import { skillSurvey } from '@bulr/db/schema';
 
-import { SurveyList } from './_components/survey-list';
+import { SurveyList, type SurveyStats } from './_components/survey-list';
 
 export default async function SurveyListPage() {
+  let candidateProfileId: string;
   try {
-    await requireCandidate();
+    const { candidateProfile } = await requireCandidate();
+    candidateProfileId = candidateProfile.id;
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.code === 'UNAUTHORIZED') redirect('/sign-in');
@@ -30,10 +33,19 @@ export default async function SurveyListPage() {
     throw err;
   }
 
-  const surveys = await db
-    .select()
-    .from(skillSurvey)
-    .where(eq(skillSurvey.isActive, true));
+  const [surveys, stats] = await Promise.all([
+    db.select().from(skillSurvey).where(eq(skillSurvey.isActive, true)),
+    getSelfAnalysisStatsForCandidate(candidateProfileId),
+  ]);
+
+  // surveyId → 診断統計 の Record に変換して SurveyList へ渡す
+  const statsBySurveyId: Record<string, SurveyStats> = {};
+  for (const s of stats) {
+    statsBySurveyId[s.surveyId] = {
+      diagnosisCount: s.diagnosisCount,
+      lastDiagnosedAt: s.lastDiagnosedAt,
+    };
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -43,7 +55,7 @@ export default async function SurveyListPage() {
           職種別のスキルアンケートに回答して、あなたの技術スタックを整理しましょう。
         </p>
       </div>
-      <SurveyList surveys={surveys} />
+      <SurveyList surveys={surveys} statsBySurveyId={statsBySurveyId} />
     </main>
   );
 }
