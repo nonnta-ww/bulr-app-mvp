@@ -1898,6 +1898,187 @@ export const backendSurveySeed: BackendSurveySeedData = {
         },
       ],
     },
+    // ── 直近利用（recency）設問: 各トップレベルカテゴリに 1 問ずつ追加 ──
+    {
+      name: 'プログラミング',
+      subcategory: '直近利用',
+      displayOrder: 45,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'フレームワーク・ライブラリ',
+      subcategory: '直近利用',
+      displayOrder: 46,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'データベース',
+      subcategory: '直近利用',
+      displayOrder: 47,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'API開発',
+      subcategory: '直近利用',
+      displayOrder: 48,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'セキュリティ（認証・認可以外）',
+      subcategory: '直近利用',
+      displayOrder: 49,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'アーキテクチャ設計',
+      subcategory: '直近利用',
+      displayOrder: 50,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'パフォーマンス・チューニング',
+      subcategory: '直近利用',
+      displayOrder: 51,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'テスト',
+      subcategory: '直近利用',
+      displayOrder: 52,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'DevOps・インフラ',
+      subcategory: '直近利用',
+      displayOrder: 53,
+      questions: [
+        {
+          text: 'この領域の技術を最後に実務で利用したのはいつですか？',
+          questionType: 'single_choice',
+          scoringKind: 'recency',
+          displayOrder: 0,
+          choices: [
+            { text: '現在も利用中', displayOrder: 0, level: 4 },
+            { text: '1年以内', displayOrder: 1, level: 3 },
+            { text: '3年以内', displayOrder: 2, level: 2 },
+            { text: '3年以上前', displayOrder: 3, level: 1 },
+            { text: '実務利用なし', displayOrder: 4, level: 0 },
+          ],
+        },
+      ],
+    },
   ],
 };
 
