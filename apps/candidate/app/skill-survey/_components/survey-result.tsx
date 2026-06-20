@@ -37,6 +37,8 @@ export interface SurveyResultProps {
   choiceLabels: Map<string, string>;
   /** サーベイタイトル（任意。ページヘッダ補足用） */
   surveyTitle?: string;
+  /** 結果対象のアンケート ID（自己分析詳細への導線に使用） */
+  surveyId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,11 +50,25 @@ export function SurveyResult({
   answers,
   choiceLabels,
   surveyTitle,
+  surveyId,
 }: SurveyResultProps) {
   const steps = groupByCategoryName(categories);
 
   return (
     <div className="space-y-6">
+      {/* 完了バナー: アンケート回答済みを明示 */}
+      <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white"
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+        <p className="text-sm font-medium text-emerald-800">
+          アンケートに回答しました。棚卸しが完了です。
+        </p>
+      </div>
+
       {/* ページ説明 */}
       <p className="text-sm text-gray-600">
         {surveyTitle
@@ -61,16 +77,17 @@ export function SurveyResult({
         スコアや他者比較は表示されません。
       </p>
 
-      {/* 自己診断への導線 CTA（要件 11.5） */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p className="mb-2 text-sm font-medium text-blue-800">
-          棚卸しが完了しました。次のステップへ進みませんか？
+      {/* 次アクション: 自己分析への主要 CTA（要件 11.5） */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-5">
+        <h2 className="text-base font-semibold text-blue-900">次は自己分析へ</h2>
+        <p className="mt-1 text-sm text-blue-800">
+          回答内容をもとに、あなたの強み・弱み・成長アクションを確認できます。
         </p>
         <Link
-          href="/self-analysis"
-          className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          href={`/self-analysis/${surveyId}`}
+          className="mt-3 inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          あなたの強み・弱みを見る（自己診断へ）
+          自己分析を見る →
         </Link>
       </div>
 
@@ -167,10 +184,10 @@ export function SurveyResult({
           スキルの強み・弱みをさらに詳しく分析しますか？
         </p>
         <Link
-          href="/self-analysis"
+          href={`/self-analysis/${surveyId}`}
           className="inline-block rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          あなたの強み・弱みを見る（自己診断へ）
+          自己分析を見る →
         </Link>
       </div>
     </div>

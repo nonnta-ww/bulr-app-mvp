@@ -57,6 +57,8 @@ export interface GenerateButtonProps {
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   /** 追加の className */
   className?: string;
+  /** 対象アンケートの ID（生成系アクションへ渡す） */
+  surveyId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +70,7 @@ export function GenerateButton({
   label,
   variant = 'default',
   className,
+  surveyId,
 }: GenerateButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -78,7 +81,9 @@ export function GenerateButton({
     startTransition(async () => {
       // action props に応じて呼び分け
       const result =
-        action === 'generate' ? await generateSelfAnalysis({}) : await regenerateNarrative({});
+        action === 'generate'
+          ? await generateSelfAnalysis({ surveyId })
+          : await regenerateNarrative({ surveyId });
 
       // --- 2段階読み ---
 
