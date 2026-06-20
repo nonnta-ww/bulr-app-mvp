@@ -21,6 +21,7 @@ import {
   skillSurveyChoice,
   skillSurveyQuestion,
 } from '../../schema/skill-survey';
+import type { ScoreKind } from '../../schema/skill-survey';
 import { skillSurveyAnswer, skillSurveyResponse } from '../../schema/skill-survey-response';
 
 // ---------------------------------------------------------------------------
@@ -33,8 +34,15 @@ export interface AnswerForAnalysis {
   categoryName: string;
   questionBody: string;
   questionType: 'single_choice' | 'multi_choice' | 'free_text';
+  /** 集計分類（proficiency / recency）。未分類の設問は null（追加: proficiency-scale） */
+  scoringKind: ScoreKind | null;
   /** selected_choice_ids を label に解決した配列 */
   selectedLabels: string[];
+  /**
+   * selected_choice_ids を level（序数）に解決した配列（追加: proficiency-scale）。
+   * level を持たない選択肢（level=null）および解決できなかった ID は除外する。
+   */
+  selectedLevels: number[];
   freeText: string | null;
 }
 
@@ -119,13 +127,19 @@ async function buildResponseBundle(
   const choiceRows =
     uniqueChoiceIds.length > 0
       ? await db
-          .select({ id: skillSurveyChoice.id, label: skillSurveyChoice.label })
+          .select({
+            id: skillSurveyChoice.id,
+            label: skillSurveyChoice.label,
+            level: skillSurveyChoice.level,
+          })
           .from(skillSurveyChoice)
           .where(inArray(skillSurveyChoice.id, uniqueChoiceIds))
       : [];
 
   // choice ID → label のマップ
   const choiceLabelMap = new Map<string, string>(choiceRows.map((c) => [c.id, c.label]));
+  // choice ID → level のマップ（level=null の選択肢も登録するが、解決時に除外する）
+  const choiceLevelMap = new Map<string, number | null>(choiceRows.map((c) => [c.id, c.level]));
 
   // Step E: カテゴリごとに答えを束ねる
   const answerMap = new Map(answers.map((a) => [a.questionId, a]));
@@ -148,13 +162,20 @@ async function buildResponseBundle(
         const label = choiceLabelMap.get(choiceId);
         return label !== undefined ? [label] : [];
       });
+      // level を持つ選択肢のみ序数へ解決（level=null・未解決 ID は除外）
+      const selectedLevels = (selectedChoiceIds ?? []).flatMap((choiceId) => {
+        const level = choiceLevelMap.get(choiceId);
+        return level !== undefined && level !== null ? [level] : [];
+      });
 
       return {
         questionId: question.id,
         categoryName: category.name,
         questionBody: question.body,
         questionType: question.questionType,
+        scoringKind: question.scoringKind ?? null,
         selectedLabels,
+        selectedLevels,
         freeText: answer?.freeText ?? null,
       };
     });
