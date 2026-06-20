@@ -29,7 +29,9 @@ export type BackendSurveySeedData = {
       displayOrder: number;
       // Wave 5: per-question 必須上書き（任意）。未指定時は REQUIRED_QUESTION_BODIES で判定する。
       isRequired?: boolean;
-      choices: Array<{ text: string; displayOrder: number }>;
+      // proficiency-scale: 集計分類（能力系は 'proficiency'、直近利用は 'recency'、その他は未設定）
+      scoringKind?: 'proficiency' | 'recency';
+      choices: Array<{ text: string; displayOrder: number; level?: number }>;
     }>;
   }>;
 };
@@ -99,10 +101,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'IDE のステップデバッガー（例: Visual Studio Code、IntelliJ、PhpStorm など）を使用して、コードのデバッグを行ったことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -119,10 +124,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'ブラウザのデベロッパーツール（Chrome DevTools など）を使用して、リクエストのパフォーマンスを分析したことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -148,10 +156,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'プロジェクトや組織内で、コーディングルール（例: コードフォーマット、命名規則、レビュー基準）を策定した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -227,10 +238,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '正規表現を使って、ログ解析、入力バリデーション、テキスト抽出などのパターンマッチング処理を実装したことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -332,10 +346,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'フレームワークを拡張してカスタム機能を作成した経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -352,37 +369,49 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '自作のフレームワークやライブラリを開発したことはありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'プロジェクトのライブラリ更新を定期的に行う運用をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'フレームワークやライブラリの導入に関して、開発メンバーの合意を取るプロセスを経験したことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 4,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'プロジェクトの技術スタックを変更する提案をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 5,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -452,10 +481,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'GROUP BY、HAVING、集計関数（SUM, COUNT, AVG など）を使ってデータを集計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -478,10 +510,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'EXPLAINを使ってSQLクエリの実行計画を確認したことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -499,19 +534,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'インデックスを活用して、パフォーマンス改善を行った経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'インデックスの最適化を行った経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -524,10 +565,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'システムを新規に構築する際に、RDB（リレーショナルデータベース）のテーブル定義書を作成した経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -561,19 +605,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'パフォーマンスのために意図的に非正規化した設計をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: '大規模なシステムや高トラフィックなアプリケーションにおいて、RDB（リレーショナルデータベース）のパーティショニングまたはシャーディングを行った経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 4,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -586,10 +636,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'ACID特性（Atomicity, Consistency, Isolation, Durability）を理解し、RDB（リレーショナルデータベース）のトランザクション設計を行った経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -602,10 +655,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'RDB（リレーショナルデータベース）のデータのバックアップ・リストアを設計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -648,37 +704,49 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'キー・バリュー型ストア（Redis, DynamoDB など）において、適切なキー設計をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'ドキュメント指向データベース（MongoDBなど）において、データ構造の設計をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'カラム指向型データベース（Apache Cassandra, HBaseなど）において、読み取り速度を考慮してカラムファミリーを設計をしたことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 4,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'グラフデータベース（Neo4j など）において、ノードとエッジの設計を最適化した経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 5,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -691,10 +759,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'CAP定理を理解し、分散システムにおけるNoSQLデータベースの設計を行った経験がありますか？（例えば、整合性、可用性、分断耐性のトレードオフを考慮した設計）',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -707,10 +778,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '旧システムからデータベースのデータ移行の設計経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -735,28 +809,37 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'RESTful APIの実装経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'RESTful APIの設計経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'RESTful APIの開発において、GET、POST、PUT、DELETEなどのHTTPメソッドを適切に使い分けて設計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -769,10 +852,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'RESTful APIの開発において、HTTPステータスコード（200, 201, 400, 404, 500 など）を適切に使い分け、エラーハンドリングを設計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -785,19 +871,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'CORS（クロスオリジンリソースシェアリング）に関して理解し、実際に設定した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'クエリパラメータやヘッダー、ボディを使用して、データのフィルタリングやページネーションを設計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -810,10 +902,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'APIのドキュメンテーションツール（Swagger、OpenAPIなど）を使って、APIドキュメントを作成した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -826,37 +921,49 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'gRPCを使ったAPIの設計・実装経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'Protocol Buffers（protobuf）を使って、メッセージ定義を作成した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'gRPCのストリーミング機能（クライアントストリーミング／サーバーストリーミング／双方向ストリーミング）を実装した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'gRPCサーバーのパフォーマンスチューニング（同時接続数やスレッドプール設定）を行った経験がありますか',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -869,10 +976,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'XSS（クロスサイトスクリプティング）対策を実装した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -885,10 +995,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'CSRF（クロスサイトリクエストフォージェリ）対策を実装した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -901,10 +1014,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'SQLインジェクション対策を実施した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -917,19 +1033,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'セッション管理のセキュリティ対策（セッション固定攻撃、セッションハイジャック対策）を行った経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'セキュリティ対策としてWAF（Web Application Firewall）を導入・設定した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -942,10 +1064,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'Webアプリケーションのセキュリティ診断（ペネトレーションテストや脆弱性診断）を行った経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -958,10 +1083,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'HTTPS/TLSの設定でセキュリティ対策を行なった経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -974,10 +1102,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '外部の第三者機関による脆弱性診断を受けて、システムの修正や改善を行った経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1016,10 +1147,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'マイクロサービスアーキテクチャで設計を行なった経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1040,10 +1174,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'イベント駆動アーキテクチャ（Event-Driven Architecture）で設計を行なった経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1065,10 +1202,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'サーバーレスアーキテクチャ（Serverless Architecture）で設計を行なった経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 5,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1099,10 +1239,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'デザインパターン（例：Singleton、Factory、Observer）を理解し、実際に適用した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1137,10 +1280,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'キューを使用した非同期処理の設計経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1165,10 +1311,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'メッセージングサービスを使用した非同期処理の設計経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1200,10 +1349,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '認証機能の設計経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1234,10 +1386,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '認可機能の設計経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1267,28 +1422,37 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'プロファイリングツール（Datadog、New Relic、Google Cloud Profiler、JVM Profilerなど）を使って、アプリケーションのパフォーマンスボトルネックを診断したことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'SQLクエリのパフォーマンス最適化を行ったことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'コードの最適化を行い、アプリケーションのパフォーマンスを改善した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 2,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -1320,10 +1484,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '並列処理（マルチスレッド、マルチプロセス）を活用してパフォーマンス向上を実現した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
       ],
@@ -1336,19 +1503,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'CDNを利用して、ウェブアプリケーションのパフォーマンスを向上させた経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'CDNを利用して、キャッシュ戦略（例: キャッシュの期限設定、キャッシュクリア方法）を設計した経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1396,10 +1569,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '単体テストの経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1437,10 +1613,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '結合テストの経験がありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 3,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1503,19 +1682,25 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'チーム開発でGitを用いたバージョン管理を行った経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
           text: 'ブランチ戦略の設計に携わったことがありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 1,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1551,10 +1736,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: 'CI/CDツール（GitHub Actions、GitLab CI、CircleCIなど）を使った自動化パイプラインを構築した経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
@@ -1665,10 +1853,13 @@ export const backendSurveySeed: BackendSurveySeedData = {
         {
           text: '監視設定（メトリクス収集・ログ取得・アラート設定など）を行った経験はありますか？',
           questionType: 'single_choice',
+          scoringKind: 'proficiency',
           displayOrder: 0,
           choices: [
-            { text: 'はい', displayOrder: 0 },
-            { text: 'いいえ', displayOrder: 1 },
+            { text: '未経験・知識なし', displayOrder: 0, level: 0 },
+            { text: '学習・理解はある（実務経験なし）', displayOrder: 1, level: 1 },
+            { text: '実務で実装・運用したことがある', displayOrder: 2, level: 2 },
+            { text: '設計・改善を主導／チームへ展開・標準化した', displayOrder: 3, level: 3 },
           ],
         },
         {
