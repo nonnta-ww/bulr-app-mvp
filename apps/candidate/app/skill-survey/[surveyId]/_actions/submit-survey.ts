@@ -31,6 +31,7 @@ import {
   skillSurveyCategory,
 } from '@bulr/db/schema';
 import { canReAnswer } from '../../../self-analysis/_lib/cooldown';
+import { resolveCooldownDays } from '../../../self-analysis/_lib/cooldown-config';
 
 // --- Zod スキーマ ---
 
@@ -133,7 +134,7 @@ export const submitSurvey = authedAction(
 
     const now = new Date();
     const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfile.id, surveyId);
-    const cooldownVerdict = canReAnswer(lastSubmittedAt, now);
+    const cooldownVerdict = canReAnswer(lastSubmittedAt, now, resolveCooldownDays());
 
     if (!cooldownVerdict.allowed) {
       // nextAvailableAt は allowed=false のとき必ず Date 値が入る（cooldown.ts の不変条件）

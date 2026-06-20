@@ -20,6 +20,7 @@ import { asc, eq } from 'drizzle-orm';
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db, getLatestResponseByCandidateProfileId, getLatestResponseSubmittedAt } from '@bulr/db';
 import { canReAnswer } from '../../self-analysis/_lib/cooldown';
+import { resolveCooldownDays } from '../../self-analysis/_lib/cooldown-config';
 import {
   skillSurvey,
   skillSurveyCategory,
@@ -133,7 +134,7 @@ export default async function SurveyFormPage({ params }: PageProps) {
 
   // クールダウン判定（要件 2.1, 2.2）— 初回（existingResponse===null）は常に許可
   const lastSubmittedAt = await getLatestResponseSubmittedAt(candidateProfileId, surveyId);
-  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date());
+  const cooldownVerdict = canReAnswer(lastSubmittedAt, new Date(), resolveCooldownDays());
 
   // クールダウン中はフォームを表示せず再開日を通知する
   if (!cooldownVerdict.allowed) {
