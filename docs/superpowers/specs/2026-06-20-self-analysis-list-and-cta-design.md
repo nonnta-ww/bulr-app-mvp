@@ -84,6 +84,24 @@ interface AnsweredSurveySummary {
 
 既存クエリ（`getAnsweredSurveyForCandidate`, `getSelfAnalysis`, `getSelfAnalysisHistory`）は変更しない（詳細ページが流用）。
 
+### Server Action 改修（複数アンケート対応の要）
+
+現状 `generateSelfAnalysis` / `regenerateNarrative` は入力が空（`z.object({})`）で、
+対象を `getAnsweredSurveyForCandidate`（= 常に最新アンケート1件）で決めている。
+詳細ページが surveyId 単位になるため、**今見ているアンケートに対して生成**できるよう改修する。
+
+- 入力スキーマを `z.object({ surveyId: z.string().min(1) })` に変更。
+- `generateSelfAnalysis`: `getAnsweredSurveyForCandidate` による対象選択を廃し、
+  `input.surveyId` を使用。回答存在確認は `getLatestSurveyResponseForAnalysis(profileId, surveyId)`
+  が null なら `NO_RESPONSE`（このクエリは本人フィルタ込みで所有者確認も兼ねる）。
+- `regenerateNarrative`: 同様に `input.surveyId` を使用し `getSelfAnalysis(profileId, surveyId)`。
+- 両アクションとも `revalidatePath('/self-analysis')` に加え
+  `` revalidatePath(`/self-analysis/${surveyId}`) `` を呼ぶ。
+- `GenerateButton` に `surveyId: string` prop を追加し、アクション呼び出しを
+  `generateSelfAnalysis({ surveyId })` / `regenerateNarrative({ surveyId })` に変更。
+- `SelfAnalysisView` に `surveyId: string` prop を追加し、全 `GenerateButton` に伝播。
+  詳細ページ（`/self-analysis/[surveyId]/page.tsx`）が params の surveyId を渡す。
+
 ### アンケート結果ページ CTA 強化（`survey-result.tsx`）
 
 - 冒頭に**完了バナー**を追加: チェックアイコン＋「アンケートに回答しました」（emerald 系）。
