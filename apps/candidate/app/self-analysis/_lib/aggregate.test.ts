@@ -58,6 +58,22 @@ describe('aggregate — 熟練度スコア (Req 5.1, 5.2)', () => {
     expect(aggregate(source([{ categoryName: 'C', totalQuestions: 1, answers: [proficiency([0])] }])).categories[0]!.proficiencyScore).toBe(0);
   });
 
+  it('レベル混在（0,1,2,3）の平均/最大×100 を四捨五入する', () => {
+    const snap = aggregate(
+      source([
+        {
+          categoryName: 'C',
+          totalQuestions: 4,
+          answers: [proficiency([0]), proficiency([1]), proficiency([2]), proficiency([3])],
+        },
+      ]),
+    );
+    const cat = snap.categories[0]!;
+    // mean([0,1,2,3]) = 1.5 → 1.5/3*100 = 50
+    expect(cat.proficiencyScore).toBe(50);
+    expect(cat.answeredProficiencyCount).toBe(4);
+  });
+
   it('proficiency 回答が0件のカテゴリは proficiencyScore=null・answeredProficiencyCount=0 (Req 5.4)', () => {
     const snap = aggregate(
       source([
@@ -130,6 +146,20 @@ describe('aggregate — 同名カテゴリ集約 (subcategory 跨ぎ)', () => {
     expect(cat.proficiencyScore).toBe(100);
     expect(cat.recencyOrdinal).toBe(3);
     expect(cat.recencyLabel).toBe('1年以内');
+  });
+
+  it('同名カテゴリを跨いで proficiency の level が合算され平均される', () => {
+    const snap = aggregate(
+      source([
+        { categoryName: 'C', totalQuestions: 1, answers: [proficiency([3], 'C')] },
+        { categoryName: 'C', totalQuestions: 1, answers: [proficiency([1], 'C')] },
+      ]),
+    );
+    expect(snap.categories).toHaveLength(1);
+    const cat = snap.categories[0]!;
+    // mean([3,1]) = 2 → 2/3*100 = 67
+    expect(cat.proficiencyScore).toBe(67);
+    expect(cat.answeredProficiencyCount).toBe(2);
   });
 
   it('同名カテゴリで複数の recency を持つ場合は集約後も最大序数（最新）を採用する', () => {
