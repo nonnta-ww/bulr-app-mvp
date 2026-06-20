@@ -39,6 +39,8 @@ export interface SelfAnalysisViewProps {
   record: SelfAnalysisRecord | null;
   /** 最新 skill-survey 回答が record の生成元より新しい場合 true（Req 5.1） */
   isStale: boolean;
+  /** 対象アンケートの ID（生成系アクションへ渡す） */
+  surveyId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +83,7 @@ function VizOnlyBanner() {
 // メインコンポーネント
 // ---------------------------------------------------------------------------
 
-export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
+export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisViewProps) {
   // ---------------------------------------------------------------------------
   // Empty 状態: 自己分析が未生成
   // ---------------------------------------------------------------------------
@@ -100,6 +102,7 @@ export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
           action="generate"
           label="自己分析を生成する"
           className="min-w-40"
+          surveyId={surveyId}
         />
       </div>
     );
@@ -124,6 +127,7 @@ export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
             label="サマリ再生成"
             variant="outline"
             className="min-w-36"
+            surveyId={surveyId}
           />
         </div>
       </div>
@@ -145,6 +149,7 @@ export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
             action="generate"
             label="再生成する"
             className="min-w-36"
+            surveyId={surveyId}
           />
         </div>
 
@@ -210,6 +215,7 @@ export function SelfAnalysisView({ record, isStale }: SelfAnalysisViewProps) {
           label="再生成する"
           variant="outline"
           className="min-w-28"
+          surveyId={surveyId}
         />
       </div>
     </div>

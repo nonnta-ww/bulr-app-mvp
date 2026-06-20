@@ -6,8 +6,8 @@
  *
  * generateSelfAnalysis authedAction フロー（design.md §自己分析の生成（版スコープ）厳守）:
  *   1. requireCandidate — 未認証は AuthError として authedAction が捕捉し ok:false を返す
- *   2. getAnsweredSurveyForCandidate — 未回答なら NO_RESPONSE を返す
- *   3. getLatestSurveyResponseForAnalysis — 最新版 response を解決（responseId を確定させる）
+ *   2. getLatestSurveyResponseForAnalysis(input.surveyId) — 指定 survey の最新版 response を解決
+ *      （null なら NO_RESPONSE。本人フィルタ込みで所有者確認も兼ねる）
  *   4. checkRegenerationAllowed(sourceResponseId) — 版スコープの日次上限超過なら RATE_LIMITED を返す
  *   5. aggregate — 決定論的集計で AggregatedSnapshot を算出
  *   6. generateSelfAnalysisNarrative — try/catch で LLM 生成を試みる
@@ -18,8 +18,7 @@
  *
  * regenerateNarrative authedAction フロー（design.md §System Flows 末尾・集計不変）:
  *   1. requireCandidate
- *   2. getAnsweredSurveyForCandidate — 未回答なら NO_RESPONSE
- *   3. getSelfAnalysis — 最新版の保存済み分析。無ければ NO_ANALYSIS
+ *   2. getSelfAnalysis(input.surveyId) — 指定 survey の最新版の保存済み分析。無ければ NO_ANALYSIS
  *   4. checkRegenerationAllowed(existing.sourceResponseId) — 版スコープ判定。上限超過なら RATE_LIMITED
  *   5. getSurveyResponseByResponseId(existing.sourceResponseId) — 同一版の回答を取得（版固定）
  *   6. generateSelfAnalysisNarrative(aggregated=保存済みスナップショット) — try/catch
@@ -50,7 +49,6 @@ import { z } from 'zod';
 
 import { authedAction, requireCandidate } from '@bulr/auth/server';
 import {
-  getAnsweredSurveyForCandidate,
   getLatestSurveyResponseForAnalysis,
   getSurveyResponseByResponseId,
   getSelfAnalysis,
@@ -67,10 +65,10 @@ import { aggregate } from '../_lib/aggregate';
 import { estimateUsd } from '../_lib/cost';
 
 // ---------------------------------------------------------------------------
-// 入力スキーマ（入力不要：対象 survey は getAnsweredSurveyForCandidate で特定）
+// 入力スキーマ（対象 survey は呼び出し元の詳細ページが surveyId で指定する）
 // ---------------------------------------------------------------------------
 
-const generateSelfAnalysisSchema = z.object({});
+const generateSelfAnalysisSchema = z.object({ surveyId: z.string().min(1) });
 
 // ---------------------------------------------------------------------------
 // 戻り値型（handler レベルの discriminated union）
@@ -96,31 +94,23 @@ type GenerateSelfAnalysisResult =
  */
 export const generateSelfAnalysis = authedAction(
   generateSelfAnalysisSchema,
-  async (_input, _ctx): Promise<GenerateSelfAnalysisResult> => {
+  async (input, _ctx): Promise<GenerateSelfAnalysisResult> => {
     // 1. requireCandidate — 未認証・プロフィール未作成は AuthError として伝播
     const { candidateProfile } = await requireCandidate();
 
-    // 2. 候補者の回答済み survey を特定（未回答なら NO_RESPONSE）
-    const surveySummary = await getAnsweredSurveyForCandidate(candidateProfile.id);
-    if (!surveySummary) {
+    const { surveyId } = input;
+
+    // 2. 指定 survey の最新版 response を解決（未回答 or 他者の survey なら NO_RESPONSE）
+    //    getLatestSurveyResponseForAnalysis は candidateProfileId で本人フィルタ済み（所有者確認も兼ねる）
+    const source = await getLatestSurveyResponseForAnalysis(candidateProfile.id, surveyId);
+    if (!source) {
       return {
         ok: false,
         error: {
           code: 'NO_RESPONSE',
-          message: 'skill-survey にまだ回答していません。先に skill-survey に回答してください。',
+          message: 'このアンケートにまだ回答していません。先にアンケートに回答してください。',
         },
       };
-    }
-
-    const { surveyId } = surveySummary;
-
-    // 3. 最新版 response を解決して responseId を確定させる
-    // 理論上 null にはならないが防御的に扱う（null の場合はシステムエラーとして再 throw）
-    const source = await getLatestSurveyResponseForAnalysis(candidateProfile.id, surveyId);
-    if (!source) {
-      throw new Error(
-        `getLatestSurveyResponseForAnalysis returned null for candidateProfileId=${candidateProfile.id} surveyId=${surveyId}`,
-      );
     }
 
     // 4. 版スコープの日次再生成抑制カウンタ判定（上限超過なら RATE_LIMITED）
@@ -195,8 +185,9 @@ export const generateSelfAnalysis = authedAction(
       regenerationWindowStart: verdict.windowStart,
     });
 
-    // 8. /self-analysis を revalidate（再訪時に最新状態を表示するため）
+    // 8. /self-analysis（一覧）と詳細を revalidate（再訪時に最新状態を表示するため）
     revalidatePath('/self-analysis');
+    revalidatePath(`/self-analysis/${surveyId}`);
 
     return { ok: true, status };
   },
@@ -206,7 +197,7 @@ export const generateSelfAnalysis = authedAction(
 // 入力スキーマ（regenerateNarrative — 入力不要）
 // ---------------------------------------------------------------------------
 
-const regenerateNarrativeSchema = z.object({});
+const regenerateNarrativeSchema = z.object({ surveyId: z.string().min(1) });
 
 // ---------------------------------------------------------------------------
 // 戻り値型（regenerateNarrative handler レベルの discriminated union）
@@ -235,25 +226,13 @@ type RegenerateNarrativeResult =
  */
 export const regenerateNarrative = authedAction(
   regenerateNarrativeSchema,
-  async (_input, _ctx): Promise<RegenerateNarrativeResult> => {
+  async (input, _ctx): Promise<RegenerateNarrativeResult> => {
     // 1. requireCandidate — 未認証・プロフィール未作成は AuthError として伝播
     const { candidateProfile } = await requireCandidate();
 
-    // 2. 候補者の回答済み survey を特定（未回答なら NO_RESPONSE）
-    const surveySummary = await getAnsweredSurveyForCandidate(candidateProfile.id);
-    if (!surveySummary) {
-      return {
-        ok: false,
-        error: {
-          code: 'NO_RESPONSE',
-          message: 'skill-survey にまだ回答していません。先に skill-survey に回答してください。',
-        },
-      };
-    }
+    const { surveyId } = input;
 
-    const { surveyId } = surveySummary;
-
-    // 3. 最新版の保存済み自己分析を取得（無ければ再生成対象が無い）
+    // 2. 指定 survey の最新版の保存済み自己分析を取得（無ければ再生成対象が無い）
     const existing = await getSelfAnalysis(candidateProfile.id, surveyId);
     if (!existing) {
       return {
@@ -338,8 +317,9 @@ export const regenerateNarrative = authedAction(
       };
     }
 
-    // /self-analysis を revalidate（再訪時に最新状態を表示するため）
+    // /self-analysis（一覧）と詳細を revalidate（再訪時に最新状態を表示するため）
     revalidatePath('/self-analysis');
+    revalidatePath(`/self-analysis/${surveyId}`);
 
     return { ok: true, status: 'complete' };
   },

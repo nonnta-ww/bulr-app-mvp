@@ -158,6 +158,7 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
         answers={answers}
         choiceLabels={choiceLabels}
         surveyTitle={survey.title}
+        surveyId={surveyId}
       />
     </main>
   );
