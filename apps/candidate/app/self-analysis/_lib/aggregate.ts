@@ -29,16 +29,34 @@ import type { SurveyResponseForAnalysis } from '@bulr/db';
  *
  * overallCoverageRatio:
  *   全カテゴリの answeredQuestions 合計 / 全カテゴリの totalQuestions 合計（0 除算ガード）
+ *
+ * proficiency-scale で追加する熟練度・直近利用（既存指標とは独立, Req 5.1-5.4）:
+ * - proficiencyScore:        scoringKind='proficiency' 回答の selectedLevels 平均を
+ *                            MAX_LEVEL=3 基準で 0..100 へ正規化し四捨五入。寄与0件なら null。
+ * - answeredProficiencyCount: 熟練度に寄与した設問数（level を解決できた proficiency 回答数）。
+ * - recencyOrdinal/recencyLabel: scoringKind='recency' 回答の選択 level の最大（=最新）と
+ *                            その表示ラベル。recency 回答が無ければ null。熟練度平均には混ぜない。
  */
+const MAX_LEVEL = 3;
+
+interface MergedCategory {
+  answeredQuestions: number;
+  totalQuestions: number;
+  selectedBreadth: number;
+  freeTextPresence: boolean;
+  proficiencyLevelSum: number;
+  proficiencyLevelCount: number;
+  answeredProficiencyCount: number;
+  recencyOrdinal: number | null;
+  recencyLabel: string | null;
+}
+
 export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot {
   let totalAnsweredSum = 0;
   let totalQuestionsSum = 0;
 
   // categoryName ごとに集約（Map は挿入順を保持）
-  const merged = new Map<
-    string,
-    { answeredQuestions: number; totalQuestions: number; selectedBreadth: number; freeTextPresence: boolean }
-  >();
+  const merged = new Map<string, MergedCategory>();
 
   for (const category of source.categories) {
     const { categoryName, totalQuestions, answers } = category;
@@ -46,6 +64,11 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
     let answeredQuestions = 0;
     let selectedBreadth = 0;
     let freeTextPresence = false;
+    let proficiencyLevelSum = 0;
+    let proficiencyLevelCount = 0;
+    let answeredProficiencyCount = 0;
+    let recencyOrdinal: number | null = null;
+    let recencyLabel: string | null = null;
 
     for (const answer of answers) {
       const hasSelection = answer.selectedLabels.length > 0;
@@ -60,6 +83,28 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
       if (hasFreeText) {
         freeTextPresence = true;
       }
+
+      // 熟練度・直近利用は独立系統で集計（旧データは scoringKind/selectedLevels が
+      // 欠落し得るため null 安全に扱う, Req 5.4）。
+      const selectedLevels = answer.selectedLevels ?? [];
+      if (answer.scoringKind === 'proficiency') {
+        if (selectedLevels.length > 0) {
+          answeredProficiencyCount += 1;
+          for (const level of selectedLevels) {
+            proficiencyLevelSum += level;
+            proficiencyLevelCount += 1;
+          }
+        }
+      } else if (answer.scoringKind === 'recency') {
+        // 選択 level の最大（=最新）を採用。selectedLabels と selectedLevels は
+        // recency 設問（全選択肢に level）では添字対応する。
+        selectedLevels.forEach((level, i) => {
+          if (recencyOrdinal === null || level > recencyOrdinal) {
+            recencyOrdinal = level;
+            recencyLabel = answer.selectedLabels[i] ?? null;
+          }
+        });
+      }
     }
 
     totalAnsweredSum += answeredQuestions;
@@ -71,8 +116,25 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
       existing.totalQuestions += totalQuestions;
       existing.selectedBreadth += selectedBreadth;
       existing.freeTextPresence = existing.freeTextPresence || freeTextPresence;
+      existing.proficiencyLevelSum += proficiencyLevelSum;
+      existing.proficiencyLevelCount += proficiencyLevelCount;
+      existing.answeredProficiencyCount += answeredProficiencyCount;
+      if (recencyOrdinal !== null && (existing.recencyOrdinal === null || recencyOrdinal > existing.recencyOrdinal)) {
+        existing.recencyOrdinal = recencyOrdinal;
+        existing.recencyLabel = recencyLabel;
+      }
     } else {
-      merged.set(categoryName, { answeredQuestions, totalQuestions, selectedBreadth, freeTextPresence });
+      merged.set(categoryName, {
+        answeredQuestions,
+        totalQuestions,
+        selectedBreadth,
+        freeTextPresence,
+        proficiencyLevelSum,
+        proficiencyLevelCount,
+        answeredProficiencyCount,
+        recencyOrdinal,
+        recencyLabel,
+      });
     }
   }
 
@@ -83,6 +145,13 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
     coverageRatio: v.totalQuestions > 0 ? v.answeredQuestions / v.totalQuestions : 0,
     selectedBreadth: v.selectedBreadth,
     freeTextPresence: v.freeTextPresence,
+    proficiencyScore:
+      v.proficiencyLevelCount > 0
+        ? Math.round((v.proficiencyLevelSum / v.proficiencyLevelCount / MAX_LEVEL) * 100)
+        : null,
+    answeredProficiencyCount: v.answeredProficiencyCount,
+    recencyOrdinal: v.recencyOrdinal,
+    recencyLabel: v.recencyLabel,
   }));
 
   const overallCoverageRatio =

@@ -25,6 +25,11 @@ export interface CategoryCoverage {
   coverageRatio: number; // answered/total（0..1）
   selectedBreadth: number; // 選択肢選択の総数
   freeTextPresence: boolean; // 自由記述の有無
+  // --- proficiency-scale で追加（すべて optional / 旧スナップショットでは欠落） ---
+  proficiencyScore?: number | null; // 0..100。proficiency 回答が無ければ null（Req 5.1, 5.4）
+  answeredProficiencyCount?: number; // 熟練度に寄与した設問数
+  recencyOrdinal?: number | null; // recency 設問の level 序数（無ければ null, Req 5.3）
+  recencyLabel?: string | null; // 表示用ラベル（例: 現在も利用中）
 }
 
 /**
