@@ -9,7 +9,7 @@
   - _Requirements: 4.1_
   - _Boundary: score_kind enum + migration_
 
-- [ ] 1.2 (P) カテゴリ別カバレッジ型に頻度フィールドを追加
+- [x] 1.2 (P) カテゴリ別カバレッジ型に頻度フィールドを追加
   - `CategoryCoverage` に `frequencyScore?: number | null` と `answeredFrequencyCount?: number` を optional 追加する（既存 proficiency/recency と同じ後方互換方針）
   - 観測可能完了: 型がコンパイルし、frequency フィールドが欠落する旧スナップショットと後方互換である
   - _Requirements: 4.2_
@@ -62,3 +62,8 @@
   - 観測可能完了: 既存テストスイートが緑で、上記 AI アンケート挙動が既存コンポーネントの再利用のみで成立する
   - _Depends: 3.1_
   - _Requirements: 1.2, 1.3, 1.4, 3.5, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3, 7.4, 9.1, 9.2_
+
+## Implementation Notes
+
+- **@bulr/ui dist 前提（worktree 共通）**: この worktree は `@bulr/ui` の dist が未ビルドで、`@bulr/candidate` の typecheck が `Cannot find module '@bulr/ui'` で失敗する（本 spec の変更とは無関係の前提課題、memory: @bulr/ui は dist ビルドで消費）。apps/candidate を typecheck する必要のあるタスク（2.1 集計, 4.1, 4.3）の前に親側で `@bulr/ui` を dist ビルドする。`aggregate.ts` は型のみ `@bulr/db` 参照で UI 非依存のため、vitest 単体テストは UI 未ビルドでも実行可能な見込み。
+- **drizzle-kit env（task 1.1 実績）**: ローカル DB は `postgresql://bulr:dev_password@localhost:5434/bulr_dev`。generate/migrate は DIRECT_URL+DATABASE_URL を inline 上書きで実行。psql 未インストールのため DB 確認は `docker exec docker-postgres-1 psql -U bulr -d bulr_dev ...`。

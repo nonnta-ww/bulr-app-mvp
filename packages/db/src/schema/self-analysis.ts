@@ -30,6 +30,9 @@ export interface CategoryCoverage {
   answeredProficiencyCount?: number; // 熟練度に寄与した設問数
   recencyOrdinal?: number | null; // recency 設問の level 序数（無ければ null, Req 5.3）
   recencyLabel?: string | null; // 表示用ラベル（例: 現在も利用中）
+  // --- ai-driven-development-survey で追加（すべて optional / 旧スナップショットでは欠落） ---
+  frequencyScore?: number | null; // 0..100。frequency 回答が無ければ null（Req 4.2）
+  answeredFrequencyCount?: number; // 頻度に寄与した設問数
 }
 
 /**
