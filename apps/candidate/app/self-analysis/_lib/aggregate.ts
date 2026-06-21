@@ -49,6 +49,9 @@ interface MergedCategory {
   answeredProficiencyCount: number;
   recencyOrdinal: number | null;
   recencyLabel: string | null;
+  frequencyLevelSum: number;
+  frequencyLevelCount: number;
+  answeredFrequencyCount: number;
 }
 
 export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot {
@@ -69,6 +72,9 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
     let answeredProficiencyCount = 0;
     let recencyOrdinal: number | null = null;
     let recencyLabel: string | null = null;
+    let frequencyLevelSum = 0;
+    let frequencyLevelCount = 0;
+    let answeredFrequencyCount = 0;
 
     for (const answer of answers) {
       const hasSelection = answer.selectedLabels.length > 0;
@@ -93,6 +99,14 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
           for (const level of selectedLevels) {
             proficiencyLevelSum += level;
             proficiencyLevelCount += 1;
+          }
+        }
+      } else if (answer.scoringKind === 'frequency') {
+        if (selectedLevels.length > 0) {
+          answeredFrequencyCount += 1;
+          for (const level of selectedLevels) {
+            frequencyLevelSum += level;
+            frequencyLevelCount += 1;
           }
         }
       } else if (answer.scoringKind === 'recency') {
@@ -123,6 +137,9 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
         existing.recencyOrdinal = recencyOrdinal;
         existing.recencyLabel = recencyLabel;
       }
+      existing.frequencyLevelSum += frequencyLevelSum;
+      existing.frequencyLevelCount += frequencyLevelCount;
+      existing.answeredFrequencyCount += answeredFrequencyCount;
     } else {
       merged.set(categoryName, {
         answeredQuestions,
@@ -134,6 +151,9 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
         answeredProficiencyCount,
         recencyOrdinal,
         recencyLabel,
+        frequencyLevelSum,
+        frequencyLevelCount,
+        answeredFrequencyCount,
       });
     }
   }
@@ -152,6 +172,11 @@ export function aggregate(source: SurveyResponseForAnalysis): AggregatedSnapshot
     answeredProficiencyCount: v.answeredProficiencyCount,
     recencyOrdinal: v.recencyOrdinal,
     recencyLabel: v.recencyLabel,
+    frequencyScore:
+      v.frequencyLevelCount > 0
+        ? Math.round((v.frequencyLevelSum / v.frequencyLevelCount / MAX_LEVEL) * 100)
+        : null,
+    answeredFrequencyCount: v.answeredFrequencyCount,
   }));
 
   const overallCoverageRatio =

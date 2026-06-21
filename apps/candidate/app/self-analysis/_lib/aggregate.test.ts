@@ -200,6 +200,105 @@ describe('aggregate — 既存指標の不変 (回帰なし)', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// 頻度スコア (Req 4.2, 4.3, 4.4, 7.5)
+// ---------------------------------------------------------------------------
+
+const frequency = (levels: number[], categoryName = 'C') =>
+  ans({ categoryName, scoringKind: 'frequency', selectedLabels: levels.map(String), selectedLevels: levels });
+
+describe('aggregate — 頻度スコア (Req 4.2, 4.3, 4.4)', () => {
+  it('frequency 回答の level 平均を MAX_LEVEL=3 基準で 0..100 に正規化し四捨五入する (a)', () => {
+    // levels [1,3] → mean=2 → 2/3*100 = 66.67 → 67
+    const snap = aggregate(
+      source([{ categoryName: 'C', totalQuestions: 2, answers: [frequency([1]), frequency([3])] }]),
+    );
+    const cat = snap.categories[0]!;
+    expect(cat.frequencyScore).toBe(67);
+    expect(cat.answeredFrequencyCount).toBe(2);
+  });
+
+  it('frequency は proficiency/recency の出力を変えない（非混入） (b)', () => {
+    // 同一 proficiency + recency に frequency を加えても proficiency/recency 出力は不変
+    const baseAnswers = [proficiency([2]), recency(3, '1年以内')];
+    const withFreqAnswers = [proficiency([2]), recency(3, '1年以内'), frequency([1])];
+
+    const baseSnap = aggregate(source([{ categoryName: 'C', totalQuestions: 2, answers: baseAnswers }]));
+    const withFreqSnap = aggregate(source([{ categoryName: 'C', totalQuestions: 3, answers: withFreqAnswers }]));
+
+    const baseCat = baseSnap.categories[0]!;
+    const withFreqCat = withFreqSnap.categories[0]!;
+
+    // proficiency 出力が完全一致
+    expect(withFreqCat.proficiencyScore).toBe(baseCat.proficiencyScore);
+    expect(withFreqCat.answeredProficiencyCount).toBe(baseCat.answeredProficiencyCount);
+    // recency 出力が完全一致
+    expect(withFreqCat.recencyOrdinal).toBe(baseCat.recencyOrdinal);
+    expect(withFreqCat.recencyLabel).toBe(baseCat.recencyLabel);
+    // frequency は独自に反映される
+    expect(withFreqCat.frequencyScore).toBe(33); // 1/3*100 = 33.33 → 33
+    expect(withFreqCat.answeredFrequencyCount).toBe(1);
+  });
+
+  it('frequency のみのカテゴリは proficiencyScore=null かつ frequencyScore が非 null になる (c)', () => {
+    const snap = aggregate(
+      source([{ categoryName: 'C', totalQuestions: 1, answers: [frequency([2])] }]),
+    );
+    const cat = snap.categories[0]!;
+    expect(cat.proficiencyScore).toBeNull();
+    expect(cat.answeredProficiencyCount).toBe(0);
+    expect(cat.frequencyScore).toBe(67); // 2/3*100 = 66.67 → 67
+    expect(cat.answeredFrequencyCount).toBe(1);
+  });
+
+  it('frequency 回答が0件のカテゴリは frequencyScore=null (d)', () => {
+    const snap = aggregate(
+      source([{ categoryName: 'C', totalQuestions: 1, answers: [proficiency([2])] }]),
+    );
+    const cat = snap.categories[0]!;
+    expect(cat.frequencyScore).toBeNull();
+    expect(cat.answeredFrequencyCount).toBe(0);
+  });
+
+  it('level=3 は 100、level=0 は 0 になる（frequency）', () => {
+    expect(
+      aggregate(source([{ categoryName: 'C', totalQuestions: 1, answers: [frequency([3])] }])).categories[0]!.frequencyScore,
+    ).toBe(100);
+    expect(
+      aggregate(source([{ categoryName: 'C', totalQuestions: 1, answers: [frequency([0])] }])).categories[0]!.frequencyScore,
+    ).toBe(0);
+  });
+
+  it('同名カテゴリを跨いで frequency が合算され平均される', () => {
+    const snap = aggregate(
+      source([
+        { categoryName: 'C', totalQuestions: 1, answers: [frequency([3], 'C')] },
+        { categoryName: 'C', totalQuestions: 1, answers: [frequency([0], 'C')] },
+      ]),
+    );
+    expect(snap.categories).toHaveLength(1);
+    const cat = snap.categories[0]!;
+    // mean([3,0]) = 1.5 → 1.5/3*100 = 50
+    expect(cat.frequencyScore).toBe(50);
+    expect(cat.answeredFrequencyCount).toBe(2);
+  });
+
+  it('旧データ（scoringKind/selectedLevels 欠落）でも frequency 系指標はエラーなく null になる (Req 4.4)', () => {
+    const legacyAnswer = {
+      questionId: 'old-freq-1',
+      categoryName: 'C',
+      questionBody: 'old',
+      questionType: 'single_choice',
+      selectedLabels: ['たまに'],
+      freeText: null,
+    } as unknown as Answer;
+    const snap = aggregate(source([{ categoryName: 'C', totalQuestions: 1, answers: [legacyAnswer] }]));
+    const cat = snap.categories[0]!;
+    expect(cat.frequencyScore).toBeNull();
+    expect(cat.answeredFrequencyCount).toBe(0);
+  });
+});
+
 describe('aggregate — 決定論性 & null 安全 (Req 8.1, 5.4)', () => {
   it('同一入力で同一スナップショットを返す（決定論的）', () => {
     const input = source([

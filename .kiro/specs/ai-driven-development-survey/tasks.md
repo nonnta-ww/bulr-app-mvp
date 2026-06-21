@@ -16,7 +16,7 @@
   - _Boundary: CategoryCoverage 型拡張_
 
 - [ ] 2. Core: 集計と seed
-- [ ] 2.1 (P) 集計純関数に頻度の独立系統を追加
+- [x] 2.1 (P) 集計純関数に頻度の独立系統を追加
   - frequency 分岐と独立アキュムレータを追加し、`frequencyScore`（level 平均→0..100 正規化、寄与0件なら null）と `answeredFrequencyCount` を算出する
   - 頻度を proficiency 指標へ加算しない。`selectedLevels` 欠落の旧データは null 安全にスキップする
   - 純関数性（I/O・乱数・時刻参照なし、同一入力→同一出力）を維持する
