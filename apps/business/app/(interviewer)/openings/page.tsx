@@ -98,7 +98,7 @@ export default async function OpeningsPage() {
                   <th className="px-6 py-4 font-medium">タイトル</th>
                   <th className="px-6 py-4 font-medium">ステータス</th>
                   <th className="px-6 py-4 font-medium">作成日</th>
-                  <th className="w-24 px-6 py-4 text-right font-medium">アクション</th>
+                  <th className="w-32 px-6 py-4 text-right font-medium">アクション</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline text-sm">
@@ -112,12 +112,20 @@ export default async function OpeningsPage() {
                     </td>
                     <td className="px-6 py-4 tabular-nums text-body">{formatDate(o.createdAt)}</td>
                     <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/openings/${o.id}`}
-                        className="text-sm font-medium text-copper hover:underline"
-                      >
-                        詳細
-                      </Link>
+                      <div className="flex items-center justify-end gap-4">
+                        <Link
+                          href={`/openings/${o.id}`}
+                          className="text-sm font-medium text-copper hover:underline"
+                        >
+                          詳細
+                        </Link>
+                        <Link
+                          href={`/openings/${o.id}/edit`}
+                          className="text-sm font-medium text-body hover:underline"
+                        >
+                          編集
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
