@@ -50,7 +50,7 @@
   - _Depends: 2.1_
   - _Requirements: 4.2, 4.3, 4.4, 9.3_
 
-- [ ] 4.2 (P) seed と回答経路の結合テストを追加
+- [x] 4.2 (P) seed と回答経路の結合テストを追加
   - 二重実行で重複ゼロ（冪等）、投入件数（6 カテゴリ / 18 設問 / 必須3問 / level / frequency 2問）が正しいこと、回答→ソース構築→集計で frequency が `frequencyScore` に反映されることを検証する
   - 観測可能完了: 結合テストが緑になり、seed 二重実行で重複レコードが生成されない
   - _Depends: 3.1_
@@ -67,3 +67,5 @@
 
 - **@bulr/ui dist 前提（worktree 共通）**: この worktree は `@bulr/ui` の dist が未ビルドで、`@bulr/candidate` の typecheck が `Cannot find module '@bulr/ui'` で失敗する（本 spec の変更とは無関係の前提課題、memory: @bulr/ui は dist ビルドで消費）。apps/candidate を typecheck する必要のあるタスク（2.1 集計, 4.1, 4.3）の前に親側で `@bulr/ui` を dist ビルドする。`aggregate.ts` は型のみ `@bulr/db` 参照で UI 非依存のため、vitest 単体テストは UI 未ビルドでも実行可能な見込み。
 - **drizzle-kit env（task 1.1 実績）**: ローカル DB は `postgresql://bulr:dev_password@localhost:5434/bulr_dev`。generate/migrate は DIRECT_URL+DATABASE_URL を inline 上書きで実行。psql 未インストールのため DB 確認は `docker exec docker-postgres-1 psql -U bulr -d bulr_dev ...`。
+- **Node バージョン（検証時）**: ルートは `engines.node >=22`。シェル既定が Node v15 だと pnpm が落ちるため、検証コマンドは `export PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"` を前置して実行する。db 統合テストは `DATABASE_URL='postgres://bulr:dev_password@localhost:5434/bulr_dev' pnpm --filter @bulr/db test`。
+- **非回帰修正（task 4.2 で露呈）**: `proficiency-scale.integration.test.ts` は設問選択を survey 非スコープの `limit(1)` で行っていた。AI survey が同型設問（proficiency/multi_choice/free_text）を seed 済み DB に追加したことで、物理行順次第で他 survey の設問を拾い `buildResponseBundle`（response の survey 設問のみで構築）で `get()` undefined → TypeError になる断続失敗が発生。設問選択を backend survey の categoryId にスコープして解消（production の buildResponseBundle は元から正しくスコープ済み＝テスト側の脆弱性）。
