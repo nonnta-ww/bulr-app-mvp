@@ -21,3 +21,4 @@ export * from './mock-interview';
 export * from './self-analysis';
 export * from './transcript-segment';
 export * from './capture-recording';
+export * from './company-user-invitation';

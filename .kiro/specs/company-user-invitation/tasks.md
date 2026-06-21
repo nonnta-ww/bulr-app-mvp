@@ -4,7 +4,7 @@
 
 ## 1. Foundation: スキーマ・共有 enum・エラー基盤
 
-- [ ] 1.1 会社ユーザー招待テーブルを新設する
+- [x] 1.1 会社ユーザー招待テーブルを新設する
   - `company_user_invitation` を定義（id / company_id / email / role_in_org / token unique / status / invited_by_user_id / expires_at / accepted_at / accepted_by_user_id / created_at / updated_at）
   - `status` は pending / accepted / revoked、token は nanoid 既定値
   - `UNIQUE(company_id, email) WHERE status = 'pending'` の partial unique index を定義
