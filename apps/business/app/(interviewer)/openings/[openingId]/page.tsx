@@ -122,6 +122,13 @@ export default async function OpeningDetailPage({ params }: PageProps) {
               {OPENING_STATUS_LABEL[ownedOpening.status] ?? ownedOpening.status}
             </Badge>
           </div>
+          <Link
+            href={`/openings/${openingId}/edit`}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-hairline bg-card px-4 py-2 text-sm font-medium text-body transition-colors hover:bg-canvas"
+          >
+            <Icon name="edit" size={16} />
+            編集
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
