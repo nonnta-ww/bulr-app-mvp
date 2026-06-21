@@ -13,7 +13,7 @@
   - _Requirements: 1.1, 1.3, 2.1, 2.2, 3.3, 6.5_
   - _Boundary: company_user_invitation_
 
-- [ ] 1.2 会社にライフサイクルステータス列を追加する
+- [x] 1.2 会社にライフサイクルステータス列を追加する
   - `company.status`（active / suspended / terminated、NOT NULL default 'active'）を追加
   - `is_active` は後方互換シャドウとして残置（status 系アクションで同期維持する旨をコメント明記）
   - 完了状態: `company` に `status` 列が存在し、新規行は 'active' で作成される
