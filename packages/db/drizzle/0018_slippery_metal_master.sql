@@ -1,0 +1,1 @@
+ALTER TYPE "public"."score_kind" ADD VALUE 'frequency';
