@@ -25,7 +25,7 @@
   - _Requirements: 4.2, 4.3, 4.4, 7.5_
   - _Boundary: aggregate frequency 拡張_
 
-- [ ] 2.2 (P) AI駆動開発アンケートの seed データと冪等投入関数を作成
+- [x] 2.2 (P) AI駆動開発アンケートの seed データと冪等投入関数を作成
   - 6 カテゴリ / 18 設問 / 必須 3 問（利用ツール・活用深度・生成コード検証レベル）/ frequency 2 問 を、Survey Content Blueprint に従い型付きデータで定義する
   - 全カテゴリに非 null の `subcategory`、各スケール選択肢に `level`(0-3)、スコア対象設問に `scoringKind`、必須3問に `isRequired: true` を付与する
   - backend.ts と同じ冪等 upsert 規約（survey: jobType / category: (surveyId,name,subcategory) / question: (categoryId,body) / choice: (questionId,label) を `onConflictDoUpdate`）の投入関数を実装する

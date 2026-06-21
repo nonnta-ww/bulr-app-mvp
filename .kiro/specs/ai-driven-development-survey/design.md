@@ -183,7 +183,7 @@ packages/db/drizzle/
 | 17 | モデル特性（コンテキスト長・幻覚・得手不得手）の理解度を選択してください。 | [scale:proficiency] | proficiency | 標準習熟度ラベル |
 | 18 | AIをどこまで信頼し、どのように検証しているか、あなたの考え方を記述してください。 | [free] | — | 任意 |
 
-**集計**: 計 6 カテゴリ / 18 設問。必須 3 問（#1 利用ツール・#4 活用深度・#10 検証レベル）。proficiency 設問 7 問、frequency 設問 2 問、multi 6 問、free 2 問。
+**集計**: 計 6 カテゴリ / 18 設問。必須 3 問（#1 利用ツール・#4 活用深度・#10 検証レベル）。proficiency 設問 7 問、frequency 設問 2 問、multi 7 問、free 2 問（計 18）。
 
 **カテゴリ `subcategory` は非 null の安定識別子を付与する**（冪等性のため必須。下表）。カテゴリ一意インデックス `(skillSurveyId, name, subcategory)` は標準 unique index（NULL 同士を非等価に扱う）であり、`subcategory=null` だと `onConflictDoUpdate` の conflict target が既存行にヒットせず seed 再実行で重複 INSERT され冪等性（Req 8.2）を壊す。既存 backend は subcategory が常に非 null のため顕在化していない。
 
