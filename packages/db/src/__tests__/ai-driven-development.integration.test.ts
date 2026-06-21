@@ -12,6 +12,9 @@
  *       scoringKind='frequency' かつ selectedLevels=[選択 level] が解決される。
  *     - aggregate 関数（apps/candidate）への接続前の「答え→ソース束」が
  *       frequencyScore 算出に必要な形を満たすことを証明する。
+ *  C. 発見可能性 — AI アンケートがアクティブ一覧・自己分析発見経路に現れる (Req 1.2, 7.1, 7.3)
+ *     - isActive=true クエリ（候補者一覧ページと同じ）に jobType='ai-driven-development' が含まれる。
+ *     - 候補者が回答後、getAnsweredSurveysForCandidate が jobType='ai-driven-development' を返す。
  *
  * 実行前提: ローカル Postgres が起動し DATABASE_URL が指す DB に接続できること。
  *   DATABASE_URL 未設定時はスイートごと skip する（CI はテストを実行しない）。
@@ -46,9 +49,13 @@ if (!HAS_DB) {
 // 動的 import で取得する値（DATABASE_URL があるときのみ client を評価する）
 let db: DB;
 let getSurveyResponseByResponseId: typeof import('../queries/self-analysis/analysis-source-query')['getSurveyResponseByResponseId'];
+let getAnsweredSurveysForCandidate: typeof import('../queries/self-analysis/answered-surveys-query')['getAnsweredSurveysForCandidate'];
 
-// 後始末用に作成したレコード ID
+// 後始末用に作成したレコード ID（テスト B: frequency 回答経路）
 const created: { userId?: string; profileId?: string; responseId?: string } = {};
+
+// 後始末用に作成したレコード ID（テスト C: 発見可能性）
+const createdDisc: { userId?: string; profileId?: string; responseId?: string } = {};
 
 describeDb('ai-driven-development 統合テスト', () => {
   beforeAll(async () => {
@@ -57,6 +64,8 @@ describeDb('ai-driven-development 統合テスト', () => {
     db = clientMod.db;
     const queryMod = await import('../queries/self-analysis/analysis-source-query');
     getSurveyResponseByResponseId = queryMod.getSurveyResponseByResponseId;
+    const answeredMod = await import('../queries/self-analysis/answered-surveys-query');
+    getAnsweredSurveysForCandidate = answeredMod.getAnsweredSurveysForCandidate;
 
     // スキーマを migrator で自己適用（適用済みなら no-op）
     const { migrate } = await import('drizzle-orm/node-postgres/migrator');
@@ -69,6 +78,7 @@ describeDb('ai-driven-development 統合テスト', () => {
 
   afterAll(async () => {
     if (!db) return;
+    // テスト B クリーンアップ
     if (created.responseId) {
       await db.delete(skillSurveyResponse).where(eq(skillSurveyResponse.id, created.responseId));
     }
@@ -77,6 +87,18 @@ describeDb('ai-driven-development 統合テスト', () => {
     }
     if (created.userId) {
       await db.delete(user).where(eq(user.id, created.userId));
+    }
+    // テスト C（発見可能性）クリーンアップ
+    if (createdDisc.responseId) {
+      await db
+        .delete(skillSurveyResponse)
+        .where(eq(skillSurveyResponse.id, createdDisc.responseId));
+    }
+    if (createdDisc.profileId) {
+      await db.delete(candidateProfile).where(eq(candidateProfile.id, createdDisc.profileId));
+    }
+    if (createdDisc.userId) {
+      await db.delete(user).where(eq(user.id, createdDisc.userId));
     }
   });
 
@@ -389,5 +411,83 @@ describeDb('ai-driven-development 統合テスト', () => {
     expect(profAnswer).toBeDefined();
     expect(profAnswer!.scoringKind).toBe('proficiency');
     expect(profAnswer!.selectedLevels).toEqual([profPick.level]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test C: 発見可能性 — AI アンケートがアクティブ一覧・自己分析発見経路に現れる
+  //         (Req 1.2, 7.1, 7.3 — task 4.3)
+  // ---------------------------------------------------------------------------
+
+  it('isActive=true クエリが jobType="ai-driven-development" の行を返す (Req 1.2)', async () => {
+    /*
+     * 候補者一覧ページ（apps/candidate/app/skill-survey/page.tsx）は
+     *   db.select().from(skillSurvey).where(eq(skillSurvey.isActive, true))
+     * で全アクティブ survey を取得する。本テストはそのクエリを直接再現し、
+     * AI アンケートが確実に一覧に含まれることを確認する。
+     * AI アンケートが inactive に変更されたり削除されると失敗する（有意なテスト）。
+     */
+    const activeRows = await db.select().from(skillSurvey).where(eq(skillSurvey.isActive, true));
+
+    const aiRow = activeRows.find((r) => r.jobType === 'ai-driven-development');
+    expect(aiRow).toBeDefined();
+    expect(aiRow!.isActive).toBe(true);
+    expect(aiRow!.jobType).toBe('ai-driven-development');
+  });
+
+  it('候補者が AI アンケートに回答後、getAnsweredSurveysForCandidate が jobType="ai-driven-development" を返す (Req 7.1, 7.3)', async () => {
+    /*
+     * 自己分析発見経路:
+     *   getAnsweredSurveysForCandidate（packages/db/src/queries/self-analysis/answered-surveys-query.ts）
+     * は skill_survey_response を skill_survey に JOIN し、候補者が回答済みの survey を
+     * 集約して返す。本テストは AI アンケートへの回答を投入し、この survey-agnostic な
+     * クエリが jobType='ai-driven-development' を返すことを確認する。
+     * AI アンケートが DB に存在しないか isActive=false でも response JOIN は成功するが、
+     * 回答レコードが存在しなければ空配列が返り失敗する（有意なテスト）。
+     */
+
+    // AI survey ID の取得
+    const [aiSurvey] = await db
+      .select({ id: skillSurvey.id })
+      .from(skillSurvey)
+      .where(eq(skillSurvey.jobType, 'ai-driven-development'))
+      .limit(1);
+    expect(aiSurvey).toBeTruthy();
+    const aiSurveyId = aiSurvey!.id;
+
+    // 発見可能性テスト専用のユーザー・プロフィール・回答を作成（created とは別の ID）
+    const now = new Date();
+    const discUserId = `it-disc-${randomUUID()}`;
+    createdDisc.userId = discUserId;
+    await db.insert(user).values({
+      id: discUserId,
+      email: `${discUserId}@example.com`,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const [discProf] = await db
+      .insert(candidateProfile)
+      .values({ userId: discUserId, displayName: 'disc-test-ai' })
+      .returning({ id: candidateProfile.id });
+    createdDisc.profileId = discProf!.id;
+
+    const [discResp] = await db
+      .insert(skillSurveyResponse)
+      .values({
+        candidateProfileId: discProf!.id,
+        skillSurveyId: aiSurveyId,
+        submittedAt: now,
+      })
+      .returning({ id: skillSurveyResponse.id });
+    createdDisc.responseId = discResp!.id;
+
+    // getAnsweredSurveysForCandidate を呼んで AI アンケートが含まれるか確認
+    const summaries = await getAnsweredSurveysForCandidate(discProf!.id);
+
+    const aiEntry = summaries.find((s) => s.jobType === 'ai-driven-development');
+    expect(aiEntry).toBeDefined();
+    expect(aiEntry!.surveyId).toBe(aiSurveyId);
+    expect(aiEntry!.jobType).toBe('ai-driven-development');
   });
 });
