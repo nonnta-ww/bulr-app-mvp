@@ -18,10 +18,15 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, count, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 
 import type { DB } from '../client';
-import { skillSurvey, skillSurveyChoice, skillSurveyQuestion } from '../schema/skill-survey';
+import {
+  skillSurvey,
+  skillSurveyCategory,
+  skillSurveyChoice,
+  skillSurveyQuestion,
+} from '../schema/skill-survey';
 import { skillSurveyAnswer, skillSurveyResponse } from '../schema/skill-survey-response';
 import { candidateProfile } from '../schema/candidate-profile';
 import { user } from '../schema/auth';
@@ -114,28 +119,60 @@ describeDb('skill-survey-proficiency-scale 統合テスト', () => {
       .limit(1);
     expect(survey).toBeTruthy();
 
+    // 設問選択は backend survey のカテゴリにスコープする。DB には他 survey
+    // （ai-driven-development など）の同型設問（proficiency / multi_choice / free_text）も
+    // 存在するため、survey 非スコープの limit(1) は他 survey の設問を拾い得る。その設問へ
+    // backend response の回答を挿入すると buildResponseBundle（response の survey の設問のみで
+    // bundle を構築）に含まれず get() が undefined になり破綻する。job_type='backend' に固定する。
+    const backendCats = await db
+      .select({ id: skillSurveyCategory.id })
+      .from(skillSurveyCategory)
+      .where(eq(skillSurveyCategory.skillSurveyId, survey!.id));
+    const backendCatIds = backendCats.map((c) => c.id);
+
     const choicesFor = (questionId: string) =>
       db.select().from(skillSurveyChoice).where(eq(skillSurveyChoice.questionId, questionId));
 
     const [profQ] = await db
       .select()
       .from(skillSurveyQuestion)
-      .where(eq(skillSurveyQuestion.scoringKind, 'proficiency'))
+      .where(
+        and(
+          eq(skillSurveyQuestion.scoringKind, 'proficiency'),
+          inArray(skillSurveyQuestion.categoryId, backendCatIds),
+        ),
+      )
       .limit(1);
     const [recQ] = await db
       .select()
       .from(skillSurveyQuestion)
-      .where(eq(skillSurveyQuestion.scoringKind, 'recency'))
+      .where(
+        and(
+          eq(skillSurveyQuestion.scoringKind, 'recency'),
+          inArray(skillSurveyQuestion.categoryId, backendCatIds),
+        ),
+      )
       .limit(1);
     const [invQ] = await db
       .select()
       .from(skillSurveyQuestion)
-      .where(and(eq(skillSurveyQuestion.questionType, 'multi_choice'), isNull(skillSurveyQuestion.scoringKind)))
+      .where(
+        and(
+          eq(skillSurveyQuestion.questionType, 'multi_choice'),
+          isNull(skillSurveyQuestion.scoringKind),
+          inArray(skillSurveyQuestion.categoryId, backendCatIds),
+        ),
+      )
       .limit(1);
     const [freeQ] = await db
       .select()
       .from(skillSurveyQuestion)
-      .where(eq(skillSurveyQuestion.questionType, 'free_text'))
+      .where(
+        and(
+          eq(skillSurveyQuestion.questionType, 'free_text'),
+          inArray(skillSurveyQuestion.categoryId, backendCatIds),
+        ),
+      )
       .limit(1);
 
     expect(profQ && recQ && invQ && freeQ).toBeTruthy();

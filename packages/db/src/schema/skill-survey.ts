@@ -17,7 +17,7 @@ export const questionType = pgEnum('question_type', [
   'free_text',
 ]);
 
-export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency']);
+export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency', 'frequency']);
 
 // --- Tables ---
 
