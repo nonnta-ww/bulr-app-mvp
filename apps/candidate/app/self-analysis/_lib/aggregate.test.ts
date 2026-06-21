@@ -299,6 +299,58 @@ describe('aggregate — 頻度スコア (Req 4.2, 4.3, 4.4)', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Req 9.3 回帰: 頻度分類追加後も既存の proficiency/recency 集計値を変えない
+// "When score_kind に頻度分類を追加したとき, the Self-Analysis Service shall
+//  既存の熟練度（proficiency）・直近利用（recency）の集計結果を変更しない."
+// ---------------------------------------------------------------------------
+
+describe('aggregate — Req 9.3 回帰: 頻度追加で proficiency/recency 集計値が不変', () => {
+  it('proficiency + recency のみの入力に frequency を加えても既存指標の具体値が変わらない', () => {
+    // frequency を含まない基準スナップショット
+    // proficiencyScore: mean([1,3])=2 → 2/3*100=66.67 → 67
+    // recencyOrdinal: 4, recencyLabel: '現在も利用中'
+    const baseInput = source([
+      {
+        categoryName: 'C',
+        totalQuestions: 2,
+        answers: [proficiency([1, 3]), recency(4, '現在も利用中')],
+      },
+    ]);
+    const basecat = aggregate(baseInput).categories[0]!;
+
+    // frequency 回答を同じカテゴリに追加した入力
+    const withFreqInput = source([
+      {
+        categoryName: 'C',
+        totalQuestions: 3,
+        answers: [proficiency([1, 3]), recency(4, '現在も利用中'), frequency([2])],
+      },
+    ]);
+    const withFreqCat = aggregate(withFreqInput).categories[0]!;
+
+    // --- Req 9.3: 既存指標の具体値が完全に一致すること ---
+    // proficiency 系 (frequency level=2 が混入していれば mean([1,3,2])=2 → 67 のまま偶然一致するが
+    // selectedLevels 複数要素 proficiency([1,3]) → mean=2 → 67 なので
+    // frequency が混入するなら追加の 2 も足されカウントが変わるため answeredProficiencyCount で検出可)
+    expect(withFreqCat.proficiencyScore).toBe(basecat.proficiencyScore);           // 67
+    expect(withFreqCat.answeredProficiencyCount).toBe(basecat.answeredProficiencyCount); // 1 (1問)
+    // recency 系
+    expect(withFreqCat.recencyOrdinal).toBe(basecat.recencyOrdinal);   // 4
+    expect(withFreqCat.recencyLabel).toBe(basecat.recencyLabel);       // '現在も利用中'
+
+    // 念のため具体値も固定 (回帰の明示的アンカー)
+    expect(withFreqCat.proficiencyScore).toBe(67);
+    expect(withFreqCat.answeredProficiencyCount).toBe(1);
+    expect(withFreqCat.recencyOrdinal).toBe(4);
+    expect(withFreqCat.recencyLabel).toBe('現在も利用中');
+
+    // frequency 自体は独立して算出されていること (Req 4.2)
+    expect(withFreqCat.frequencyScore).toBe(67); // 2/3*100=66.67 → 67
+    expect(withFreqCat.answeredFrequencyCount).toBe(1);
+  });
+});
+
 describe('aggregate — 決定論性 & null 安全 (Req 8.1, 5.4)', () => {
   it('同一入力で同一スナップショットを返す（決定論的）', () => {
     const input = source([

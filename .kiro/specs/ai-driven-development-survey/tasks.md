@@ -44,7 +44,7 @@
   - _Boundary: seeds/index_
 
 - [ ] 4. Validation: テストと非回帰
-- [ ] 4.1 (P) 頻度集計のユニットテストを追加
+- [x] 4.1 (P) 頻度集計のユニットテストを追加
   - frequency 反映 / proficiency 非混入（同一入力で既存出力が不変）/ 寄与0件で null / 旧データ（scoringKind=null・selectedLevels 欠落）後方互換 を網羅する
   - 観測可能完了: 集計純関数のユニットテストが緑になり、既存 proficiency/recency ケースも不変で緑のまま
   - _Depends: 2.1_
