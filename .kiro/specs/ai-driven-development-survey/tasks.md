@@ -35,7 +35,7 @@
   - _Boundary: AI survey seed_
 
 - [ ] 3. Integration: 登録と適用
-- [ ] 3.1 seed を登録経路に組み込み実行する
+- [x] 3.1 seed を登録経路に組み込み実行する
   - `seeds/index.ts` の barrel export と `main()` に投入関数を追加し、backend に続けて実行されるようにする
   - seed を実行し AI アンケートを DB へ投入する
   - 観測可能完了: `tsx packages/db/src/seeds/index.ts` 実行で AI アンケートが投入され、候補者のアンケート一覧に出現する
