@@ -20,7 +20,7 @@
  * Boundary: SurveyFormComponent
  */
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import type {
   SkillSurvey,
@@ -104,6 +104,22 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   const [formError, setFormError] = useState('');
 
   const [isPending, startTransition] = useTransition();
+
+  // ステップ切り替え時にページ最上部へスクロールする。
+  // ウィザードは 1 URL のクライアント遷移のため、ステップを進めてもスクロール位置が
+  // 前ステップ下部（ボタン位置）のまま残り、次ステップの「回答を送信する」ボタンが
+  // ほぼ同じ位置に来て誤って送信してしまう。ステップ変更時に即時で最上部へ戻し、
+  // 次ステップの最初の設問から回答できるようにする（初回マウントは除外）。
+  const isInitialStepRef = useRef(true);
+  useEffect(() => {
+    if (isInitialStepRef.current) {
+      isInitialStepRef.current = false;
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [currentStepIndex]);
 
   // ---------------------------------------------------------------------------
   // Handlers
