@@ -27,7 +27,7 @@
   - _Requirements: 1.7, 4.1_
   - _Boundary: packages/auth schemas_
 
-- [ ] 1.4 (P) 認可エラーコードに会社利用停止を追加する
+- [x] 1.4 (P) 認可エラーコードに会社利用停止を追加する
   - `AuthErrorCode` に `COMPANY_INACTIVE` を追加する
   - 完了状態: `new AuthError('COMPANY_INACTIVE')` が型エラーなく生成でき、既存コードと判別可能
   - _Requirements: 5.2, 6.1_
