@@ -21,5 +21,5 @@ export type { AuthErrorCode } from './errors';
 export type { User, Session } from './schemas';
 
 // 入力検証スキーマ（既存 apps/business / 後続 apps/admin・candidate から共有）
-export { emailSchema, interviewerProfileSchema } from './schemas';
-export type { InterviewerProfileInput } from './schemas';
+export { emailSchema, interviewerProfileSchema, companyRoleSchema, companyStatusSchema } from './schemas';
+export type { InterviewerProfileInput, CompanyRole, CompanyStatus } from './schemas';

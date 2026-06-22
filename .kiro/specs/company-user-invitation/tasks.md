@@ -20,7 +20,7 @@
   - _Requirements: 4.1, 4.6_
   - _Boundary: company.status_
 
-- [ ] 1.3 (P) 役割・ステータスの共有 enum を auth に追加する
+- [x] 1.3 (P) 役割・ステータスの共有 enum を auth に追加する
   - `companyRoleSchema`（role_in_org 用 zod enum）と `companyStatusSchema` を定義
   - server エントリから両 enum と型を re-export する
   - 完了状態: admin / business / guards から同一 enum を import でき、列挙外の値が parse で拒否される
