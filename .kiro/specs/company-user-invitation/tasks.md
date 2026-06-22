@@ -43,7 +43,7 @@
 
 ## 2. Core: 認可ガード更新
 
-- [ ] 2.1 会社ゲートにステータス判定を追加する
+- [x] 2.1 会社ゲートにステータス判定を追加する
   - `requireCompanyUser()` に company 参照を追加し、company_id 無は `COMPANY_NOT_ASSOCIATED`、status≠active は `COMPANY_INACTIVE` を throw
   - 返り値に会社ステータスを含める
   - 完了状態: 未所属・一時停止・解約・有効の各ケースで期待どおりのコード/正常返却に分岐する（単体テストで確認）

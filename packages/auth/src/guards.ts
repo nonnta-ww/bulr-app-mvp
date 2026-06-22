@@ -16,13 +16,14 @@ import 'server-only';
 import { headers } from 'next/headers';
 
 import { db } from '@bulr/db';
-import { candidateProfile, userProfile } from '@bulr/db/schema';
+import { candidateProfile, company, userProfile } from '@bulr/db/schema';
 import { eq } from 'drizzle-orm';
 
 import { createAuth } from './server';
 import { AuthError } from './errors';
 import type { CandidateProfile } from '@bulr/db/schema';
 import type { User, Session } from './schemas';
+import type { CompanyStatus } from './schemas';
 
 /**
  * guards 内部専用の auth インスタンス。
@@ -149,12 +150,53 @@ export async function requireCandidate(): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// resolveCompanyAccess — 会社ゲートの純粋分岐ロジック（テスト可能なヘルパー）
+//
+// company-user-invitation Requirements: 4.2, 4.3, 5.2, 6.1, 6.2
+//
+// DB 値を受け取り、以下のルールで AuthError を throw するか { companyId, companyStatus } を返す。
+//   - companyId が null/undefined → COMPANY_NOT_ASSOCIATED（未所属）
+//   - companyStatus が null/undefined → COMPANY_NOT_ASSOCIATED（会社行なし、防御的扱い）
+//   - companyStatus が 'active' 以外（'suspended' / 'terminated'） → COMPANY_INACTIVE
+//   - それ以外 → { companyId, companyStatus } を返す
+// ---------------------------------------------------------------------------
+
+export function resolveCompanyAccess(input: {
+  companyId: string | null | undefined;
+  companyStatus: CompanyStatus | null | undefined;
+}): { companyId: string; companyStatus: CompanyStatus } {
+  const { companyId, companyStatus } = input;
+
+  // companyId が未設定 → 未所属
+  if (!companyId) {
+    throw new AuthError('COMPANY_NOT_ASSOCIATED');
+  }
+
+  // 会社行が存在しない（companyStatus が null）→ 防御的に未所属扱い
+  if (!companyStatus) {
+    throw new AuthError('COMPANY_NOT_ASSOCIATED');
+  }
+
+  // 会社がアクティブでない（suspended / terminated）→ COMPANY_INACTIVE
+  if (companyStatus !== 'active') {
+    throw new AuthError('COMPANY_INACTIVE');
+  }
+
+  return { companyId, companyStatus };
+}
+
+// ---------------------------------------------------------------------------
 // requireCompanyUser — 認証済み かつ user_profile に company_id が存在することを確認するガード
 //
 // company-and-opening Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+// company-user-invitation Requirements: 4.2, 4.3, 5.2, 6.1, 6.2
 // ---------------------------------------------------------------------------
 
-export async function requireCompanyUser(): Promise<{ user: User; companyId: string }> {
+export async function requireCompanyUser(): Promise<{
+  user: User;
+  companyId: string;
+  companyStatus: CompanyStatus;
+}> {
   // Step 1: UNAUTHORIZED の throw を requireUser() に委譲（design.md パターン）
   await requireUser();
 
@@ -173,10 +215,23 @@ export async function requireCompanyUser(): Promise<{ user: User; companyId: str
     .where(eq(userProfile.userId, baUser.id))
     .limit(1);
 
-  // company_id が NULL の場合は COMPANY_NOT_ASSOCIATED を throw
-  if (!profile?.companyId) {
-    throw new AuthError('COMPANY_NOT_ASSOCIATED');
+  // company テーブルから status を取得する（companyId が存在する場合のみ）
+  let rawCompanyStatus: string | null = null;
+  if (profile?.companyId) {
+    const [companyRow] = await db
+      .select({ status: company.status })
+      .from(company)
+      .where(eq(company.id, profile.companyId))
+      .limit(1);
+    rawCompanyStatus = companyRow?.status ?? null;
   }
+
+  // resolveCompanyAccess で未所属・INACTIVE 判定を集約する
+  // （COMPANY_NOT_ASSOCIATED / COMPANY_INACTIVE の throw を一元管理）
+  const { companyId, companyStatus } = resolveCompanyAccess({
+    companyId: profile?.companyId,
+    companyStatus: rawCompanyStatus as CompanyStatus | null,
+  });
 
   // Better Auth の getSession は optional フィールドを string | null | undefined で返すが、
   // Drizzle $inferSelect の User 型は string | null を期待する。
@@ -191,5 +246,5 @@ export async function requireCompanyUser(): Promise<{ user: User; companyId: str
     updatedAt: baUser.updatedAt,
   };
 
-  return { user, companyId: profile.companyId };
+  return { user, companyId, companyStatus };
 }
