@@ -33,7 +33,7 @@
   - _Requirements: 5.2, 6.1_
   - _Boundary: packages/auth errors_
 
-- [ ] 1.5 マイグレーションを生成・適用する
+- [x] 1.5 マイグレーションを生成・適用する
   - 1.1 / 1.2 の変更から drizzle マイグレーションを生成（DIRECT_URL + DATABASE_URL を inline 指定）
   - 既存 `company` 行の status を backfill（is_active=true→active / false→suspended）
   - 完了状態: ローカル Postgres に適用され、`company_user_invitation` テーブルと `company.status` 列・partial unique index が実在する
@@ -181,3 +181,9 @@
   - _Requirements: 2.1, 5.1, 5.2_
   - _Depends: 5.1, 6.2_
   - _Boundary: e2e tests_
+
+## Implementation Notes
+
+- 環境: ワークツリーで作業する場合、Node は `export PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`（既定 node は v15 で pnpm 不可）、git は `/opt/homebrew/bin/git`（`/usr/bin/git` は Xcode シム壊れ）、`.env.local` はメインリポジトリからコピー、`pnpm install` 必須。
+- 1.3: `@bulr/auth` にはテストランナーが無かったため vitest インフラ（vitest.config.ts + package.json test script + devDep）を追加した。
+- 1.5: `packages/db/src/schema/` に co-located した `*.integration.test.ts` を drizzle-kit がスキーマとして誤読するため、`drizzle.config.ts` の schema glob を `./src/schema/!(*.test|*.integration.test).ts` に変更。drizzle-kit 系は `DIRECT_URL` と `DATABASE_URL` を両方 inline でローカル URL に上書きして実行（env 解決ハマり回避）。DML backfill は generate 対象外なので migration SQL に手動追記。
