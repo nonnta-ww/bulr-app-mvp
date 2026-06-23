@@ -109,7 +109,7 @@
   - _Depends: 1.1, 1.5_
   - _Boundary: apps/business invitation confirm page_
 
-- [ ] 4.3 受諾アクションで会社紐付けを行う
+- [x] 4.3 受諾アクションで会社紐付けを行う
   - authedAction でラップし、token から招待を取得して status=pending・未期限・会社 active・招待先メールと受諾者メール一致・受諾者未所属を検証
   - transaction 内で招待を pending→accepted に条件付き更新（recheck で競合検知）し、user_profile に company_id と role_in_org を設定
   - 成功時に cookie をクリアし募集一覧へ遷移
