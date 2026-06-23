@@ -140,4 +140,28 @@ describe('SurveyForm — 4段階熟練度設問と必須ガード (Req 1.4)', ()
     expect(screen.getByRole('heading', { name: 'カテゴリB' })).toBeInTheDocument();
     expect(screen.queryByText('この設問への回答は必須です。')).not.toBeInTheDocument();
   });
+
+  it('ステップ遷移時にページ最上部へスクロールする（初回マウントでは呼ばない）', async () => {
+    const user = userEvent.setup();
+    const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    try {
+      render(<SurveyForm survey={makeSurvey()} categories={makeCategories()} existingResponse={null} />);
+
+      // 初回マウントではスクロールしない
+      expect(scrollSpy).not.toHaveBeenCalled();
+
+      // 必須未充足の「次へ」はステップが進まないのでスクロールも発火しない
+      await user.click(screen.getByRole('button', { name: '次へ' }));
+      expect(scrollSpy).not.toHaveBeenCalled();
+
+      // 回答してステップを進めると最上部（top: 0）へスクロールする
+      await user.click(screen.getByRole('radio', { name: '実務で実装・運用したことがある' }));
+      await user.click(screen.getByRole('button', { name: '次へ' }));
+
+      expect(screen.getByRole('heading', { name: 'カテゴリB' })).toBeInTheDocument();
+      expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+    } finally {
+      scrollSpy.mockRestore();
+    }
+  });
 });
