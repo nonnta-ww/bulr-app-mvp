@@ -11,17 +11,17 @@
  * Requirements: entry-flow 7.1〜7.4
  */
 
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { and, eq } from 'drizzle-orm';
 
-import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { db, getEntriesByOpeningId } from '@bulr/db';
 import { opening } from '@bulr/db/schema';
 
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { ENTRY_STATUS_LABEL, ENTRY_STATUS_TONE } from '@/lib/status';
+import { requireCompanyGate } from '@/lib/company-gate';
 
 // ---------------------------------------------------------------------------
 // 日時フォーマット (Asia/Tokyo)
@@ -52,16 +52,7 @@ export default async function BusinessEntriesListPage({ params }: PageProps) {
   const { openingId } = await params;
 
   // 認証 + 企業所属確認
-  let companyId: string;
-  try {
-    const result = await requireCompanyUser();
-    companyId = result.companyId;
-  } catch (e) {
-    if (e instanceof AuthError) {
-      redirect('/sign-in');
-    }
-    redirect('/sign-in');
-  }
+  const { companyId } = await requireCompanyGate();
 
   // opening 取得（id AND company_id で絞り込み — 他社の opening は notFound）
   const [ownedOpening] = await db

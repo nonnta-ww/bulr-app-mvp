@@ -145,7 +145,7 @@
   - _Depends: 2.1_
   - _Boundary: apps/business company-gate helper_
 
-- [ ] 6.2 会社ゲート付きページの分岐を共通ヘルパーへ置換する
+- [x] 6.2 会社ゲート付きページの分岐を共通ヘルパーへ置換する
   - 募集一覧・募集詳細・エントリー一覧・エントリー詳細・候補者招待ページの catch を requireCompanyGate に置換
   - 完了状態: 未所属/停止ユーザーは `/no-company` に遷移し、`/openings → /sign-in → /interviews` の二段リダイレクトが起きない
   - _Requirements: 5.1, 5.5_
