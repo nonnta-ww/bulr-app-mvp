@@ -118,7 +118,7 @@
   - _Depends: 1.1, 1.3_
   - _Boundary: apps/business accept invitation action_
 
-- [ ] 4.4 (P) 未所属・利用停止の専用ページを実装する
+- [x] 4.4 (P) 未所属・利用停止の専用ページを実装する
   - requireUser でアクセス制御（未認証はサインインへ）
   - user_profile と company から状態を導出し、未所属/一時停止/解約で文言を出し分け、次アクションを提示
   - 完了状態: `/no-company` が認証済みで開け、3状態それぞれに対応する説明が表示される
