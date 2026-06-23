@@ -69,7 +69,7 @@
   - _Depends: 1.1_
   - _Boundary: apps/admin company invitation actions_
 
-- [ ] 3.3 (P) メンバー解除アクションを実装する
+- [x] 3.3 (P) メンバー解除アクションを実装する
   - adminAction でラップし、対象ユーザーの company_id と role_in_org を NULL に戻す（所属不一致は拒否）
   - 完了状態: 解除後ユーザーは未所属になり、当該ユーザーが作成した既存データ（募集等）は削除されず残る
   - _Requirements: 3.2, 3.4, 3.5, 6.1_
