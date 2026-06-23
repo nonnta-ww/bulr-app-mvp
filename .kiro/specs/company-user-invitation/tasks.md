@@ -76,7 +76,7 @@
   - _Depends: 1.5_
   - _Boundary: apps/admin company member actions_
 
-- [ ] 3.4 (P) 会社ステータス遷移アクションを実装する
+- [x] 3.4 (P) 会社ステータス遷移アクションを実装する
   - adminAction でラップし、許可遷移（active→suspended/terminated、suspended→active/terminated、terminated は終端）のみ受け付け、is_active を同期
   - 既存の会社無効化アクションを本アクションへ統合（呼び出し側を差し替え）
   - 完了状態: 一時停止/解約/再有効化が反映され is_active と整合、terminated からの再有効化と不正遷移は拒否される
