@@ -62,7 +62,7 @@
   - _Depends: 1.1, 1.3, 1.5_
   - _Boundary: apps/admin company invitation actions_
 
-- [ ] 3.2 (P) 招待取消アクションを実装する
+- [x] 3.2 (P) 招待取消アクションを実装する
   - adminAction でラップし、対象招待を pending→revoked に条件付き更新（pending 以外は拒否）
   - 完了状態: 保留中招待が revoked になり以後受諾不可、pending 以外の取消は拒否される
   - _Requirements: 3.3, 3.5, 6.1_
