@@ -53,7 +53,7 @@
 
 ## 3. Core: admin 招待・メンバー・ステータス管理
 
-- [ ] 3.1 招待発行アクションとメールを実装する
+- [x] 3.1 招待発行アクションとメールを実装する
   - 入力（company_id / email / role_in_org）を Zod 検証し adminAction でラップ
   - 会社が active であること、宛先メールのユーザーが未所属であること、pending 重複が無いこと（partial unique 違反の検知含む）を確認
   - token と有効期限（7日）を持つ招待を作成し、受諾リンク（BUSINESS_BASE_URL ベース）を含む招待メールを送信
