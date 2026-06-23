@@ -19,10 +19,18 @@ import { Icon } from '@/components/ui/icon';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
-export function SignInForm() {
+interface SignInFormProps {
+  /** 招待トークン。指定された場合、magic-link の callbackURL を招待フローへ変更する（Req 2.4） */
+  token?: string;
+}
+
+export function SignInForm({ token }: SignInFormProps = {}) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // token がある場合は招待フローへ、ない場合は従来どおり /interviews へ
+  const callbackURL = token ? `/invitations/${token}` : '/interviews';
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,7 +49,7 @@ export function SignInForm() {
     try {
       const result = await signIn.magicLink({
         email: parsed.data,
-        callbackURL: '/interviews',
+        callbackURL,
       });
 
       // result.error が存在する場合はエラー処理
