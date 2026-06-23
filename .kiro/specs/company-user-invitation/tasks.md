@@ -152,7 +152,7 @@
   - _Depends: 6.1, 4.4_
   - _Boundary: apps/business gated pages_
 
-- [ ] 6.3 (P) 未所属ページの UX リダイレクトを proxy に追加する
+- [x] 6.3 (P) 未所属ページの UX リダイレクトを proxy に追加する
   - proxy matcher に `/no-company` を追加（Cookie 無→サインイン）、`/invitations/*` は matcher に含めない
   - 完了状態: 未認証で `/no-company` を開くとサインインへ、招待リンクは route handler 側で処理される
   - _Requirements: 5.3, 5.4_

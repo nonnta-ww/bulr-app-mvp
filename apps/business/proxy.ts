@@ -28,8 +28,15 @@ import { NextRequest, NextResponse } from 'next/server';
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // /interviews/* および /openings/* への Cookie 存在チェック → /sign-in リダイレクト
-  if (pathname.startsWith('/interviews/') || pathname === '/openings' || pathname.startsWith('/openings/')) {
+  // /interviews/*・/openings/*・/no-company への Cookie 存在チェック → /sign-in リダイレクト
+  // NOTE: /invitations/* は matcher に含めない。未認証の招待者は route handler が
+  //       /sign-in?token= へ誘導するため、proxy で先回りして token を落とさないこと。
+  if (
+    pathname.startsWith('/interviews/') ||
+    pathname === '/openings' ||
+    pathname.startsWith('/openings/') ||
+    pathname === '/no-company'
+  ) {
     return handleInterviewerAuth(request);
   }
 
@@ -67,5 +74,6 @@ export const config = {
     '/openings/:openingId*',
     '/openings/:openingId/entries',
     '/openings/:openingId/entries/:entryId*',
+    '/no-company',
   ],
 };
