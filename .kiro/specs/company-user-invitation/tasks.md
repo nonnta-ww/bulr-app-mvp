@@ -138,7 +138,7 @@
 
 ## 6. Integration: business 会社ゲート配線
 
-- [ ] 6.1 会社ゲート共通ヘルパーを実装する
+- [x] 6.1 会社ゲート共通ヘルパーを実装する
   - requireCompanyUser を呼び、UNAUTHORIZED/SESSION_EXPIRED→サインイン、COMPANY_NOT_ASSOCIATED/COMPANY_INACTIVE→/no-company にマップするヘルパーを作成
   - 完了状態: ヘルパー呼び出しで company_id が返るか、コードに応じた適切なリダイレクトが行われる
   - _Requirements: 5.1, 5.2, 6.2_
