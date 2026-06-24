@@ -161,7 +161,7 @@
 
 ## 7. Validation: テスト
 
-- [ ] 7.1 (P) 認可・enum・遷移の単体テストを追加する
+- [x] 7.1 (P) 認可・enum・遷移の単体テストを追加する
   - 共有 enum の列挙値検証、requireCompanyUser の4分岐、ステータス許可遷移表、requireCompanyGate のコード→リダイレクト対応を検証
   - 完了状態: 各単体テストが green
   - _Requirements: 4.2, 4.3, 4.4, 5.2, 6.1, 6.2_
@@ -188,3 +188,4 @@
 - 1.3: `@bulr/auth` にはテストランナーが無かったため vitest インフラ（vitest.config.ts + package.json test script + devDep）を追加した。
 - 1.5: `packages/db/src/schema/` に co-located した `*.integration.test.ts` を drizzle-kit がスキーマとして誤読するため、`drizzle.config.ts` の schema glob を `./src/schema/!(*.test|*.integration.test).ts` に変更。drizzle-kit 系は `DIRECT_URL` と `DATABASE_URL` を両方 inline でローカル URL に上書きして実行（env 解決ハマり回避）。DML backfill は generate 対象外なので migration SQL に手動追記。
 - 5.1: `'use server'` ファイルは async 関数（Server Action）以外を export できない。3.4 で `set-company-status.ts`('use server') に純粋関数 `isAllowedCompanyTransition` を同居させていたため、5.1 でクライアントが import した時点で `next build` が失敗（typecheck/vitest は検出せず、build のみ検出）。純粋関数を `company-status-transitions.ts`(非 'use server') に切り出して解消。app 配線タスクでは `pnpm --filter <app> build` を必ず実行すること。
+- 7.1: 単体テストは各実装タスクの TDD で既に追加済み（1.3 schemas.test=enum、2.1 guards.test=resolveCompanyAccess 4分岐、3.4 set-company-status.test=遷移マトリクス、6.1 company-gate.test=コード→redirect）。本タスクは網羅確認で完了。
