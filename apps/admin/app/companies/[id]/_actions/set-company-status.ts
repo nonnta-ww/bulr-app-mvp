@@ -26,38 +26,9 @@ import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-// ---------------------------------------------------------------------------
-// 純粋遷移ヘルパー
-// ---------------------------------------------------------------------------
-
-/**
- * 会社ステータス遷移の可否を判定する純粋関数。
- *
- * 許可エッジ（State Diagram より）:
- *   active → suspended
- *   active → terminated
- *   suspended → active
- *   suspended → terminated
- *
- * 禁止:
- *   terminated → * （終端状態）
- *   * → same   （同一ステータス no-op）
- */
-export function isAllowedCompanyTransition(from: CompanyStatus, to: CompanyStatus): boolean {
-  // 同一ステータスへの遷移は常に禁止
-  if (from === to) return false;
-
-  // terminated は終端状態: いかなる遷移も禁止
-  if (from === 'terminated') return false;
-
-  // 許可エッジ: active → suspended, active → terminated
-  if (from === 'active' && (to === 'suspended' || to === 'terminated')) return true;
-
-  // 許可エッジ: suspended → active, suspended → terminated
-  if (from === 'suspended' && (to === 'active' || to === 'terminated')) return true;
-
-  return false;
-}
+// 純粋な遷移判定は 'use server' 非依存モジュールに切り出している
+// （本ファイルは 'use server' のため async 関数以外を export できない）。
+import { isAllowedCompanyTransition } from './company-status-transitions';
 
 // ---------------------------------------------------------------------------
 // setCompanyStatus アクション

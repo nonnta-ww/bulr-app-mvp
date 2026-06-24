@@ -121,47 +121,47 @@ function extractDomainError(
 
 describe('isAllowedCompanyTransition (pure unit)', () => {
   it('allows active → suspended', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('active', 'suspended')).toBe(true);
   });
 
   it('allows active → terminated', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('active', 'terminated')).toBe(true);
   });
 
   it('allows suspended → active', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('suspended', 'active')).toBe(true);
   });
 
   it('allows suspended → terminated', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('suspended', 'terminated')).toBe(true);
   });
 
   it('rejects terminated → active (terminated is terminal)', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('terminated', 'active')).toBe(false);
   });
 
   it('rejects terminated → suspended (terminated is terminal)', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('terminated', 'suspended')).toBe(false);
   });
 
   it('rejects active → active (same-state no-op)', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('active', 'active')).toBe(false);
   });
 
   it('rejects suspended → suspended (same-state no-op)', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('suspended', 'suspended')).toBe(false);
   });
 
   it('rejects terminated → terminated (same-state no-op from terminal)', async () => {
-    const { isAllowedCompanyTransition } = await import('./set-company-status');
+    const { isAllowedCompanyTransition } = await import('./company-status-transitions');
     expect(isAllowedCompanyTransition('terminated', 'terminated')).toBe(false);
   });
 });

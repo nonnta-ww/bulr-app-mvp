@@ -128,7 +128,7 @@
 
 ## 5. Integration: admin 管理 UI 配線
 
-- [ ] 5.1 会社詳細ページに招待・メンバー・ステータス操作を統合する
+- [x] 5.1 会社詳細ページに招待・メンバー・ステータス操作を統合する
   - 招待発行フォーム、保留中招待一覧と取消、メンバー一覧と解除、会社ステータス操作（停止/解約/再有効化）を会社詳細ページへ配線
   - 各操作を 3.1〜3.5 のアクション/クエリに接続し、操作後に再検証（revalidate）
   - 完了状態: admin が会社詳細から招待発行・取消・メンバー解除・ステータス変更を一通り実行でき、結果が一覧に反映される
@@ -187,3 +187,4 @@
 - 環境: ワークツリーで作業する場合、Node は `export PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`（既定 node は v15 で pnpm 不可）、git は `/opt/homebrew/bin/git`（`/usr/bin/git` は Xcode シム壊れ）、`.env.local` はメインリポジトリからコピー、`pnpm install` 必須。
 - 1.3: `@bulr/auth` にはテストランナーが無かったため vitest インフラ（vitest.config.ts + package.json test script + devDep）を追加した。
 - 1.5: `packages/db/src/schema/` に co-located した `*.integration.test.ts` を drizzle-kit がスキーマとして誤読するため、`drizzle.config.ts` の schema glob を `./src/schema/!(*.test|*.integration.test).ts` に変更。drizzle-kit 系は `DIRECT_URL` と `DATABASE_URL` を両方 inline でローカル URL に上書きして実行（env 解決ハマり回避）。DML backfill は generate 対象外なので migration SQL に手動追記。
+- 5.1: `'use server'` ファイルは async 関数（Server Action）以外を export できない。3.4 で `set-company-status.ts`('use server') に純粋関数 `isAllowedCompanyTransition` を同居させていたため、5.1 でクライアントが import した時点で `next build` が失敗（typecheck/vitest は検出せず、build のみ検出）。純粋関数を `company-status-transitions.ts`(非 'use server') に切り出して解消。app 配線タスクでは `pnpm --filter <app> build` を必ず実行すること。
