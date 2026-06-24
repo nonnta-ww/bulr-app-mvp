@@ -15,11 +15,10 @@
  * Requirements: entry-flow 8.1〜8.5, session-from-entry 3.1, 3.4
  */
 
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { asc, eq, inArray } from 'drizzle-orm';
 
-import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { db, getEntryWithSnapshots, getLatestResponseByCandidateProfileId } from '@bulr/db';
 import type { SkillSurveyResponseWithAnswers } from '@bulr/db';
 import { assessmentPattern, skillSurveyAnswer, skillSurveyCategory, skillSurveyChoice, skillSurveyQuestion } from '@bulr/db/schema';
@@ -27,6 +26,7 @@ import { assessmentPattern, skillSurveyAnswer, skillSurveyCategory, skillSurveyC
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { ENTRY_STATUS_LABEL, ENTRY_STATUS_TONE } from '@/lib/status';
+import { requireCompanyGate } from '@/lib/company-gate';
 
 import { ResumePreviewButton } from './_components/resume-preview-button';
 import { UpdateStatusButtons } from './_components/update-status-buttons';
@@ -63,16 +63,7 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
   const { openingId, entryId } = await params;
 
   // 認証 + 企業所属確認
-  let companyId: string;
-  try {
-    const result = await requireCompanyUser();
-    companyId = result.companyId;
-  } catch (e) {
-    if (e instanceof AuthError) {
-      redirect('/sign-in');
-    }
-    redirect('/sign-in');
-  }
+  const { companyId } = await requireCompanyGate();
 
   // エントリー詳細取得（スナップショット含む）
   const entryData = await getEntryWithSnapshots(entryId);

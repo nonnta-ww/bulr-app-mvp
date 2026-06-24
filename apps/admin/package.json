@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3022",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@bulr/auth": "workspace:*",
@@ -24,6 +25,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.0",
     "lucide-react": "^0.469.0",
+    "nanoid": "^5",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -36,6 +38,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5.4"
+    "typescript": "^5.4",
+    "vitest": "^4.1.0"
   }
 }

@@ -1,9 +1,11 @@
-import { and, count, eq, ilike, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 import { db } from '../../client';
 import { user } from '../../schema/auth';
 import { company } from '../../schema/company';
+import type { CompanyStatus } from '../../schema/company';
+import { companyUserInvitation } from '../../schema/company-user-invitation';
 import { opening } from '../../schema/opening';
 import { userProfile } from '../../schema/user-profile';
 
@@ -20,13 +22,21 @@ export interface CompanyListItem {
 }
 
 export interface CompanyDetail {
-  company: { id: string; name: string; isActive: boolean; createdAt: Date };
+  company: { id: string; name: string; isActive: boolean; status: CompanyStatus; createdAt: Date };
   openings: Array<{ id: string; title: string; status: string; createdAt: Date }>;
   interviewers: Array<{
     userId: string;
     email: string;
     displayName: string;
     roleInOrg: string | null;
+  }>;
+  pendingInvitations: Array<{
+    id: string;
+    email: string;
+    roleInOrg: string;
+    status: string;
+    expiresAt: Date;
+    createdAt: Date;
   }>;
 }
 
@@ -142,6 +152,7 @@ export async function getCompanyDetail(
       id: company.id,
       name: company.name,
       isActive: company.isActive,
+      status: company.status,
       createdAt: company.createdAt,
     })
     .from(company)
@@ -183,6 +194,27 @@ export async function getCompanyDetail(
     .orderBy(userProfile.displayName);
 
   // ------------------------------------------------------------------
+  // 保留中招待一覧（status = 'pending', createdAt 降順）
+  // ------------------------------------------------------------------
+  const pendingInvitationRows = await db
+    .select({
+      id: companyUserInvitation.id,
+      email: companyUserInvitation.email,
+      roleInOrg: companyUserInvitation.roleInOrg,
+      status: companyUserInvitation.status,
+      expiresAt: companyUserInvitation.expiresAt,
+      createdAt: companyUserInvitation.createdAt,
+    })
+    .from(companyUserInvitation)
+    .where(
+      and(
+        eq(companyUserInvitation.companyId, companyId),
+        eq(companyUserInvitation.status, 'pending'),
+      ),
+    )
+    .orderBy(desc(companyUserInvitation.createdAt));
+
+  // ------------------------------------------------------------------
   // 結果の組み立て
   // ------------------------------------------------------------------
   return {
@@ -190,6 +222,7 @@ export async function getCompanyDetail(
       id: companyRow.id,
       name: companyRow.name,
       isActive: companyRow.isActive,
+      status: companyRow.status as CompanyStatus,
       createdAt: companyRow.createdAt,
     },
     openings: openingRows.map((r) => ({
@@ -203,6 +236,14 @@ export async function getCompanyDetail(
       email: r.email,
       displayName: r.displayName,
       roleInOrg: r.roleInOrg ?? null,
+    })),
+    pendingInvitations: pendingInvitationRows.map((r) => ({
+      id: r.id,
+      email: r.email,
+      roleInOrg: r.roleInOrg,
+      status: r.status,
+      expiresAt: r.expiresAt,
+      createdAt: r.createdAt,
     })),
   };
 }

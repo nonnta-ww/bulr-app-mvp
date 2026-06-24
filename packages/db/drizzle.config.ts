@@ -22,7 +22,8 @@ if (!migrationUrl) {
 }
 
 export default defineConfig({
-  schema: './src/schema/*.ts',
+  // テストファイル（*.test.ts / *.integration.test.ts）はスキーマとして読み込まない
+  schema: './src/schema/!(*.test|*.integration.test).ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: { url: migrationUrl },

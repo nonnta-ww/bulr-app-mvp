@@ -17,3 +17,11 @@ export const interviewerProfileSchema = z.object({
 
 // 型エクスポート (Requirement 9.7)
 export type InterviewerProfileInput = z.infer<typeof interviewerProfileSchema>;
+
+// 企業ユーザー招待: 組織内役割 (company-user-invitation Requirement 1.7, 4.1)
+export const companyRoleSchema = z.enum(['admin', 'member']);
+export type CompanyRole = z.infer<typeof companyRoleSchema>;
+
+// 企業ユーザー招待: 会社ステータス (company-user-invitation Requirement 4.1)
+export const companyStatusSchema = z.enum(['active', 'suspended', 'terminated']);
+export type CompanyStatus = z.infer<typeof companyStatusSchema>;

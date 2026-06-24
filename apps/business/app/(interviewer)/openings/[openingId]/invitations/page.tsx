@@ -7,15 +7,15 @@
  * Requirements: company-and-opening 6.x, 7.x, 8.x, 9.x
  */
 
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { and, desc, eq } from 'drizzle-orm';
 
-import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { opening, invitation } from '@bulr/db/schema';
 
 import { Badge } from '@/components/ui/badge';
+import { requireCompanyGate } from '@/lib/company-gate';
 
 import { CopyUrlButton } from '../../_components/copy-url-button';
 import { CreateInvitationButton } from '../_components/create-invitation-button';
@@ -48,16 +48,7 @@ export default async function InvitationsPage({ params }: PageProps) {
   const { openingId } = await params;
 
   // 認証 + 企業所属確認
-  let companyId: string;
-  try {
-    const result = await requireCompanyUser();
-    companyId = result.companyId;
-  } catch (e) {
-    if (e instanceof AuthError) {
-      redirect('/sign-in');
-    }
-    redirect('/sign-in');
-  }
+  const { companyId } = await requireCompanyGate();
 
   // opening 所有権確認（id AND company_id — 他社の opening は取得しない）
   const [ownedOpening] = await db

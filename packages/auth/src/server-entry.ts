@@ -42,8 +42,8 @@ export { AuthError } from './errors';
 export type { AuthErrorCode } from './errors';
 
 // 入力検証スキーマ（isomorphic だが server 側でも参照しやすいよう再エクスポート）
-export { emailSchema, interviewerProfileSchema } from './schemas';
-export type { InterviewerProfileInput } from './schemas';
+export { emailSchema, interviewerProfileSchema, companyRoleSchema, companyStatusSchema } from './schemas';
+export type { InterviewerProfileInput, CompanyRole, CompanyStatus } from './schemas';
 
 // Better Auth 推論型
 export type { User, Session } from './schemas';

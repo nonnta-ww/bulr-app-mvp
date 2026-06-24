@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@bulr/db": "workspace:*",
@@ -26,7 +27,8 @@
     "@types/node": "^22",
     "@types/nodemailer": "^6.4.0",
     "@types/react": "^19",
-    "typescript": "^5.4"
+    "typescript": "^5.4",
+    "vitest": "^4.1.0"
   },
   "peerDependencies": {
     "next": "^16.0.0",

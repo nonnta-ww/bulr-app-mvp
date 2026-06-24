@@ -5,13 +5,12 @@
  */
 
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { desc, eq } from 'drizzle-orm';
 import { db } from '@bulr/db';
 import { opening } from '@bulr/db/schema';
-import { requireCompanyUser, AuthError } from '@bulr/auth/server';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
+import { requireCompanyGate } from '@/lib/company-gate';
 
 // ---------------------------------------------------------------------------
 // ステータスラベルマッピング
@@ -47,16 +46,7 @@ function formatDate(date: Date | null): string {
 // ---------------------------------------------------------------------------
 
 export default async function OpeningsPage() {
-  let companyId: string;
-  try {
-    const result = await requireCompanyUser();
-    companyId = result.companyId;
-  } catch (e) {
-    if (e instanceof AuthError) {
-      redirect('/sign-in');
-    }
-    redirect('/sign-in');
-  }
+  const { companyId } = await requireCompanyGate();
 
   const openings = await db
     .select()
