@@ -168,14 +168,14 @@
   - _Depends: 2.1, 3.4, 6.1_
   - _Boundary: unit tests_
 
-- [ ] 7.2 招待発行・受諾・管理の統合テストを追加する
+- [x] 7.2 招待発行・受諾・管理の統合テストを追加する
   - 発行（正常/重複/所属済み/非active）、受諾（正常/期限切れ/取消済み/消費済み/メール不一致/非active/並行1回成立）、解除（company_id NULL 化・既存データ残存）、ステータス（停止でメンバー遮断/再有効化で回復/解約後再有効化不可）を検証
   - 完了状態: 各統合テストが green で、受諾後に company_id と role_in_org が永続化される
   - _Requirements: 1.1, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.5, 2.6, 2.7, 3.2, 3.3, 3.4, 4.2, 4.4, 4.5, 6.4_
   - _Depends: 3.1, 3.2, 3.3, 3.4, 4.3_
   - _Boundary: integration tests_
 
-- [ ] 7.3 主要フローの E2E テストを追加する
+- [x] 7.3 主要フローの E2E テストを追加する
   - 未所属ユーザーで募集一覧→/no-company、招待リンク→（サインイン）→確認→受諾→募集一覧到達、一時停止会社メンバー→/no-company を検証
   - 完了状態: 3つの critical path が E2E で green
   - _Requirements: 2.1, 5.1, 5.2_
@@ -189,3 +189,4 @@
 - 1.5: `packages/db/src/schema/` に co-located した `*.integration.test.ts` を drizzle-kit がスキーマとして誤読するため、`drizzle.config.ts` の schema glob を `./src/schema/!(*.test|*.integration.test).ts` に変更。drizzle-kit 系は `DIRECT_URL` と `DATABASE_URL` を両方 inline でローカル URL に上書きして実行（env 解決ハマり回避）。DML backfill は generate 対象外なので migration SQL に手動追記。
 - 5.1: `'use server'` ファイルは async 関数（Server Action）以外を export できない。3.4 で `set-company-status.ts`('use server') に純粋関数 `isAllowedCompanyTransition` を同居させていたため、5.1 でクライアントが import した時点で `next build` が失敗（typecheck/vitest は検出せず、build のみ検出）。純粋関数を `company-status-transitions.ts`(非 'use server') に切り出して解消。app 配線タスクでは `pnpm --filter <app> build` を必ず実行すること。
 - 7.1: 単体テストは各実装タスクの TDD で既に追加済み（1.3 schemas.test=enum、2.1 guards.test=resolveCompanyAccess 4分岐、3.4 set-company-status.test=遷移マトリクス、6.1 company-gate.test=コード→redirect）。本タスクは網羅確認で完了。
+- 7.2/7.3: 並行受諾レーステストが実バグを検出。受諾の race 判定が recheck(status/acceptedByUserId) ベースだったため、同一ユーザーの並行受諾で両方成功していた。条件付き UPDATE の `.returning()` 影響行数で判定する方式に修正（後勝ち tx は WHERE status='pending' が 0 行）。なお apps/business の DB-backed テストは vitest のファイル並列実行 + 共有 Postgres により一部 pre-existing で flaky（lib/capture/compatibility.test.ts, api/cron/audio-purge/route.test.ts。本機能とは無関係）。レーステストは負荷下でも安定するよう「成功は高々1件 + 最終状態の整合」で検証。

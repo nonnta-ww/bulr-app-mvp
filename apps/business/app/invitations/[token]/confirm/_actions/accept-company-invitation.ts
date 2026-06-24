@@ -86,8 +86,15 @@ export const acceptCompanyInvitation = authedAction(
     // 7. transaction: 招待を accepted に条件付き UPDATE + recheck（race-safe）、user_profile 更新（Req 2.1, 2.7）
     try {
       await db.transaction(async (tx) => {
-        // 条件付き UPDATE: status='pending' のときのみ更新（race condition 対策）
-        await tx
+        // 条件付き UPDATE: status='pending' のときのみ更新し、影響行を RETURNING で受ける。
+        //
+        // race-safe の要は「影響行数」であって recheck ではない。
+        // 同一ユーザーが並行受諾した場合、両 tx とも acceptedByUserId が同値になるため
+        // status/acceptedByUserId の recheck では「自分が更新したか」を判別できない。
+        // 条件付き UPDATE の `WHERE status='pending'` は同時実行でも 1 tx しか一致しない
+        // （後勝ち tx は先勝ち tx の commit 後に status='accepted' となり 0 行になる）。
+        // よって RETURNING の件数 0 を CONSUME_RACE として扱う（Req 2.7）。
+        const consumed = await tx
           .update(companyUserInvitation)
           .set({
             status: 'accepted',
@@ -100,16 +107,10 @@ export const acceptCompanyInvitation = authedAction(
               eq(companyUserInvitation.id, inv.id),
               eq(companyUserInvitation.status, 'pending'),
             ),
-          );
+          )
+          .returning({ id: companyUserInvitation.id });
 
-        // recheck: 本当に自分が accepted に更新できたかを確認
-        const [recheck] = await tx
-          .select({ status: companyUserInvitation.status, acceptedByUserId: companyUserInvitation.acceptedByUserId })
-          .from(companyUserInvitation)
-          .where(eq(companyUserInvitation.id, inv.id))
-          .limit(1);
-
-        if (!recheck || recheck.status !== 'accepted' || recheck.acceptedByUserId !== ctx.userId) {
+        if (consumed.length === 0) {
           throw new Error('CONSUME_RACE');
         }
 
