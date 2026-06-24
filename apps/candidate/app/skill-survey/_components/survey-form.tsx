@@ -246,8 +246,7 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   // Submit handler
   // ---------------------------------------------------------------------------
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function submitAnswers() {
     setFormError('');
 
     // Validate all steps before submitting
@@ -300,7 +299,7 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   const isLastStep = currentStepIndex === steps.length - 1;
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8">
+    <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-8">
       {/* 進捗インジケータ */}
       <SurveyProgress
         steps={steps}
@@ -483,10 +482,19 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
           戻る
         </button>
 
-        {/* 次へ or 回答を送信する */}
+        {/*
+          次へ / 回答を送信する。
+          いずれも type="button" にして onClick で処理する（type="submit" を使わない）。
+          三項で同位置にボタンを描画すると React が DOM ノードを再利用するため、
+          最終ステップ手前で「次へ」をクリック → handleNext が isLastStep を true にし、
+          同じボタン要素の type が submit に書き換わった状態でブラウザがクリックの
+          デフォルト動作を評価し、フォームが意図せず送信されてしまう（最終ステップ遷移時のみ発生）。
+          ネイティブ送信経路を排除することで誤送信を原理的に防ぐ。
+        */}
         {isLastStep ? (
           <button
-            type="submit"
+            type="button"
+            onClick={submitAnswers}
             disabled={isPending}
             className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
