@@ -20,7 +20,7 @@
  * Boundary: SurveyFormComponent
  */
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import type {
   SkillSurvey,
@@ -104,6 +104,22 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   const [formError, setFormError] = useState('');
 
   const [isPending, startTransition] = useTransition();
+
+  // ステップ切り替え時にページ最上部へスクロールする。
+  // ウィザードは 1 URL のクライアント遷移のため、ステップを進めてもスクロール位置が
+  // 前ステップ下部（ボタン位置）のまま残り、次ステップの「回答を送信する」ボタンが
+  // ほぼ同じ位置に来て誤って送信してしまう。ステップ変更時に即時で最上部へ戻し、
+  // 次ステップの最初の設問から回答できるようにする（初回マウントは除外）。
+  const isInitialStepRef = useRef(true);
+  useEffect(() => {
+    if (isInitialStepRef.current) {
+      isInitialStepRef.current = false;
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [currentStepIndex]);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -230,8 +246,7 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   // Submit handler
   // ---------------------------------------------------------------------------
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function submitAnswers() {
     setFormError('');
 
     // Validate all steps before submitting
@@ -284,7 +299,7 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   const isLastStep = currentStepIndex === steps.length - 1;
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8">
+    <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-8">
       {/* 進捗インジケータ */}
       <SurveyProgress
         steps={steps}
@@ -467,10 +482,19 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
           戻る
         </button>
 
-        {/* 次へ or 回答を送信する */}
+        {/*
+          次へ / 回答を送信する。
+          いずれも type="button" にして onClick で処理する（type="submit" を使わない）。
+          三項で同位置にボタンを描画すると React が DOM ノードを再利用するため、
+          最終ステップ手前で「次へ」をクリック → handleNext が isLastStep を true にし、
+          同じボタン要素の type が submit に書き換わった状態でブラウザがクリックの
+          デフォルト動作を評価し、フォームが意図せず送信されてしまう（最終ステップ遷移時のみ発生）。
+          ネイティブ送信経路を排除することで誤送信を原理的に防ぐ。
+        */}
         {isLastStep ? (
           <button
-            type="submit"
+            type="button"
+            onClick={submitAnswers}
             disabled={isPending}
             className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >

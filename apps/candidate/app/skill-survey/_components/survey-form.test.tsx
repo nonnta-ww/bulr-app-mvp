@@ -21,9 +21,16 @@ vi.mock('../[surveyId]/_actions/submit-survey', () => ({
 import type { SkillSurvey } from '@bulr/db/schema';
 
 import { SurveyForm } from './survey-form';
+import { submitSurvey } from '../[surveyId]/_actions/submit-survey';
 import type { CategoryWithQuestions } from '../_lib/survey-structure';
 
-afterEach(cleanup);
+const submitMock = submitSurvey as unknown as ReturnType<typeof vi.fn>;
+
+afterEach(() => {
+  cleanup();
+  submitMock.mockReset();
+  vi.restoreAllMocks();
+});
 
 const PROFICIENCY_LABELS = [
   '未経験・知識なし',
@@ -139,5 +146,53 @@ describe('SurveyForm — 4段階熟練度設問と必須ガード (Req 1.4)', ()
 
     expect(screen.getByRole('heading', { name: 'カテゴリB' })).toBeInTheDocument();
     expect(screen.queryByText('この設問への回答は必須です。')).not.toBeInTheDocument();
+  });
+
+  it('ナビゲーション/送信ボタンは type="button" で、最終ステップ遷移で誤送信しない', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    render(<SurveyForm survey={makeSurvey()} categories={makeCategories()} existingResponse={null} />);
+
+    // ステップ0: 「次へ」は type="button"（type="submit" を使わない）
+    const nextBtn = screen.getByRole('button', { name: '次へ' });
+    expect(nextBtn).toHaveAttribute('type', 'button');
+
+    // 必須回答 → 最終ステップへ。遷移しても submit は呼ばれない（誤送信なし）
+    await user.click(screen.getByRole('radio', { name: '実務で実装・運用したことがある' }));
+    await user.click(nextBtn);
+    expect(screen.getByRole('heading', { name: 'カテゴリB' })).toBeInTheDocument();
+    expect(submitMock).not.toHaveBeenCalled();
+
+    // 最終ステップの「回答を送信する」も type="button"（ネイティブ送信経路を持たない）
+    const submitBtn = screen.getByRole('button', { name: '回答を送信する' });
+    expect(submitBtn).toHaveAttribute('type', 'button');
+
+    // 明示的に押したときだけ submit が呼ばれる
+    await user.click(submitBtn);
+    expect(submitMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('ステップ遷移時にページ最上部へスクロールする（初回マウントでは呼ばない）', async () => {
+    const user = userEvent.setup();
+    const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    try {
+      render(<SurveyForm survey={makeSurvey()} categories={makeCategories()} existingResponse={null} />);
+
+      // 初回マウントではスクロールしない
+      expect(scrollSpy).not.toHaveBeenCalled();
+
+      // 必須未充足の「次へ」はステップが進まないのでスクロールも発火しない
+      await user.click(screen.getByRole('button', { name: '次へ' }));
+      expect(scrollSpy).not.toHaveBeenCalled();
+
+      // 回答してステップを進めると最上部（top: 0）へスクロールする
+      await user.click(screen.getByRole('radio', { name: '実務で実装・運用したことがある' }));
+      await user.click(screen.getByRole('button', { name: '次へ' }));
+
+      expect(screen.getByRole('heading', { name: 'カテゴリB' })).toBeInTheDocument();
+      expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+    } finally {
+      scrollSpy.mockRestore();
+    }
   });
 });

@@ -15,8 +15,8 @@ CREATE TABLE "company_user_invitation" (
 );
 --> statement-breakpoint
 ALTER TABLE "company" ADD COLUMN "status" text DEFAULT 'active' NOT NULL;--> statement-breakpoint
+UPDATE "company" SET "status" = 'suspended' WHERE "is_active" = false;--> statement-breakpoint
 ALTER TABLE "company_user_invitation" ADD CONSTRAINT "company_user_invitation_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_user_invitation" ADD CONSTRAINT "company_user_invitation_invited_by_user_id_user_id_fk" FOREIGN KEY ("invited_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_user_invitation" ADD CONSTRAINT "company_user_invitation_accepted_by_user_id_user_id_fk" FOREIGN KEY ("accepted_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "company_user_invitation_company_email_pending_uniq" ON "company_user_invitation" USING btree ("company_id","email") WHERE status = 'pending';--> statement-breakpoint
-UPDATE "company" SET "status" = 'suspended' WHERE "is_active" = false;
+CREATE UNIQUE INDEX "company_user_invitation_company_email_pending_uniq" ON "company_user_invitation" USING btree ("company_id","email") WHERE status = 'pending';
