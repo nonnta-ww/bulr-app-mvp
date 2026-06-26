@@ -51,6 +51,7 @@ Docker を使ったローカル開発環境の構築手順は [`./local.md`](./l
 | [`./vercel.md`](./vercel.md) | Vercel プロジェクト `bulr-web` の作成と設定手順 |
 | [`./vercel-blob.md`](./vercel-blob.md) | Vercel Blob ストア `bulr-audio` の作成手順 |
 | [`./cron.md`](./cron.md) | `CRON_SECRET` の生成および Vercel への登録手順 |
+| [`./recall.md`](./recall.md) | Recall.ai ボット連携（面接キャプチャ）のセットアップ。**Webhooks 登録・env 一覧・`RECALL_API_BASE_URL` の /api/v1 二重化注意** を含む |
 | [`./env-vars.md`](./env-vars.md) | Vercel 環境変数の一覧と登録手順 |
 | [`./ci.md`](./ci.md) | GitHub Actions CI パイプラインの動作確認手順 |
 | [`./drizzle-kit.md`](./drizzle-kit.md) | drizzle-kit を使用した初回スキーマ push 手順 |
