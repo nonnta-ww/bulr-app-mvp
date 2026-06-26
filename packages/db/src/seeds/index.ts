@@ -4,6 +4,7 @@ export { runBackendSkillSurveySeed } from './skill-surveys/backend';
 export { runAiDrivenDevelopmentSkillSurveySeed } from './skill-surveys/ai-driven-development';
 export { runFrontendSkillSurveySeed } from './skill-surveys/frontend';
 export { runInfrastructureSreSkillSurveySeed } from './skill-surveys/infrastructure-sre';
+export { runEngineeringManagerSkillSurveySeed } from './skill-surveys/engineering-manager';
 
 // ---------------------------------------------------------------------------
 // CLI entry point
@@ -15,11 +16,13 @@ async function main(): Promise<void> {
   const { runAiDrivenDevelopmentSkillSurveySeed } = await import('./skill-surveys/ai-driven-development');
   const { runFrontendSkillSurveySeed } = await import('./skill-surveys/frontend');
   const { runInfrastructureSreSkillSurveySeed } = await import('./skill-surveys/infrastructure-sre');
+  const { runEngineeringManagerSkillSurveySeed } = await import('./skill-surveys/engineering-manager');
 
   await runBackendSkillSurveySeed(db);
   await runAiDrivenDevelopmentSkillSurveySeed(db);
   await runFrontendSkillSurveySeed(db);
   await runInfrastructureSreSkillSurveySeed(db);
+  await runEngineeringManagerSkillSurveySeed(db);
 
   console.log('All seeds completed.');
 }
