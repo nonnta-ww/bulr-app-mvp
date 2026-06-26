@@ -2,6 +2,7 @@ export type { AssessmentPatternCode, AssessmentPatternSeed, PatternCategory } fr
 export { assessmentPatterns, EXPECTED_COUNTS, countByCategory } from './assessment-patterns';
 export { runBackendSkillSurveySeed } from './skill-surveys/backend';
 export { runAiDrivenDevelopmentSkillSurveySeed } from './skill-surveys/ai-driven-development';
+export { runFrontendSkillSurveySeed } from './skill-surveys/frontend';
 
 // ---------------------------------------------------------------------------
 // CLI entry point
@@ -11,9 +12,11 @@ async function main(): Promise<void> {
   const { db } = await import('../client');
   const { runBackendSkillSurveySeed } = await import('./skill-surveys/backend');
   const { runAiDrivenDevelopmentSkillSurveySeed } = await import('./skill-surveys/ai-driven-development');
+  const { runFrontendSkillSurveySeed } = await import('./skill-surveys/frontend');
 
   await runBackendSkillSurveySeed(db);
   await runAiDrivenDevelopmentSkillSurveySeed(db);
+  await runFrontendSkillSurveySeed(db);
 
   console.log('All seeds completed.');
 }
