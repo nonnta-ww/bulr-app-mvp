@@ -11,7 +11,7 @@
  *
  * Requirements: 6.1, 6.2, 8.1, 8.2, 8.3, 8.4
  *
- * authedAction wrapper を使わない理由は upload-resume.ts のコメント参照
+ * authedAction wrapper を使わない理由は app/api/resume/upload/route.ts のコメント参照
  * (パターン統一: requireCandidate 直呼び出しでセキュリティ等価性を担保)
  */
 

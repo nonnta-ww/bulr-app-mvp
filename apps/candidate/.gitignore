@@ -1,1 +1,4 @@
 .vercel
+
+# ローカル開発の BLOB_STORAGE_PROVIDER=local-fs で書き込まれるアップロード保存先
+tmp/
