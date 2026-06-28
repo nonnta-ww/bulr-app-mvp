@@ -1,24 +1,27 @@
 'use server';
 
 /**
- * getSignedUrlAction — Blob 署名 URL 発行 Server Action
+ * getSignedUrlAction — 履歴書ダウンロード URL 発行 Server Action
  *
  * - requireCandidate() で所有権確認 + candidate_profile_id スコープで pathname を SELECT
- * - head(blobPathname, { token: BLOB_READ_WRITE_TOKEN }) を呼んで downloadUrl を取得
- * - クライアントには raw blob_url を返さず、TTL 付き downloadUrl のみを返す
+ * - ResumeStorageClient.getDownloadUrl() で downloadUrl を取得
+ *   - vercel-blob: head() による TTL 付き downloadUrl
+ *   - local-fs: 認証付きローカル配信ルート（/api/resume/file/...）の URL
+ * - クライアントには raw blob_url を返さず downloadUrl のみを返す
  *
  * Requirements: 5.1, 5.2, 5.3, 5.4, 8.1, 8.2, 8.3, 8.4
  *
- * authedAction wrapper を使わない理由は upload-resume.ts のコメント参照。
+ * authedAction wrapper を使わない理由は app/api/resume/upload/route.ts のコメント参照。
  */
 
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
-import { head } from '@vercel/blob';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { resumeDocument } from '@bulr/db/schema';
+
+import { getResumeStorage } from '../../../lib/resume-storage/storage';
 
 const inputSchema = z.object({
   documentId: z.string().min(1).max(64),
@@ -54,12 +57,10 @@ export async function getSignedUrlAction(formData: FormData): Promise<SignedUrlR
       return { ok: false, error: { code: 'NOT_FOUND', message: '指定された履歴書が見つかりません。' } };
     }
 
-    // Blob head で downloadUrl を発行 (TTL 付き)
+    // ストレージから downloadUrl を発行（vercel-blob は TTL 付き、local-fs は配信ルート URL）
     try {
-      const meta = await head(target.blobPathname, {
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-      return { ok: true, data: { downloadUrl: meta.downloadUrl } };
+      const downloadUrl = await getResumeStorage().getDownloadUrl(target.blobPathname);
+      return { ok: true, data: { downloadUrl } };
     } catch {
       return { ok: false, error: { code: 'BLOB_HEAD_FAILED', message: 'ファイル URL の発行に失敗しました。再試行してください。' } };
     }

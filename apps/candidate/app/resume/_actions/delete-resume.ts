@@ -4,22 +4,23 @@
  * deleteResumeAction — 履歴書削除 Server Action
  *
  * - requireCandidate() で所有権確認 + candidate_profile_id スコープで対象を SELECT
- * - del(blobPathname) で Blob 削除
- * - Blob 削除成功時のみ DB の resume_document 行を DELETE
- * - Blob 削除失敗時は DB を変更せず BLOB_DELETE_FAILED を返す
+ * - ResumeStorageClient.delete(blobPathname) でファイル削除（local-fs / vercel-blob）
+ * - ファイル削除成功時のみ DB の resume_document 行を DELETE
+ * - ファイル削除失敗時は DB を変更せず BLOB_DELETE_FAILED を返す
  *
  * Requirements: 2.5, 7.1, 7.2, 7.3, 8.1, 8.2, 8.3, 8.4
  *
- * authedAction wrapper を使わない理由は upload-resume.ts のコメント参照。
+ * authedAction wrapper を使わない理由は app/api/resume/upload/route.ts のコメント参照。
  */
 
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
-import { del } from '@vercel/blob';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { resumeDocument } from '@bulr/db/schema';
+
+import { getResumeStorage } from '../../../lib/resume-storage/storage';
 
 const inputSchema = z.object({
   documentId: z.string().min(1).max(64),
@@ -55,9 +56,9 @@ export async function deleteResumeAction(formData: FormData): Promise<DeleteResu
       return { ok: false, error: { code: 'NOT_FOUND', message: '指定された履歴書が見つかりません。' } };
     }
 
-    // Blob 削除を先に実施 (失敗時は DB を変更しない)
+    // ファイル削除を先に実施 (失敗時は DB を変更しない)
     try {
-      await del(target.blobPathname);
+      await getResumeStorage().delete(target.blobPathname);
     } catch {
       return { ok: false, error: { code: 'BLOB_DELETE_FAILED', message: 'ファイル削除に失敗しました。再試行してください。' } };
     }

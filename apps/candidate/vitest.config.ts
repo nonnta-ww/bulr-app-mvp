@@ -8,7 +8,12 @@ export default defineConfig({
     // 既定は node。UI/コンポーネントテストはファイル先頭の
     // `// @vitest-environment jsdom` で jsdom 環境を選択する。
     environment: "node",
-    include: ["app/**/*.test.ts", "app/**/*.test.tsx"],
+    include: [
+      "app/**/*.test.ts",
+      "app/**/*.test.tsx",
+      "lib/**/*.test.ts",
+      "lib/**/*.test.tsx",
+    ],
     setupFiles: ["./vitest.setup.ts"],
   },
 });
