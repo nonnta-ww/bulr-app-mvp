@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>スキルアンケート結果 - bulr</title>
+<!-- Google Fonts & Material Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f8f9ff",
+                        "on-tertiary-container": "#6e1900",
+                        "on-secondary-container": "#395a80",
+                        "primary-fixed": "#ffdcc2",
+                        "on-primary-container": "#592e00",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d2e4ff",
+                        "on-secondary-fixed-variant": "#27486e",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#8f4d00",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#564335",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#a8c9f5",
+                        "surface-container-highest": "#d4e3ff",
+                        "on-tertiary-fixed": "#3b0900",
+                        "tertiary-fixed": "#ffdbd1",
+                        "outline": "#897362",
+                        "inverse-surface": "#203149",
+                        "surface-dim": "#c9dbf9",
+                        "surface-container": "#e6eeff",
+                        "on-primary-fixed-variant": "#6d3a00",
+                        "surface-container-low": "#eff3ff",
+                        "secondary": "#406087",
+                        "on-secondary-fixed": "#001c37",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed": "#2e1500",
+                        "surface-tint": "#8f4d00",
+                        "on-surface": "#091c33",
+                        "primary-fixed-dim": "#ffb77b",
+                        "primary-container": "#f28705",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-on-surface": "#ebf1ff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#872100",
+                        "tertiary-fixed-dim": "#ffb5a0",
+                        "surface-container-high": "#dde9ff",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#b1d1fe",
+                        "outline-variant": "#dcc2af",
+                        "surface-variant": "#d4e3ff",
+                        "tertiary": "#b12e00",
+                        "tertiary-container": "#ff7b55",
+                        "on-background": "#091c33",
+                        "inverse-primary": "#ffb77b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "24px",
+                        "gutter": "24px",
+                        "xs": "8px",
+                        "base": "4px",
+                        "margin-desktop": "48px",
+                        "lg": "40px",
+                        "xl": "64px",
+                        "margin-mobile": "16px",
+                        "sm": "16px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Noto Sans JP"],
+                        "label-md": ["Noto Sans JP"],
+                        "body-md": ["Noto Sans JP"],
+                        "headline-md": ["Noto Sans JP"],
+                        "headline-lg": ["Noto Sans JP"],
+                        "headline-lg-mobile": ["Noto Sans JP"],
+                        "title-lg": ["Noto Sans JP"],
+                        "display-lg": ["Noto Sans JP"],
+                        "body-lg": ["Noto Sans JP"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.7", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "1.5", "fontWeight": "500" }],
+                        "display-lg": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.7", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .ambient-shadow {
+            box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- SideNavBar (from JSON) -->
+<nav class="hidden md:flex w-64 h-screen fixed left-0 top-0 bg-inverse-surface shadow-sm z-50">
+<div class="flex flex-col h-full py-lg px-sm w-full">
+<!-- Header Brand -->
+<div class="px-sm mb-xl">
+<h1 class="font-display-lg text-display-lg font-bold text-primary tracking-tight">bulr</h1>
+<p class="font-caption text-caption text-surface-container-highest mt-1 opacity-80">Software Engineer Growth</p>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 space-y-2">
+<!-- Inactive Tab: ホーム -->
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span>ホーム</span>
+</a>
+<!-- Active Tab: スキルアンケート -->
+<a class="flex items-center gap-sm bg-surface-variant text-on-surface-variant rounded-r-full border-l-4 border-primary px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">quiz</span>
+<span>スキルアンケート</span>
+</a>
+<!-- Inactive Tab: 自己分析 -->
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">psychology</span>
+<span>自己分析</span>
+</a>
+<!-- Inactive Tab: 履歴書 -->
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">description</span>
+<span>履歴書</span>
+</a>
+<!-- Inactive Tab: 模擬面接 -->
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">forum</span>
+<span>模擬面接</span>
+</a>
+<!-- Inactive Tab: エントリー -->
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">send</span>
+<span>エントリー</span>
+</a>
+</div>
+<!-- Footer Tab -->
+<div class="mt-auto pt-lg">
+<a class="flex items-center gap-sm text-surface-container-highest px-sm py-xs hover:bg-surface-variant/10 transition-colors duration-200 rounded-r-full font-label-md text-label-md scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">logout</span>
+<span>ログアウト</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 px-margin-mobile md:px-margin-desktop py-lg md:py-xl overflow-y-auto">
+<div class="max-w-[800px] mx-auto w-full">
+<!-- Page Header -->
+<header class="mb-xl">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-xs">
+                    スキルアンケート結果
+                </h2>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<p class="font-body-md text-body-md">回答日 2026/06/01</p>
+</div>
+</header>
+<!-- Content Group -->
+<div class="flex flex-col gap-md">
+<!-- Section 1: 設計判断 -->
+<article class="bg-surface-container-lowest border border-surface-container-highest rounded-[10px] p-md ambient-shadow transition-colors duration-300 hover:border-secondary">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">architecture</span>
+                        設計判断
+                    </h3>
+<div class="space-y-sm">
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                            小規模なマイクロサービス間通信において、同期・非同期の選択基準をどのように設けていますか？
+                        </p>
+<div class="pt-sm">
+<span class="inline-flex items-center gap-xs px-sm py-xs bg-primary-fixed text-on-primary-fixed font-label-md text-label-md rounded-full shadow-sm">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                レイテンシと整合性の要件で個別に判断
+                            </span>
+</div>
+</div>
+</article>
+<!-- Section 2: トラブル対応 -->
+<article class="bg-surface-container-lowest border border-surface-container-highest rounded-[10px] p-md ambient-shadow transition-colors duration-300 hover:border-secondary">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">troubleshoot</span>
+                        トラブル対応
+                    </h3>
+<div class="space-y-sm">
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                            本番環境で原因不明のパフォーマンス低下が発生した際、最初に着手する調査項目は何ですか？
+                        </p>
+<div class="pt-sm">
+<span class="inline-flex items-center gap-xs px-sm py-xs bg-primary-fixed text-on-primary-fixed font-label-md text-label-md rounded-full shadow-sm">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                分散トレーシングによるボトルネックの特定
+                            </span>
+</div>
+</div>
+</article>
+</div>
+<!-- Bottom Action Area -->
+<div class="mt-xl flex flex-col items-center justify-center pt-lg border-t border-surface-container-highest">
+<div class="flex items-center gap-sm text-secondary bg-surface-container-low px-md py-xs rounded-full">
+<span class="material-symbols-outlined text-[18px]">lock_clock</span>
+<p class="font-body-md text-body-md">次回 2026/07/01 から編集できます</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

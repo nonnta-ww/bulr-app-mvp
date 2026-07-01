@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>履歴書管理 - bulr</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#eff3ff",
+                    "on-secondary-container": "#395a80",
+                    "on-primary-fixed-variant": "#6d3a00",
+                    "surface-container-high": "#dde9ff",
+                    "secondary-container": "#b1d1fe",
+                    "on-primary-fixed": "#2e1500",
+                    "inverse-primary": "#ffb77b",
+                    "on-secondary-fixed-variant": "#27486e",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#d4e3ff",
+                    "surface-container": "#e6eeff",
+                    "primary": "#8f4d00",
+                    "on-primary-container": "#592e00",
+                    "on-tertiary-fixed": "#3b0900",
+                    "surface-tint": "#8f4d00",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#ebf1ff",
+                    "outline": "#897362",
+                    "secondary-fixed": "#d2e4ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#dcc2af",
+                    "tertiary-fixed": "#ffdbd1",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#001c37",
+                    "background": "#f8f9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#872100",
+                    "surface-container-highest": "#d4e3ff",
+                    "primary-fixed-dim": "#ffb77b",
+                    "primary-fixed": "#ffdcc2",
+                    "primary-container": "#f28705",
+                    "tertiary-container": "#ff7b55",
+                    "surface-dim": "#c9dbf9",
+                    "secondary-fixed-dim": "#a8c9f5",
+                    "on-surface": "#091c33",
+                    "on-tertiary-container": "#6e1900",
+                    "on-primary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "inverse-surface": "#203149",
+                    "tertiary": "#b12e00",
+                    "on-background": "#091c33",
+                    "secondary": "#406087",
+                    "tertiary-fixed-dim": "#ffb5a0",
+                    "on-surface-variant": "#564335"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "64px",
+                    "margin-desktop": "48px",
+                    "lg": "40px",
+                    "gutter": "24px",
+                    "sm": "16px",
+                    "base": "4px",
+                    "md": "24px",
+                    "margin-mobile": "16px",
+                    "xs": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Noto Sans JP"],
+                    "headline-lg-mobile": ["Noto Sans JP"],
+                    "label-md": ["Noto Sans JP"],
+                    "headline-lg": ["Noto Sans JP"],
+                    "caption": ["Noto Sans JP"],
+                    "body-lg": ["Noto Sans JP"],
+                    "headline-md": ["Noto Sans JP"],
+                    "title-lg": ["Noto Sans JP"],
+                    "display-lg": ["Noto Sans JP"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.7", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.7", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                    "display-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .custom-shadow { box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05); }
+        .hairline-border { border-color: #DCE3EC; }
+        .slate-blue-border { border-color: #7595BF; }
+        .slate-blue-text { color: #7595BF; }
+        .bg-app-base { background-color: #F5F8FC; }
+        .bg-secondary-surface { background-color: #E4EBF2; }
+        .peach-chip-bg { background-color: #F2BBA7; }
+        
+        .list-item-hover:hover {
+            background-color: #F5F8FC;
+            border-left: 4px solid #7595BF;
+            padding-left: calc(1.5rem - 4px); /* maintain spacing */
+        }
+    </style>
+</head>
+<body class="bg-app-base font-body-md text-on-surface antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="h-full w-64 fixed left-0 top-0 overflow-y-auto bg-inverse-surface dark:bg-inverse-surface shadow-sm z-50 flex flex-col py-xl">
+<!-- Brand Header -->
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest/20 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-surface-container-lowest" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div>
+<h1 class="font-display-lg text-display-lg font-bold text-surface-container-lowest tracking-tight">bulr</h1>
+<p class="font-caption text-caption text-surface-variant">Software Engineer Growth</p>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-2 flex flex-col">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined">home</span>
+<span>ホーム</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined">poll</span>
+<span>スキルアンケート</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span>自己分析</span>
+</a>
+<!-- ACTIVE TAB -->
+<a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest/10 text-surface-container-lowest font-bold border-l-4 border-primary transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span>履歴書</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span>模擬面接</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors opacity-100 scale-[0.98] duration-150" href="#">
+<span class="material-symbols-outlined">send</span>
+<span>エントリー</span>
+</a>
+</nav>
+<!-- Footer Action -->
+<div class="px-4 mt-auto">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant font-body-md hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>ログアウト</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 overflow-y-auto">
+<div class="max-w-[1200px] mx-auto px-6 py-12 md:py-margin-desktop md:px-margin-desktop min-h-full">
+<!-- Page Header -->
+<header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">履歴書管理</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">アップロードされた職務経歴書やCVを管理・更新します。</p>
+</div>
+<button class="bg-primary-container text-on-secondary-fixed font-label-md text-label-md px-6 py-3 rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap self-start md:self-auto">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    アップロード
+                </button>
+</header>
+<!-- Document List Card -->
+<div class="bg-surface-container-lowest border hairline-border rounded-[10px] custom-shadow overflow-hidden">
+<!-- List Header (Optional, for structure) -->
+<div class="px-6 py-4 border-b hairline-border bg-surface-bright/50 hidden md:grid grid-cols-12 gap-4">
+<div class="col-span-6 font-label-md text-label-md text-on-surface-variant">ファイル名</div>
+<div class="col-span-3 font-label-md text-label-md text-on-surface-variant">アップロード日</div>
+<div class="col-span-3 font-label-md text-label-md text-on-surface-variant text-right">アクション</div>
+</div>
+<!-- List Items -->
+<div class="flex flex-col">
+<!-- Row 1 -->
+<div class="px-6 py-5 border-b hairline-border border-l-4 border-transparent list-item-hover transition-all duration-200 grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer">
+<div class="col-span-1 md:col-span-6 flex flex-col sm:flex-row sm:items-center gap-3">
+<span class="material-symbols-outlined text-outline">picture_as_pdf</span>
+<span class="font-title-lg text-title-lg font-medium text-on-surface truncate">2024年版_職務経歴書.pdf</span>
+<span class="peach-chip-bg text-on-secondary-fixed font-caption text-caption px-3 py-1 rounded-full whitespace-nowrap w-fit self-start sm:self-auto">職務経歴書</span>
+</div>
+<div class="col-span-1 md:col-span-3 font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                            2024年03月15日
+                        </div>
+<div class="col-span-1 md:col-span-3 flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-4 py-2 text-on-secondary-container font-label-md text-label-md rounded-md hover:bg-secondary-container/20 transition-colors flex items-center gap-1 border border-transparent hover:border-secondary-container">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+                                プレビュー
+                            </button>
+<button class="p-2 text-error font-label-md text-label-md rounded-md hover:bg-error-container/30 transition-colors flex items-center justify-center border border-transparent hover:border-error-container">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="px-6 py-5 border-l-4 border-transparent list-item-hover transition-all duration-200 grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer">
+<div class="col-span-1 md:col-span-6 flex flex-col sm:flex-row sm:items-center gap-3">
+<span class="material-symbols-outlined text-outline">picture_as_pdf</span>
+<span class="font-title-lg text-title-lg font-medium text-on-surface truncate">Fullstack_Engineer_CV.pdf</span>
+<span class="peach-chip-bg text-on-secondary-fixed font-caption text-caption px-3 py-1 rounded-full whitespace-nowrap w-fit self-start sm:self-auto">CV</span>
+</div>
+<div class="col-span-1 md:col-span-3 font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                            2024年02月28日
+                        </div>
+<div class="col-span-1 md:col-span-3 flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-4 py-2 text-on-secondary-container font-label-md text-label-md rounded-md hover:bg-secondary-container/20 transition-colors flex items-center gap-1 border border-transparent hover:border-secondary-container">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+                                プレビュー
+                            </button>
+<button class="p-2 text-error font-label-md text-label-md rounded-md hover:bg-error-container/30 transition-colors flex items-center justify-center border border-transparent hover:border-error-container">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State / Helpful Hint -->
+<div class="mt-8 bg-surface-bright border hairline-border rounded-lg p-6 flex items-start gap-4 custom-shadow">
+<span class="material-symbols-outlined text-primary-container text-2xl mt-1">lightbulb</span>
+<div>
+<h4 class="font-title-lg text-title-lg font-medium text-on-surface">履歴書の最適化</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">アップロードされた履歴書は、AIによる自動解析とスキルキーワードの抽出に使用されます。最新の経験を反映させることで、模擬面接の精度が向上します。</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

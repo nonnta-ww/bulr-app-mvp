@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr - スキルアンケート回答</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "brand-navy": "#172940",
+          "brand-navy-light": "#203149",
+          "brand-orange": "#F28705",
+          "brand-peach": "#F2BBA7",
+          "brand-bg": "#F5F8FC",
+          "brand-border": "#DCE3EC",
+          "brand-border-hover": "#7595BF",
+          "brand-text-light": "#E4EBF2",
+          "brand-text-muted": "#7D8B8C",
+          
+          "surface-tint": "#8f4d00",
+          "on-background": "#091c33",
+          "surface-container-lowest": "#ffffff",
+          "on-primary-fixed": "#2e1500",
+          "on-primary": "#ffffff",
+          "secondary-container": "#b1d1fe",
+          "on-error-container": "#93000a",
+          "tertiary-fixed": "#ffdbd1",
+          "tertiary": "#b12e00",
+          "surface-bright": "#f8f9ff",
+          "error-container": "#ffdad6",
+          "on-tertiary-fixed-variant": "#872100",
+          "on-secondary-container": "#395a80",
+          "surface-container-low": "#eff3ff",
+          "on-surface": "#091c33",
+          "inverse-surface": "#203149",
+          "on-tertiary-fixed": "#3b0900",
+          "surface-container-highest": "#d4e3ff",
+          "surface-dim": "#c9dbf9",
+          "surface-container": "#e6eeff",
+          "on-secondary": "#ffffff",
+          "surface": "#f8f9ff",
+          "inverse-primary": "#ffb77b",
+          "primary-fixed-dim": "#ffb77b",
+          "primary": "#8f4d00",
+          "primary-fixed": "#ffdcc2",
+          "on-surface-variant": "#564335",
+          "tertiary-fixed-dim": "#ffb5a0",
+          "outline": "#897362",
+          "on-secondary-fixed-variant": "#27486e",
+          "error": "#ba1a1a",
+          "outline-variant": "#dcc2af",
+          "secondary-fixed-dim": "#a8c9f5",
+          "on-tertiary": "#ffffff",
+          "background": "#f8f9ff",
+          "on-primary-container": "#592e00",
+          "secondary": "#406087",
+          "on-error": "#ffffff",
+          "surface-container-high": "#dde9ff",
+          "primary-container": "#f28705",
+          "on-tertiary-container": "#6e1900",
+          "on-secondary-fixed": "#001c37",
+          "surface-variant": "#d4e3ff",
+          "secondary-fixed": "#d2e4ff",
+          "tertiary-container": "#ff7b55",
+          "inverse-on-surface": "#ebf1ff",
+          "on-primary-fixed-variant": "#6d3a00"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "16px",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "base": "4px",
+          "xs": "8px",
+          "margin-desktop": "48px",
+          "lg": "40px",
+          "margin-mobile": "16px",
+          "sm": "16px",
+          "xl": "64px",
+          "md": "24px",
+          "gutter": "24px"
+        },
+        "fontFamily": {
+          "display-lg": ["Noto Sans JP"],
+          "headline-lg": ["Noto Sans JP"],
+          "caption": ["Noto Sans JP"],
+          "title-lg": ["Noto Sans JP"],
+          "body-lg": ["Noto Sans JP"],
+          "body-md": ["Noto Sans JP"],
+          "headline-md": ["Noto Sans JP"],
+          "headline-lg-mobile": ["Noto Sans JP"],
+          "label-md": ["Noto Sans JP"]
+        },
+        "fontSize": {
+          "display-lg": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+          "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+          "title-lg": ["20px", { "lineHeight": "1.5", "fontWeight": "500" }],
+          "body-lg": ["18px", { "lineHeight": "1.7", "fontWeight": "400" }],
+          "body-md": ["16px", { "lineHeight": "1.7", "fontWeight": "400" }],
+          "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+          "headline-lg-mobile": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+          "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .soft-shadow {
+            box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05);
+        }
+        
+        .radio-custom:checked + div {
+            border-color: #F28705 !important;
+            background-color: #F2BBA7 !important;
+        }
+        
+        .radio-custom:checked + div .radio-icon {
+            color: #F28705 !important;
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Hide scrollbar for clean UI but keep functionality */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dcc2af;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg text-on-background font-body-md h-screen overflow-hidden flex selection:bg-brand-peach selection:text-brand-navy">
+<aside class="hidden md:flex flex-col h-full w-64 fixed left-0 top-0 bg-brand-navy py-md gap-xs z-40">
+<div class="px-md mb-lg">
+<h1 class="text-headline-md font-headline-md font-bold text-white tracking-[-0.02em]">bulr</h1>
+<p class="text-caption font-caption text-brand-text-muted mt-1">Software Engineer Growth</p>
+</div>
+<nav class="flex-1 px-sm space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light hover:bg-brand-navy-light transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>ホーム</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light bg-brand-navy-light border-l-4 border-brand-orange font-bold transition-colors duration-300" href="#">
+<span class="material-symbols-outlined text-brand-orange" data-icon="assessment" style="font-variation-settings: 'FILL' 1;">assessment</span>
+<span>スキルアンケート</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light hover:bg-brand-navy-light transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span>自己分析</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light hover:bg-brand-navy-light transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>履歴書</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light hover:bg-brand-navy-light transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span>模擬面接</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-label-md font-label-md text-brand-text-light hover:bg-brand-navy-light transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+<span>エントリー</span>
+</a>
+</nav>
+</aside>
+<div class="flex-1 flex flex-col md:ml-64 h-full relative">
+<header class="md:hidden flex justify-between items-center w-full px-margin-mobile py-4 bg-brand-navy shadow-sm z-50 sticky top-0">
+<h1 class="text-headline-md font-headline-md font-bold text-white">bulr</h1>
+<div class="flex items-center gap-4">
+<span class="text-label-md font-label-md text-brand-text-light truncate max-w-[120px]">user@example.com</span>
+<button class="text-label-md font-label-md text-brand-orange font-bold hover:bg-brand-navy-light px-3 py-1.5 rounded-lg transition-all duration-200">ログアウト</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto w-full max-w-[1200px] mx-auto pb-32 pt-8 px-4 md:px-6 space-y-12">
+<section class="max-w-3xl mx-auto w-full relative">
+<div class="mb-12">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-md font-label-md text-on-surface-variant">カテゴリ 3 / 10</span>
+<span class="text-caption font-caption text-secondary">30% 完了</span>
+</div>
+<div class="w-full h-2 bg-brand-text-light rounded-full overflow-hidden">
+<div class="h-full bg-brand-orange rounded-full transition-all duration-500 ease-out" style="width: 30%"></div>
+</div>
+<h2 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-background mt-8 tracking-[-0.02em]">設計判断</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-2 leading-[1.7]">アーキテクチャの選定やトレードオフの判断基準についてお伺いします。</p>
+</div>
+<div class="space-y-8">
+<div class="bg-white rounded-lg p-6 md:p-8 soft-shadow border border-brand-border hover:border-brand-border-hover hover:bg-brand-text-light transition-colors duration-300 relative group">
+<div class="flex items-start gap-3 mb-6">
+<span class="inline-flex items-center justify-center bg-brand-peach text-brand-navy text-[12px] font-bold px-2 py-1 rounded-[4px] mt-1 whitespace-nowrap">必須</span>
+<h3 class="text-title-lg font-title-lg text-on-background font-bold">小規模なマイクロサービス間通信において、同期・非同期の選択基準をどのように設けていますか？</h3>
+</div>
+<div class="space-y-3">
+<label class="block relative cursor-pointer group">
+<input class="radio-custom sr-only peer" name="q1" type="radio" value="1"/>
+<div class="flex items-center p-4 rounded-lg border border-brand-border bg-white peer-hover:bg-brand-bg transition-all duration-200">
+<span class="material-symbols-outlined radio-icon text-brand-border-hover mr-4 transition-colors">radio_button_unchecked</span>
+<span class="text-body-md font-body-md text-on-background">原則すべて同期(REST/gRPC)</span>
+</div>
+</label>
+<label class="block relative cursor-pointer group">
+<input class="radio-custom sr-only peer" name="q1" type="radio" value="2"/>
+<div class="flex items-center p-4 rounded-lg border border-brand-border bg-white peer-hover:bg-brand-bg transition-all duration-200">
+<span class="material-symbols-outlined radio-icon text-brand-border-hover mr-4 transition-colors">radio_button_unchecked</span>
+<span class="text-body-md font-body-md text-on-background">原則すべて非同期(Message Queue)</span>
+</div>
+</label>
+<label class="block relative cursor-pointer group">
+<input checked="" class="radio-custom sr-only peer" name="q1" type="radio" value="3"/>
+<div class="flex items-center p-4 rounded-lg border border-brand-border bg-white transition-all duration-200">
+<span class="material-symbols-outlined radio-icon text-brand-border-hover mr-4 transition-colors">radio_button_unchecked</span>
+<span class="text-body-md font-body-md text-on-background font-medium">レイテンシと整合性の要件で個別に判断</span>
+</div>
+</label>
+<label class="block relative cursor-pointer group">
+<input class="radio-custom sr-only peer" name="q1" type="radio" value="4"/>
+<div class="flex items-center p-4 rounded-lg border border-brand-border bg-white peer-hover:bg-brand-bg transition-all duration-200">
+<span class="material-symbols-outlined radio-icon text-brand-border-hover mr-4 transition-colors">radio_button_unchecked</span>
+<span class="text-body-md font-body-md text-on-background">その他（自由記述）</span>
+</div>
+</label>
+</div>
+</div>
+<div class="bg-white rounded-lg p-6 md:p-8 soft-shadow border border-brand-border hover:border-brand-border-hover hover:bg-brand-text-light transition-colors duration-300">
+<div class="flex items-start gap-3 mb-6">
+<span class="inline-flex items-center justify-center bg-brand-text-light text-brand-text-muted text-[12px] font-bold px-2 py-1 rounded-[4px] mt-1 whitespace-nowrap">任意</span>
+<h3 class="text-title-lg font-title-lg text-on-background font-bold">過去に経験した最も複雑な設計課題と、その解決策について教えてください</h3>
+</div>
+<div class="relative">
+<textarea class="w-full bg-white text-on-background text-body-md font-body-md border border-brand-border rounded-lg p-4 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/50 outline-none transition-all resize-y placeholder:text-outline-variant" placeholder="例: 決済システム移行時に生じたデータ不整合リスクに対し、2フェーズコミットではなくSagaパターンを導入し..." rows="6"></textarea>
+<div class="absolute bottom-3 right-4 text-caption font-caption text-outline-variant">0 / 1000</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-0 left-0 right-0 md:left-64 bg-white/90 backdrop-blur-sm border-t border-brand-border p-4 md:px-margin-desktop flex justify-between items-center z-40">
+<button class="px-6 py-3 rounded-lg text-label-md font-label-md text-brand-navy hover:bg-brand-text-light transition-colors duration-200 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
+                戻る
+            </button>
+<button class="px-8 py-3 rounded-lg text-label-md font-label-md text-brand-navy bg-brand-orange hover:brightness-110 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 font-bold">
+                次へ
+                <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</body></html>
