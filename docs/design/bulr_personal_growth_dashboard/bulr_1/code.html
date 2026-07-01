@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>エントリー - bulr</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Noto Sans JP -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Tailwind Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#b12e00",
+              "on-error": "#ffffff",
+              "outline-variant": "#dcc2af",
+              "surface-tint": "#8f4d00",
+              "inverse-surface": "#203149",
+              "on-secondary-fixed-variant": "#27486e",
+              "error": "#ba1a1a",
+              "surface-container-low": "#eff3ff",
+              "surface-container-high": "#dde9ff",
+              "on-primary-container": "#592e00",
+              "tertiary-container": "#ff7b55",
+              "secondary": "#406087",
+              "on-secondary-container": "#395a80",
+              "primary-container": "#f28705",
+              "error-container": "#ffdad6",
+              "on-tertiary-container": "#6e1900",
+              "surface-bright": "#f8f9ff",
+              "surface-container": "#e6eeff",
+              "on-tertiary": "#ffffff",
+              "primary-fixed-dim": "#ffb77b",
+              "secondary-container": "#b1d1fe",
+              "on-error-container": "#93000a",
+              "background": "#f8f9ff",
+              "inverse-primary": "#ffb77b",
+              "outline": "#897362",
+              "on-primary-fixed": "#2e1500",
+              "on-secondary-fixed": "#001c37",
+              "on-primary": "#ffffff",
+              "tertiary-fixed": "#ffdbd1",
+              "primary": "#8f4d00",
+              "surface": "#f8f9ff",
+              "on-tertiary-fixed": "#3b0900",
+              "surface-container-lowest": "#ffffff",
+              "on-surface-variant": "#564335",
+              "tertiary-fixed-dim": "#ffb5a0",
+              "primary-fixed": "#ffdcc2",
+              "on-surface": "#091c33",
+              "on-secondary": "#ffffff",
+              "surface-dim": "#c9dbf9",
+              "secondary-fixed": "#d2e4ff",
+              "inverse-on-surface": "#ebf1ff",
+              "on-primary-fixed-variant": "#6d3a00",
+              "on-background": "#091c33",
+              "secondary-fixed-dim": "#a8c9f5",
+              "on-tertiary-fixed-variant": "#872100",
+              "surface-container-highest": "#d4e3ff",
+              "surface-variant": "#d4e3ff",
+              
+              // Custom design system colors mapped roughly to requested specs
+              "ds-bg": "#F5F8FC",
+              "ds-surface": "#FFFFFF",
+              "ds-surface-secondary": "#E4EBF2",
+              "ds-primary-text": "#172940",
+              "ds-border": "#DCE3EC",
+              "ds-accent": "#7595BF",
+              "ds-accent-peach": "#F2BBA7",
+              "ds-success-bg": "#D1E9E4",
+              "ds-success-text": "#2F9E8A",
+              "ds-error-bg": "#FFDAD6",
+              "ds-error-text": "#BA1A1A",
+              "ds-button-primary-bg": "#F28705",
+              "ds-neutral-text": "#7D8B8C",
+              "ds-shadow": "rgba(23, 41, 64, 0.05)"
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px",
+              "ds-card": "10px",
+              "ds-input": "8px"
+            },
+            spacing: {
+              "margin-mobile": "16px",
+              "gutter": "24px",
+              "sm": "16px",
+              "margin-desktop": "48px",
+              "xl": "64px",
+              "xs": "8px",
+              "md": "24px",
+              "base": "4px",
+              "lg": "40px",
+              "ds-8": "8px",
+              "ds-16": "16px",
+              "ds-24": "24px",
+              "ds-32": "32px",
+              "ds-48": "48px"
+            },
+            fontFamily: {
+              "headline-md": ["Noto Sans JP", "sans-serif"],
+              "headline-lg-mobile": ["Noto Sans JP", "sans-serif"],
+              "title-lg": ["Noto Sans JP", "sans-serif"],
+              "label-md": ["Noto Sans JP", "sans-serif"],
+              "body-md": ["Noto Sans JP", "sans-serif"],
+              "headline-lg": ["Noto Sans JP", "sans-serif"],
+              "display-lg": ["Noto Sans JP", "sans-serif"],
+              "body-lg": ["Noto Sans JP", "sans-serif"],
+              "caption": ["Noto Sans JP", "sans-serif"]
+            },
+            fontSize: {
+              "headline-md": ["24px", { lineHeight: "1.4", fontWeight: "700" }],
+              "headline-lg-mobile": ["24px", { lineHeight: "1.4", fontWeight: "700" }],
+              "title-lg": ["20px", { lineHeight: "1.5", fontWeight: "500" }],
+              "label-md": ["14px", { lineHeight: "1.4", letterSpacing: "0.02em", fontWeight: "500" }],
+              "body-md": ["16px", { lineHeight: "1.7", fontWeight: "400" }],
+              "headline-lg": ["32px", { lineHeight: "1.3", fontWeight: "700" }],
+              "display-lg": ["40px", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" }],
+              "body-lg": ["18px", { lineHeight: "1.7", fontWeight: "400" }],
+              "caption": ["12px", { lineHeight: "1.4", fontWeight: "400" }]
+            },
+            boxShadow: {
+              "ds-ambient": "0px 4px 20px rgba(23, 41, 64, 0.05)"
+            }
+          }
+        }
+      }
+    </script>
+<style>
+      body {
+        background-color: #F5F8FC;
+      }
+      .ds-ambient-shadow {
+        box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05);
+      }
+      .ds-card-hover {
+        transition: all 0.2s ease-in-out;
+      }
+      .ds-card-hover:hover {
+        border-color: #7595BF;
+        background-color: #E4EBF2;
+      }
+      .ds-ghost-button {
+        transition: all 0.2s ease-in-out;
+      }
+      .ds-ghost-button:hover {
+        background-color: #E4EBF2;
+      }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-ds-primary-text font-body-md antialiased bg-ds-bg">
+<!-- SideNavBar (Shared Component Shell) -->
+<nav class="docked h-screen w-72 left-0 top-0 bg-inverse-surface border-r border-outline-variant/10 shadow-sm flex-shrink-0 z-50 hidden md:flex flex-col py-md px-sm max-w-xs">
+<!-- Brand Header -->
+<div class="mb-ds-48 px-4 mt-ds-16">
+<h1 class="font-headline-lg text-headline-lg text-surface-lowest font-black tracking-tight mb-2">bulr</h1>
+<p class="font-label-md text-label-md text-surface-variant opacity-80">Software Engineer Growth</p>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-2 flex-grow">
+<!-- Inactive Tab: Home -->
+<li>
+<a class="flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-surface-bright transition-colors" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-md text-label-md mt-0.5">Home</span>
+</a>
+</li>
+<!-- Inactive Tab: Skill Survey -->
+<li>
+<a class="flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-surface-bright transition-colors" style="font-variation-settings: 'FILL' 0;">poll</span>
+<span class="font-label-md text-label-md mt-0.5">Skill Survey</span>
+</a>
+</li>
+<!-- Inactive Tab: Self Analysis -->
+<li>
+<a class="flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-surface-bright transition-colors" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-label-md text-label-md mt-0.5">Self Analysis</span>
+</a>
+</li>
+<!-- Inactive Tab: Resume -->
+<li>
+<a class="flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-surface-bright transition-colors" style="font-variation-settings: 'FILL' 0;">description</span>
+<span class="font-label-md text-label-md mt-0.5">Resume</span>
+</a>
+</li>
+<!-- Inactive Tab: Mock Interview -->
+<li>
+<a class="flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-surface-bright transition-colors" style="font-variation-settings: 'FILL' 0;">record_voice_over</span>
+<span class="font-label-md text-label-md mt-0.5">Mock Interview</span>
+</a>
+</li>
+<!-- ACTIVE TAB: Entry (エントリー) -->
+<li>
+<a class="flex items-center gap-3 bg-secondary-fixed-dim/10 text-on-primary-fixed-variant font-bold border-l-4 border-primary-container px-4 py-3 rounded-r-full" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">input</span>
+<span class="font-label-md text-label-md mt-0.5 text-primary-container">Entry</span>
+</a>
+</li>
+</ul>
+<!-- Bottom Actions (User / Logout) -->
+<div class="mt-auto border-t border-outline-variant/10 pt-4">
+<button class="w-full flex items-center gap-3 text-surface-variant hover:text-surface-bright px-4 py-3 transition-colors rounded-r-full group">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">person</span>
+</div>
+<span class="font-label-md text-label-md mt-0.5 text-left w-full">Logout</span>
+<span class="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 transition-opacity">logout</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col h-full overflow-y-auto w-full relative">
+<!-- Mobile Top Nav (visible only on mobile) -->
+<div class="md:hidden bg-inverse-surface py-4 px-4 flex justify-between items-center shadow-sm z-40 sticky top-0">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-surface-lowest font-black tracking-tight">bulr</h1>
+<button class="text-surface-lowest">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+<div class="flex-grow flex flex-col items-center w-full pb-ds-48 pt-ds-32 md:pt-ds-48 px-sm md:px-gutter">
+<!-- 1200px Constraint Container -->
+<div class="w-full max-w-[1200px] flex flex-col gap-ds-32">
+<!-- Page Header -->
+<header class="w-full">
+<h2 class="font-headline-md text-headline-md text-ds-primary-text">エントリー状況</h2>
+</header>
+<!-- Application List Container -->
+<section class="w-full bg-ds-surface rounded-ds-card border border-ds-border ds-ambient-shadow overflow-hidden">
+<!-- List Header Row (Desktop only) -->
+<div class="hidden md:grid grid-cols-12 gap-4 px-ds-24 py-ds-16 border-b border-ds-border bg-ds-surface-secondary/30">
+<div class="col-span-6 font-label-md text-label-md text-ds-neutral-text">企業・ポジション</div>
+<div class="col-span-3 font-label-md text-label-md text-ds-neutral-text">エントリー日</div>
+<div class="col-span-3 font-label-md text-label-md text-ds-neutral-text text-right">ステータス</div>
+</div>
+<!-- Row 1: Document Review -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-ds-16 md:px-ds-24 py-ds-16 md:py-ds-24 border-b border-ds-border hover:bg-ds-surface-secondary/20 transition-colors group relative">
+<!-- Subtle Left Accent on Hover -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-ds-accent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="col-span-1 md:col-span-6 flex flex-col justify-center">
+<span class="font-body-md text-body-md text-ds-primary-text font-medium mb-1">株式会社テックフロンティア</span>
+<span class="font-label-md text-label-md text-ds-neutral-text">シニアバックエンドエンジニア</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center md:items-center">
+<span class="font-label-md text-label-md text-ds-primary-text md:text-ds-neutral-text flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                                2026/06/10
+                            </span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center md:justify-end mt-2 md:mt-0">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium leading-none bg-ds-surface-secondary text-ds-accent border border-ds-accent/20">
+                                書類確認中
+                            </span>
+</div>
+</div>
+<!-- Row 2: Confirmed/Success -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-ds-16 md:px-ds-24 py-ds-16 md:py-ds-24 border-b border-ds-border hover:bg-ds-surface-secondary/20 transition-colors group relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-ds-accent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="col-span-1 md:col-span-6 flex flex-col justify-center">
+<span class="font-body-md text-body-md text-ds-primary-text font-medium mb-1">合同会社イノベーションズ</span>
+<span class="font-label-md text-label-md text-ds-neutral-text">プロダクトマネージャー</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center">
+<span class="font-label-md text-label-md text-ds-primary-text md:text-ds-neutral-text flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                                2026/05/28
+                            </span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center md:justify-end mt-2 md:mt-0">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium leading-none bg-ds-success-bg text-ds-success-text border border-ds-success-text/20">
+                                確認済み
+                            </span>
+</div>
+</div>
+<!-- Row 3: In Progress (Peach/Orange) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-ds-16 md:px-ds-24 py-ds-16 md:py-ds-24 border-b border-ds-border hover:bg-ds-surface-secondary/20 transition-colors group relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-ds-accent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="col-span-1 md:col-span-6 flex flex-col justify-center">
+<span class="font-body-md text-body-md text-ds-primary-text font-medium mb-1">グローバルシステムズ株式会社</span>
+<span class="font-label-md text-label-md text-ds-neutral-text">フロントエンドリード</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center">
+<span class="font-label-md text-label-md text-ds-primary-text md:text-ds-neutral-text flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                                2026/05/15
+                            </span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center md:justify-end mt-2 md:mt-0">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium leading-none bg-ds-accent-peach text-ds-primary-text border border-ds-primary-text/10">
+                                選考中
+                            </span>
+</div>
+</div>
+<!-- Row 4: Rejected (Maroon) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-ds-16 md:px-ds-24 py-ds-16 md:py-ds-24 hover:bg-ds-surface-secondary/20 transition-colors group relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-ds-accent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="col-span-1 md:col-span-6 flex flex-col justify-center">
+<span class="font-body-md text-body-md text-ds-primary-text font-medium mb-1 opacity-70">ネクストビジョン株式会社</span>
+<span class="font-label-md text-label-md text-ds-neutral-text opacity-70">SREエンジニア</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center opacity-70">
+<span class="font-label-md text-label-md text-ds-primary-text md:text-ds-neutral-text flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] md:hidden">calendar_today</span>
+                                2026/04/02
+                            </span>
+</div>
+<div class="col-span-1 md:col-span-3 flex items-center md:justify-end mt-2 md:mt-0">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium leading-none bg-ds-error-bg text-ds-error-text border border-ds-error-text/20 opacity-80">
+                                不合格
+                            </span>
+</div>
+</div>
+</section>
+<!-- Empty State Card (Demonstrating the 'Empty' scenario as requested inset) -->
+<section class="w-full bg-ds-surface rounded-ds-card border border-ds-border ds-ambient-shadow p-ds-32 md:p-ds-48 flex flex-col items-center justify-center text-center mt-ds-16">
+<div class="w-16 h-16 rounded-full bg-ds-surface-secondary flex items-center justify-center mb-ds-16 text-ds-accent">
+<span class="material-symbols-outlined text-[32px]">draft</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-ds-primary-text mb-2">まだエントリーがありません</h3>
+<p class="font-body-md text-body-md text-ds-neutral-text mb-ds-32 max-w-md">
+                        新しいキャリアの機会を探して、エントリーを開始しましょう。まずはプロフィールとスキルを充実させることをおすすめします。
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+<button class="ds-ghost-button px-6 py-3 rounded-md text-ds-accent font-label-md text-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+                            履歴書をアップロード
+                        </button>
+<button class="ds-ghost-button px-6 py-3 rounded-md text-ds-accent font-label-md text-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">fact_check</span>
+                            スキルアンケートに回答
+                        </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom Nav (Visible only on mobile) -->
+<nav class="md:hidden bg-inverse-surface border-t border-outline-variant/10 shadow-[0_-4px_20px_rgba(23,41,64,0.05)] z-50 fixed bottom-0 w-full flex justify-around items-center px-2 py-2 pb-safe">
+<!-- Just rendering a simplified active/inactive for bottom nav demonstration based on rules -->
+<a class="flex flex-col items-center p-2 text-surface-variant" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+</a>
+<a class="flex flex-col items-center p-2 text-surface-variant" href="#">
+<span class="material-symbols-outlined text-[24px]">poll</span>
+</a>
+<a class="flex flex-col items-center p-2 text-primary-container relative" href="#">
+<div class="absolute -top-1 w-8 h-1 bg-primary-container rounded-full"></div>
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">input</span>
+</a>
+<a class="flex flex-col items-center p-2 text-surface-variant" href="#">
+<span class="material-symbols-outlined text-[24px]">person</span>
+</a>
+</nav>
+</body></html>

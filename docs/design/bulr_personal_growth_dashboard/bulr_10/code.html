@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>bulr - ホーム</title>
+<!-- Fonts and Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#a8c9f5",
+                    "tertiary-fixed": "#ffdbd1",
+                    "primary": "#8f4d00",
+                    "surface-container-high": "#dde9ff",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "error-container": "#ffdad6",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#ffb5a0",
+                    "surface": "#f8f9ff",
+                    "on-primary-fixed": "#2e1500",
+                    "on-primary-fixed-variant": "#6d3a00",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#ff7b55",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#395a80",
+                    "on-tertiary-fixed": "#3b0900",
+                    "surface-variant": "#d4e3ff",
+                    "secondary": "#406087",
+                    "primary-fixed-dim": "#ffb77b",
+                    "surface-bright": "#f8f9ff",
+                    "on-background": "#091c33",
+                    "on-secondary-fixed": "#001c37",
+                    "inverse-surface": "#203149",
+                    "surface-container-highest": "#d4e3ff",
+                    "secondary-container": "#b1d1fe",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#592e00",
+                    "surface-dim": "#c9dbf9",
+                    "tertiary": "#b12e00",
+                    "outline-variant": "#dcc2af",
+                    "inverse-primary": "#ffb77b",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "outline": "#897362",
+                    "on-surface": "#091c33",
+                    "surface-tint": "#8f4d00",
+                    "on-error": "#ffffff",
+                    "primary-container": "#f28705",
+                    "on-tertiary-fixed-variant": "#872100",
+                    "on-tertiary-container": "#6e1900",
+                    "secondary-fixed": "#d2e4ff",
+                    "surface-container": "#e6eeff",
+                    "on-secondary-fixed-variant": "#27486e",
+                    "on-surface-variant": "#564335",
+                    "surface-container-low": "#eff3ff",
+                    "primary-fixed": "#ffdcc2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "4px",
+                    "xl": "64px",
+                    "md": "24px",
+                    "xs": "8px",
+                    "margin-desktop": "48px",
+                    "lg": "40px",
+                    "sm": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Noto Sans JP"],
+                    "headline-lg": ["Noto Sans JP"],
+                    "headline-md": ["Noto Sans JP"],
+                    "headline-lg-mobile": ["Noto Sans JP"],
+                    "body-lg": ["Noto Sans JP"],
+                    "title-lg": ["Noto Sans JP"],
+                    "caption": ["Noto Sans JP"],
+                    "display-lg": ["Noto Sans JP"],
+                    "label-md": ["Noto Sans JP"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.7", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.7", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "display-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        /* Custom Styles for Ambient Shadow and specific colors not in tailwind config but required in instructions */
+        body {
+            background-color: #F5F8FC;
+            color: #172940;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05);
+        }
+        .card-border {
+            border: 1px solid #DCE3EC;
+        }
+        .card-hover:hover {
+            border-color: #7595BF;
+            background-color: #E4EBF2;
+        }
+        .btn-primary {
+            background-color: #F28705;
+            color: #172940;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen font-body-md text-body-md flex bg-[#F5F8FC]">
+<!-- SideNavBar (Hidden on Mobile, Visible on md+) -->
+<nav class="hidden md:flex h-screen w-64 fixed left-0 top-0 bg-[#172940] flex-col py-md gap-xs z-20"><!-- Brand / Header -->
+<div class="px-md mb-6">
+<h1 class="text-headline-md font-headline-md font-bold text-[#F5F8FC]">bulr</h1>
+<p class="text-caption font-caption text-[#7595BF]">Software Engineer Growth</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 px-sm">
+<!-- Active: ホーム -->
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#F5F8FC] bg-primary/20 border-l-4 border-primary font-bold transition-colors duration-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-label-md font-label-md">ホーム</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#7595BF] hover:bg-white/10 hover:text-[#F5F8FC] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-label-md font-label-md">スキルアンケート</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#7595BF] hover:bg-white/10 hover:text-[#F5F8FC] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="text-label-md font-label-md">自己分析</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#7595BF] hover:bg-white/10 hover:text-[#F5F8FC] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md font-label-md">履歴書</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#7595BF] hover:bg-white/10 hover:text-[#F5F8FC] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="text-label-md font-label-md">模擬面接</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 mb-1 rounded-r-full text-[#7595BF] hover:bg-white/10 hover:text-[#F5F8FC] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="text-label-md font-label-md">エントリー</span>
+</a>
+</div><div class="mt-auto px-sm pt-4 border-t border-white/10">
+<button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors duration-200 group text-left">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[#172940] font-bold text-sm">
+      U
+    </div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-[#F5F8FC] truncate">user@example.com</p>
+<p class="text-caption font-caption text-[#7595BF]">ログアウト</p>
+</div>
+<span class="material-symbols-outlined text-[#7595BF] text-sm">more_horiz</span>
+</button>
+</div></nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 min-h-screen">
+<!-- TopNavBar (Visible on Mobile) -->
+<header class="md:hidden bg-surface flex justify-between items-center w-full px-margin-mobile py-4 border-b border-surface-variant shadow-sm z-10 sticky top-0">
+<h1 class="text-headline-md-mobile font-headline-lg-mobile font-bold text-primary">bulr</h1>
+<!-- Mobile Menu Toggle (Decorative) -->
+<button class="text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<!-- TopNavBar (Desktop - User Actions) -->
+<!-- Main Canvas -->
+<main class="flex-1 w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+<!-- Welcome Header -->
+<div class="mb-12">
+<h2 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg font-bold text-[#172940]">
+                    こんにちは、ゲスト さん
+                </h2>
+<p class="mt-2 text-body-lg font-body-lg text-on-surface-variant">
+                    今日も成長に向けた一歩を踏み出しましょう。
+                </p>
+</div>
+<!-- Bento Grid Layout for Entry Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 auto-rows-min">
+<!-- Primary Card: 自己分析 (Spans 2 columns on desktop) -->
+<div class="md:col-span-2 bg-[#FFFFFF] rounded-[10px] card-border ambient-shadow p-md md:p-lg flex flex-col justify-between transition-all duration-300 relative overflow-hidden group">
+<!-- Decorative Graphic/Gradient -->
+<div class="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-tertiary-fixed/40 to-transparent rounded-bl-full opacity-50 pointer-events-none"></div>
+<div>
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary-container text-3xl">psychology</span>
+<h3 class="text-headline-md font-headline-md font-bold text-[#172940]">自己分析を見る</h3>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mb-6 max-w-lg">
+                            あなたの強みや適性を深く理解し、キャリアの方向性を明確にします。客観的なデータに基づいたインサイトを提供します。
+                        </p>
+<!-- Sub-note / Warning -->
+<div class="inline-flex items-center gap-2 bg-[#E4EBF2] px-4 py-2 rounded-full mb-8">
+<span class="material-symbols-outlined text-[#7595BF] text-sm">info</span>
+<span class="text-caption font-caption text-[#395a80]">※ スキルアンケートの回答が必要です</span>
+</div>
+</div>
+<div class="mt-auto flex justify-end">
+<button class="btn-primary font-label-md text-label-md font-bold px-8 py-3 rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2">
+                            分析を開始する
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Secondary Column (Stack of quieter cards) -->
+<div class="flex flex-col gap-6 md:gap-8">
+<!-- スキルアンケート -->
+<a class="bg-[#FFFFFF] rounded-[10px] card-border ambient-shadow p-md card-hover transition-all duration-300 group block h-full flex flex-col" href="#">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2 text-[#7595BF]">
+<span class="material-symbols-outlined">assessment</span>
+<h4 class="text-title-lg font-title-lg font-medium text-[#172940]">スキルアンケート</h4>
+</div>
+<span class="material-symbols-outlined text-[#DCE3EC] group-hover:text-[#7595BF] transition-colors">chevron_right</span>
+</div>
+<p class="text-caption font-caption text-on-surface-variant mt-auto">
+                            現在の技術スタックと習熟度を記録し、自己分析の精度を高めます。
+                        </p>
+</a>
+<!-- 履歴書 -->
+<a class="bg-[#FFFFFF] rounded-[10px] card-border ambient-shadow p-md card-hover transition-all duration-300 group block h-full flex flex-col" href="#">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2 text-[#7595BF]">
+<span class="material-symbols-outlined">description</span>
+<h4 class="text-title-lg font-title-lg font-medium text-[#172940]">履歴書</h4>
+</div>
+<span class="material-symbols-outlined text-[#DCE3EC] group-hover:text-[#7595BF] transition-colors">chevron_right</span>
+</div>
+<p class="text-caption font-caption text-on-surface-variant mt-auto">
+                            自己分析の結果を元に、あなたの魅力が伝わる職務経歴書を作成します。
+                        </p>
+</a>
+<!-- 模擬面接 -->
+<a class="bg-[#FFFFFF] rounded-[10px] card-border ambient-shadow p-md card-hover transition-all duration-300 group block h-full flex flex-col" href="#">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2 text-[#7595BF]">
+<span class="material-symbols-outlined">forum</span>
+<h4 class="text-title-lg font-title-lg font-medium text-[#172940]">模擬面接</h4>
+</div>
+<span class="material-symbols-outlined text-[#DCE3EC] group-hover:text-[#7595BF] transition-colors">chevron_right</span>
+</div>
+<p class="text-caption font-caption text-on-surface-variant mt-auto">
+                            AIを活用した実践的な面接練習で、本番での対応力を磨きます。
+                        </p>
+</a>
+</div>
+</div>
+<!-- Optional Spacer for bottom on mobile -->
+<div class="h-24 md:h-8"></div>
+</main>
+</div>
+</body></html>

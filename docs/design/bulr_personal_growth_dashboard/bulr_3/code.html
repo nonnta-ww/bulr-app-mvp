@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>模擬面接フィードバック - bulr</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration (Provided) -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#a8c9f5",
+                    "on-primary-container": "#592e00",
+                    "inverse-primary": "#ffb77b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#8f4d00",
+                    "surface-container": "#e6eeff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#203149",
+                    "surface-bright": "#f8f9ff",
+                    "primary": "#8f4d00",
+                    "outline": "#897362",
+                    "on-background": "#091c33",
+                    "secondary-fixed": "#d2e4ff",
+                    "on-primary-fixed": "#2e1500",
+                    "primary-fixed": "#ffdcc2",
+                    "on-secondary-fixed-variant": "#27486e",
+                    "surface-variant": "#d4e3ff",
+                    "outline-variant": "#dcc2af",
+                    "tertiary-container": "#ff7b55",
+                    "secondary": "#406087",
+                    "on-secondary-container": "#395a80",
+                    "tertiary": "#b12e00",
+                    "primary-fixed-dim": "#ffb77b",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#eff3ff",
+                    "surface-container-high": "#dde9ff",
+                    "secondary-container": "#b1d1fe",
+                    "error": "#ba1a1a",
+                    "on-surface": "#091c33",
+                    "surface-container-highest": "#d4e3ff",
+                    "surface": "#f8f9ff",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#6d3a00",
+                    "tertiary-fixed-dim": "#ffb5a0",
+                    "on-tertiary-fixed": "#3b0900",
+                    "on-secondary": "#ffffff",
+                    "on-surface-variant": "#564335",
+                    "surface-dim": "#c9dbf9",
+                    "primary-container": "#f28705",
+                    "on-tertiary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "on-tertiary-container": "#6e1900",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#872100",
+                    "on-secondary-fixed": "#001c37",
+                    "tertiary-fixed": "#ffdbd1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "16px",
+                    "lg": "40px",
+                    "xl": "64px",
+                    "margin-desktop": "48px",
+                    "xs": "8px",
+                    "md": "24px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "caption": [
+                            "Noto Sans JP"
+                    ],
+                    "headline-lg": [
+                            "Noto Sans JP"
+                    ],
+                    "headline-lg-mobile": [
+                            "Noto Sans JP"
+                    ],
+                    "display-lg": [
+                            "Noto Sans JP"
+                    ],
+                    "body-md": [
+                            "Noto Sans JP"
+                    ],
+                    "headline-md": [
+                            "Noto Sans JP"
+                    ],
+                    "title-lg": [
+                            "Noto Sans JP"
+                    ],
+                    "body-lg": [
+                            "Noto Sans JP"
+                    ],
+                    "label-md": [
+                            "Noto Sans JP"
+                    ]
+            },
+            "fontSize": {
+                    "caption": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "40px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.7",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "title-lg": [
+                            "20px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.7",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+          }
+        },
+      }
+    </script>
+<style>
+        body { background-color: #F5F8FC; } /* Base Layer App Background */
+        .surface-card { background-color: #FFFFFF; border: 1px solid #DCE3EC; border-radius: 10px; box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05); }
+        .peach-accent { border-left: 4px solid #F2BBA7; }
+        .primary-button { background-color: #F28705; color: #172940; font-weight: 700; transition: transform 0.15s ease, background-color 0.2s ease; border-radius: 8px; }
+        .primary-button:hover { transform: scale(0.98); opacity: 0.9; }
+        .ghost-button { background-color: transparent; color: #7595BF; border: none; border-radius: 8px; transition: background-color 0.2s ease; }
+        .ghost-button:hover { background-color: #E4EBF2; }
+    </style>
+</head>
+<body class="font-body-md text-on-surface flex min-h-screen">
+<!-- Shared Component: SideNavBar -->
+<nav class="hidden md:flex flex-col h-full bg-inverse-surface dark:bg-inverse-surface shadow-sm fixed left-0 top-0 w-[256px] py-lg z-50 transition-all duration-300">
+<div class="px-6 mb-8 flex flex-col gap-2">
+<!-- Brand Avatar / Logo placeholder. Assuming text logo for minimal setup based on styling -->
+<div class="font-display-lg text-display-lg font-bold text-on-primary-fixed tracking-tight">bulr</div>
+<p class="font-caption text-caption text-secondary-fixed-dim opacity-80">Growth for Engineers</p>
+</div>
+<ul class="flex flex-col gap-2 flex-grow">
+<!-- Item 1: ホーム -->
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">ホーム</span>
+</a>
+</li>
+<!-- Item 2: スキルアンケート -->
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-md text-label-md">スキルアンケート</span>
+</a>
+</li>
+<!-- Item 3: 自己分析 -->
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-md text-label-md">自己分析</span>
+</a>
+</li>
+<!-- Item 4: 履歴書 -->
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">履歴書</span>
+</a>
+</li>
+<!-- Item 5: 模擬面接 (ACTIVE) -->
+<li>
+<a class="relative flex items-center gap-4 px-6 py-3 bg-secondary-container/10 dark:bg-secondary-fixed-dim/10 text-on-primary-fixed-variant before:absolute before:left-0 before:w-1 before:h-full before:bg-primary scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-label-md text-label-md font-bold">模擬面接</span>
+</a>
+</li>
+<!-- Item 6: エントリー -->
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="font-label-md text-label-md">エントリー</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto flex flex-col gap-2">
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim dark:text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">ログアウト</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full md:ml-[256px] flex flex-col pb-xl">
+<!-- Mobile Header (Visible only on md:hidden) -->
+<header class="md:hidden flex items-center justify-between px-margin-mobile py-4 bg-inverse-surface text-on-primary-fixed sticky top-0 z-40 shadow-sm">
+<div class="font-display-lg text-headline-lg-mobile font-bold tracking-tight">bulr</div>
+<button class="ghost-button p-2 text-secondary-fixed-dim">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<div class="max-w-[1200px] w-full mx-auto px-margin-mobile md:px-margin-desktop py-lg md:py-xl flex-1 flex flex-col gap-lg">
+<!-- Page Header -->
+<div class="flex flex-col gap-xs md:gap-4 md:flex-row md:items-end justify-between border-b border-[#DCE3EC] pb-6">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-label-md text-label-md text-secondary">模擬面接フィードバック</span>
+</div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">システム設計の基本</h1>
+</div>
+<div class="flex gap-4 font-caption text-caption text-on-surface-variant bg-surface-bright px-4 py-2 rounded-lg border border-[#DCE3EC]">
+<div class="flex flex-col">
+<span class="text-[#7D8B8C]">実施日</span>
+<span class="font-medium">2026/06/10</span>
+</div>
+<div class="w-[1px] bg-[#DCE3EC]"></div>
+<div class="flex flex-col">
+<span class="text-[#7D8B8C]">ターン数</span>
+<span class="font-medium">全 6 ターン</span>
+</div>
+</div>
+</div>
+<!-- Feedback Cards Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md items-start">
+<!-- Card 1: 真贋 -->
+<section class="surface-card p-md peach-accent flex flex-col gap-4 group hover:border-[#7595BF] transition-colors duration-300 h-full">
+<header class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">fingerprint</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">真贋</h2>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        経験に基づく具体的な事例が語られており、自身の言葉で設計意図を説明できている点に説得力を感じました。とくに、過去の失敗から学んだ教訓を現在の設計アプローチにどう活かしているかのくだりは、非常にリアリティがあります。今後さらに、選択しなかった代替案に関する考察を深めることで、技術的な引き出しの多さをアピールできそうです。
+                    </p>
+</section>
+<!-- Card 2: 判断力 -->
+<section class="surface-card p-md peach-accent flex flex-col gap-4 group hover:border-[#7595BF] transition-colors duration-300 h-full">
+<header class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">balance</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">判断力</h2>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        トレードオフの認識が明確です。パフォーマンスと保守性のバランスを取る際、どちらを優先すべきかプロジェクトの状況に応じて柔軟に判断しようとする姿勢が伺えます。議論の中で前提条件が変わった際も、立ち止まって要件を再確認するプロセスは実践的で素晴らしいアプローチです。
+                    </p>
+</section>
+<!-- Card 3: 射程 -->
+<section class="surface-card p-md peach-accent flex flex-col gap-4 group hover:border-[#7595BF] transition-colors duration-300 h-full">
+<header class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">射程</h2>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        目先の要件を満たすだけでなく、将来的なデータ増加やユーザー数拡大を見据えたスケーラビリティの考慮が含まれていました。システムの寿命や運用フェーズまで想像を巡らせている点は、シニアエンジニアとしての視座の高さを感じさせます。
+                    </p>
+</section>
+<!-- Card 4: メタ認知 -->
+<section class="surface-card p-md peach-accent flex flex-col gap-4 group hover:border-[#7595BF] transition-colors duration-300 h-full">
+<header class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">psychology_alt</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">メタ認知</h2>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        回答中、自身の知識の限界を素直に認め、推測と事実を切り分けて話す姿勢が非常に良かったです。面接官のフィードバックに対して防御的にならず、新しい観点として受け入れて議論を発展させる態度は、チーム開発において極めて重要な素養として高く評価されます。
+                    </p>
+</section>
+<!-- Card 5: AI活用リテラシー -->
+<section class="surface-card p-md peach-accent flex flex-col gap-4 group hover:border-[#7595BF] transition-colors duration-300 md:col-span-2 h-full">
+<header class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">AI活用リテラシー</h2>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        設計の壁打ちやプロトタイピングの段階でAIツールをどのように組み込んでいるか、具体的なユースケースが言語化されていました。AIの出力を鵜呑みにせず、最終的なアーキテクチャの妥当性は自身のエンジニアリング知識で検証するというスタンスが明確で、現代の開発環境に適応した健全なリテラシーを示しています。
+                    </p>
+</section>
+</div>
+<!-- Final Summary Card -->
+<section class="surface-card p-xl mt-4 relative overflow-hidden flex flex-col items-center text-center gap-6 border-[#7595BF]/30">
+<!-- Decorative background elements -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-secondary-container/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+<div class="absolute bottom-0 left-0 w-48 h-48 bg-primary-container/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+<div class="relative z-10 max-w-2xl flex flex-col items-center">
+<div class="w-16 h-16 rounded-2xl bg-surface-bright border border-[#DCE3EC] flex items-center justify-center text-primary mb-2 shadow-sm">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">総評</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                        全体を通して、落ち着いたトーンで論理的に説明できており、非常に安心感のある面接でした。技術的な知識の深さだけでなく、チームの中でどのように課題に向き合うかという「人柄」や「仕事へのスタンス」がよく伝わってきます。今回の感触を自信に変え、引き続き様々なケーススタディで思考の瞬発力を鍛えていきましょう。確実な成長の軌跡が見えています。
+                    </p>
+</div>
+</section>
+<!-- Footer Action -->
+<div class="flex justify-center mt-8">
+<button class="primary-button px-10 py-4 font-body-lg text-body-lg flex items-center gap-3 shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined">refresh</span>
+                    もう一度練習する
+                </button>
+</div>
+</div>
+</main>
+<!-- Shared Component: BottomNavBar for Mobile (Visible md:hidden) -->
+<!-- Kept simple based on requirement to show shell on top level, but feedback page might be task focused. However, prompt says "with shell". So including mobile shell as requested by standard shell presence logic for consistency if viewed as top-level review. -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface-container-lowest border-t border-[#DCE3EC] pb-safe pt-2 px-4 flex justify-between z-50">
+<a class="flex flex-col items-center p-2 text-secondary-fixed-dim" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-caption text-[10px]">ホーム</span>
+</a>
+<a class="flex flex-col items-center p-2 text-secondary-fixed-dim" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-caption text-[10px]">自己分析</span>
+</a>
+<a class="flex flex-col items-center p-2 text-primary font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-caption text-[10px]">模擬面接</span>
+</a>
+<a class="flex flex-col items-center p-2 text-secondary-fixed-dim" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="font-caption text-[10px]">エントリー</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>模擬面接フィードバック - bulr</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#a8c9f5",
+                        "on-primary-container": "#592e00",
+                        "inverse-primary": "#ffb77b",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#8f4d00",
+                        "surface-container": "#e6eeff",
+                        "inverse-on-surface": "#ebf1ff",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#203149",
+                        "surface-bright": "#f8f9ff",
+                        "primary": "#8f4d00",
+                        "outline": "#897362",
+                        "on-background": "#091c33",
+                        "secondary-fixed": "#d2e4ff",
+                        "on-primary-fixed": "#2e1500",
+                        "primary-fixed": "#ffdcc2",
+                        "on-secondary-fixed-variant": "#27486e",
+                        "surface-variant": "#d4e3ff",
+                        "outline-variant": "#dcc2af",
+                        "tertiary-container": "#ff7b55",
+                        "secondary": "#406087",
+                        "on-secondary-container": "#395a80",
+                        "tertiary": "#b12e00",
+                        "primary-fixed-dim": "#ffb77b",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#eff3ff",
+                        "surface-container-high": "#dde9ff",
+                        "secondary-container": "#b1d1fe",
+                        "error": "#ba1a1a",
+                        "on-surface": "#091c33",
+                        "surface-container-highest": "#d4e3ff",
+                        "surface": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#6d3a00",
+                        "tertiary-fixed-dim": "#ffb5a0",
+                        "on-tertiary-fixed": "#3b0900",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#564335",
+                        "surface-dim": "#c9dbf9",
+                        "primary-container": "#f28705",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9ff",
+                        "on-tertiary-container": "#6e1900",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#872100",
+                        "on-secondary-fixed": "#001c37",
+                        "tertiary-fixed": "#ffdbd1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "16px",
+                        "lg": "40px",
+                        "xl": "64px",
+                        "margin-desktop": "48px",
+                        "xs": "8px",
+                        "md": "24px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Noto Sans JP"],
+                        "headline-lg": ["Noto Sans JP"],
+                        "headline-lg-mobile": ["Noto Sans JP"],
+                        "display-lg": ["Noto Sans JP"],
+                        "body-md": ["Noto Sans JP"],
+                        "headline-md": ["Noto Sans JP"],
+                        "title-lg": ["Noto Sans JP"],
+                        "body-lg": ["Noto Sans JP"],
+                        "label-md": ["Noto Sans JP"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "display-lg": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.7", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "1.5", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "1.7", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom spinner animation for a calm, methodical feel */
+        @keyframes subtle-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse-opacity {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-subtle-spin {
+            animation: subtle-spin 2s linear infinite;
+        }
+        .animate-pulse-opacity {
+            animation: pulse-opacity 3s ease-in-out infinite;
+        }
+        /* Enforce soft card styling */
+        .card-premium {
+            box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen w-full flex overflow-hidden">
+<!-- SideNavBar (Shell) -->
+<nav class="fixed left-0 top-0 h-full w-[256px] bg-inverse-surface shadow-sm z-50 flex flex-col py-lg">
+<!-- Brand Header -->
+<div class="px-6 mb-10">
+<h1 class="font-display-lg text-display-lg font-bold text-on-primary-fixed tracking-tight">bulr</h1>
+<p class="font-caption text-caption text-secondary-fixed-dim mt-1">Growth for Engineers</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-2">
+<!-- 0: ホーム -->
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">ホーム</span>
+</a>
+<!-- 1: スキルアンケート -->
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-md text-label-md">スキルアンケート</span>
+</a>
+<!-- 2: 自己分析 -->
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-md text-label-md">自己分析</span>
+</a>
+<!-- 3: 履歴書 -->
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">履歴書</span>
+</a>
+<!-- 4: 模擬面接 (ACTIVE) -->
+<a class="relative flex items-center gap-4 px-6 py-3 bg-secondary-container/10 text-on-primary-fixed-variant before:absolute before:left-0 before:w-1 before:h-full before:bg-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-label-md text-label-md">模擬面接</span>
+</a>
+<!-- 5: エントリー -->
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="font-label-md text-label-md">エントリー</span>
+</a>
+</div>
+<!-- Footer Link -->
+<div class="mt-auto">
+<a class="flex items-center gap-4 px-6 py-3 text-secondary-fixed-dim opacity-70 hover:bg-secondary-fixed-dim/5 hover:text-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">ログアウト</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-[256px] h-full overflow-y-auto">
+<div class="max-w-[1200px] mx-auto w-full h-full flex flex-col p-md md:p-margin-desktop">
+<!-- Page Header -->
+<header class="mb-12">
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-lg text-headline-lg text-on-background">システム設計の基本</h2>
+<div class="flex items-center gap-6 font-body-md text-body-md text-on-surface-variant opacity-80">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            実施日: 2026/06/10
+                        </span>
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                            全 6 ターン
+                        </span>
+</div>
+</div>
+</header>
+<!-- Loading State Container -->
+<div class="flex-1 flex items-center justify-center pb-20">
+<!-- Premium Glass/White Card -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-lg p-xl flex flex-col items-center justify-center gap-8 w-full max-w-lg card-premium animate-pulse-opacity">
+<!-- Spinner -->
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full text-surface-variant absolute inset-0" fill="none" stroke="currentColor" stroke-width="4" viewbox="0 0 100 100">
+<circle cx="50" cy="50" opacity="0.3" r="45"></circle>
+</svg>
+<svg class="w-full h-full text-secondary animate-subtle-spin absolute inset-0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4" viewbox="0 0 100 100">
+<path d="M50 5 a45 45 0 0 1 45 45"></path>
+</svg>
+<span class="material-symbols-outlined text-secondary absolute" style="font-size: 24px;">psychology</span>
+</div>
+<!-- Text -->
+<div class="text-center flex flex-col gap-2">
+<h3 class="font-title-lg text-title-lg text-on-background">フィードバックを生成中です…</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-70">
+                            面接内容を分析し、最適なアドバイスを構築しています。
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

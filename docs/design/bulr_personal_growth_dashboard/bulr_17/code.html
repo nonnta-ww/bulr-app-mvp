@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>自己分析 - bulr</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed": "#2e1500",
+                      "tertiary": "#b12e00",
+                      "on-tertiary-container": "#6e1900",
+                      "outline": "#897362",
+                      "on-secondary-fixed": "#001c37",
+                      "primary-fixed": "#ffdcc2",
+                      "surface-variant": "#d4e3ff",
+                      "surface-dim": "#c9dbf9",
+                      "on-tertiary-fixed": "#3b0900",
+                      "on-primary": "#ffffff",
+                      "surface-container-high": "#dde9ff",
+                      "surface-container": "#e6eeff",
+                      "secondary-fixed-dim": "#a8c9f5",
+                      "tertiary-fixed": "#ffdbd1",
+                      "on-background": "#091c33",
+                      "primary-fixed-dim": "#ffb77b",
+                      "surface-tint": "#8f4d00",
+                      "outline-variant": "#dcc2af",
+                      "secondary-container": "#b1d1fe",
+                      "inverse-surface": "#203149",
+                      "on-secondary": "#ffffff",
+                      "surface-bright": "#f8f9ff",
+                      "surface-container-highest": "#d4e3ff",
+                      "tertiary-fixed-dim": "#ffb5a0",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#6d3a00",
+                      "inverse-primary": "#ffb77b",
+                      "on-secondary-fixed-variant": "#27486e",
+                      "secondary-fixed": "#d2e4ff",
+                      "on-surface-variant": "#564335",
+                      "tertiary-container": "#ff7b55",
+                      "on-secondary-container": "#395a80",
+                      "surface-container-low": "#eff3ff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#872100",
+                      "on-tertiary": "#ffffff",
+                      "background": "#f8f9ff",
+                      "on-primary-container": "#592e00",
+                      "inverse-on-surface": "#ebf1ff",
+                      "surface": "#f8f9ff",
+                      "primary-container": "#f28705",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#406087",
+                      "on-surface": "#091c33",
+                      "primary": "#8f4d00",
+                      "error-container": "#ffdad6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "xl": "64px",
+                      "lg": "40px",
+                      "base": "4px",
+                      "md": "24px",
+                      "margin-desktop": "48px",
+                      "gutter": "24px",
+                      "xs": "8px",
+                      "sm": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Noto Sans JP"],
+                      "headline-lg-mobile": ["Noto Sans JP"],
+                      "title-lg": ["Noto Sans JP"],
+                      "display-lg": ["Noto Sans JP"],
+                      "headline-md": ["Noto Sans JP"],
+                      "caption": ["Noto Sans JP"],
+                      "label-md": ["Noto Sans JP"],
+                      "headline-lg": ["Noto Sans JP"],
+                      "body-lg": ["Noto Sans JP"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "1.7", "fontWeight": "400"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                      "title-lg": ["20px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                      "display-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                      "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "1.7", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { background-color: #F5F8FC; }
+        .ambient-shadow { box-shadow: 0px 4px 20px rgba(23, 41, 64, 0.05); }
+        .hairline-border { border: 1px solid #DCE3EC; }
+        .card-hover:hover { border-color: #7595BF; background-color: #E4EBF2; transition: all 0.2s ease; }
+        .list-hover:hover { background-color: #F5F8FC; border-left: 4px solid #7595BF; }
+    </style>
+</head>
+<body class="font-body-md text-on-surface bg-[#F5F8FC] antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-on-secondary-fixed dark:bg-on-secondary-fixed h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col justify-between py-lg z-50">
+<div>
+<div class="px-md mb-xl">
+<h1 class="font-display-lg text-display-lg font-black text-primary-container dark:text-primary-fixed">bulr</h1>
+<p class="font-label-md text-label-md text-secondary-fixed-dim mt-xs">Growth Platform</p>
+</div>
+<div class="flex flex-col gap-base">
+<!-- Navigation Items -->
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-3 px-md hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">ホーム</span>
+</a>
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-3 px-md hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-md text-label-md">スキルアンケート</span>
+</a>
+<!-- Active Item -->
+<a class="flex items-center gap-xs bg-inverse-surface dark:bg-inverse-surface text-primary-fixed-dim border-l-4 border-primary-container py-3 px-md opacity-90 transition-all" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-md text-label-md">自己分析</span>
+</a>
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-3 px-md hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">履歴書</span>
+</a>
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-3 px-md hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-md text-label-md">模擬面接</span>
+</a>
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-3 px-md hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="font-label-md text-label-md">エントリー</span>
+</a>
+</div>
+</div>
+<div class="px-md flex flex-col gap-sm">
+<button class="w-full bg-primary-container text-[#172940] font-label-md text-label-md py-sm rounded-lg hover:opacity-90 transition-opacity">
+                Upgrade Plan
+            </button>
+<div class="flex flex-col gap-base mt-sm border-t border-outline-variant pt-sm">
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-2 px-xs hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span class="font-label-md text-label-md">設定</span>
+</a>
+<a class="flex items-center gap-xs text-secondary-fixed-dim hover:text-surface-bright py-2 px-xs hover:bg-on-secondary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span class="font-label-md text-label-md">ログアウト</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 h-screen overflow-y-auto w-full">
+<div class="max-w-[1200px] mx-auto px-margin-desktop py-xl">
+<!-- Header -->
+<header class="flex justify-between items-end mb-xl">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">あなたの自己分析</h2>
+<p class="font-body-md text-body-md text-[#7D8B8C]">最終更新 2026/06/05</p>
+</div>
+<button class="flex items-center gap-xs px-md py-xs rounded-lg text-[#7595BF] hover:bg-[#E4EBF2] transition-colors">
+<span class="material-symbols-outlined text-sm">refresh</span>
+<span class="font-label-md text-label-md">再生成</span>
+</button>
+</header>
+<!-- State Notice (Empty/Prompt) -->
+<div class="bg-[#FFF8ED] border border-[#F2BBA7] rounded-xl p-md mb-xl flex justify-between items-center ambient-shadow">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-[#F28705]/20 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<p class="font-body-md text-body-md text-[#592e00]">スキルアンケートに回答すると、より詳細な自己分析が作成できます。</p>
+</div>
+<button class="bg-primary-container text-[#172940] px-md py-xs rounded-lg font-label-md text-label-md hover:bg-primary-fixed-dim transition-colors">
+                    アンケートに回答する
+                </button>
+</div>
+<div class="grid grid-cols-12 gap-gutter mb-xl">
+<!-- Strengths Section -->
+<section class="col-span-12 lg:col-span-8">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary-container">flare</span>
+                        強み
+                    </h3>
+<div class="flex flex-col gap-sm">
+<!-- Card 1 -->
+<div class="bg-surface rounded-xl p-md hairline-border ambient-shadow card-hover relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">スケーラブルなアーキテクチャ設計</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                                過去のプロジェクトにおいて、高トラフィックに耐えうるマイクロサービスアーキテクチャの導入を主導しました。可用性と保守性を考慮したシステム分割の経験は、今後の大規模開発においても強力な武器となります。
+                            </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface rounded-xl p-md hairline-border ambient-shadow card-hover relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">チーム開発のリードとメンタリング</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                                ジュニアエンジニアへの技術指導や、コードレビューを通じた品質向上のプロセスを確立する能力に長けています。チーム全体の生産性を底上げするコミュニケーションスキルは高く評価されます。
+                            </p>
+</div>
+</div>
+</section>
+<!-- Growth Areas Section -->
+<section class="col-span-12 lg:col-span-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[#7595BF]">psychology_alt</span>
+                        伸びしろ
+                    </h3>
+<div class="flex flex-col gap-sm">
+<!-- Card 1 -->
+<div class="bg-surface rounded-xl p-md hairline-border ambient-shadow card-hover relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#7595BF]"></div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">分散システムの深い理解</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">
+                                データの一貫性や耐障害性に関するより深い知識を身につけることで、アーキテクトとしての信頼性をさらに高めることができます。
+                            </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface rounded-xl p-md hairline-border ambient-shadow card-hover relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#7595BF]"></div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">技術選定の意思決定プロセス</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">
+                                トレードオフをより定量的に評価し、ビジネス要件と技術的制約のバランスを取る経験を積むことが次のステップです。
+                            </p>
+</div>
+</div>
+</section>
+</div>
+<!-- Next Actions & Trends Grid -->
+<div class="grid grid-cols-12 gap-gutter mb-xl">
+<!-- Actions -->
+<section class="col-span-12 lg:col-span-6 bg-surface rounded-xl p-md hairline-border ambient-shadow">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">次の成長アクション</h3>
+<ul class="flex flex-col">
+<li class="flex items-start gap-sm py-sm border-b border-[#DCE3EC] last:border-0 list-hover transition-colors px-xs rounded-r-lg">
+<span class="material-symbols-outlined text-primary-container mt-1">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">gRPCを用いたマイクロサービスの実装に挑戦し、通信効率の最適化を学ぶ。</span>
+</li>
+<li class="flex items-start gap-sm py-sm border-b border-[#DCE3EC] last:border-0 list-hover transition-colors px-xs rounded-r-lg">
+<span class="material-symbols-outlined text-primary-container mt-1">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">DDD（ドメイン駆動設計）の書籍を読み、現在のプロジェクトの課題への適用を検討する。</span>
+</li>
+<li class="flex items-start gap-sm py-sm border-b border-[#DCE3EC] last:border-0 list-hover transition-colors px-xs rounded-r-lg">
+<span class="material-symbols-outlined text-primary-container mt-1">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">社内勉強会を主催し、アーキテクチャ設計の知見をチームに共有する。</span>
+</li>
+</ul>
+</section>
+<!-- Trends (Mock Chart) -->
+<section class="col-span-12 lg:col-span-6 bg-surface rounded-xl p-md hairline-border ambient-shadow flex flex-col">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">成長の推移</h3>
+<div class="flex-1 relative min-h-[200px] flex items-end pt-lg">
+<!-- Simple CSS based Line Chart visualization -->
+<div class="absolute inset-0 flex flex-col justify-between py-md z-0 pointer-events-none">
+<div class="w-full h-px bg-[#DCE3EC]"></div>
+<div class="w-full h-px bg-[#DCE3EC] opacity-50"></div>
+<div class="w-full h-px bg-[#DCE3EC] opacity-50"></div>
+<div class="w-full h-px bg-[#DCE3EC]"></div>
+</div>
+<div class="relative w-full h-full flex items-end justify-between px-md z-10">
+<!-- Points -->
+<div class="flex flex-col items-center gap-xs relative group cursor-pointer" style="height: 40%">
+<div class="w-3 h-3 rounded-full bg-[#7595BF] border-2 border-white shadow-sm z-20 group-hover:scale-150 transition-transform"></div>
+<span class="font-caption text-caption text-[#7D8B8C] absolute -bottom-6">2月</span>
+</div>
+<div class="flex flex-col items-center gap-xs relative group cursor-pointer" style="height: 55%">
+<div class="w-3 h-3 rounded-full bg-[#7595BF] border-2 border-white shadow-sm z-20 group-hover:scale-150 transition-transform"></div>
+<span class="font-caption text-caption text-[#7D8B8C] absolute -bottom-6">3月</span>
+</div>
+<div class="flex flex-col items-center gap-xs relative group cursor-pointer" style="height: 60%">
+<div class="w-3 h-3 rounded-full bg-[#7595BF] border-2 border-white shadow-sm z-20 group-hover:scale-150 transition-transform"></div>
+<span class="font-caption text-caption text-[#7D8B8C] absolute -bottom-6">4月</span>
+</div>
+<div class="flex flex-col items-center gap-xs relative group cursor-pointer" style="height: 85%">
+<div class="w-4 h-4 rounded-full bg-primary-container border-2 border-white shadow-sm z-20 group-hover:scale-150 transition-transform shadow-[0_0_10px_rgba(242,135,5,0.3)]"></div>
+<span class="font-caption text-caption font-bold text-primary-container absolute -bottom-6">現在</span>
+</div>
+<!-- Connecting SVG Line (Visual representation) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="none">
+<path d="M 40,120 Q 150,100 250,90 T 500,30" fill="none" stroke="#7595BF" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer History -->
+<footer class="mt-xl pt-lg border-t border-outline-variant flex items-center gap-md text-sm">
+<span class="font-label-md text-label-md text-[#7D8B8C] flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">history</span>
+                    過去の履歴:
+                </span>
+<div class="flex gap-sm">
+<a class="px-3 py-1 rounded-full bg-[#E4EBF2] text-[#7D8B8C] font-caption text-caption hover:bg-[#7595BF] hover:text-white transition-colors" href="#">2026/05/01</a>
+<a class="px-3 py-1 rounded-full bg-[#E4EBF2] text-[#7D8B8C] font-caption text-caption hover:bg-[#7595BF] hover:text-white transition-colors" href="#">2026/04/01</a>
+<a class="px-3 py-1 rounded-full bg-[#E4EBF2] text-[#7D8B8C] font-caption text-caption hover:bg-[#7595BF] hover:text-white transition-colors" href="#">2026/03/01</a>
+</div>
+</footer>
+</div>
+</main>
+</body></html>
