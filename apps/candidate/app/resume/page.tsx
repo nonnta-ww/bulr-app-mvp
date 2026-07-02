@@ -34,22 +34,39 @@ export default async function ResumeListPage() {
   const documents = await getResumeDocuments(candidateProfileId);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">履歴書管理</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            履歴書・職務経歴書・CV・レジュメ を種別ごとに管理します。
+          <h1 className="text-2xl font-bold text-ink md:text-3xl">履歴書管理</h1>
+          <p className="mt-2 text-base text-body">
+            アップロードされた職務経歴書や CV を管理・更新します。
           </p>
         </div>
         <Link
           href="/resume/upload"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90"
         >
-          + アップロード
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            add
+          </span>
+          アップロード
         </Link>
       </div>
+
       <ResumeList documents={documents} />
+
+      {/* 履歴書の最適化 ヒント */}
+      <div className="mt-6 flex items-start gap-3 rounded-card border border-hairline bg-card p-6 shadow-ambient">
+        <span className="material-symbols-outlined text-primary" aria-hidden="true">
+          lightbulb
+        </span>
+        <div>
+          <h2 className="text-base font-bold text-ink">履歴書の最適化</h2>
+          <p className="mt-1 text-sm leading-relaxed text-body">
+            アップロードされた履歴書は、AI による自動解析とスキルキーワードの抽出に使用されます。最新の経験を反映させることで、模擬面接の精度が向上します。
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

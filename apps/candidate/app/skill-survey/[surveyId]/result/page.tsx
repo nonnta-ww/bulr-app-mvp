@@ -126,41 +126,75 @@ export default async function SkillSurveyResultPage({ params }: PageProps) {
   // DB の回答配列を questionId キーの state マップへ正規化
   const answers = answersToStateMap(responseData.answers);
 
+  // 回答日（最新提出日時）。ヘッダの「回答日」表示に使用する。
+  const answerDateStr = lastSubmittedAt
+    ? lastSubmittedAt.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    : null;
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <nav className="mb-4 text-sm text-gray-500">
-        <Link href="/skill-survey" className="hover:underline">
-          ← アンケート一覧に戻る
+    <main className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-8 md:py-12">
+      <nav className="mb-4">
+        <Link
+          href="/skill-survey"
+          className="inline-flex items-center gap-1 text-sm text-slate hover:text-ink"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_back
+          </span>
+          アンケート一覧に戻る
         </Link>
       </nav>
-      <h1 className="mb-2 text-2xl font-semibold text-gray-900">{survey.title} の結果</h1>
 
-      <div className="mb-6">
-        {cooldownVerdict.allowed ? (
-          <Link
-            href={`/skill-survey/${surveyId}`}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            回答を編集する →
-          </Link>
-        ) : (
-          <p className="text-sm text-gray-400">
-            {(cooldownVerdict.nextAvailableAt as Date).toLocaleDateString('ja-JP', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            })}以降に再回答できます
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-ink md:text-3xl">スキルアンケート結果</h1>
+        {answerDateStr && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              calendar_today
+            </span>
+            回答日 {answerDateStr}
           </p>
         )}
-      </div>
+      </header>
 
       <SurveyResult
         categories={categoryTree}
         answers={answers}
         choiceLabels={choiceLabels}
-        surveyTitle={survey.title}
         surveyId={surveyId}
       />
+
+      {/* 編集可否（クールダウン）— 要件 2.1, 2.2 */}
+      <div className="mt-8 flex justify-center border-t border-hairline pt-8">
+        {cooldownVerdict.allowed ? (
+          <Link
+            href={`/skill-survey/${surveyId}`}
+            className="inline-flex items-center gap-2 rounded-lg border border-hairline px-5 py-2.5 text-sm font-medium text-slate transition-colors hover:border-slate hover:bg-surface-2"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              edit
+            </span>
+            回答を編集する
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 px-4 py-2 text-sm text-muted">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              lock
+            </span>
+            次回{' '}
+            {(cooldownVerdict.nextAvailableAt as Date).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            })}{' '}
+            から編集できます
+          </span>
+        )}
+      </div>
     </main>
   );
 }

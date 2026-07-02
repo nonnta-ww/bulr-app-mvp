@@ -48,13 +48,13 @@ export default async function SurveyListPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">スキルアンケート</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          職種別のスキルアンケートに回答して、あなたの技術スタックを整理しましょう。
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <header className="mb-10 max-w-3xl md:mb-12">
+        <h1 className="mb-3 text-2xl font-bold text-ink md:text-3xl">スキルアンケート</h1>
+        <p className="text-base leading-relaxed text-body md:text-lg">
+          現在の技術スタックと習熟度を記録しましょう。自己分析やキャリア提案の精度が高まります。
         </p>
-      </div>
+      </header>
       <SurveyList surveys={surveys} statsBySurveyId={statsBySurveyId} />
     </main>
   );

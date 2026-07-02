@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Sidebar — ナビ項目を描画する presentational Client Component。
- * collapsed=true でアイコンのみ（ラベルは title 属性でツールチップ）。
+ * Sidebar — navy 固定サイドバーの中身（ブランド + ナビ + 下部ユーザーボタン）。
+ * デスクトップの固定 aside とモバイル drawer の両方で再利用する。
  * onNavigate はモバイル drawer をリンク選択時に閉じるためのコールバック。
  */
 
@@ -10,40 +10,57 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { NAV_ITEMS, isActive } from './nav-items';
+import { SidebarUser } from './user-menu';
 
 interface SidebarProps {
-  collapsed: boolean;
+  email: string;
   onNavigate?: () => void;
 }
 
-export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
+export function Sidebar({ email, onNavigate }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="メインナビゲーション" className="flex flex-col gap-1 p-2">
-      {NAV_ITEMS.map((item) => {
-        const active = isActive(pathname, item);
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? 'page' : undefined}
-            title={collapsed ? item.label : undefined}
-            className={[
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              collapsed ? 'justify-center' : '',
-              active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-            {!collapsed && <span className="truncate">{item.label}</span>}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="flex h-full flex-col bg-navy py-6">
+      {/* ブランド */}
+      <div className="mb-6 px-6">
+        <p className="text-2xl font-bold leading-tight text-canvas">bulr</p>
+        <p className="text-xs text-slate">Software Engineer Growth</p>
+      </div>
+
+      {/* ナビゲーション */}
+      <nav aria-label="メインナビゲーション" className="flex-1 px-3">
+        {NAV_ITEMS.map((item) => {
+          const active = isActive(pathname, item);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
+              className={[
+                'mb-1 flex items-center gap-4 rounded-r-full border-l-4 px-4 py-3 text-sm transition-colors',
+                active
+                  ? 'border-primary bg-primary/20 font-bold text-canvas'
+                  : 'border-transparent text-slate hover:bg-white/10 hover:text-canvas',
+              ].join(' ')}
+            >
+              <span
+                className={`material-symbols-outlined${active ? ' fill' : ''}`}
+                aria-hidden="true"
+              >
+                {item.symbol}
+              </span>
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* 下部ユーザーボタン */}
+      <div className="mt-auto border-t border-white/10 px-3 pt-4">
+        <SidebarUser email={email} />
+      </div>
+    </div>
   );
 }

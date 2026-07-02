@@ -282,7 +282,7 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
 
   if (categories.length === 0 || steps.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+      <div className="rounded-card border border-dashed border-hairline bg-card p-8 text-center text-sm text-muted">
         このアンケートにはまだ設問がありません。
       </div>
     );
@@ -301,161 +301,162 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
   return (
     <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-8">
       {/* 進捗インジケータ */}
-      <SurveyProgress
-        steps={steps}
-        answers={answers}
-        currentStepIndex={currentStepIndex}
-      />
+      <SurveyProgress steps={steps} currentStepIndex={currentStepIndex} />
 
       {/* 現在ステップのカテゴリ名見出し */}
       <section aria-labelledby={`step-heading-${currentStepIndex}`}>
         <h2
           id={`step-heading-${currentStepIndex}`}
-          className="mb-6 text-xl font-bold text-gray-900"
+          className="text-2xl font-bold text-ink md:text-3xl"
         >
           {currentStep.categoryName}
         </h2>
+        {survey.description && (
+          <p className="mt-2 text-base text-body">{survey.description}</p>
+        )}
 
         {/* サブカテゴリグループ → 設問 */}
-        <div className="space-y-10">
+        <div className="mt-8 space-y-6">
           {currentStep.subgroups.map((subgroup) => (
-            <div key={subgroup.subcategory ?? '__root__'}>
+            <div key={subgroup.subcategory ?? '__root__'} className="space-y-6">
               {/* サブカテゴリ見出し（存在する場合） */}
               {subgroup.subcategory && (
-                <h3 className="mb-4 border-b border-gray-100 pb-2 text-base font-semibold text-gray-700">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
                   {subgroup.subcategory}
                 </h3>
               )}
 
-              {/* 設問リスト */}
-              <div className="space-y-8">
-                {subgroup.questions.map((question, qIndex) => {
-                  const answer = answers[question.id];
-                  const error = fieldErrors[question.id];
+              {/* 設問リスト（各設問は 1 枚のカード） */}
+              {subgroup.questions.map((question) => {
+                const answer = answers[question.id];
+                const error = fieldErrors[question.id];
 
-                  return (
-                    <div key={question.id} className="space-y-3">
-                      {/* 設問テキスト + 必須マーク */}
-                      <p className="text-sm font-medium text-gray-800">
-                        <span className="mr-1 text-gray-400">{qIndex + 1}.</span>
-                        {question.body}
-                        {question.isRequired && (
-                          <span
-                            className="ml-1 text-red-500"
-                            aria-label="必須"
-                            title="必須"
-                          >
-                            *
-                          </span>
-                        )}
-                      </p>
-
-                      {/* single_choice → radio group */}
-                      {question.questionType === 'single_choice' && (
-                        <div className="space-y-2 pl-4">
-                          {question.choices.map((choice) => {
-                            const inputId = `radio-${question.id}-${choice.id}`;
-                            const isChecked =
-                              answer?.selectedChoiceIds?.[0] === choice.id;
-                            return (
-                              <label
-                                key={choice.id}
-                                htmlFor={inputId}
-                                className="flex cursor-pointer items-center gap-2 text-sm text-gray-700"
-                              >
-                                <input
-                                  id={inputId}
-                                  type="radio"
-                                  name={`q-${question.id}`}
-                                  value={choice.id}
-                                  checked={isChecked}
-                                  onChange={() =>
-                                    handleSingleChoice(question.id, choice.id)
-                                  }
-                                  disabled={isPending}
-                                  className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {choice.label}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* multi_choice → checkbox group */}
-                      {question.questionType === 'multi_choice' && (
-                        <div className="space-y-2 pl-4">
-                          {question.choices.map((choice) => {
-                            const inputId = `checkbox-${question.id}-${choice.id}`;
-                            const isChecked =
-                              answer?.selectedChoiceIds?.includes(choice.id) ?? false;
-                            return (
-                              <label
-                                key={choice.id}
-                                htmlFor={inputId}
-                                className="flex cursor-pointer items-center gap-2 text-sm text-gray-700"
-                              >
-                                <input
-                                  id={inputId}
-                                  type="checkbox"
-                                  name={`q-${question.id}`}
-                                  value={choice.id}
-                                  checked={isChecked}
-                                  onChange={(e) =>
-                                    handleMultiChoice(
-                                      question.id,
-                                      choice.id,
-                                      e.target.checked,
-                                    )
-                                  }
-                                  disabled={isPending}
-                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {choice.label}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* free_text → textarea + 残り文字数 */}
-                      {question.questionType === 'free_text' && (
-                        <div className="pl-4">
-                          <textarea
-                            id={`textarea-${question.id}`}
-                            name={`q-${question.id}`}
-                            value={answer?.freeText ?? ''}
-                            onChange={(e) =>
-                              handleFreeText(question.id, e.target.value)
-                            }
-                            disabled={isPending}
-                            rows={4}
-                            maxLength={2000}
-                            placeholder="自由に記入してください（2000文字以内）"
-                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                          />
-                          <p
-                            className={`mt-1 text-right text-xs ${
-                              (answer?.freeText ?? '').length > 2000
-                                ? 'font-semibold text-red-600'
-                                : 'text-gray-400'
-                            }`}
-                          >
-                            {(answer?.freeText ?? '').length} / 2000
-                          </p>
-                        </div>
-                      )}
-
-                      {/* インライン検証エラー */}
-                      {error && (
-                        <p role="alert" className="pl-4 text-sm text-red-600">
-                          {error}
-                        </p>
-                      )}
+                return (
+                  <div
+                    key={question.id}
+                    className="rounded-card border border-hairline bg-card p-6 shadow-ambient"
+                  >
+                    {/* 必須 / 任意 バッジ + 設問テキスト */}
+                    <div className="mb-5 flex items-start gap-3">
+                      <span
+                        className={[
+                          'mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-medium',
+                          question.isRequired
+                            ? 'bg-primary/15 text-[#8f4d00]'
+                            : 'bg-surface-2 text-muted',
+                        ].join(' ')}
+                      >
+                        {question.isRequired ? '必須' : '任意'}
+                      </span>
+                      <p className="text-base font-bold text-ink">{question.body}</p>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* single_choice → radio group（選択肢を枠付き行で表示） */}
+                    {question.questionType === 'single_choice' && (
+                      <div className="space-y-3">
+                        {question.choices.map((choice) => {
+                          const inputId = `radio-${question.id}-${choice.id}`;
+                          const isChecked = answer?.selectedChoiceIds?.[0] === choice.id;
+                          return (
+                            <label
+                              key={choice.id}
+                              htmlFor={inputId}
+                              className={[
+                                'flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors',
+                                isChecked
+                                  ? 'border-primary bg-primary/10 text-ink'
+                                  : 'border-hairline text-body hover:border-slate',
+                              ].join(' ')}
+                            >
+                              <input
+                                id={inputId}
+                                type="radio"
+                                name={`q-${question.id}`}
+                                value={choice.id}
+                                checked={isChecked}
+                                onChange={() => handleSingleChoice(question.id, choice.id)}
+                                disabled={isPending}
+                                className="h-4 w-4 shrink-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              />
+                              {choice.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* multi_choice → checkbox group */}
+                    {question.questionType === 'multi_choice' && (
+                      <div className="space-y-3">
+                        {question.choices.map((choice) => {
+                          const inputId = `checkbox-${question.id}-${choice.id}`;
+                          const isChecked =
+                            answer?.selectedChoiceIds?.includes(choice.id) ?? false;
+                          return (
+                            <label
+                              key={choice.id}
+                              htmlFor={inputId}
+                              className={[
+                                'flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors',
+                                isChecked
+                                  ? 'border-primary bg-primary/10 text-ink'
+                                  : 'border-hairline text-body hover:border-slate',
+                              ].join(' ')}
+                            >
+                              <input
+                                id={inputId}
+                                type="checkbox"
+                                name={`q-${question.id}`}
+                                value={choice.id}
+                                checked={isChecked}
+                                onChange={(e) =>
+                                  handleMultiChoice(question.id, choice.id, e.target.checked)
+                                }
+                                disabled={isPending}
+                                className="h-4 w-4 shrink-0 rounded accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              />
+                              {choice.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* free_text → textarea + 残り文字数 */}
+                    {question.questionType === 'free_text' && (
+                      <div>
+                        <textarea
+                          id={`textarea-${question.id}`}
+                          name={`q-${question.id}`}
+                          value={answer?.freeText ?? ''}
+                          onChange={(e) => handleFreeText(question.id, e.target.value)}
+                          disabled={isPending}
+                          rows={4}
+                          maxLength={2000}
+                          placeholder="自由に記入してください（2000文字以内）"
+                          className="block w-full rounded-lg border border-hairline bg-card px-3 py-2 text-sm text-ink placeholder:text-muted transition-all focus:border-slate focus:outline-none focus:shadow-[0_0_0_2px_rgba(242,187,167,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                        <p
+                          className={`mt-1 text-right text-xs ${
+                            (answer?.freeText ?? '').length > 2000
+                              ? 'font-semibold text-ember'
+                              : 'text-muted'
+                          }`}
+                        >
+                          {(answer?.freeText ?? '').length} / 2000
+                        </p>
+                      </div>
+                    )}
+
+                    {/* インライン検証エラー */}
+                    {error && (
+                      <p role="alert" className="mt-3 text-sm text-ember">
+                        {error}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -463,22 +464,25 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
 
       {/* フォームレベルのエラーメッセージ（サーバエラー） */}
       {formError && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-lg bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">
           {formError}
         </p>
       )}
 
       {/* ナビゲーションボタン */}
-      <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-6">
+      <div className="flex items-center justify-between gap-4 border-t border-hairline pt-6">
         {/* 戻るボタン（最初のステップでは非表示） */}
         <button
           type="button"
           onClick={handleBack}
           disabled={isFirstStep || isPending}
-          className={`rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50 ${
             isFirstStep ? 'invisible' : ''
           }`}
         >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_back
+          </span>
           戻る
         </button>
 
@@ -496,18 +500,26 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
             type="button"
             onClick={submitAnswers}
             disabled={isPending}
-            className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? '送信中...' : '回答を送信する'}
+            {!isPending && (
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                check
+              </span>
+            )}
           </button>
         ) : (
           <button
             type="button"
             onClick={handleNext}
             disabled={isPending}
-            className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             次へ
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              arrow_forward
+            </span>
           </button>
         )}
       </div>

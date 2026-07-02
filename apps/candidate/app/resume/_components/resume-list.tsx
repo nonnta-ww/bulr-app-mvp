@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { Button } from '@bulr/ui';
 import type { ResumeDocument } from '@bulr/db/schema';
 
 import { deleteResumeAction } from '../_actions/delete-resume';
@@ -145,12 +144,18 @@ export function ResumeList({ documents }: Props) {
 
   if (documents.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
-        <p className="text-sm text-gray-600">履歴書がまだアップロードされていません</p>
+      <div className="flex flex-col items-center justify-center gap-4 rounded-card border border-dashed border-hairline bg-card px-6 py-12 text-center">
+        <span className="material-symbols-outlined text-[32px] text-slate opacity-60" aria-hidden="true">
+          description
+        </span>
+        <p className="text-sm text-muted">履歴書がまだアップロードされていません</p>
         <Link
           href="/resume/upload"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90"
         >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            add
+          </span>
           履歴書をアップロードする
         </Link>
       </div>
@@ -161,84 +166,91 @@ export function ResumeList({ documents }: Props) {
   // 一覧
   // ---------------------------------------------------------------------------
 
+  const actionBtn =
+    'inline-flex items-center gap-1 rounded-lg border border-hairline px-3 py-1.5 text-sm text-slate transition-colors hover:border-slate hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50';
+  const deleteBtn =
+    'inline-flex items-center gap-1 rounded-lg border border-[#f5c6c2] px-3 py-1.5 text-sm text-ember transition-colors hover:bg-[#ffdad6] disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
-    <ul className="space-y-3">
-      {documents.map((doc) => {
+    <div className="overflow-hidden rounded-card border border-hairline bg-card shadow-ambient">
+      {/* ヘッダ行（デスクトップのみ） */}
+      <div className="hidden items-center gap-4 border-b border-hairline px-5 py-3 text-xs font-medium text-muted md:flex">
+        <span className="flex-1">ファイル名</span>
+        <span className="w-32">アップロード日</span>
+        <span className="w-[220px] text-right">アクション</span>
+      </div>
+
+      {documents.map((doc, index) => {
         const isThisPending = isPending && pendingId === doc.id;
         const errorMessage = errorMap[doc.id];
 
         return (
-          <li
+          <div
             key={doc.id}
-            className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            className={`px-5 py-4 ${index > 0 ? 'border-t border-hairline' : ''}`}
           >
-            {/* ファイル情報行 */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* ファイル名 */}
-              <span className="flex-1 truncate text-sm font-medium text-gray-900">
-                {doc.originalFilename}
-              </span>
-
-              {/* 種別バッジ */}
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                {doc.kind}
-              </span>
-
-              {/* メインバッジ */}
-              {doc.isPrimary && (
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                  メイン
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+              {/* ファイル名 + 種別 + メイン */}
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="material-symbols-outlined shrink-0 text-slate" aria-hidden="true">
+                  description
                 </span>
-              )}
+                <span className="truncate text-sm font-medium text-ink">
+                  {doc.originalFilename}
+                </span>
+                <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
+                  {doc.kind}
+                </span>
+                {doc.isPrimary && (
+                  <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-[#8f4d00]">
+                    メイン
+                  </span>
+                )}
+              </div>
 
               {/* アップロード日 */}
-              <span className="text-xs text-gray-400">{formatDate(doc.uploadedAt)}</span>
+              <span className="text-sm text-muted md:w-32">{formatDate(doc.uploadedAt)}</span>
+
+              {/* アクション */}
+              <div className="flex flex-wrap gap-2 md:w-[220px] md:justify-end">
+                {!doc.isPrimary && (
+                  <button
+                    type="button"
+                    disabled={isThisPending}
+                    onClick={() => handleSetPrimary(doc.id)}
+                    className={actionBtn}
+                  >
+                    {isThisPending ? '処理中...' : 'メインにする'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={isThisPending}
+                  onClick={() => handlePreview(doc.id)}
+                  className={actionBtn}
+                >
+                  {isThisPending ? '処理中...' : 'プレビュー'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isThisPending}
+                  onClick={() => handleDelete(doc.id, doc.originalFilename)}
+                  className={deleteBtn}
+                >
+                  {isThisPending ? '処理中...' : '削除'}
+                </button>
+              </div>
             </div>
 
             {/* エラーメッセージ */}
             {errorMessage && (
-              <p role="alert" className="rounded-md bg-red-50 px-3 py-1.5 text-xs text-red-700">
+              <p role="alert" className="mt-2 rounded-lg bg-[#ffdad6] px-3 py-1.5 text-xs text-[#93000a]">
                 {errorMessage}
               </p>
             )}
-
-            {/* アクションボタン行 */}
-            <div className="flex flex-wrap gap-2">
-              {/* メインにする（既に primary の場合は非表示） */}
-              {!doc.isPrimary && (
-                <Button
-                  type="button"
-                  disabled={isThisPending}
-                  onClick={() => handleSetPrimary(doc.id)}
-                  className="bg-white text-sm text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isThisPending ? '処理中...' : 'メインにする'}
-                </Button>
-              )}
-
-              {/* プレビュー */}
-              <Button
-                type="button"
-                disabled={isThisPending}
-                onClick={() => handlePreview(doc.id)}
-                className="bg-white text-sm text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isThisPending ? '処理中...' : 'プレビュー'}
-              </Button>
-
-              {/* 削除 */}
-              <Button
-                type="button"
-                disabled={isThisPending}
-                onClick={() => handleDelete(doc.id, doc.originalFilename)}
-                className="bg-white text-sm text-red-600 ring-1 ring-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isThisPending ? '処理中...' : '削除'}
-              </Button>
-            </div>
-          </li>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }

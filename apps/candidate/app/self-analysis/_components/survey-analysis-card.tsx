@@ -13,9 +13,9 @@ const STATUS_BADGE: Record<
   AnsweredSurveySummary['analysisStatus'],
   { label: string; className: string }
 > = {
-  none: { label: '未生成', className: 'bg-gray-100 text-gray-600' },
+  none: { label: '未生成', className: 'bg-surface-2 text-muted' },
   ready: { label: '生成済み', className: 'bg-emerald-100 text-emerald-800' },
-  stale: { label: '要再生成', className: 'bg-amber-100 text-amber-800' },
+  stale: { label: '要再生成', className: 'bg-primary/15 text-[#8f4d00]' },
 };
 
 const BUTTON_LABEL: Record<AnsweredSurveySummary['analysisStatus'], string> = {
@@ -35,12 +35,12 @@ export function SurveyAnalysisCard({ summary }: { summary: AnsweredSurveySummary
   return (
     <Link
       href={`/self-analysis/${summary.surveyId}`}
-      className="block rounded-lg border border-gray-200 p-5 transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      className="group block rounded-card border border-hairline bg-card p-6 shadow-ambient transition-colors hover:border-slate hover:bg-surface-2"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-gray-900">{summary.title}</h2>
-          <p className="mt-1 text-xs text-gray-500">最終回答日: {submitted}</p>
+          <h2 className="truncate text-base font-bold text-ink">{summary.title}</h2>
+          <p className="mt-1 text-xs text-muted">最終回答日: {submitted}</p>
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
@@ -49,8 +49,11 @@ export function SurveyAnalysisCard({ summary }: { summary: AnsweredSurveySummary
         </span>
       </div>
       <div className="mt-4">
-        <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
-          {BUTTON_LABEL[summary.analysisStatus]} →
+        <span className="inline-flex items-center gap-1 text-sm font-medium text-slate transition-transform group-hover:translate-x-1">
+          {BUTTON_LABEL[summary.analysisStatus]}
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_forward
+          </span>
         </span>
       </div>
     </Link>

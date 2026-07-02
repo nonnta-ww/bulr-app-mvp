@@ -3,8 +3,8 @@
 /**
  * ResumeUploadForm — 履歴書アップロードフォーム（Client Component）
  *
- * - 種別（履歴書 / 職務経歴書 / CV / レジュメ）を <select> で選択する
- * - <input type="file" accept=".pdf,.doc,.docx,.txt"> でファイルを選択する
+ * - 種別（履歴書 / 職務経歴書 / CV / レジュメ）をピルボタンで選択する
+ * - ドロップゾーン（ドラッグ&ドロップ or クリックでファイル選択）でファイルを選ぶ
  * - クライアント側で未選択・MIME 不一致・4MB 超を検出してエラーメッセージを表示する
  * - fetch('/api/resume/upload') へ FormData を POST する（サーバ経由アップロード）
  *   - Server Action の 1MB ボディ上限を避けるため Route Handler を使う
@@ -16,9 +16,8 @@
  */
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-import { Button } from '@bulr/ui';
 
 // ---------------------------------------------------------------------------
 // 定数
@@ -45,14 +44,24 @@ export function ResumeUploadForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [kind, setKind] = useState<ResumeKind>('履歴書');
+  const [file, setFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) {
+      setFile(dropped);
+      setErrorMessage('');
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrorMessage('');
-
-    const file = fileInputRef.current?.files?.[0];
 
     // ファイル未選択チェック
     if (!file) {
@@ -108,33 +117,47 @@ export function ResumeUploadForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
-      {/* 種別選択（Req 3.7） */}
-      <div className="space-y-2">
-        <label htmlFor="resume-kind" className="block text-sm font-medium text-gray-700">
-          書類の種別
-        </label>
-        <select
-          id="resume-kind"
-          name="kind"
-          value={kind}
-          onChange={(e) => setKind(e.target.value as ResumeKind)}
-          disabled={isSubmitting}
-          className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {RESUME_KINDS.map((k) => (
-            <option key={k} value={k}>
-              {k}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* ファイル選択（Req 3.2） */}
-      <div className="space-y-2">
-        <label htmlFor="resume-file" className="block text-sm font-medium text-gray-700">
-          ファイルを選択
-          <span className="ml-1 text-xs text-gray-500">（PDF・Word・テキスト、最大 4MB）</span>
-        </label>
+      {/* ドロップゾーン（Req 3.2） */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={() => setDragActive(false)}
+        onDrop={handleDrop}
+        aria-label="ファイルをドラッグ、またはクリックして選択"
+        className={[
+          'flex cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed px-6 py-14 text-center transition-colors',
+          dragActive ? 'border-slate bg-surface-2' : 'border-hairline hover:border-slate',
+        ].join(' ')}
+      >
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-slate">
+          <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+            cloud_upload
+          </span>
+        </span>
+        {file ? (
+          <div>
+            <p className="text-lg font-medium text-ink">{file.name}</p>
+            <p className="mt-1 text-xs text-slate">クリックで別のファイルを選択</p>
+          </div>
+        ) : (
+          <div>
+            <p className="text-lg font-medium text-ink">
+              ファイルをドラッグ、またはクリックして選択
+            </p>
+            <p className="mt-1 text-xs text-slate">PDF / Word / テキスト・最大 4MB</p>
+          </div>
+        )}
         <input
           ref={fileInputRef}
           id="resume-file"
@@ -142,25 +165,64 @@ export function ResumeUploadForm() {
           name="file"
           accept=".pdf,.doc,.docx,.txt"
           disabled={isSubmitting}
-          className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+          onChange={(e) => {
+            setFile(e.target.files?.[0] ?? null);
+            setErrorMessage('');
+          }}
+          className="hidden"
         />
+      </div>
+
+      {/* 種別選択（Req 3.7）— ピルボタン */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-ink">書類の種類</p>
+        <div className="flex flex-wrap gap-2">
+          {RESUME_KINDS.map((k) => {
+            const selected = k === kind;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                disabled={isSubmitting}
+                aria-pressed={selected}
+                className={[
+                  'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  selected
+                    ? 'border-primary bg-primary/15 text-[#8f4d00]'
+                    : 'border-transparent bg-surface-2 text-muted hover:text-ink',
+                ].join(' ')}
+              >
+                {k}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* エラーメッセージ（Req 3.3, 3.4） */}
       {errorMessage && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-lg bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">
           {errorMessage}
         </p>
       )}
 
-      {/* 送信ボタン — 送信中は disabled で二重送信を防ぐ */}
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-blue-600 text-white hover:bg-blue-700"
-      >
-        {isSubmitting ? 'アップロード中...' : 'アップロードする'}
-      </Button>
+      {/* アクション */}
+      <div className="flex justify-end gap-3 border-t border-hairline pt-6">
+        <Link
+          href="/resume"
+          className="inline-flex items-center rounded-lg px-5 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-surface-2"
+        >
+          キャンセル
+        </Link>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex items-center rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? 'アップロード中...' : 'アップロード'}
+        </button>
+      </div>
     </form>
   );
 }

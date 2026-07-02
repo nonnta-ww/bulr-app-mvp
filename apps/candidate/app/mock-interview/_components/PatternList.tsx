@@ -1,10 +1,9 @@
 /**
  * PatternList — 模擬面接パターン選択コンポーネント（Server Component）
  *
- * - hasSkillSurvey === true の場合、上部に「あなたへのおすすめ」セクションとして汎用ヒントを表示
- * - カテゴリ別セクションでパターン一覧を表示
- * - 各カードに title・description（先頭 80 文字）・「このパターンで開始」ボタン
- * - disabled === true の場合は全「開始」ボタンを disabled 属性で無効化
+ * - 「面接パターンを選択」見出し + パターンをカードグリッドで表示
+ * - 各カードに #code・カテゴリタグ・title・description・「この設定で練習する」ボタン
+ * - disabled === true の場合は全ボタンを disabled 属性で無効化
  * - createMockInterviewSessionAction を .bind 形式のフォームアクションで呼び出す
  *
  * Requirements: 要件2
@@ -18,26 +17,15 @@ import { createMockInterviewSessionAction } from '../_actions/create-session';
 // 定数
 // ---------------------------------------------------------------------------
 
-const CATEGORY_ORDER: PatternCategory[] = [
-  'design',
-  'trouble',
-  'performance',
-  'security',
-  'organization',
-  'ai',
-];
-
-const CATEGORY_LABEL: Record<PatternCategory, string> = {
-  design: 'Design（設計）',
-  trouble: 'Trouble（障害対応）',
-  performance: 'Performance（パフォーマンス）',
-  security: 'Security（セキュリティ）',
-  organization: 'Organization（組織・チーム）',
-  ai: 'AI（AI 活用）',
+/** カテゴリ → 短いタグ表記 */
+const CATEGORY_TAG: Record<PatternCategory, string> = {
+  design: '設計',
+  trouble: '障害対応',
+  performance: 'パフォーマンス',
+  security: 'セキュリティ',
+  organization: '組織・チーム',
+  ai: 'AI 活用',
 };
-
-const SKILL_SURVEY_HINT =
-  'スキルアンケートの回答に基づき、あなたの経験・関心に近い状況パターンに取り組むことで、より実践的なフィードバックを得やすくなります。カテゴリを参考に、挑戦してみたいパターンを選んでください。';
 
 // ---------------------------------------------------------------------------
 // ユーティリティ
@@ -54,21 +42,14 @@ function truncate(text: string, maxLength = 80): string {
 
 interface Props {
   patterns: AssessmentPattern[];
-  quotaRemaining: number;
   disabled: boolean;
-  hasSkillSurvey: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // サブコンポーネント
 // ---------------------------------------------------------------------------
 
-interface PatternCardProps {
-  pattern: AssessmentPattern;
-  disabled: boolean;
-}
-
-function PatternCard({ pattern, disabled }: PatternCardProps) {
+function PatternCard({ pattern, disabled }: { pattern: AssessmentPattern; disabled: boolean }) {
   // .bind で patternCode を部分適用し、戻り値を void に変換して form action の型に合わせる
   const boundAction = createMockInterviewSessionAction.bind(
     null,
@@ -76,16 +57,24 @@ function PatternCard({ pattern, disabled }: PatternCardProps) {
   ) as unknown as () => Promise<void>;
 
   return (
-    <li className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-gray-900">{pattern.title}</h3>
-      <p className="mt-1 text-sm text-gray-600">{truncate(pattern.description)}</p>
-      <form action={boundAction} className="mt-3">
+    <li className="flex h-full flex-col rounded-card border border-hairline bg-card p-6 shadow-ambient">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted">#{pattern.code}</span>
+        <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
+          {CATEGORY_TAG[pattern.category]}
+        </span>
+      </div>
+      <h3 className="mb-2 text-lg font-bold text-ink">{pattern.title}</h3>
+      <p className="mb-6 flex-1 text-sm leading-relaxed text-muted">
+        {truncate(pattern.description)}
+      </p>
+      <form action={boundAction}>
         <button
           type="submit"
           disabled={disabled}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="w-full rounded-lg bg-primary px-3 py-2.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          このパターンで開始
+          この設定で練習する
         </button>
       </form>
     </li>
@@ -96,62 +85,25 @@ function PatternCard({ pattern, disabled }: PatternCardProps) {
 // メインコンポーネント
 // ---------------------------------------------------------------------------
 
-export function PatternList({ patterns, quotaRemaining: _quotaRemaining, disabled, hasSkillSurvey }: Props) {
-  // カテゴリ別にパターンをグループ化
-  const grouped = CATEGORY_ORDER.reduce<Map<PatternCategory, AssessmentPattern[]>>((map, cat) => {
-    const items = patterns.filter((p) => p.category === cat);
-    if (items.length > 0) {
-      map.set(cat, items);
-    }
-    return map;
-  }, new Map());
+export function PatternList({ patterns, disabled }: Props) {
+  if (patterns.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-hairline bg-card px-6 py-12 text-center">
+        <p className="text-sm text-muted">現在利用可能なパターンはありません。</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* あなたへのおすすめセクション（スキルアンケート回答済みの場合のみ） */}
-      {hasSkillSurvey && (
-        <section
-          aria-labelledby="recommendation-heading"
-          className="rounded-lg border border-blue-200 bg-blue-50 p-5"
-        >
-          <h2
-            id="recommendation-heading"
-            className="mb-2 text-sm font-semibold text-blue-800"
-          >
-            あなたへのおすすめ
-          </h2>
-          <p className="text-sm text-blue-700">{SKILL_SURVEY_HINT}</p>
-        </section>
-      )}
-
-      {/* カテゴリ別パターン一覧 */}
-      {CATEGORY_ORDER.map((cat) => {
-        const items = grouped.get(cat);
-        if (!items || items.length === 0) return null;
-
-        return (
-          <section key={cat} aria-labelledby={`category-${cat}-heading`}>
-            <h2
-              id={`category-${cat}-heading`}
-              className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
-            >
-              {CATEGORY_LABEL[cat]}
-            </h2>
-            <ul className="space-y-3">
-              {items.map((pattern) => (
-                <PatternCard key={pattern.id} pattern={pattern} disabled={disabled} />
-              ))}
-            </ul>
-          </section>
-        );
-      })}
-
-      {/* パターンが 0 件の場合 */}
-      {patterns.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
-          <p className="text-sm text-gray-600">現在利用可能なパターンはありません。</p>
-        </div>
-      )}
-    </div>
+    <section aria-labelledby="pattern-select-heading">
+      <h2 id="pattern-select-heading" className="mb-4 text-lg font-bold text-ink">
+        面接パターンを選択
+      </h2>
+      <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {patterns.map((pattern) => (
+          <PatternCard key={pattern.id} pattern={pattern} disabled={disabled} />
+        ))}
+      </ul>
+    </section>
   );
 }

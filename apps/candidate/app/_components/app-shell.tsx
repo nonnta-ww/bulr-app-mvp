@@ -1,24 +1,22 @@
 'use client';
 
 /**
- * AppShell — apps/candidate のアプリ枠（上部バー＋左サイドバー＋本文）。
+ * AppShell — apps/candidate のアプリ枠（navy 固定サイドバー＋本文）。
  *
  * - userEmail === null（未認証）/ '/sign-in' / '/onboarding' では枠を描画せず children のみ返す。
- * - デスクトップ（md+）: サイドバー常時表示。☰ で展開↔アイコンレールをトグルし localStorage に保存。
- * - モバイル（<md）: サイドバーは隠れ、☰ でオーバーレイ drawer。リンク選択 / 背景 / Esc で閉じる。
+ * - デスクトップ（md+）: navy サイドバーを画面左に固定表示（本文は md:ml-64）。
+ * - モバイル（<md）: サイドバーは隠れ、上部バーの ☰ でオーバーレイ drawer。
+ *   リンク選択 / 背景 / Esc で閉じる。
  *
  * 注意: 各ページが独自の <main> を持つため、本シェルの本文ラッパは <div>（<main> の入れ子回避）。
  */
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
 
 import { Sidebar } from './sidebar';
-import { UserMenu } from './user-menu';
 
-const COLLAPSE_KEY = 'bulr.nav.collapsed';
-const CHROMELESS_PATHS = ['/sign-in', '/onboarding'];
+const CHROMELESS_PATHS = ['/sign-in', '/onboarding', '/invitations'];
 
 interface AppShellProps {
   userEmail: string | null;
@@ -27,15 +25,7 @@ interface AppShellProps {
 
 export function AppShell({ userEmail, children }: AppShellProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // 折りたたみ設定を復元（初回マウント時）
-  useEffect(() => {
-    if (window.localStorage.getItem(COLLAPSE_KEY) === '1') {
-      setCollapsed(true);
-    }
-  }, []);
 
   // ルート変更でモバイル drawer を閉じる
   useEffect(() => {
@@ -58,82 +48,54 @@ export function AppShell({ userEmail, children }: AppShellProps) {
     return <>{children}</>;
   }
 
-  function toggleDesktop() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      window.localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
-      return next;
-    });
-  }
-
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* 上部バー */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2">
-        <div className="flex items-center gap-2">
-          {/* モバイル: drawer を開く */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            aria-label="メニューを開く"
-            className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100 md:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          {/* デスクトップ: 展開↔レール */}
-          <button
-            type="button"
-            onClick={toggleDesktop}
-            aria-label={collapsed ? 'メニューを展開' : 'メニューを折りたたむ'}
-            aria-expanded={!collapsed}
-            className="hidden rounded-md p-1.5 text-gray-600 hover:bg-gray-100 md:inline-flex"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <span className="text-sm font-semibold text-gray-800">bulr</span>
-        </div>
-        <UserMenu email={userEmail} />
+    <div className="min-h-screen">
+      {/* デスクトップ: navy 固定サイドバー */}
+      <aside className="fixed left-0 top-0 z-20 hidden h-screen w-64 md:block">
+        <Sidebar email={userEmail} />
+      </aside>
+
+      {/* モバイル: 上部バー */}
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-card px-4 py-3 md:hidden">
+        <span className="text-xl font-bold text-primary">bulr</span>
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="メニューを開く"
+          className="text-navy"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            menu
+          </span>
+        </button>
       </header>
 
-      <div className="flex flex-1">
-        {/* デスクトップ・サイドバー */}
-        <aside
-          className={[
-            'hidden shrink-0 border-r border-gray-200 bg-white md:block',
-            collapsed ? 'w-16' : 'w-56',
-          ].join(' ')}
-        >
-          <Sidebar collapsed={collapsed} />
-        </aside>
-
-        {/* モバイル drawer */}
-        {mobileOpen && (
-          <div className="fixed inset-0 z-40 md:hidden">
-            <div
-              className="absolute inset-0 bg-black/40"
+      {/* モバイル drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute left-0 top-0 h-full w-64 shadow-xl">
+            <button
+              type="button"
               onClick={() => setMobileOpen(false)}
-              aria-hidden="true"
-            />
-            <div className="absolute left-0 top-0 flex h-full w-64 flex-col bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
-                <span className="text-sm font-semibold text-gray-800">メニュー</span>
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="メニューを閉じる"
-                  className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <Sidebar collapsed={false} onNavigate={() => setMobileOpen(false)} />
-            </div>
+              aria-label="メニューを閉じる"
+              className="absolute right-3 top-4 z-10 text-slate hover:text-canvas"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                close
+              </span>
+            </button>
+            <Sidebar email={userEmail} onNavigate={() => setMobileOpen(false)} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* 本文（各ページが自前の <main> を持つため <div> ラッパ） */}
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+      {/* 本文（各ページが自前の <main> を持つため <div> ラッパ） */}
+      <div className="min-w-0 md:ml-64">{children}</div>
     </div>
   );
 }

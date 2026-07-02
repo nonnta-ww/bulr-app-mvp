@@ -66,42 +66,28 @@ export default async function MockInterviewResultPage({
   // フィードバック未生成の場合はローディング表示
   if (session.formativeFeedback == null) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">フィードバック結果</h1>
-        </div>
-
-        {/* 補足情報 */}
-        <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          <p>
-            <span className="font-medium">パターン：</span>
-            {patternTitle}
-          </p>
-          <p>
-            <span className="font-medium">実施日時：</span>
-            {formattedDate}
-          </p>
-          <p>
-            <span className="font-medium">ターン数：</span>
-            {session.turnCount}
-          </p>
-        </div>
+      <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+        <ResultHeader
+          patternTitle={patternTitle}
+          formattedDate={formattedDate}
+          turnCount={session.turnCount}
+        />
 
         {/* ローディング表示 */}
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-blue-200 bg-blue-50 px-6 py-10 text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-300 border-t-blue-600" />
-          <p className="text-base font-medium text-blue-800">フィードバックを生成中です...</p>
-          <p className="text-sm text-blue-600">
-            AIがフィードバックを生成しています。しばらくお待ちください。
+        <div className="mt-8 flex flex-col items-center gap-4 rounded-card border border-hairline bg-card px-6 py-12 text-center shadow-ambient">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-hairline border-t-primary" />
+          <p className="text-base font-bold text-ink">フィードバックを生成中です…</p>
+          <p className="text-sm text-body">
+            AI がフィードバックを生成しています。しばらくお待ちください。
           </p>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex justify-center">
           <Link
             href="/mock-interview"
-            className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-lg border border-hairline px-5 py-2.5 text-sm font-medium text-slate transition-colors hover:border-slate hover:bg-surface-2"
           >
-            新しい模擬面接を開始
+            模擬面接一覧へ
           </Link>
         </div>
       </main>
@@ -111,70 +97,103 @@ export default async function MockInterviewResultPage({
   const feedback = session.formativeFeedback;
 
   const dimensions = [
-    { label: '真贋', key: 'authenticity', value: feedback.authenticity },
-    { label: '判断力', key: 'judgment', value: feedback.judgment },
-    { label: '射程', key: 'scope', value: feedback.scope },
-    { label: 'メタ認知', key: 'meta_cognition', value: feedback.meta_cognition },
-    { label: 'AI活用リテラシー', key: 'ai_literacy', value: feedback.ai_literacy },
+    { label: '真贋', key: 'authenticity', value: feedback.authenticity, symbol: 'fingerprint' },
+    { label: '判断力', key: 'judgment', value: feedback.judgment, symbol: 'balance' },
+    { label: '射程', key: 'scope', value: feedback.scope, symbol: 'radar' },
+    { label: 'メタ認知', key: 'meta_cognition', value: feedback.meta_cognition, symbol: 'psychology' },
+    { label: 'AI活用リテラシー', key: 'ai_literacy', value: feedback.ai_literacy, symbol: 'smart_toy' },
   ] as const;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">フィードバック結果</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          模擬面接のフィードバックをご確認ください。
-        </p>
-      </div>
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <ResultHeader
+        patternTitle={patternTitle}
+        formattedDate={formattedDate}
+        turnCount={session.turnCount}
+      />
 
-      {/* 補足情報 */}
-      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-        <p>
-          <span className="font-medium">パターン：</span>
-          {patternTitle}
-        </p>
-        <p>
-          <span className="font-medium">実施日時：</span>
-          {formattedDate}
-        </p>
-        <p>
-          <span className="font-medium">ターン数：</span>
-          {session.turnCount}
-        </p>
-      </div>
-
-      {/* 5 次元フィードバック */}
-      <div className="mb-6 space-y-4">
+      {/* 評価軸フィードバック */}
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 md:grid-cols-2">
         {dimensions.map((dim) => (
           <section
             key={dim.key}
-            className="rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm"
+            className="flex h-full flex-col gap-3 rounded-card border border-l-4 border-hairline border-l-primary bg-card p-6 shadow-ambient"
           >
-            <h2 className="mb-2 text-base font-semibold text-gray-900">{dim.label}</h2>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-              {dim.value}
-            </p>
+            <header className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-primary">
+                <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
+                  {dim.symbol}
+                </span>
+              </div>
+              <h2 className="text-lg font-bold text-ink">{dim.label}</h2>
+            </header>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{dim.value}</p>
           </section>
         ))}
       </div>
 
-      {/* 総合所感 */}
-      <section className="mb-8 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4">
-        <h2 className="mb-2 text-base font-semibold text-indigo-900">総合所感</h2>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-indigo-800">
-          {feedback.overall}
-        </p>
+      {/* 総評 */}
+      <section className="mt-6 rounded-card border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-6 md:p-8">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary" aria-hidden="true">
+            military_tech
+          </span>
+          <h2 className="text-lg font-bold text-ink">総評</h2>
+        </div>
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{feedback.overall}</p>
       </section>
 
-      {/* 新しい模擬面接リンク */}
-      <div className="text-center">
+      {/* もう一度練習する */}
+      <div className="mt-8 flex justify-center">
         <Link
           href="/mock-interview"
-          className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90"
         >
-          新しい模擬面接を開始
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            replay
+          </span>
+          もう一度練習する
         </Link>
       </div>
     </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ページヘッダ（フィードバックのメタ情報）
+// ---------------------------------------------------------------------------
+
+function ResultHeader({
+  patternTitle,
+  formattedDate,
+  turnCount,
+}: {
+  patternTitle: string;
+  formattedDate: string;
+  turnCount: number;
+}) {
+  return (
+    <div className="flex flex-col justify-between gap-4 border-b border-hairline pb-6 md:flex-row md:items-end">
+      <div>
+        <div className="mb-2 flex items-center gap-2">
+          <span className="material-symbols-outlined fill text-slate" aria-hidden="true">
+            forum
+          </span>
+          <span className="text-sm font-medium text-slate">模擬面接フィードバック</span>
+        </div>
+        <h1 className="text-2xl font-bold text-ink md:text-3xl">{patternTitle}</h1>
+      </div>
+      <div className="flex gap-4 rounded-lg border border-hairline bg-card px-4 py-2 text-xs">
+        <div className="flex flex-col">
+          <span className="text-muted">実施日</span>
+          <span className="font-medium text-ink">{formattedDate}</span>
+        </div>
+        <div className="w-px bg-hairline" />
+        <div className="flex flex-col">
+          <span className="text-muted">ターン数</span>
+          <span className="font-medium text-ink">全 {turnCount} ターン</span>
+        </div>
+      </div>
+    </div>
   );
 }

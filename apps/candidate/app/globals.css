@@ -1,1 +1,96 @@
 @import 'tailwindcss';
+
+/**
+ * bulr candidate デザインシステム "Zenith Personal Growth"
+ *
+ * docs/design/bulr_personal_growth_dashboard のデザインを Tailwind v4 の
+ * テーマトークンとして定義。エンジニア向け個人成長プラットフォーム用の
+ * 「Calm / Encouraging / Methodical」なトーン。
+ *
+ * - ブランド: navy(#172940) の落ち着いた土台 + orange(#F28705) の成長アクセント
+ * - 面: canvas(ページ背景 #F5F8FC) / card(白カード) / surface-2(補助面・チップ)
+ * - 罫線: hairline(#DCE3EC)。hover で slate(#7595BF) に遷移
+ * - テキスト: ink(見出し) / body(本文) / muted(補助・キャプション)
+ * - 影: ambient（ソフトな 5% navy グロー）
+ */
+@theme {
+  /* ブランド */
+  --color-navy: #172940;
+  --color-navy-soft: #203149;
+  --color-primary: #f28705;
+  --color-on-primary: #172940;
+  --color-amber: #f29f05;
+  --color-ember: #f24405;
+
+  /* 面 */
+  --color-canvas: #f5f8fc;
+  --color-card: #ffffff;
+  --color-surface-2: #e4ebf2;
+
+  /* 罫線 */
+  --color-hairline: #dce3ec;
+  --color-slate: #7595bf;
+
+  /* テキスト */
+  --color-ink: #172940;
+  --color-body: #45526a;
+  --color-muted: #7595bf;
+
+  /* タイポグラフィ */
+  --font-sans:
+    'Noto Sans JP', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* 角丸: カードは 10px、ボタン/入力は既定の rounded-lg(8px) */
+  --radius-card: 0.625rem;
+
+  /* 影: ソフトなアンビエントシャドウ（ハードなドロップではなくグロー） */
+  --shadow-ambient: 0px 4px 20px rgba(23, 41, 64, 0.05);
+}
+
+html,
+body {
+  background-color: var(--color-canvas);
+}
+
+body {
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols（デザインで多用されるアイコンフォント） */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* 数字の桁揃え（日時・スコア等） */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

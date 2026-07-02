@@ -26,7 +26,6 @@
 
 import dynamic from 'next/dynamic';
 import type { AggregatedSnapshot, SelfAnalysisRecord } from '@bulr/db';
-import { Card, CardContent, CardHeader, CardTitle } from '@bulr/ui';
 
 import { CoverageBars } from './coverage-bars';
 import { GenerateButton } from './generate-button';
@@ -42,7 +41,7 @@ const SkillBalanceRadar = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[300px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-400">
+      <div className="flex h-[300px] items-center justify-center rounded-card border border-hairline bg-canvas text-sm text-muted">
         読み込み中…
       </div>
     ),
@@ -58,11 +57,11 @@ const SkillBalanceRadar = dynamic(
 // 渡し、cn(tailwind-merge) により variant の配色を上書きして確実にボタンらしく見せる。
 // ---------------------------------------------------------------------------
 
-/** 主要ボタン（塗りつぶし） */
-const PRIMARY_BTN = 'bg-blue-600 text-white hover:bg-blue-700';
+/** 主要ボタン（塗りつぶし・オレンジ） */
+const PRIMARY_BTN = 'bg-primary text-on-primary hover:opacity-90';
 /** 副ボタン（白地・枠線） */
 const SECONDARY_BTN =
-  'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900';
+  'border border-hairline bg-card text-body hover:border-slate hover:bg-surface-2';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -85,12 +84,17 @@ function StaleBanner() {
   return (
     <div
       role="status"
-      className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      className="flex items-start gap-3 rounded-card border border-primary/30 bg-primary/10 px-4 py-3 text-sm"
     >
-      <p className="font-medium">回答が更新されています</p>
-      <p className="mt-1 text-amber-700">
-        最新の skill-survey 回答が自己分析の生成後に更新されています。最新化するには再生成してください。
-      </p>
+      <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">
+        info
+      </span>
+      <div>
+        <p className="font-medium text-ink">回答が更新されています</p>
+        <p className="mt-1 text-body">
+          最新の skill-survey 回答が自己分析の生成後に更新されています。最新化するには再生成してください。
+        </p>
+      </div>
     </div>
   );
 }
@@ -103,12 +107,17 @@ function VizOnlyBanner() {
   return (
     <div
       role="status"
-      className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+      className="flex items-start gap-3 rounded-card border border-[#f5c6c2] bg-[#ffdad6] px-4 py-3 text-sm"
     >
-      <p className="font-medium">サマリ生成に失敗しました</p>
-      <p className="mt-1 text-rose-700">
-        可視化データは正常に保存されています。「サマリ再生成」ボタンから自然言語サマリの再生成をお試しください。
-      </p>
+      <span className="material-symbols-outlined text-[20px] text-[#93000a]" aria-hidden="true">
+        error
+      </span>
+      <div>
+        <p className="font-medium text-[#93000a]">サマリ生成に失敗しました</p>
+        <p className="mt-1 text-[#7a0008]">
+          可視化データは正常に保存されています。「サマリ再生成」ボタンから自然言語サマリの再生成をお試しください。
+        </p>
+      </div>
     </div>
   );
 }
@@ -124,16 +133,10 @@ function VizOnlyBanner() {
 function AnalysisVisualization({ snapshot }: { snapshot: AggregatedSnapshot }) {
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-gray-900">
-            スキルバランス（熟練度）
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SkillBalanceRadar categories={snapshot.categories} />
-        </CardContent>
-      </Card>
+      <div className="rounded-card border border-hairline bg-card p-6 shadow-ambient">
+        <h3 className="mb-4 text-base font-bold text-ink">スキルバランス（熟練度）</h3>
+        <SkillBalanceRadar categories={snapshot.categories} />
+      </div>
 
       <CoverageBars snapshot={snapshot} />
     </div>
@@ -152,9 +155,9 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
     return (
       <div className="flex flex-col items-center gap-6 py-12 text-center">
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-gray-900">自己分析を始めましょう</h2>
-          <p className="text-sm text-gray-500">
-            skill-survey の回答をもとに、強み・弱み・成長アクションを生成します。
+          <h2 className="text-xl font-bold text-ink">自己分析を始めましょう</h2>
+          <p className="text-sm text-body">
+            skill-survey の回答をもとに、強み・伸びしろ・成長アクションを生成します。
             <br />
             ※ 生成には skill-survey への回答が必要です。
           </p>
@@ -216,26 +219,36 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
 
         {/* 既存の分析内容（最新でない旨を伝えたうえで表示）（Req 5.3） */}
         <div className="opacity-80">
-          <p className="mb-4 text-xs text-gray-500">
+          <p className="mb-4 text-xs text-muted">
             ※ 以下は最後に生成された自己分析です（最新の回答に基づいていない可能性があります）
           </p>
-          <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
-          <div className="mt-6 space-y-4">
+          <div className="grid gap-8 md:grid-cols-2">
             <NarrativeSection
               title="強み"
               items={record.llmOutput.strengths}
-              accentClass="text-emerald-700"
+              symbol="auto_awesome"
+              iconClass="text-primary"
+              accentBorderClass="border-l-primary"
             />
             <NarrativeSection
-              title="弱み・手薄な領域"
+              title="伸びしろ"
               items={record.llmOutput.weaknesses}
-              accentClass="text-rose-700"
+              symbol="lightbulb"
+              iconClass="text-slate"
+              accentBorderClass="border-l-slate"
             />
+          </div>
+          <div className="mt-6">
             <NarrativeSection
-              title="成長アクション"
+              title="次の成長アクション"
               items={record.llmOutput.growthActions}
-              accentClass="text-blue-700"
+              symbol="flag"
+              iconClass="text-amber"
+              accentBorderClass="border-l-amber"
             />
+          </div>
+          <div className="mt-6">
+            <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
           </div>
         </div>
       </div>
@@ -246,33 +259,41 @@ export function SelfAnalysisView({ record, isStale, surveyId }: SelfAnalysisView
   // Complete 状態: record あり & llmOutput あり & !isStale（正常表示）
   // ---------------------------------------------------------------------------
   return (
-    <div className="space-y-6">
-      {/* 可視化（Req 2.1）。熟練度レーダーとカバレッジを併置（Req 6.1, 6.2） */}
-      <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
-
-      {/* 自然言語サマリ + 成長アクション（Req 3.1, 3.2） */}
-      <div className="space-y-4">
+    <div className="space-y-8">
+      {/* 自然言語サマリ: 強み + 伸びしろ を 2 カラム（Req 3.1） */}
+      <div className="grid gap-8 md:grid-cols-2">
         <NarrativeSection
           title="強み"
           items={record.llmOutput.strengths}
-          accentClass="text-emerald-700"
+          symbol="auto_awesome"
+          iconClass="text-primary"
+          accentBorderClass="border-l-primary"
         />
         <NarrativeSection
-          title="弱み・手薄な領域"
+          title="伸びしろ"
           items={record.llmOutput.weaknesses}
-          accentClass="text-rose-700"
-        />
-        <NarrativeSection
-          title="成長アクション"
-          items={record.llmOutput.growthActions}
-          accentClass="text-blue-700"
+          symbol="lightbulb"
+          iconClass="text-slate"
+          accentBorderClass="border-l-slate"
         />
       </div>
 
+      {/* 次の成長アクション（Req 3.2） */}
+      <NarrativeSection
+        title="次の成長アクション"
+        items={record.llmOutput.growthActions}
+        symbol="flag"
+        iconClass="text-amber"
+        accentBorderClass="border-l-amber"
+      />
+
+      {/* 可視化（Req 2.1）。熟練度レーダーとカバレッジを併置（Req 6.1, 6.2） */}
+      <AnalysisVisualization snapshot={record.aggregatedSnapshot} />
+
       {/* 再診断 CTA（Complete 状態でも提供、Req 5.2）。
           最新のアンケート回答で診断をやり直せることを明示し、塗りつぶしボタンで誘導する。 */}
-      <div className="flex flex-col items-stretch gap-2 border-t border-gray-200 pt-6 sm:items-end">
-        <p className="text-xs text-gray-500">
+      <div className="flex flex-col items-stretch gap-2 border-t border-hairline pt-6 sm:items-end">
+        <p className="text-xs text-muted">
           最新のスキルアンケート回答をもとに診断をやり直せます。
         </p>
         <GenerateButton

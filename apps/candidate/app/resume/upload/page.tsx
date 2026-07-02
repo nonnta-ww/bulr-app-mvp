@@ -28,17 +28,22 @@ export default async function ResumeUploadPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <nav className="mb-4 text-sm text-gray-500">
-        <Link href="/resume" className="hover:underline">
-          ← 履歴書一覧に戻る
+    <main className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-8 md:py-12">
+      <nav className="mb-4">
+        <Link
+          href="/resume"
+          className="inline-flex items-center gap-1 text-sm text-slate hover:text-ink"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_back
+          </span>
+          履歴書管理
         </Link>
       </nav>
-      <h1 className="mb-2 text-2xl font-semibold text-gray-900">履歴書をアップロード</h1>
-      <p className="mb-6 text-sm text-gray-600">
-        履歴書・職務経歴書・CV・レジュメをアップロードできます。種別ごとに最新版が「メイン」として企業へのエントリーに使われます。
-      </p>
-      <ResumeUploadForm />
+      <div className="rounded-card border border-hairline bg-card p-6 shadow-ambient md:p-10">
+        <h1 className="mb-6 text-2xl font-bold text-ink">履歴書をアップロード</h1>
+        <ResumeUploadForm />
+      </div>
     </main>
   );
 }

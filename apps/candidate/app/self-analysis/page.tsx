@@ -36,20 +36,18 @@ export default async function SelfAnalysisPage() {
   // ── NoResponse 状態 ──
   if (surveys.length === 0) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">自己分析</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            アンケートの回答をもとに、あなたの強み・弱み・成長アクションを生成します。
+      <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+        <header className="mb-10 max-w-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-ink md:text-3xl">自己分析</h1>
+          <p className="text-base leading-relaxed text-body md:text-lg">
+            アンケートの回答をもとに、あなたの強み・伸びしろ・成長アクションを生成します。
           </p>
-        </div>
+        </header>
 
-        <div className="flex flex-col items-center gap-6 rounded-lg border border-amber-200 bg-amber-50 px-6 py-10 text-center">
+        <div className="flex flex-col items-center gap-6 rounded-card border border-primary/30 bg-primary/10 px-6 py-12 text-center">
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-amber-900">
-              先にアンケートに回答しましょう
-            </h2>
-            <p className="text-sm text-amber-700">
+            <h2 className="text-xl font-bold text-ink">先にアンケートに回答しましょう</h2>
+            <p className="text-sm text-body">
               自己分析を生成するには、スキルアンケートへの回答が必要です。
               <br />
               まずアンケートに回答してから、こちらで自己分析を生成してください。
@@ -57,9 +55,12 @@ export default async function SelfAnalysisPage() {
           </div>
           <Link
             href="/skill-survey"
-            className="inline-flex items-center gap-2 rounded-md bg-amber-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90"
           >
             アンケート一覧へ
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              arrow_forward
+            </span>
           </Link>
         </div>
       </main>
@@ -68,15 +69,15 @@ export default async function SelfAnalysisPage() {
 
   // ── 一覧表示 ──
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">自己分析</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          回答済みのアンケートを選んで、強み・弱み・成長アクションを確認しましょう。
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <header className="mb-10 max-w-3xl">
+        <h1 className="mb-3 text-2xl font-bold text-ink md:text-3xl">自己分析</h1>
+        <p className="text-base leading-relaxed text-body md:text-lg">
+          回答済みのアンケートを選んで、強み・伸びしろ・成長アクションを確認しましょう。
         </p>
-      </div>
+      </header>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {surveys.map((summary) => (
           <SurveyAnalysisCard key={summary.surveyId} summary={summary} />
         ))}
