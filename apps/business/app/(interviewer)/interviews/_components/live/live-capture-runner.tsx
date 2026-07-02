@@ -74,6 +74,26 @@ export interface LiveCaptureRunnerProps {
    * 本番では import デフォルト値を使用。テストでは mock を注入する。
    */
   resumeCapture?: (input: PauseCaptureInput) => Promise<unknown>;
+  /**
+   * finalize トリガ（対面 mic モードの終端）。
+   * 本番では /api/interview/finalize を叩くデフォルトを使用。テストでは mock を注入する。
+   */
+  finalizeCapture?: (input: { sessionId: string }) => Promise<unknown>;
+}
+
+/**
+ * mic モードの finalize デフォルト実装。
+ *
+ * 対面録音は会議終了 webhook（recall の bot.call_ended）が存在しないため、
+ * 面接終了時にクライアントから finalize ルートを起動する。finalizeSession が
+ * capture_status を stopping → stopped に確定し、ライブ画面のポーリングが終端する。
+ */
+async function defaultFinalizeCapture(input: { sessionId: string }): Promise<unknown> {
+  return fetch('/api/interview/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: input.sessionId }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +138,7 @@ export function LiveCaptureRunner({
   stopCapture = defaultStopCapture as (input: StopCaptureInput) => Promise<unknown>,
   pauseCapture = defaultPauseCapture as (input: PauseCaptureInput) => Promise<unknown>,
   resumeCapture = defaultResumeCapture as (input: PauseCaptureInput) => Promise<unknown>,
+  finalizeCapture = defaultFinalizeCapture,
 }: LiveCaptureRunnerProps) {
   // Req 8.2: useLiveState の返却値のみで描画。useReducer 進行ステートマシンは持たない。
   const liveState = useLiveState(sessionId);
@@ -158,6 +179,11 @@ export function LiveCaptureRunner({
   /** 面接終了（Req 3.5 制御要素 2/3） */
   async function handleFinish() {
     await stopCapture({ sessionId, reason: 'finish' });
+    // 対面(mic)モードは会議終了 webhook が無いため、クライアントから finalize を起動して
+    // stopping → stopped の終端まで到達させる（recall モードは bot.call_ended webhook が駆動）。
+    if (captureProvider === 'mic') {
+      await finalizeCapture({ sessionId });
+    }
   }
 
   /** 中止（Req 3.5 制御要素 3/3） */
@@ -299,7 +325,7 @@ export function LiveCaptureRunner({
             )
           )}
 
-          {/* Req 3.5 制御要素 2/3: 面接終了 */}
+          {/* Req 3.5 制御要素 3/3: 中止 */}
           <button
             type="button"
             onClick={handleAbort}
@@ -308,7 +334,7 @@ export function LiveCaptureRunner({
             中止
           </button>
 
-          {/* Req 3.5 制御要素 3/3: 中止 */}
+          {/* Req 3.5 制御要素 2/3: 面接終了 */}
           <button
             type="button"
             onClick={handleFinish}

@@ -15,7 +15,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
 
 import { requireCandidate, AuthError } from '@bulr/auth/server';
 import { db, getLatestResponseByCandidateProfileId, getLatestResponseSubmittedAt } from '@bulr/db';
@@ -80,32 +80,24 @@ export default async function SurveyFormPage({ params }: PageProps) {
   let questionsWithChoices: CategoryWithQuestions[] = [];
 
   if (categoryIds.length > 0) {
-    // カテゴリ配下の全設問を一括取得
-    const questions = await db
+    // 当該 survey のカテゴリ配下の設問のみ取得（全 survey 横断で取らない）
+    const filteredQuestions = await db
       .select()
       .from(skillSurveyQuestion)
+      .where(inArray(skillSurveyQuestion.categoryId, categoryIds))
       .orderBy(asc(skillSurveyQuestion.displayOrder));
-
-    // 該当カテゴリに絞り込み
-    const filteredQuestions = questions.filter((q) =>
-      categoryIds.includes(q.categoryId),
-    );
 
     const questionIds = filteredQuestions.map((q) => q.id);
 
-    // 全選択肢を一括取得
-    const choices =
+    // 当該設問配下の選択肢のみ取得
+    const filteredChoices =
       questionIds.length > 0
         ? await db
             .select()
             .from(skillSurveyChoice)
+            .where(inArray(skillSurveyChoice.questionId, questionIds))
             .orderBy(asc(skillSurveyChoice.displayOrder))
         : [];
-
-    // 該当設問に絞り込み
-    const filteredChoices = choices.filter((c) =>
-      questionIds.includes(c.questionId),
-    );
 
     // JS でネスト構造を構築
     const questionMap = new Map<string, QuestionWithChoices>();

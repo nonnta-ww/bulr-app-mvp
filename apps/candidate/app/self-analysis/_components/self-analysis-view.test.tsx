@@ -68,8 +68,10 @@ describe('SelfAnalysisView — レーダーとカバレッジの併存 (Req 6.1,
     expect(screen.getByText('スキルバランス（熟練度）')).toBeInTheDocument();
     // 既存カバレッジ表示が維持されている
     expect(screen.getByText('全体の回答網羅度')).toBeInTheDocument();
-    // dynamic 読み込みのレーダーが解決し、非空描画される
-    expect(await screen.findByText(/カテゴリ別の熟練度/)).toBeInTheDocument();
+    // dynamic 読み込みのレーダーが解決し、非空描画される。
+    // next/dynamic(ssr:false) + recharts の解決は CI 高負荷時に既定 1000ms を超えうるため
+    // タイムアウトを広げてフレークを防ぐ。
+    expect(await screen.findByText(/カテゴリ別の熟練度/, undefined, { timeout: 10_000 })).toBeInTheDocument();
   });
 
   it('旧版スナップショット（proficiencyScore 無し）でもレーダーが空表示で破綻しない', async () => {
@@ -82,7 +84,9 @@ describe('SelfAnalysisView — レーダーとカバレッジの併存 (Req 6.1,
 
     expect(screen.getByText('スキルバランス（熟練度）')).toBeInTheDocument();
     expect(screen.getByText('全体の回答網羅度')).toBeInTheDocument();
-    // レーダーは空表示にフォールバック
-    expect(await screen.findByText(/熟練度を表示できるデータがまだありません/)).toBeInTheDocument();
+    // レーダーは空表示にフォールバック（dynamic 解決待ちのため広めのタイムアウト）
+    expect(
+      await screen.findByText(/熟練度を表示できるデータがまだありません/, undefined, { timeout: 10_000 }),
+    ).toBeInTheDocument();
   });
 });

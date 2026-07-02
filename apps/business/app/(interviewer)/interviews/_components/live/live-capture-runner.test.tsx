@@ -278,6 +278,53 @@ describe('LiveCaptureRunner', () => {
       });
     });
 
+    it('mic モードの「面接終了」クリックで finalizeCapture({ sessionId }) が呼ばれる（webhook が無いため）', async () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'mic' }),
+      );
+
+      const mockStop = vi.fn().mockResolvedValue({ ok: true, data: {} });
+      const mockFinalize = vi.fn().mockResolvedValue(undefined);
+      render(
+        <LiveCaptureRunner
+          sessionId="mic-finish"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={mockStop as never}
+          finalizeCapture={mockFinalize as never}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: /面接終了|finish/i }));
+
+      expect(mockStop).toHaveBeenCalledWith({ sessionId: 'mic-finish', reason: 'finish' });
+      expect(mockFinalize).toHaveBeenCalledTimes(1);
+      expect(mockFinalize).toHaveBeenCalledWith({ sessionId: 'mic-finish' });
+    });
+
+    it('recall モードの「面接終了」クリックでは finalizeCapture を呼ばない（bot.call_ended webhook が駆動）', async () => {
+      vi.mocked(useLiveState).mockReturnValue(
+        makeDefaultHookResult({ captureStatus: 'recording', captureProvider: 'recall' }),
+      );
+
+      const mockStop = vi.fn().mockResolvedValue({ ok: true, data: {} });
+      const mockFinalize = vi.fn().mockResolvedValue(undefined);
+      render(
+        <LiveCaptureRunner
+          sessionId="recall-finish"
+          consentObtained={true}
+          startCapture={vi.fn() as never}
+          stopCapture={mockStop as never}
+          finalizeCapture={mockFinalize as never}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: /面接終了|finish/i }));
+
+      expect(mockStop).toHaveBeenCalledWith({ sessionId: 'recall-finish', reason: 'finish' });
+      expect(mockFinalize).not.toHaveBeenCalled();
+    });
+
     it('recording 中に「一時停止」クリックで pauseCapture({ sessionId }) が呼ばれる', async () => {
       vi.mocked(useLiveState).mockReturnValue(
         makeDefaultHookResult({ captureStatus: 'recording' }),

@@ -9,6 +9,31 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    # DB 統合テスト用の Postgres。ローカル docker/compose.yml と同じ認証情報。
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bulr
+          POSTGRES_PASSWORD: dev_password
+          POSTGRES_DB: bulr_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bulr"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # ランタイム/migrator 双方に同一のローカル Postgres を指す（drizzle-kit は DIRECT_URL 優先）。
+      DATABASE_URL: postgresql://bulr:dev_password@localhost:5432/bulr_test
+      DIRECT_URL: postgresql://bulr:dev_password@localhost:5432/bulr_test
+      # テスト専用のダミー値（本番シークレットではない）。
+      BETTER_AUTH_SECRET: test-secret-for-ci-only-0123456789
+      BETTER_AUTH_URL: http://localhost:3000
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +57,19 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Apply DB schema
+        # マイグレーションを事前適用する。これにより各パッケージのテスト内 self-migrate
+        # （drizzle migrate）は __drizzle_migrations 記録により no-op になり、実行順序に
+        # 依存せず全パッケージがスキーマを利用できる。
+        run: pnpm --filter @bulr/db exec drizzle-kit migrate
+
+      - name: Test
+        # --concurrency=1: パッケージ間で同一 DB への書き込みが競合しないよう直列実行する。
+        # パッケージ内のファイル並列は各 vitest.config に委ねる（DB seed テストを持つ
+        # @bulr/db は fileParallelism=false で直列、コンポーネントテストはワーカ分離のまま）。
+        # DATABASE_URL 等は turbo.json の test.env でテストプロセスへ受け渡す。
+        run: pnpm turbo run test --concurrency=1
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=moderate

@@ -18,7 +18,7 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { authedAction, requireCandidate, AuthError } from '@bulr/auth/server';
+import { candidateAction, ActionError } from '@bulr/auth/server';
 import { db } from '@bulr/db';
 import { entry, invitation, skillSurvey } from '@bulr/db/schema';
 import { getPrimaryResumeDocument, getLatestResponseByCandidateProfileId } from '@bulr/db';
@@ -29,9 +29,7 @@ const createEntrySchema = z.object({
   token: z.string().min(1).regex(/^[A-Za-z0-9_-]+$/).max(256),
 });
 
-export const createEntry = authedAction(createEntrySchema, async ({ token }, _ctx) => {
-  const { candidateProfile } = await requireCandidate();
-
+export const createEntry = candidateAction(createEntrySchema, async ({ token }, { candidateProfile }) => {
   // 1. invitation を token で SELECT
   const [inv] = await db
     .select({ id: invitation.id, openingId: invitation.openingId, consumedAt: invitation.consumedAt })
@@ -40,10 +38,10 @@ export const createEntry = authedAction(createEntrySchema, async ({ token }, _ct
     .limit(1);
 
   if (!inv) {
-    return { ok: false as const, error: { code: 'INVALID_TOKEN', message: '招待リンクが無効です' } };
+    throw new ActionError('INVALID_TOKEN', '招待リンクが無効です');
   }
   if (inv.consumedAt !== null) {
-    return { ok: false as const, error: { code: 'ALREADY_CONSUMED', message: 'この招待リンクは既に使用されています' } };
+    throw new ActionError('ALREADY_CONSUMED', 'この招待リンクは既に使用されています');
   }
 
   // 2. 履歴書スナップショット (primary) を取得 — 履歴書種別 '履歴書'
@@ -100,16 +98,15 @@ export const createEntry = authedAction(createEntrySchema, async ({ token }, _ct
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
     if (msg.includes('CONSUME_RACE')) {
-      return { ok: false as const, error: { code: 'ALREADY_CONSUMED', message: '他のリクエストが先にエントリーしました' } };
+      throw new ActionError('ALREADY_CONSUMED', '他のリクエストが先にエントリーしました');
     }
     // UNIQUE(candidate_profile_id, opening_id) 違反 → 重複エントリー
     // drizzle 0.45 は DrizzleQueryError でラップするため err.cause チェーンを辿って判定する
     if (isUniqueViolation(err, 'entry_candidate_opening_uniq')) {
-      return { ok: false as const, error: { code: 'DUPLICATE_ENTRY', message: '同じ募集に既にエントリー済みです' } };
+      throw new ActionError('DUPLICATE_ENTRY', '同じ募集に既にエントリー済みです');
     }
-    if (err instanceof AuthError) {
-      return { ok: false as const, error: { code: err.code, message: err.message } };
-    }
+    // ActionError（上で throw したもの）や AuthError・想定外は再 throw し、
+    // candidateAction のラッパー側でフラットな Result に変換させる。
     throw err;
   }
 

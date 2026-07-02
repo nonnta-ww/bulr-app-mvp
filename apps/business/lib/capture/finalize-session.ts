@@ -443,6 +443,21 @@ export async function finalizeSession(
       .update(schema.interviewSession)
       .set({ status: 'completed', completed_at: new Date() })
       .where(eq(schema.interviewSession.id, sessionId));
+
+    // capture_status を stopping → stopped に確定し、ライブ画面のポーリングを終端させる。
+    // - mic モード: 会議終了 webhook が存在しないため、この finalize が唯一の終端点になる
+    //   （これが無いと capture_status='stopping' のまま永久にポーリングし続ける）。
+    // - recall モード: webhook が先に stopped 済みのため WHERE 条件で no-op（冪等）。
+    // - aborted / failed など他のターミナル状態は WHERE 条件で保護され上書きしない。
+    await db
+      .update(schema.interviewSession)
+      .set({ capture_status: 'stopped', last_capture_event_at: new Date() })
+      .where(
+        and(
+          eq(schema.interviewSession.id, sessionId),
+          eq(schema.interviewSession.capture_status, 'stopping'),
+        ),
+      );
   } catch (e) {
     console.error(
       `[finalize-session] DB update failed for sessionId=${sessionId}`,

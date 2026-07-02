@@ -12,14 +12,8 @@
  *  - score_kind enum は既存値（proficiency のみ使用）
  */
 
-import { sql } from 'drizzle-orm';
 import type { DB } from '../../client';
-import {
-  skillSurvey,
-  skillSurveyCategory,
-  skillSurveyQuestion,
-  skillSurveyChoice,
-} from '../../schema/skill-survey';
+import { runSkillSurveySeed } from './runner';
 
 export type InfrastructureSreSurveySeedData = {
   jobType: 'infrastructure-sre';
@@ -863,118 +857,8 @@ export const infrastructureSreSurveySeed: InfrastructureSreSurveySeedData = {
 };
 
 /**
- * インフラ・SRE スキルアンケートのシードデータを DB に投入する（idempotent）。
- *
- * upsert 方式（onConflictDoUpdate）を全テーブルで統一使用。
- * 各テーブルの id は初回生成後不変（set に id を含めない）。
- * backend / frontend / ai-driven-development seed と同型。
+ * infrastructure-sre スキルアンケートの seed を投入する（idempotent）。共通ランナーへ委譲する。
  */
 export async function runInfrastructureSreSkillSurveySeed(db: DB): Promise<void> {
-  await db.transaction(async (tx) => {
-    // 1. survey をアップサート
-    const [survey] = await tx
-      .insert(skillSurvey)
-      .values({
-        jobType: infrastructureSreSurveySeed.jobType,
-        title: infrastructureSreSurveySeed.title,
-      })
-      .onConflictDoUpdate({
-        target: skillSurvey.jobType,
-        set: {
-          title: sql`excluded.title`,
-          description: sql`excluded.description`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning({ id: skillSurvey.id });
-
-    if (!survey) throw new Error('Failed to upsert skill_survey row');
-    const surveyId = survey.id;
-
-    let totalCategories = 0;
-    let totalQuestions = 0;
-    let totalChoices = 0;
-
-    for (const category of infrastructureSreSurveySeed.categories) {
-      // 2. category をアップサート
-      const [cat] = await tx
-        .insert(skillSurveyCategory)
-        .values({
-          skillSurveyId: surveyId,
-          name: category.name,
-          subcategory: category.subcategory,
-          displayOrder: category.displayOrder,
-        })
-        .onConflictDoUpdate({
-          target: [
-            skillSurveyCategory.skillSurveyId,
-            skillSurveyCategory.name,
-            skillSurveyCategory.subcategory,
-          ],
-          set: {
-            displayOrder: sql`excluded.display_order`,
-            updatedAt: new Date(),
-          },
-        })
-        .returning({ id: skillSurveyCategory.id });
-
-      if (!cat) throw new Error(`Failed to upsert category: ${category.name} / ${category.subcategory}`);
-      const categoryId = cat.id;
-      totalCategories++;
-
-      for (const question of category.questions) {
-        // 3. question をアップサート
-        const [q] = await tx
-          .insert(skillSurveyQuestion)
-          .values({
-            categoryId,
-            body: question.text,
-            questionType: question.questionType,
-            scoringKind: question.scoringKind ?? null,
-            displayOrder: question.displayOrder,
-            isRequired: question.isRequired ?? false,
-          })
-          .onConflictDoUpdate({
-            target: [skillSurveyQuestion.categoryId, skillSurveyQuestion.body],
-            set: {
-              questionType: sql`excluded.question_type`,
-              scoringKind: sql`excluded.scoring_kind`,
-              displayOrder: sql`excluded.display_order`,
-              isRequired: sql`excluded.is_required`,
-              updatedAt: new Date(),
-            },
-          })
-          .returning({ id: skillSurveyQuestion.id });
-
-        if (!q) throw new Error(`Failed to upsert question: ${question.text}`);
-        const questionId = q.id;
-        totalQuestions++;
-
-        for (const choice of question.choices) {
-          // 4. choice をアップサート
-          await tx
-            .insert(skillSurveyChoice)
-            .values({
-              questionId,
-              label: choice.text,
-              level: choice.level ?? null,
-              displayOrder: choice.displayOrder,
-            })
-            .onConflictDoUpdate({
-              target: [skillSurveyChoice.questionId, skillSurveyChoice.label],
-              set: {
-                level: sql`excluded.level`,
-                displayOrder: sql`excluded.display_order`,
-              },
-            });
-
-          totalChoices++;
-        }
-      }
-    }
-
-    console.log(
-      `[skill-survey/infrastructure-sre] categories: ${totalCategories}, questions: ${totalQuestions}, choices: ${totalChoices}`,
-    );
-  });
+  await runSkillSurveySeed(db, infrastructureSreSurveySeed, { logLabel: 'infrastructure-sre' });
 }

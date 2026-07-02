@@ -85,23 +85,16 @@ export function GenerateButton({
           ? await generateSelfAnalysis({ surveyId })
           : await regenerateNarrative({ surveyId });
 
-      // --- 2段階読み ---
-
-      // 1段目: authedAction ラッパー層（auth / Zod エラー）
+      // candidateAction が業務エラー（NO_RESPONSE / RATE_LIMITED / GENERATION_FAILED /
+      // NO_ANALYSIS）も auth / Zod エラーも単層 {ok:false,error} に畳むため 1 段階で読む。
       if (!result.ok) {
         setErrorMessage(resolveErrorMessage(result.error.code, result.error.message));
         return;
       }
 
-      // 2段目: ビジネスロジック層
-      if (!result.data.ok) {
-        setErrorMessage(resolveErrorMessage(result.data.error.code, result.data.error.message));
-        return;
-      }
-
       // 成功: revalidatePath('/self-analysis') が Server Action 側で呼ばれているため
       // 親 Server Component が自動的に再レンダリングされる（router.refresh 不要）
-      // status === 'viz_only' の場合も UI の状態分岐は page → self-analysis-view 側で処理
+      // result.data.status === 'viz_only' の場合も UI の状態分岐は page → self-analysis-view 側で処理
     });
   }
 

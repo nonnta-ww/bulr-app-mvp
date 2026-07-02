@@ -30,8 +30,8 @@ export {
 } from './guards';
 
 // Server Action ラッパー（型安全な認可付き Server Action を提供）
-export { authedAction, adminAction } from './safe-action';
-export type { Result } from './safe-action';
+export { authedAction, adminAction, candidateAction, ActionError } from './safe-action';
+export type { Result, ActionErrorPayload } from './safe-action';
 
 // メール送信ユーティリティ（sendMagicLink 実装を各アプリが自前で用意する際に使用）
 // candidate-auth-onboarding Requirements: 2.2, 8.2

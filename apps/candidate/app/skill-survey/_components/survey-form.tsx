@@ -270,6 +270,9 @@ export function SurveyForm({ survey, categories, existingResponse }: SurveyFormP
       });
 
       if (result && !result.ok) {
+        // candidateAction が業務エラー（COOLDOWN / INVALID_CHOICE_IDS /
+        // MISSING_REQUIRED_ANSWERS）も認証・入力エラーも単層 {ok:false,error} に畳むため
+        // 1 段階で読む。
         setFormError(result.error.message ?? 'エラーが発生しました。もう一度お試しください。');
       }
       // 成功時は Server Action 内で redirect('/skill-survey/{surveyId}/result') が呼ばれる

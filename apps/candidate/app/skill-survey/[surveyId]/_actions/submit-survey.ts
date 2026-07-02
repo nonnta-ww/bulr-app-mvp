@@ -20,8 +20,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { inArray, eq, and } from 'drizzle-orm';
 
-import { authedAction } from '@bulr/auth/server';
-import { requireCandidate } from '@bulr/auth/server';
+import { candidateAction, ActionError } from '@bulr/auth/server';
 import { db, getLatestResponseSubmittedAt } from '@bulr/db';
 import {
   skillSurveyResponse,
@@ -48,12 +47,9 @@ const submitSurveySchema = z.object({
 
 // --- Server Action ---
 
-export const submitSurvey = authedAction(
+export const submitSurvey = candidateAction(
   submitSurveySchema,
-  async ({ surveyId, answers }, _ctx) => {
-    // candidateProfile を requireCandidate() で取得する
-    const { candidateProfile } = await requireCandidate();
-
+  async ({ surveyId, answers }, { candidateProfile }) => {
     // --- selectedChoiceIds のサーバーサイド実在確認 ---
 
     const allRequestedChoiceIds = answers.flatMap(
@@ -70,13 +66,10 @@ export const submitSurvey = authedAction(
       const missingIds = allRequestedChoiceIds.filter((id) => !existingIds.has(id));
 
       if (missingIds.length > 0) {
-        return {
-          ok: false as const,
-          error: {
-            code: 'INVALID_CHOICE_IDS',
-            message: '無効な選択肢IDが含まれています。ページを再読み込みして再度お試しください。',
-          },
-        };
+        throw new ActionError(
+          'INVALID_CHOICE_IDS',
+          '無効な選択肢IDが含まれています。ページを再読み込みして再度お試しください。',
+        );
       }
     }
 
@@ -119,13 +112,10 @@ export const submitSurvey = authedAction(
     }
 
     if (unsatisfiedRequiredIds.length > 0) {
-      return {
-        ok: false as const,
-        error: {
-          code: 'MISSING_REQUIRED_ANSWERS',
-          message: '必須項目が未回答です。すべての必須設問にご回答のうえ、再度送信してください。',
-        },
-      };
+      throw new ActionError(
+        'MISSING_REQUIRED_ANSWERS',
+        '必須項目が未回答です。すべての必須設問にご回答のうえ、再度送信してください。',
+      );
     }
 
     // --- 30日クールダウン判定（最終防衛線）---
@@ -144,14 +134,11 @@ export const submitSurvey = authedAction(
         month: '2-digit',
         day: '2-digit',
       });
-      return {
-        ok: false as const,
-        error: {
-          code: 'COOLDOWN' as const,
-          message: `このアンケートは前回提出から30日間は再回答できません。${resumeDateStr}以降に再度ご回答ください。`,
-          nextAvailableAt: nextAvailableAt.toISOString(),
-        },
-      };
+      throw new ActionError(
+        'COOLDOWN',
+        `このアンケートは前回提出から30日間は再回答できません。${resumeDateStr}以降に再度ご回答ください。`,
+        { nextAvailableAt: nextAvailableAt.toISOString() },
+      );
     }
 
     // --- DB トランザクション（追記型）---
