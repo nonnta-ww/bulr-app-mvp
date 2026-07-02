@@ -15,5 +15,8 @@ export default defineConfig({
       "lib/**/*.test.tsx",
     ],
     setupFiles: ["./vitest.setup.ts"],
+    // next/dynamic(ssr:false) + recharts のコンポーネントテストは CI 高負荷時に
+    // 既定 5s を超えることがあるため余裕を持たせる（findBy 側は 10s を指定）。
+    testTimeout: 20_000,
   },
 });

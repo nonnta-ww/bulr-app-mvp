@@ -62,7 +62,9 @@ const SUBSCRIBED_EVENTS = new Set([
 //
 // bot.call_ended / bot.done 受信時にサーバー起点で finalizeSession を呼ぶ。
 // fire-and-forget（void 呼び出し）— finalize の失敗は Webhook の 200 応答に影響しない。
-// at-least-once 再配信: 失敗しても次の redelivery で再試行される（設計原則）。
+// at-least-once 再配信: 初回 finalize が未完了なら redelivery 時に再トリガする（下記参照）。
+// NOTE: void は serverless で応答返却後に実行が凍結され得る。実行完了保証には
+//       after()（next/server）や waitUntil への移行が望ましい（follow-up: H-3）。
 //
 // Requirements: 5.2（会議終了検知 → 自動停止 + 通知）
 // Design: FinalizeExtension（会議終了検知時は同じ処理をサーバー起点で実行）
@@ -253,10 +255,22 @@ export async function POST(request: Request): Promise<Response> {
     // Req 5.2, design: bot.call_ended / bot.done → stopped + 終了通知フラグ
     const target: CaptureStatus = 'stopped';
     if (!canTransition(currentStatus, target)) {
-      console.warn(
-        `[webhook/recall] transition not allowed: ${currentStatus} → ${target}, ` +
-          `sessionId=${sessionId} (event=${event}, redelivery likely)`,
-      );
+      // 再配信で既に stopped 済みのケース。finalize が未完了（status !== 'completed'）なら
+      // ここで再トリガして at-least-once を成立させる（初回 finalize 失敗からの回復）。
+      // これが無いと canTransition('stopped','stopped')=false で早期 return し、
+      // finalize が二度と起動されずレポート未生成のまま残る。
+      if (currentStatus === 'stopped' && session.status !== 'completed') {
+        console.info(
+          `[webhook/recall] redelivery on stopped session with incomplete finalize — ` +
+            `re-triggering finalize: sessionId=${sessionId} (event=${event})`,
+        );
+        void triggerFinalizeOnCallEnded(sessionId, session.interviewer_id);
+      } else {
+        console.warn(
+          `[webhook/recall] transition not allowed: ${currentStatus} → ${target}, ` +
+            `sessionId=${sessionId} (event=${event}, redelivery likely)`,
+        );
+      }
       return NextResponse.json({ ok: true });
     }
 

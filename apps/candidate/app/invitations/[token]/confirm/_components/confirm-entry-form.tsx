@@ -34,15 +34,10 @@ export function ConfirmEntryForm({ token }: ConfirmEntryFormProps) {
     startTransition(async () => {
       const result = await createEntry({ token });
       if (!result) return;
-      // authedAction レベルのエラー（requireCandidate の AuthError / INVALID_INPUT 等）
+      // candidateAction が業務エラー（INVALID_TOKEN / ALREADY_CONSUMED / DUPLICATE_ENTRY）も
+      // auth エラーも単層 {ok:false,error} に畳むため 1 段階で読む。
       if (!result.ok) {
         setErrorMessage(messageForCode(result.error.code, result.error.message));
-        return;
-      }
-      // createEntry ハンドラが返す業務エラー（authedAction が { ok:true, data } でラップする）
-      const inner = result.data;
-      if (inner && !inner.ok) {
-        setErrorMessage(messageForCode(inner.error.code, inner.error.message));
       }
       // 成功時は Server Action 内で redirect('/entries') が呼ばれる（ここには到達しない）
     });

@@ -172,6 +172,32 @@ describe('SurveyForm — 4段階熟練度設問と必須ガード (Req 1.4)', ()
     expect(submitMock).toHaveBeenCalledTimes(1);
   });
 
+  it('業務エラー（candidateAction が単層 {ok:false,error} に畳む）でエラーを表示する', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    // candidateAction は ActionError を捕捉して単層の {ok:false, error} を返す。
+    // consumer は 1 段階（result.ok）で業務エラーを読めることを検証する。
+    submitMock.mockResolvedValue({
+      ok: false,
+      error: {
+        code: 'COOLDOWN',
+        message: 'このアンケートは前回提出から30日間は再回答できません。',
+      },
+    });
+
+    render(<SurveyForm survey={makeSurvey()} categories={makeCategories()} existingResponse={null} />);
+
+    // 最終ステップまで進めて送信する
+    await user.click(screen.getByRole('radio', { name: '実務で実装・運用したことがある' }));
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    await user.click(screen.getByRole('button', { name: '回答を送信する' }));
+
+    expect(submitMock).toHaveBeenCalledTimes(1);
+    expect(
+      await screen.findByText('このアンケートは前回提出から30日間は再回答できません。'),
+    ).toBeInTheDocument();
+  });
+
   it('ステップ遷移時にページ最上部へスクロールする（初回マウントでは呼ばない）', async () => {
     const user = userEvent.setup();
     const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
