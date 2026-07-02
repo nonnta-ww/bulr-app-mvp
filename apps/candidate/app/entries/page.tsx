@@ -26,21 +26,21 @@ const STATUS_LABEL: Record<EntryStatus, string> = {
   progressing: '選考中',
 };
 
-/** ステータスに対応するバッジの色クラス */
+/** ステータスに対応するバッジの色クラス（Zenith） */
 const STATUS_CLASS: Record<EntryStatus, string> = {
-  submitted: 'bg-blue-100 text-blue-800',
-  reviewed: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  progressing: 'bg-yellow-100 text-yellow-800',
+  submitted: 'bg-surface-2 text-slate',
+  reviewed: 'bg-emerald-100 text-emerald-800',
+  progressing: 'bg-primary/15 text-[#8f4d00]',
+  rejected: 'bg-[#ffdad6] text-[#93000a]',
 };
 
-/** Asia/Tokyo タイムゾーンで日付フォーマット */
+/** Asia/Tokyo タイムゾーンで日付フォーマット（YYYY/MM/DD） */
 function formatDate(date: Date): string {
   return date.toLocaleDateString('ja-JP', {
     timeZone: 'Asia/Tokyo',
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 }
 
@@ -60,57 +60,79 @@ export default async function EntriesPage() {
   const entries = await getEntriesByCandidateProfileId(candidateProfileId);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">エントリー一覧</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          応募した求人のエントリー状況を確認できます。
-        </p>
-      </div>
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-ink md:text-3xl">エントリー状況</h1>
+        <p className="mt-2 text-base text-body">応募した求人のエントリー状況を確認できます。</p>
+      </header>
 
       {entries.length === 0 ? (
         /* Empty State */
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
-          <p className="text-gray-500">まだエントリーはありません。</p>
-          <p className="mt-2 text-sm text-gray-400">
-            まずは{' '}
-            <Link href="/resume/upload" className="text-blue-600 underline hover:text-blue-800">
-              履歴書を登録
+        <div className="flex flex-col items-center gap-4 rounded-card border border-hairline bg-card px-6 py-14 text-center shadow-ambient">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-slate">
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+              description
+            </span>
+          </span>
+          <div>
+            <p className="text-lg font-bold text-ink">まだエントリーがありません</p>
+            <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-body">
+              新しいキャリアの機会を探して、エントリーを開始しましょう。まずはプロフィールとスキルを充実させることをおすすめします。
+            </p>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link
+              href="/resume/upload"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate hover:text-ink"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                upload_file
+              </span>
+              履歴書をアップロード
             </Link>
-            {' '}したり、{' '}
-            <Link href="/skill-survey" className="text-blue-600 underline hover:text-blue-800">
+            <Link
+              href="/skill-survey"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate hover:text-ink"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                assessment
+              </span>
               スキルアンケートに回答
             </Link>
-            {' '}してみましょう。
-          </p>
+          </div>
         </div>
       ) : (
-        /* エントリー一覧 */
-        <ul className="space-y-4">
-          {entries.map(({ entry, opening, company }) => (
-            <li
+        /* エントリー一覧（テーブル風カード） */
+        <div className="overflow-hidden rounded-card border border-hairline bg-card shadow-ambient">
+          {/* ヘッダ行（デスクトップのみ） */}
+          <div className="hidden items-center gap-4 border-b border-hairline px-5 py-3 text-xs font-medium text-muted md:flex">
+            <span className="flex-1">企業・ポジション</span>
+            <span className="w-32">エントリー日</span>
+            <span className="w-24 text-right">ステータス</span>
+          </div>
+
+          {entries.map(({ entry, opening, company }, index) => (
+            <div
               key={entry.id}
-              className="rounded-lg border border-gray-200 bg-white px-6 py-5 shadow-sm"
+              className={`flex flex-col gap-2 px-5 py-4 md:flex-row md:items-center md:gap-4 ${
+                index > 0 ? 'border-t border-hairline' : ''
+              }`}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-medium text-gray-900">
-                    {opening.title}
-                  </p>
-                  <p className="mt-0.5 text-sm text-gray-500">{company.name}</p>
-                </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-ink">{company.name}</p>
+                <p className="mt-0.5 truncate text-xs text-muted">{opening.title}</p>
+              </div>
+              <span className="text-sm text-muted md:w-32">{formatDate(entry.createdAt)}</span>
+              <div className="md:w-24 md:text-right">
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[entry.status]}`}
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[entry.status]}`}
                 >
                   {STATUS_LABEL[entry.status]}
                 </span>
               </div>
-              <p className="mt-3 text-xs text-gray-400">
-                エントリー日: {formatDate(entry.createdAt)}
-              </p>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );

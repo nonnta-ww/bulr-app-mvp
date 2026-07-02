@@ -36,16 +36,16 @@ export function CoverageBars({ snapshot }: CoverageBarsProps) {
   return (
     <div className="space-y-6">
       {/* 全体網羅度サマリ */}
-      <Card>
+      <Card className="border-hairline shadow-ambient">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-gray-900">
+          <CardTitle className="text-base font-bold text-ink">
             全体の回答網羅度
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
             {/* バー */}
-            <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-100">
+            <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
               <div
                 className={cn('h-full rounded-full transition-all', barColorClass(overallPercent))}
                 style={{ width: `${overallPercent}%` }}
@@ -64,12 +64,15 @@ export function CoverageBars({ snapshot }: CoverageBarsProps) {
 
       {/* カテゴリ別網羅度 */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">カテゴリ別の回答状況</h3>
+        <h3 className="text-sm font-semibold text-body">カテゴリ別の回答状況</h3>
         {snapshot.categories.map((category, index) => {
           const percent = toPercent(category.coverageRatio);
           return (
             // index 併用で一意化（保存済みスナップショットが同名カテゴリを含む場合に備える）
-            <Card key={`${category.categoryName}-${index}`}>
+            <Card
+              key={`${category.categoryName}-${index}`}
+              className="border-hairline shadow-ambient"
+            >
               <CardContent className="py-4">
                 {/* カテゴリ名 */}
                 <div className="mb-2 flex items-center justify-between">
@@ -83,7 +86,7 @@ export function CoverageBars({ snapshot }: CoverageBarsProps) {
 
                 {/* 網羅度バー */}
                 <div className="flex items-center gap-3">
-                  <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all',
@@ -99,7 +102,7 @@ export function CoverageBars({ snapshot }: CoverageBarsProps) {
 
                 {/* 選択の広さ・自由記述有無 */}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                  <span className="inline-flex items-center rounded-md bg-surface-2 px-2 py-0.5 text-xs text-slate">
                     選択数: {category.selectedBreadth}
                   </span>
                   <span

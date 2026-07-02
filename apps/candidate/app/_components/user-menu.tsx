@@ -1,17 +1,14 @@
 'use client';
 
 /**
- * UserMenu — 上部バー右端のユーザーアイコン + ドロップダウン
+ * SidebarUser — navy サイドバー下部のユーザーボタン + 上方向ドロップダウン。
  *
- * ユーザーアイコン（メール頭文字のアバター）クリックで下方向にメニューを開き、
- * メールアドレスとログアウトを表示する。メニュー外クリック / Esc で閉じる。
- *
- * 旧 SignOutButton（email + ボタンを inline 表示）を置き換える。
+ * アバター（メール頭文字）+ メール + more_horiz を表示し、クリックで上方向に
+ * メニューを開いてログアウトを提供する。メニュー外クリック / Esc で閉じる。
  */
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { LogOut } from 'lucide-react';
 
 import { signOut } from '@bulr/auth/client';
 
@@ -19,7 +16,7 @@ type Props = {
   email: string;
 };
 
-export function UserMenu({ email }: Props) {
+export function SidebarUser({ email }: Props) {
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,20 +61,28 @@ export function UserMenu({ email }: Props) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="ユーザーメニュー"
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white hover:bg-blue-700"
+        className="group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-white/10"
       >
-        {initial}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary">
+          {initial}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-canvas" title={email}>
+            {email}
+          </p>
+          <p className="text-xs text-slate">アカウント</p>
+        </div>
+        <span className="material-symbols-outlined text-slate" aria-hidden="true">
+          more_horiz
+        </span>
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-10 z-40 w-56 rounded-lg border border-gray-200 bg-white shadow-lg"
+          className="absolute bottom-full left-0 z-40 mb-2 w-full overflow-hidden rounded-lg border border-hairline bg-card shadow-lg"
         >
-          <div
-            className="truncate border-b border-gray-100 px-3 py-2 text-xs text-gray-500"
-            title={email}
-          >
+          <div className="truncate border-b border-hairline px-3 py-2 text-xs text-muted" title={email}>
             {email}
           </div>
           <button
@@ -85,9 +90,11 @@ export function UserMenu({ email }: Props) {
             role="menuitem"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-body transition-colors hover:bg-canvas disabled:opacity-50"
           >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              logout
+            </span>
             <span>{signingOut ? 'ログアウト中...' : 'ログアウト'}</span>
           </button>
         </div>

@@ -13,8 +13,11 @@
 
 import { notFound, redirect } from 'next/navigation';
 
+import { eq } from 'drizzle-orm';
+
 import { requireCandidate, AuthError } from '@bulr/auth/server';
-import { getMockInterviewByIdAndOwner } from '@bulr/db';
+import { db, getMockInterviewByIdAndOwner } from '@bulr/db';
+import { assessmentPattern } from '@bulr/db/schema';
 
 import { MockInterviewChat } from './_components/MockInterviewChat';
 
@@ -48,9 +51,21 @@ export default async function MockInterviewSessionPage({
     redirect(`/mock-interview/${sessionId}/result`);
   }
 
+  // ヘッダ表示用にパターンのタイトルを取得（未取得でもチャットは成立する）
+  const [pattern] = await db
+    .select({ title: assessmentPattern.title })
+    .from(assessmentPattern)
+    .where(eq(assessmentPattern.code, session.patternCode))
+    .limit(1);
+
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <MockInterviewChat sessionId={session.id} patternCode={session.patternCode} />
+    // デスクトップはシェルに上部バーが無いためフルビューポート、モバイルは上部バー分を差し引く
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
+      <MockInterviewChat
+        sessionId={session.id}
+        patternCode={session.patternCode}
+        patternTitle={pattern?.title ?? '模擬面接'}
+      />
     </div>
   );
 }

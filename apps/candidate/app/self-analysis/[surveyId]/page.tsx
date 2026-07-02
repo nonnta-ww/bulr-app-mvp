@@ -58,20 +58,39 @@ export default async function SelfAnalysisDetailPage({ params }: PageProps) {
   // ── 陳腐化判定（最新回答日 > 分析生成元）──
   const isStale: boolean = record !== null && latestSubmittedAt > record.sourceSubmittedAt;
 
+  const lastUpdatedStr = record
+    ? record.updatedAt.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    : null;
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <nav className="mb-4 text-sm text-gray-500">
-        <Link href="/self-analysis" className="hover:underline">
-          ← 自己分析の一覧に戻る
+    <main className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-12 md:py-12">
+      <nav className="mb-4">
+        <Link
+          href="/self-analysis"
+          className="inline-flex items-center gap-1 text-sm text-slate hover:text-ink"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_back
+          </span>
+          自己分析の一覧に戻る
         </Link>
       </nav>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">自己分析</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          アンケートの回答をもとに、あなたの強み・弱み・成長アクションを確認できます。
-        </p>
-      </div>
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-ink md:text-3xl">あなたの自己分析</h1>
+        {lastUpdatedStr && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              update
+            </span>
+            最終更新 {lastUpdatedStr}
+          </p>
+        )}
+      </header>
 
       <div className="space-y-10">
         <SelfAnalysisView record={record} isStale={isStale} surveyId={surveyId} />

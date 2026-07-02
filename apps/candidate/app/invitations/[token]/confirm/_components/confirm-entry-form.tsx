@@ -10,6 +10,7 @@
  */
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 
 import { createEntry } from '../_actions/create-entry';
 
@@ -48,18 +49,29 @@ export function ConfirmEntryForm({ token }: ConfirmEntryFormProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {errorMessage && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
+        <p className="rounded-lg bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">{errorMessage}</p>
       )}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={isPending}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? 'エントリー中...' : 'この募集にエントリーする'}
+        {isPending ? 'エントリー中...' : 'このエントリーを確定する'}
+        {!isPending && (
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+            arrow_forward
+          </span>
+        )}
       </button>
+      <Link
+        href="/entries"
+        className="flex w-full items-center justify-center rounded-lg border border-hairline px-4 py-3 text-sm font-medium text-slate transition-colors hover:border-slate hover:bg-surface-2"
+      >
+        キャンセル
+      </Link>
     </div>
   );
 }

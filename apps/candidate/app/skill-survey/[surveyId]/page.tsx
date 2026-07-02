@@ -146,31 +146,33 @@ export default async function SurveyFormPage({ params }: PageProps) {
     });
 
     return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <nav className="mb-4 text-sm text-gray-500">
-          <Link href="/skill-survey" className="hover:underline">
-            ← アンケート一覧に戻る
+      <main className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-8 md:py-12">
+        <nav className="mb-4">
+          <Link
+            href="/skill-survey"
+            className="inline-flex items-center gap-1 text-sm text-slate hover:text-ink"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              arrow_back
+            </span>
+            アンケート一覧に戻る
           </Link>
         </nav>
-        <h1 className="mb-4 text-2xl font-semibold text-gray-900">{survey.title}</h1>
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
-          <p className="text-gray-700">
-            このアンケートは前回提出から30日間は再回答できません。
-          </p>
-          <p className="mt-2 text-gray-700">
-            {resumeDateStr}以降に再度ご回答ください。
-          </p>
-          <div className="mt-6 flex gap-4">
+        <h1 className="mb-4 text-2xl font-bold text-ink md:text-3xl">{survey.title}</h1>
+        <div className="rounded-card border border-hairline bg-card p-6 shadow-ambient">
+          <p className="text-body">このアンケートは前回提出から30日間は再回答できません。</p>
+          <p className="mt-2 text-body">{resumeDateStr}以降に再度ご回答ください。</p>
+          <div className="mt-6 flex flex-wrap gap-4">
             <Link
               href={`/skill-survey/${surveyId}/result`}
-              className="text-sm text-blue-600 hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-slate hover:text-ink"
             >
-              前回の回答結果を見る →
+              前回の回答結果を見る
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                arrow_forward
+              </span>
             </Link>
-            <Link
-              href="/skill-survey"
-              className="text-sm text-gray-500 hover:underline"
-            >
+            <Link href="/skill-survey" className="text-sm text-muted hover:text-ink">
               アンケート一覧
             </Link>
           </div>
@@ -180,13 +182,7 @@ export default async function SurveyFormPage({ params }: PageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{survey.title}</h1>
-        {survey.description && (
-          <p className="mt-1 text-sm text-gray-600">{survey.description}</p>
-        )}
-      </div>
+    <main className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-8 md:py-12">
       <SurveyForm
         survey={survey}
         categories={questionsWithChoices}

@@ -28,7 +28,7 @@ import {
 
 import { selectRadarPoints } from '../_lib/skill-balance';
 
-const RADAR_COLOR = '#2563eb'; // blue-600
+const RADAR_COLOR = '#f28705'; // Zenith primary（オレンジ）
 
 interface SkillBalanceRadarProps {
   categories: Array<{ categoryName: string; proficiencyScore?: number | null }>;
@@ -43,8 +43,8 @@ export function SkillBalanceRadar({ categories }: SkillBalanceRadarProps) {
 
   if (points.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50">
-        <p className="px-6 text-center text-sm text-gray-500">
+      <div className="flex h-[300px] items-center justify-center rounded-card border border-dashed border-hairline bg-canvas">
+        <p className="px-6 text-center text-sm text-muted">
           熟練度を表示できるデータがまだありません。
           <br />
           能力設問に回答すると、カテゴリ別の熟練度バランスが表示されます。
@@ -55,7 +55,7 @@ export function SkillBalanceRadar({ categories }: SkillBalanceRadarProps) {
 
   return (
     <div>
-      <p className="mb-2 text-xs text-gray-500">
+      <p className="mb-2 text-xs text-muted">
         カテゴリ別の熟練度（0〜100）です。あなた自身の回答に基づく相対的な強弱で、他者との比較ではありません。
       </p>
       <ResponsiveContainer width="100%" height={300}>

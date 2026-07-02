@@ -14,17 +14,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from '@bulr/ui';
-
 import { createCandidateProfile } from './_actions/create-profile';
 
 const formSchema = z.object({
@@ -39,7 +28,11 @@ export function OnboardingForm() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { displayName: '' },
   });
@@ -56,40 +49,46 @@ export function OnboardingForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-6">
-        <FormField
-          control={form.control}
-          name="displayName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>お名前</FormLabel>
-              <FormControl>
-                <Input
-                  type="text"
-                  placeholder="例：山田 太郎"
-                  autoComplete="name"
-                  disabled={isPending}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {errorMessage && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
-        )}
-
-        <Button
-          type="submit"
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-2 flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="displayName" className="text-sm font-medium text-ink">
+          表示名
+        </label>
+        <input
+          id="displayName"
+          type="text"
+          placeholder="山田 太郎"
+          autoComplete="name"
           disabled={isPending}
-          className="w-full bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {isPending ? '作成中...' : 'プロフィールを作成'}
-        </Button>
-      </form>
-    </Form>
+          aria-invalid={errors.displayName ? 'true' : undefined}
+          className="h-12 w-full rounded-lg border border-hairline bg-card px-3 text-base text-ink placeholder:text-muted transition-all focus:border-slate focus:outline-none focus:shadow-[0_0_0_2px_rgba(242,187,167,0.3)] disabled:opacity-50"
+          {...register('displayName')}
+        />
+        {errors.displayName && (
+          <p className="text-xs text-ember">{errors.displayName.message}</p>
+        )}
+      </div>
+
+      {errorMessage && (
+        <p className="rounded-lg bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">{errorMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary text-lg font-bold text-on-primary transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+      >
+        {isPending ? (
+          '作成中...'
+        ) : (
+          <>
+            はじめる
+            <span className="material-symbols-outlined fill" aria-hidden="true">
+              arrow_forward
+            </span>
+          </>
+        )}
+      </button>
+    </form>
   );
 }

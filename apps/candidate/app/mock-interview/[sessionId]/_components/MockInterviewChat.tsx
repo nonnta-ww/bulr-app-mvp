@@ -40,13 +40,19 @@ interface FinalizeResponse {
 export interface MockInterviewChatProps {
   sessionId: string;
   patternCode: string;
+  /** ヘッダに表示するパターン名 */
+  patternTitle?: string;
 }
 
 // ---------------------------------------------------------------------------
 // コンポーネント
 // ---------------------------------------------------------------------------
 
-export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatProps) {
+export function MockInterviewChat({
+  sessionId,
+  patternCode,
+  patternTitle = '模擬面接',
+}: MockInterviewChatProps) {
   const router = useRouter();
 
   const [history, setHistory] = useState<TurnItem[]>([]);
@@ -64,6 +70,19 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
 
   // チャット末尾へのスクロール用
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 経過時間（秒）— マウントから 1 秒ごとに加算
+  const [elapsedSec, setElapsedSec] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const elapsedLabel = `${String(Math.floor(elapsedSec / 60)).padStart(2, '0')}:${String(
+    elapsedSec % 60,
+  ).padStart(2, '0')}`;
+
+  // ターン数 = 面接官の質問数
+  const turnCount = history.filter((t) => t.role === 'interviewer').length;
 
   // ---------------------------------------------------------------------------
   // ヘルパー: turns/next API 呼び出し
@@ -248,18 +267,28 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
   const isDisabled = isLoading || isFinalizing;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-canvas">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-        <h1 className="text-base font-semibold text-gray-900">模擬面接</h1>
-        <button
-          type="button"
-          onClick={() => void handleFinalize()}
-          disabled={isDisabled}
-          className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isFinalizing ? '終了処理中...' : '面接を終了する'}
-        </button>
+      <div className="flex items-center justify-between gap-3 border-b border-hairline bg-card px-4 py-3">
+        <h1 className="min-w-0 truncate text-base font-bold text-ink">{patternTitle}</h1>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="hidden items-center gap-1.5 text-xs text-muted sm:flex">
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+              schedule
+            </span>
+            <span className="tabular-nums">経過時間 {elapsedLabel}</span>
+            <span className="text-hairline">·</span>
+            <span>ターン {turnCount}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleFinalize()}
+            disabled={isDisabled}
+            className="rounded-lg border border-hairline px-3 py-1.5 text-sm font-medium text-slate transition-colors hover:border-slate hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isFinalizing ? '終了処理中...' : '終了する'}
+          </button>
+        </div>
       </div>
 
       {/* チャット履歴エリア */}
@@ -268,7 +297,7 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
           {/* 初期ローディング（履歴が空かつ isLoading） */}
           {history.length === 0 && isLoading && (
             <div className="flex items-center justify-center py-8">
-              <span className="text-sm text-gray-500">面接官が準備中です...</span>
+              <span className="text-sm text-muted">面接官が準備中です...</span>
             </div>
           )}
 
@@ -281,7 +310,7 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
               {/* インタビュアーラベル（左側） */}
               {turn.role === 'interviewer' && (
                 <div className="mr-2 flex-shrink-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-slate">
                     AI
                   </div>
                 </div>
@@ -290,8 +319,8 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   turn.role === 'interviewer'
-                    ? 'rounded-tl-sm bg-gray-100 text-gray-900'
-                    : 'rounded-tr-sm bg-blue-600 text-white'
+                    ? 'rounded-tl-sm bg-card text-ink shadow-ambient'
+                    : 'rounded-tr-sm bg-primary/20 text-ink'
                 }`}
               >
                 {turn.content}
@@ -300,7 +329,7 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
               {/* 候補者ラベル（右側） */}
               {turn.role === 'candidate' && (
                 <div className="ml-2 flex-shrink-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
                     You
                   </div>
                 </div>
@@ -312,15 +341,15 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
           {isLoading && history.length > 0 && (
             <div className="flex justify-start">
               <div className="mr-2 flex-shrink-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-slate">
                   AI
                 </div>
               </div>
-              <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2.5">
+              <div className="rounded-2xl rounded-tl-sm bg-card px-4 py-2.5 shadow-ambient">
                 <span className="inline-flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-slate [animation-delay:-0.3s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-slate [animation-delay:-0.15s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-slate" />
                 </span>
               </div>
             </div>
@@ -333,15 +362,15 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
 
       {/* エラーメッセージ */}
       {errorMessage && (
-        <div className="border-t border-red-100 bg-red-50 px-4 py-2">
-          <p role="alert" className="text-sm text-red-700">
+        <div className="border-t border-[#f5c6c2] bg-[#ffdad6] px-4 py-2">
+          <p role="alert" className="text-sm text-[#93000a]">
             {errorMessage}
           </p>
         </div>
       )}
 
       {/* 入力エリア */}
-      <div className="border-t border-gray-200 bg-white px-4 py-3">
+      <div className="border-t border-hairline bg-card px-4 py-3">
         <div className="flex items-end gap-2">
           <textarea
             value={inputValue}
@@ -349,18 +378,24 @@ export function MockInterviewChat({ sessionId, patternCode }: MockInterviewChatP
             onKeyDown={handleKeyDown}
             disabled={isDisabled}
             rows={3}
-            placeholder="回答を入力してください（Enter で送信、Shift+Enter で改行）"
-            className="block flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="ここに回答を入力してください。"
+            className="block flex-1 resize-none rounded-lg border border-hairline bg-card px-3 py-2 text-sm text-ink placeholder:text-muted transition-all focus:border-slate focus:outline-none focus:shadow-[0_0_0_2px_rgba(242,187,167,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
           />
           <button
             type="button"
             onClick={() => void handleSend()}
             disabled={isDisabled || !inputValue.trim()}
-            className="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="送信"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? '...' : '送信'}
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              {isLoading ? 'hourglass_empty' : 'arrow_forward'}
+            </span>
           </button>
         </div>
+        <p className="mt-1.5 text-right text-xs text-muted">
+          Enter キーで送信、Shift + Enter で改行
+        </p>
       </div>
     </div>
   );

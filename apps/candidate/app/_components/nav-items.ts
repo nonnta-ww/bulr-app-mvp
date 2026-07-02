@@ -1,28 +1,19 @@
-import {
-  Home,
-  ClipboardList,
-  BarChart3,
-  FileText,
-  MessageSquare,
-  Send,
-  type LucideIcon,
-} from 'lucide-react';
-
 /** ナビ項目。match は現在地判定の方式（'/' のみ exact、他は prefix）。 */
 export interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  /** Material Symbols のアイコン名 */
+  symbol: string;
   match: 'exact' | 'prefix';
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'ホーム', href: '/', icon: Home, match: 'exact' },
-  { label: 'スキルアンケート', href: '/skill-survey', icon: ClipboardList, match: 'prefix' },
-  { label: '自己分析', href: '/self-analysis', icon: BarChart3, match: 'prefix' },
-  { label: '履歴書', href: '/resume', icon: FileText, match: 'prefix' },
-  { label: '模擬面接', href: '/mock-interview', icon: MessageSquare, match: 'prefix' },
-  { label: 'エントリー', href: '/entries', icon: Send, match: 'prefix' },
+  { label: 'ホーム', href: '/', symbol: 'home', match: 'exact' },
+  { label: 'スキルアンケート', href: '/skill-survey', symbol: 'assessment', match: 'prefix' },
+  { label: '自己分析', href: '/self-analysis', symbol: 'psychology', match: 'prefix' },
+  { label: '履歴書', href: '/resume', symbol: 'description', match: 'prefix' },
+  { label: '模擬面接', href: '/mock-interview', symbol: 'forum', match: 'prefix' },
+  { label: 'エントリー', href: '/entries', symbol: 'send', match: 'prefix' },
 ];
 
 /**

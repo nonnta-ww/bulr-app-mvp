@@ -32,12 +32,21 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-center text-2xl font-bold text-gray-900">プロフィールを設定</h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          bulr に表示されるお名前を入力してください。
-        </p>
+    <main className="flex min-h-screen items-center justify-center px-4 py-8">
+      <div className="flex w-full max-w-[400px] flex-col gap-6 rounded-card border border-hairline bg-card p-6 shadow-ambient md:p-10">
+        <header className="flex flex-col items-center gap-3 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-primary">
+            <span className="material-symbols-outlined fill text-[32px]" aria-hidden="true">
+              waving_hand
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-ink">
+            はじめまして！
+            <br />
+            表示名を教えてください
+          </h1>
+          <p className="text-base text-body">後からいつでも変更できます。</p>
+        </header>
         <OnboardingForm />
       </div>
     </main>

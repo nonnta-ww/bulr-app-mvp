@@ -227,28 +227,30 @@ function VersionComparisonInner({ versions, defaultFromId, defaultToId }: InnerP
       {bothHaveNarrative ? (
         /* 両版ともサマリあり → 強み・成長アクションを新旧対比（Req 5.2） */
         <section aria-labelledby="narrative-comparison-heading">
-          <h2 id="narrative-comparison-heading" className="mb-4 text-base font-semibold text-gray-900">
+          <h2 id="narrative-comparison-heading" className="mb-4 text-base font-bold text-ink">
             サマリの比較
           </h2>
 
           {/* 強み 新旧対比 */}
           <div className="mb-6">
-            <h3 className="mb-3 text-sm font-semibold text-emerald-700">強み</h3>
+            <h3 className="mb-3 text-sm font-semibold text-ink">強み</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">{versionLabel(fromVersion)}</p>
+                <p className="mb-2 text-xs font-medium text-muted">{versionLabel(fromVersion)}</p>
                 <NarrativeSection
                   title="強み"
                   items={fromVersion.llmOutput!.strengths}
-                  accentClass="text-emerald-700"
+                  accentBorderClass="border-l-primary"
+                  showHeading={false}
                 />
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">{versionLabel(toVersion)}</p>
+                <p className="mb-2 text-xs font-medium text-muted">{versionLabel(toVersion)}</p>
                 <NarrativeSection
                   title="強み"
                   items={toVersion.llmOutput!.strengths}
-                  accentClass="text-emerald-700"
+                  accentBorderClass="border-l-primary"
+                  showHeading={false}
                 />
               </div>
             </div>
@@ -256,22 +258,24 @@ function VersionComparisonInner({ versions, defaultFromId, defaultToId }: InnerP
 
           {/* 成長アクション 新旧対比 */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-blue-700">成長アクション</h3>
+            <h3 className="mb-3 text-sm font-semibold text-ink">成長アクション</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">{versionLabel(fromVersion)}</p>
+                <p className="mb-2 text-xs font-medium text-muted">{versionLabel(fromVersion)}</p>
                 <NarrativeSection
                   title="成長アクション"
                   items={fromVersion.llmOutput!.growthActions}
-                  accentClass="text-blue-700"
+                  accentBorderClass="border-l-amber"
+                  showHeading={false}
                 />
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-500">{versionLabel(toVersion)}</p>
+                <p className="mb-2 text-xs font-medium text-muted">{versionLabel(toVersion)}</p>
                 <NarrativeSection
                   title="成長アクション"
                   items={toVersion.llmOutput!.growthActions}
-                  accentClass="text-blue-700"
+                  accentBorderClass="border-l-amber"
+                  showHeading={false}
                 />
               </div>
             </div>
@@ -281,7 +285,7 @@ function VersionComparisonInner({ versions, defaultFromId, defaultToId }: InnerP
         /* どちらか一方でも viz_only（llmOutput null）→ 差分のみ（Req 5.3） */
         <p
           role="status"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-card border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-body"
         >
           選択した版のいずれかはサマリ未生成のため、網羅度の差分のみ表示しています。
         </p>
