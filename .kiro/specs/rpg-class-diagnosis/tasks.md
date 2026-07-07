@@ -39,7 +39,7 @@
   - _Boundary: vocation.ts_
   - _Depends: 2_
 
-- [ ] 3.2 (P) 気質軸スコアと象限化
+- [x] 3.2 (P) 気質軸スコアと象限化
   - 2軸（探索⇔深化・個人⇔協調）の回答を 0..100 正規化。逆転設問は反転吸収。中点で二値化し4象限を確定、中点ちょうどは既定極＋balanced フラグ。未回答は null。
   - 完了状態: 単体テストが通り、逆転・中点・未回答の各ケースが仕様どおり。
   - _Requirements: 2.3, 2.4, 2.5, 2.6_
@@ -151,3 +151,4 @@
 - **カテゴリ名はサーベイ横断で一意でない**（衝突）: 「フレームワーク・ライブラリ」「アーキテクチャ設計」「パフォーマンス・チューニング」「テスト」は frontend と backend の両方に存在し、狙う職掌が異なる（前衛 vs 後衛）。そのため `CATEGORY_AFFINITY` は `jobType::categoryName` 複合キー＋`JOBTYPE_DEFAULT_VOCATION[jobType]` フォールバックの resolver で解決する（設計の「categoryName または jobType」の意図に沿う精緻化）。**契約**: `VocationInput.categories` は `{ jobType, categoryName, categoryScore, answeredCount }`（3.1）、`getCandidateVocationSource` は各 category に jobType を付与して返す（4.1）。
 - seed 済み skill survey は5職種: frontend(→vanguard) / backend(→rearguard) / infrastructure-sre(→guardian) / engineering-manager(→commander) / ai-driven-development(→ranger)。sage(賢者)・strategist(策士) は対応 survey 未整備＝寄与0で非活性（枠のみ）。
 - dev DB 履歴ドリフト（0019 番号振り直し）は `__drizzle_migrations` row 20 の hash/created_at を非破壊整合して解消済み。worktree 再構築時は再発しうる。
+- **気質 pole-orientation 契約（3.2 ↔ 5 seed）**: 逆転吸収後の higher normalized score = 第2極。`explorationDeepening > 50 → deepener`(<=50→explorer, 50は既定極 explorer)、`soloCollaboration > 50 → collab`(<=50→solo, 50は既定極 solo)。playstyle seed(task 5) は post-reverse level が高いほど「深化」「協調」寄りになるよう設問と `reverse` を設計すること。反転すると全象限が入れ替わる。
