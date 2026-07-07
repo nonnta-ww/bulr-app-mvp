@@ -68,7 +68,7 @@
   - _Boundary: candidate-vocation-source.ts_
   - _Depends: 1.3_
 
-- [ ] 4.2 (P) class_diagnosis の保存・履歴・cooldown・代表クラス
+- [x] 4.2 (P) class_diagnosis の保存・履歴・cooldown・代表クラス
   - `sourceSignature`（寄与 response 群の決定論連結）で版一意化する upsert、最新版取得、履歴、24h 再生成上限判定、代表クラス取得（className/主職掌/称号のみ、根拠回答は返さない）。
   - 完了状態: 統合テストが通り、同一入力は版重複せず、履歴は全版保持、上限超過で拒否される。
   - _Requirements: 6.1, 6.2, 6.4, 10.2, 10.3, 11.3_
