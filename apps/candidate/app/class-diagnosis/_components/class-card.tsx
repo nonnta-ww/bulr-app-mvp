@@ -12,7 +12,7 @@
  * - 数値スコア・偏差値・順位・他者比較は一切表示しない（R4.4）。confidence=low は
  *   数値を伴わない注意書き（参考値）のみ。
  *
- * Zenith デザイントークン（rounded-card / border-hairline / bg-canvas / text-muted）を用い、
+ * Zenith デザイントークン（rounded-card / border-hairline / bg-card / text-muted）を用い、
  * テーマトークン非依存の配色は明示 Tailwind クラスで指定する（candidate の運用方針）。
  *
  * recharts 非依存の純粋な表示コンポーネントのため 'use client' は不要（Server 互換）。
@@ -79,7 +79,7 @@ export function ClassCard({ result, flavor }: ClassCardProps) {
 
   return (
     <section
-      className="rounded-card border border-hairline bg-canvas p-6"
+      className="rounded-card border border-hairline bg-card p-6"
       aria-label="クラス診断カード"
       data-testid="class-card"
     >
