@@ -19,7 +19,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { asc, eq, inArray } from 'drizzle-orm';
 
-import { db, getEntryWithSnapshots, getLatestResponseByCandidateProfileId } from '@bulr/db';
+import { db, getEntryWithSnapshots, getLatestResponseByCandidateProfileId, getRepresentativeClass } from '@bulr/db';
 import type { SkillSurveyResponseWithAnswers } from '@bulr/db';
 import { assessmentPattern, skillSurveyAnswer, skillSurveyCategory, skillSurveyChoice, skillSurveyQuestion } from '@bulr/db/schema';
 
@@ -32,6 +32,7 @@ import { ResumePreviewButton } from './_components/resume-preview-button';
 import { UpdateStatusButtons } from './_components/update-status-buttons';
 import { PatternRecommendation } from './_components/pattern-recommendation';
 import { CreateSessionForm } from './_components/create-session-form';
+import { RepresentativeClassSection } from './_components/representative-class-section';
 import { matchPatterns } from './_lib/pattern-matching';
 
 // ---------------------------------------------------------------------------
@@ -82,6 +83,13 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
     .select()
     .from(assessmentPattern)
     .where(eq(assessmentPattern.is_active, true));
+
+  // ---------------------------------------------------------------------------
+  // 代表クラス取得（RPG クラス診断 — 最新確定診断が無ければ null → セクション非表示）
+  // 候補者アプリ側でラベル合成済みの className を read-only 表示するのみ（根拠回答は非開示）
+  // ---------------------------------------------------------------------------
+
+  const representativeClass = await getRepresentativeClass(candidateProfile.id);
 
   // ---------------------------------------------------------------------------
   // SkillSurveyResponseWithAnswers 取得（推奨パターン計算 + PatternRecommendation 用）
@@ -237,6 +245,9 @@ export default async function BusinessEntryDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
           {/* 左カラム */}
           <div className="space-y-6">
+            {/* 代表クラス（診断済みの場合のみ表示） */}
+            <RepresentativeClassSection representativeClass={representativeClass} />
+
             {/* 書類 */}
             <section className="rounded-xl border border-hairline bg-card p-6">
               <h2 className="mb-4 border-b border-hairline pb-3 text-base font-semibold text-ink">

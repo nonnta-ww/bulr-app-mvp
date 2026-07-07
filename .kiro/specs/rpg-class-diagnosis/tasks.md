@@ -131,7 +131,7 @@
 
 ## 9. business read-only 表示
 
-- [ ] 9. entry 詳細への代表クラス read-only 表示
+- [x] 9. entry 詳細への代表クラス read-only 表示
   - entry 詳細ページで `getRepresentativeClass` を用い、候補者の代表クラス名を read-only 表示。根拠回答・パーティ編成機能は出さない。
   - 完了状態: 診断済み候補者の entry 詳細に代表クラスが表示され、未診断では非表示。
   - _Requirements: 10.1, 10.2, 10.3, 11.3_
