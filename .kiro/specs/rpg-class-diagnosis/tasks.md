@@ -8,7 +8,7 @@
   - 完了状態: スキーマ定義に `polarity`・`kind` が存在し、型エラーなくビルドが通る。
   - _Requirements: 2.1, 9.3_
 
-- [ ] 1.2 class_diagnosis テーブルとバレル追加
+- [x] 1.2 class_diagnosis テーブルとバレル追加
   - 候補者単位テーブルを定義（`candidateProfileId` FK cascade、`sourceSignature`、`sourceSnapshot`/`result`/`llmFlavor`(nullable)/`metadata` jsonb、`regenerationCount`/`regenerationWindowStart`、`generatedAt`）。
   - `unique(candidateProfileId, sourceSignature)` と `(candidateProfileId, generatedAt)` index を定義。schema/index・queries/index のバレルへ登録。
   - 完了状態: テーブルと JSON 型が定義され、re-export 経由で参照可能。
