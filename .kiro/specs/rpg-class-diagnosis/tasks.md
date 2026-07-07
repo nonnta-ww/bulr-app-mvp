@@ -75,7 +75,7 @@
   - _Boundary: class-diagnosis-query.ts_
   - _Depends: 1.3_
 
-- [ ] 4.3 職種アンケート一覧からの playstyle 除外
+- [x] 4.3 職種アンケート一覧からの playstyle 除外
   - `getAnsweredSurveysForCandidate` に `kind='skill'` 絞り込みを追加（集計・生成ロジックは不変）。
   - 完了状態: 統合テストが通り、playstyle survey が職種アンケート一覧・self-analysis 生成対象に出現しない。
   - _Requirements: 1.1_
