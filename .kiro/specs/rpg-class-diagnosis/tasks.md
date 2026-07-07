@@ -2,7 +2,7 @@
 
 ## 1. Foundation: スキーマ・enum・マイグレーション
 
-- [ ] 1.1 skill-survey スキーマ拡張（polarity / survey_kind）
+- [x] 1.1 skill-survey スキーマ拡張（polarity / survey_kind）
   - `score_kind` enum に `'polarity'` を追加。`survey_kind` enum(`'skill'|'playstyle'`)と `skill_survey.kind`（notNull, default `'skill'`）を追加。
   - 既存 job 系 survey 行は default `'skill'` で解決され、既存回答・集計に影響しないこと（非破壊）。
   - 完了状態: スキーマ定義に `polarity`・`kind` が存在し、型エラーなくビルドが通る。
