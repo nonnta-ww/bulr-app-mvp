@@ -26,12 +26,18 @@ export type SkillSurveySeedQuestion = {
   displayOrder: number;
   isRequired?: boolean;
   // 全職種の union（各 seed 側はより狭い union で構わない）。
-  scoringKind?: 'proficiency' | 'recency' | 'frequency';
+  // 'polarity' は playstyle（気質）診断用: level が第2極寄りの強さを表す。
+  scoringKind?: 'proficiency' | 'recency' | 'frequency' | 'polarity';
   choices: Array<{ text: string; displayOrder: number; level?: number }>;
 };
 
 export type SkillSurveySeedData = {
   jobType: string;
+  /**
+   * survey の種別（既定: 'skill'）。playstyle 診断は 'playstyle' を指定する。
+   * 初回 insert 時のみ設定し、onConflict の set には含めない（既存行の kind は不変）。
+   */
+  kind?: 'skill' | 'playstyle';
   title: string;
   categories: Array<{
     name: string;
@@ -71,6 +77,7 @@ export async function runSkillSurveySeed(
       .insert(skillSurvey)
       .values({
         jobType: seed.jobType,
+        kind: seed.kind ?? 'skill',
         title: seed.title,
       })
       .onConflictDoUpdate({

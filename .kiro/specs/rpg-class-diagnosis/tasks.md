@@ -84,7 +84,7 @@
 
 ## 5. プレイスタイル診断 seed
 
-- [ ] 5. プレイスタイル診断 survey の seed 追加
+- [x] 5. プレイスタイル診断 survey の seed 追加
   - `jobType='playstyle'`・`kind='playstyle'` の survey を定義。2軸×6問=12問、`scoringKind='polarity'`、Likert `level`（例0..4）。逆転設問は level 反転で表現。seeds index に登録し冪等 upsert。
   - 完了状態: seed 実行で playstyle survey が投入され、12問・2軸構成が DB に存在する。
   - _Requirements: 2.1, 2.2_
@@ -153,3 +153,4 @@
 - dev DB 履歴ドリフト（0019 番号振り直し）は `__drizzle_migrations` row 20 の hash/created_at を非破壊整合して解消済み。worktree 再構築時は再発しうる。
 - **気質 pole-orientation 契約（3.2 ↔ 5 seed）**: 逆転吸収後の higher normalized score = 第2極。`explorationDeepening > 50 → deepener`(<=50→explorer, 50は既定極 explorer)、`soloCollaboration > 50 → collab`(<=50→solo, 50は既定極 solo)。playstyle seed(task 5) は post-reverse level が高いほど「深化」「協調」寄りになるよう設問と `reverse` を設計すること。反転すると全象限が入れ替わる。
 - **className フォーマット契約（3.4 → 8.2 UI）**: temperament あり = `${titleLabel}・${temperamentLabel}な${vocationLabel}`（例「スペシャリスト・孤高の深化者な前衛」）、temperament null（部分診断）= `${titleLabel}・${vocationLabel}`。ラベルは definitions.ts の VOCATION_LABELS/TITLE_LABELS/TEMPERAMENT_LABELS。UI は className をそのまま表示してよい。
+- **playstyle category→axis マッピング契約（5 → 7 Server Action）**: category name "探索と深化" → axis `explorationDeepening`、"個人と協調" → `soloCollaboration`。選択肢の `level` は既に第2極(深化/協調)向きに正規化済み（reverse 設問は seed で level 反転済み）なので、task 7 は `scoreTemperament` に **reverse=false, maxLevel=4** で渡す。両カテゴリの subcategory は '気質'（NULLS DISTINCT 冪等性のため非null）。マッピングは category **name** で行う。
