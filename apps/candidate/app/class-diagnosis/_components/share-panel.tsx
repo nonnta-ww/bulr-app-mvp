@@ -12,7 +12,7 @@
  * - ボタン押下で navigator.clipboard.writeText（存在時のみ）へ共有テキストをコピーし、
  *   Web Share API が使えれば併用する。いずれも存在しない環境でもクラッシュしない。
  *
- * Zenith デザイントークン（rounded-card / border-hairline / bg-canvas / text-muted）を用い、
+ * Zenith デザイントークン（rounded-card / border-hairline / bg-card / text-muted）を用い、
  * テーマトークン非依存の配色は明示 Tailwind クラスで指定する（candidate の運用方針）。
  *
  * Boundary: SharePanel, toShareText
@@ -86,7 +86,7 @@ export function SharePanel({ result }: SharePanelProps) {
 
   return (
     <section
-      className="rounded-card border border-hairline bg-canvas p-6"
+      className="rounded-card border border-hairline bg-card p-6"
       aria-label="診断結果の共有"
       data-testid="share-panel"
     >
