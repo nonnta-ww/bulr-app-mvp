@@ -1,0 +1,26 @@
+{
+  "name": "@bulr/ai-class-diagnosis",
+  "private": true,
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ai": "^6.0.0",
+    "@ai-sdk/anthropic": "^3.0.0",
+    "zod": "^4.0.0",
+    "@bulr/ai": "workspace:*",
+    "@bulr/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.4",
+    "vitest": "^4.1.0"
+  }
+}

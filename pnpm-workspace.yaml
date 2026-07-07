@@ -3,3 +3,4 @@ packages:
   - 'packages/*'
   - 'packages/ai/mock'
   - 'packages/ai/self-analysis'
+  - 'packages/ai/class-diagnosis'

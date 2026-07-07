@@ -92,7 +92,7 @@
 
 ## 6. フレーバー生成 AI
 
-- [ ] 6. (P) クラスフレーバー生成パッケージ
+- [x] 6. (P) クラスフレーバー生成パッケージ
   - `@bulr/ai` にサブモジュールを新設。`ClassResult`＋回答ラベルから tagline/description/nextStepHint を structured output で生成。数値・他者比較・順位を出さない grounding 制約。self-analysis 実装を参照。
   - 完了状態: 関数が構造化出力を返し、入力に根拠づいた説明が生成される（数値非出力）。
   - _Requirements: 7.1, 7.2, 4.3_
