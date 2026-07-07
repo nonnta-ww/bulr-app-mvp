@@ -109,7 +109,7 @@
 
 ## 8. candidate UI
 
-- [ ] 8.1 診断ページと状態分岐
+- [x] 8.1 診断ページと状態分岐
   - Server Component で回答/診断を取得し陳腐化判定。状態分岐（NoVocation / PartialNoTemperament / Complete / VizOnly / Stale）と生成/再生成 CTA（pending UI）を描画。数値スコアは非表示。
   - 完了状態: 各状態で適切な表示・CTA が出て、stale 時に再診断で最新化される。
   - _Requirements: 4.1, 4.4, 6.2, 6.3, 8.1, 8.2, 11.1_
