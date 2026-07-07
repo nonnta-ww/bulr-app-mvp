@@ -53,7 +53,7 @@
   - _Boundary: title.ts_
   - _Depends: 3.1_
 
-- [ ] 3.4 クラス組み立て（ClassResult）
+- [x] 3.4 クラス組み立て（ClassResult）
   - 主/副職掌・7職掌ベクトル・気質(単一/null)・称号・代表職掌・className・confidence を組成。低回答数で `confidence='low'`。
   - 完了状態: 単体テストが通り、`vocationVector` が常に7職掌キー完備、気質未回答でも部分結果が組成される。
   - _Requirements: 3.1, 8.2, 8.3, 12.1_
@@ -152,3 +152,4 @@
 - seed 済み skill survey は5職種: frontend(→vanguard) / backend(→rearguard) / infrastructure-sre(→guardian) / engineering-manager(→commander) / ai-driven-development(→ranger)。sage(賢者)・strategist(策士) は対応 survey 未整備＝寄与0で非活性（枠のみ）。
 - dev DB 履歴ドリフト（0019 番号振り直し）は `__drizzle_migrations` row 20 の hash/created_at を非破壊整合して解消済み。worktree 再構築時は再発しうる。
 - **気質 pole-orientation 契約（3.2 ↔ 5 seed）**: 逆転吸収後の higher normalized score = 第2極。`explorationDeepening > 50 → deepener`(<=50→explorer, 50は既定極 explorer)、`soloCollaboration > 50 → collab`(<=50→solo, 50は既定極 solo)。playstyle seed(task 5) は post-reverse level が高いほど「深化」「協調」寄りになるよう設問と `reverse` を設計すること。反転すると全象限が入れ替わる。
+- **className フォーマット契約（3.4 → 8.2 UI）**: temperament あり = `${titleLabel}・${temperamentLabel}な${vocationLabel}`（例「スペシャリスト・孤高の深化者な前衛」）、temperament null（部分診断）= `${titleLabel}・${vocationLabel}`。ラベルは definitions.ts の VOCATION_LABELS/TITLE_LABELS/TEMPERAMENT_LABELS。UI は className をそのまま表示してよい。
