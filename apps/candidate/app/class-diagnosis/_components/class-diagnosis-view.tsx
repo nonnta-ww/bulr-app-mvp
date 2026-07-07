@@ -53,7 +53,7 @@ const VocationRadar = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[300px] items-center justify-center rounded-card border border-hairline bg-canvas text-sm text-muted">
+      <div className="flex h-[300px] items-center justify-center rounded-card border border-hairline bg-card text-sm text-muted">
         読み込み中…
       </div>
     ),
@@ -73,7 +73,7 @@ const VocationRadar = dynamic(
 const PRIMARY_BTN = 'bg-orange-600 text-white hover:bg-orange-700';
 /** 副ボタン（白地・枠線） */
 const SECONDARY_BTN =
-  'border border-hairline bg-canvas text-gray-800 hover:border-slate hover:bg-orange-50';
+  'border border-hairline bg-card text-gray-800 hover:border-slate hover:bg-orange-50';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -122,7 +122,7 @@ function VizOnlyNote() {
   return (
     <p
       role="status"
-      className="rounded-card border border-hairline bg-canvas px-3 py-2 text-xs text-muted"
+      className="rounded-card border border-hairline bg-card px-3 py-2 text-xs text-muted"
       data-testid="class-diagnosis-vizonly-note"
     >
       説明文の生成に失敗したため、テンプレートの説明を表示しています。再診断で生成をやり直せます。
@@ -144,7 +144,7 @@ function DiagnosisVisualization({
   return (
     <div className="space-y-6">
       <ClassCard result={result} flavor={flavor} />
-      <div className="rounded-card border border-hairline bg-canvas p-6">
+      <div className="rounded-card border border-hairline bg-card p-6">
         <h3 className="mb-4 text-base font-bold text-gray-900">職掌バランス</h3>
         <VocationRadar vocationVector={result.vocationVector} />
       </div>
