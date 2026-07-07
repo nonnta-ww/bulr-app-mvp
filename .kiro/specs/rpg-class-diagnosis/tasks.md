@@ -22,7 +22,7 @@
 
 ## 2. 定義マスタ（config）
 
-- [ ] 2. 職掌・気質・称号・アフィニティの定義 config
+- [x] 2. 職掌・気質・称号・アフィニティの定義 config
   - 7職掌（前衛/後衛/守護/賢者/指揮/策士/遊撃、displayOrder 兼 tiebreak 順）・4気質・4称号を型付き定数で定義。
   - `CATEGORY_AFFINITY`（既存 survey の各カテゴリ名→職掌重み）と `JOBTYPE_DEFAULT_VOCATION` を定義。賢者・策士は定義を置き、対応カテゴリが無ければ寄与0で非活性（対応 survey 追加で自動開放）。
   - 判定パラメータ（`SUB_VOCATION_RATIO=0.75` / `SUB_VOCATION_MAX=2` / `BREADTH_ABS_THRESHOLD` / `BREADTH_WIDE_MIN` / `DEPTH_DEEP_MIN` / `LOW_CONFIDENCE_MIN_ANSWERS` / `TEMPERAMENT_MIDPOINT`）を集中定義。
@@ -145,3 +145,9 @@
   - 完了状態: 上記フローが自動テストで通過し、全要件のユーザー可視挙動が確認される。
   - _Requirements: 4.1, 4.4, 5.1, 6.2, 6.3, 8.1, 8.2, 10.1_
   - _Depends: 8.1, 8.2, 8.3, 9_
+
+## Implementation Notes
+
+- **カテゴリ名はサーベイ横断で一意でない**（衝突）: 「フレームワーク・ライブラリ」「アーキテクチャ設計」「パフォーマンス・チューニング」「テスト」は frontend と backend の両方に存在し、狙う職掌が異なる（前衛 vs 後衛）。そのため `CATEGORY_AFFINITY` は `jobType::categoryName` 複合キー＋`JOBTYPE_DEFAULT_VOCATION[jobType]` フォールバックの resolver で解決する（設計の「categoryName または jobType」の意図に沿う精緻化）。**契約**: `VocationInput.categories` は `{ jobType, categoryName, categoryScore, answeredCount }`（3.1）、`getCandidateVocationSource` は各 category に jobType を付与して返す（4.1）。
+- seed 済み skill survey は5職種: frontend(→vanguard) / backend(→rearguard) / infrastructure-sre(→guardian) / engineering-manager(→commander) / ai-driven-development(→ranger)。sage(賢者)・strategist(策士) は対応 survey 未整備＝寄与0で非活性（枠のみ）。
+- dev DB 履歴ドリフト（0019 番号振り直し）は `__drizzle_migrations` row 20 の hash/created_at を非破壊整合して解消済み。worktree 再構築時は再発しうる。

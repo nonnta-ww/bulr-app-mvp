@@ -45,6 +45,7 @@ function makeSurvey(): SkillSurvey {
   return {
     id: 's1',
     jobType: 'backend',
+    kind: 'skill',
     title: 'バックエンド',
     description: null,
     isActive: true,
