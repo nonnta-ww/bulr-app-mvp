@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@bulr/ai-class-diagnosis": "workspace:*",
     "@bulr/ai-mock": "workspace:*",
     "@bulr/ai-self-analysis": "workspace:*",
     "@bulr/auth": "workspace:*",

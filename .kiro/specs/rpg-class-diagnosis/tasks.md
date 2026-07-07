@@ -100,7 +100,7 @@
 
 ## 7. 生成オーケストレーション（Server Action）
 
-- [ ] 7. クラス診断生成 Server Action
+- [x] 7. クラス診断生成 Server Action
   - `requireCandidate` → cooldown 判定 → 職掌ソース取得＋playstyle回答取得 → 純関数判定（3.4）→ フレーバー生成（try/catch、失敗時 `llmFlavor=null`）→ upsert → revalidate。
   - 部分状態（skill未回答/ playstyle未回答）と低信頼を結果に反映。再診断はカウンタ進行と narrative 更新に対応。
   - 完了状態: skill＋playstyle 回答済み候補者で確定診断が保存され、LLM 失敗時もクラス・可視化データが保存・表示可能。
