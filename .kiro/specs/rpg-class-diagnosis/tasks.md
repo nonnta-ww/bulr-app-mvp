@@ -61,7 +61,7 @@
 
 ## 4. DB クエリ
 
-- [ ] 4.1 (P) 候補者職掌ソースの横断取得
+- [x] 4.1 (P) 候補者職掌ソースの横断取得
   - `kind='skill'` の全 skill-survey の最新 response を読み、`aggregate()` 適用。カテゴリ寄与は `proficiencyScore ?? frequencyScore ?? round(coverageRatio*100)` にフォールバック正規化。未回答は空を返す。
   - 完了状態: 統合テストが通り、playstyle survey は集計に含まれず、proficiency 非対応カテゴリでも寄与スコアが0固定にならない。
   - _Requirements: 1.1, 1.2, 8.1_
