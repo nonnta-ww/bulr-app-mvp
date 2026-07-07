@@ -122,7 +122,7 @@
   - _Boundary: class-card.tsx, vocation-radar.tsx_
   - _Depends: 7_
 
-- [ ] 8.3 (P) 共有パネル
+- [x] 8.3 (P) 共有パネル
   - クラス名・称号のみを含む共有表現を生成（個人特定情報を含めない）。
   - 完了状態: 共有操作でクラス名・称号のみの共有テキストが得られ、PII を含まない。
   - _Requirements: 5.1, 5.2_
