@@ -14,7 +14,7 @@
   - 完了状態: テーブルと JSON 型が定義され、re-export 経由で参照可能。
   - _Requirements: 6.1, 12.1, 12.2_
 
-- [ ] 1.3 マイグレーション生成と適用
+- [x] 1.3 マイグレーション生成と適用
   - `drizzle-kit generate` で `0020_*` を生成し、dev DB へ適用（DIRECT_URL/DATABASE_URL は inline 上書き）。
   - 完了状態: マイグレーションファイルが生成され、dev DB に `class_diagnosis` と `skill_survey.kind` 列が存在。
   - _Depends: 1.1, 1.2_
