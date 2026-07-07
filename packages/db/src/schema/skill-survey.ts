@@ -17,7 +17,9 @@ export const questionType = pgEnum('question_type', [
   'free_text',
 ]);
 
-export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency', 'frequency']);
+export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency', 'frequency', 'polarity']);
+
+export const surveyKind = pgEnum('survey_kind', ['skill', 'playstyle']);
 
 // --- Tables ---
 
@@ -26,6 +28,7 @@ export const skillSurvey = pgTable('skill_survey', {
     .primaryKey()
     .$defaultFn(() => nanoid()),
   jobType: text('job_type').notNull().unique(),
+  kind: surveyKind('kind').notNull().default('skill'),
   title: text('title').notNull(),
   description: text('description'),
   isActive: boolean('is_active').notNull().default(true),
@@ -124,3 +127,6 @@ export type QuestionType = (typeof questionType.enumValues)[number];
 
 // ScoreKind は scoreKind pgEnum から派生
 export type ScoreKind = (typeof scoreKind.enumValues)[number];
+
+// SurveyKind は surveyKind pgEnum から派生
+export type SurveyKind = (typeof surveyKind.enumValues)[number];

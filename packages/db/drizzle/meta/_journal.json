@@ -141,6 +141,13 @@
       "when": 1782308330047,
       "tag": "0019_massive_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1783390578156,
+      "tag": "0020_tired_stone_men",
+      "breakpoints": true
     }
   ]
 }

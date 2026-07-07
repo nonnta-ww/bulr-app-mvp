@@ -41,7 +41,14 @@ export async function getAnsweredSurveysForCandidate(
     })
     .from(skillSurveyResponse)
     .innerJoin(skillSurvey, eq(skillSurveyResponse.skillSurveyId, skillSurvey.id))
-    .where(eq(skillSurveyResponse.candidateProfileId, candidateProfileId))
+    // playstyle アンケートは職種アンケート一覧・自己分析生成対象から除外する
+    // （rpg-class-diagnosis R1.1: playstyle は診断専用で self-analysis には載せない）
+    .where(
+      and(
+        eq(skillSurveyResponse.candidateProfileId, candidateProfileId),
+        eq(skillSurvey.kind, 'skill'),
+      ),
+    )
     .groupBy(skillSurveyResponse.skillSurveyId, skillSurvey.title, skillSurvey.jobType);
 
   if (answered.length === 0) {
