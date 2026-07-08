@@ -94,7 +94,7 @@
   - _Boundary: axis-bars.tsx_
   - _Depends: 1.2_
 
-- [ ] 4.2 共有プレゼンテーション（none/partial/full 分岐）
+- [x] 4.2 共有プレゼンテーション（none/partial/full 分岐）
   - 充足度で分岐し、full はアーキタイプ（名称・説明・次の一歩）＋4軸バー＋共有、partial は判定済み軸の寄り＋残軸への回答導線、none はアンケート誘導を表示。数値は非表示。standalone とクラス診断の両方から使う単一実装。
   - 完了状態: 3状態が正しく描画され、full でアーキタイプ、partial で残軸導線が出る。
   - _Requirements: 2.1, 2.3, 3.1, 3.2, 3.3_
