@@ -11,7 +11,7 @@
   - _Requirements: 1.1, 1.4, 7.1, 7.3_
   - _Boundary: temperament types_
 
-- [ ] 1.2 (P) 気質の軸・極・16アーキタイプ定義（app core）
+- [x] 1.2 (P) 気質の軸・極・16アーキタイプ定義（app core）
   - 4軸・8極のラベルと canonical order・中点を定義し、16 code すべてに対応するアーキタイプ（型名・短ラベル・説明・次の一歩）を `Record<TemperamentCode, Archetype>` で定義（欠落は型エラー）。
   - 文言に数値・他者比較・順位を含めない。
   - 完了状態: 16 code が型で網羅され、各アーキタイプが名称・shortLabel・説明・nextStep を持ち typecheck が通る。
