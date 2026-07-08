@@ -10,6 +10,8 @@
  * 満たすべき契約であり、それらの実装はこの型に一致するよう型付けされる。
  */
 
+import type { TemperamentSummary } from './temperament';
+
 /** 職掌（どこで戦うか）— 7種 */
 export type Vocation =
   | 'vanguard' // 前衛 フロントエンド
@@ -23,16 +25,6 @@ export type Vocation =
 /** 7職掌の 0..100 正規化ベクトル（全キー常在 — R12.1/12.2） */
 export type VocationVector = Record<Vocation, number>;
 
-/** 気質軸（どう戦うか）— 2軸 */
-export type TemperamentAxis = 'explorationDeepening' | 'soloCollaboration';
-
-/** 気質（2軸の象限）— 4種 */
-export type Temperament =
-  | 'explorer_solo'
-  | 'explorer_collab'
-  | 'deepener_solo'
-  | 'deepener_collab';
-
 /** 称号（キャラの格＝広さ×深さ）— 4種 */
 export type Title = 'sage_hero' | 'specialist' | 'jack_of_all' | 'apprentice';
 
@@ -44,8 +36,7 @@ export interface ClassResult {
   primaryVocation: Vocation;
   subVocations: Vocation[];
   vocationVector: VocationVector; // R12: 全7職掌保持
-  temperament: Temperament | null; // playstyle 未回答なら null（R8.2）
-  temperamentBalanced: boolean;
+  temperament: TemperamentSummary | null; // playstyle 未回答なら null（R8.2）。balancedAxes は summary 内へ統合
   title: Title;
   representativeVocation: Vocation; // 称号併記用（最大比重）
   className: string; // 表示名（定義から組成）

@@ -1,11 +1,12 @@
 /**
  * RPG クラス診断 — 定義マスタ（config）
  *
- * 職掌7 / 気質4 / 称号4 の型付き定数と、カテゴリ→職掌アフィニティ、
+ * 職掌7 / 称号4 の型付き定数と、カテゴリ→職掌アフィニティ、
  * jobType→既定職掌、判定パラメータをここに集中定義する（判定ロジックの唯一の設定源, R9.1）。
+ * 気質4軸・8極・16型の定義／ラベルは app core `_lib/temperament/`（axes.ts / archetypes.ts）へ移管済み。
  *
  * App-local（apps/candidate 配下）。`app → @bulr/types` の単方向依存は許容。
- * 職掌/気質/称号の union 型は `@bulr/types` を唯一の正本として再利用し、ここでは再定義しない。
+ * 職掌/称号の union 型は `@bulr/types` を唯一の正本として再利用し、ここでは再定義しない。
  *
  * ## カテゴリ名の衝突（重要）
  * カテゴリ名はサーベイ横断で一意ではない。「フレームワーク・ライブラリ」「アーキテクチャ設計」
@@ -15,7 +16,7 @@
  * resolver（`resolveCategoryVocationWeights`）で行う。
  */
 
-import type { Vocation, Temperament, Title, TemperamentAxis } from "@bulr/types";
+import type { Vocation, Title } from "@bulr/types";
 
 /**
  * 7職掌の displayOrder（＝決定論的 tiebreak 順, R1.6）。
@@ -31,26 +32,12 @@ export const VOCATIONS: readonly Vocation[] = [
   "ranger",
 ] as const;
 
-/** 4気質（2軸の象限）。 */
-export const TEMPERAMENTS: readonly Temperament[] = [
-  "explorer_solo",
-  "explorer_collab",
-  "deepener_solo",
-  "deepener_collab",
-] as const;
-
 /** 4称号（広さ×深さ）。 */
 export const TITLES: readonly Title[] = [
   "sage_hero",
   "specialist",
   "jack_of_all",
   "apprentice",
-] as const;
-
-/** 気質2軸（探索⇔深化 / 個人⇔協調）。 */
-export const TEMPERAMENT_AXES: readonly TemperamentAxis[] = [
-  "explorationDeepening",
-  "soloCollaboration",
 ] as const;
 
 /** 職掌の日本語ラベル（表示・className 組成用）。 */
@@ -62,14 +49,6 @@ export const VOCATION_LABELS: Record<Vocation, string> = {
   commander: "指揮",
   strategist: "策士",
   ranger: "遊撃",
-};
-
-/** 気質の日本語ラベル。 */
-export const TEMPERAMENT_LABELS: Record<Temperament, string> = {
-  explorer_solo: "孤高の探索者",
-  explorer_collab: "協調の探索者",
-  deepener_solo: "孤高の深化者",
-  deepener_collab: "協調の深化者",
 };
 
 /** 称号の日本語ラベル。 */
@@ -149,4 +128,3 @@ export const BREADTH_ABS_THRESHOLD = 60; // 「広さ」に数える職掌スコ
 export const BREADTH_WIDE_MIN = 4; // これ以上で「広」
 export const DEPTH_DEEP_MIN = 70; // 深さ(対象職掌の平均熟練度)閾値
 export const LOW_CONFIDENCE_MIN_ANSWERS = 8; // これ未満で低信頼(R8.3)
-export const TEMPERAMENT_MIDPOINT = 50; // 気質軸の中点（二値化境界）

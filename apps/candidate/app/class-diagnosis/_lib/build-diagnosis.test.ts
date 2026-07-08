@@ -54,9 +54,20 @@ function makeVocationSource(overrides?: Partial<CandidateVocationSource>): Candi
   };
 }
 
-/** playstyle 回答束を組み立てる（axis ごとに level を指定）。 */
+/** 気質4軸 → seed カテゴリ名（app core answers.ts の PLAYSTYLE_CATEGORY_AXIS と一致）。 */
+const AXIS_CATEGORY: Record<string, string> = {
+  explorationDeepening: '探索と深化',
+  soloCollaboration: '個人と協調',
+  planningImprovisation: '計画と即興',
+  stabilityChallenge: '堅実と挑戦',
+};
+
+/**
+ * playstyle 回答束を組み立てる（axis ごとに level 配列を指定）。
+ * 指定した軸のカテゴリのみ生成する（未指定の軸は未回答 → partial に寄与）。
+ */
 function makePlaystyle(
-  levels: { explorationDeepening: number[]; soloCollaboration: number[] },
+  levels: Partial<Record<keyof typeof AXIS_CATEGORY, number[]>>,
   overrides?: Partial<SurveyResponseForAnalysis>,
 ): SurveyResponseForAnalysis {
   const makeAnswers = (categoryName: string, levelList: number[]) =>
@@ -71,23 +82,22 @@ function makePlaystyle(
       freeText: null,
     }));
 
+  const categories = Object.entries(levels).map(([axis, levelList]) => {
+    const categoryName = AXIS_CATEGORY[axis]!;
+    const list = levelList ?? [];
+    return {
+      categoryName,
+      totalQuestions: list.length,
+      answers: makeAnswers(categoryName, list),
+    };
+  });
+
   return {
     surveyId: 'survey-playstyle',
     jobType: 'playstyle',
     responseId: 'resp-playstyle',
     submittedAt: new Date('2026-07-02T00:00:00.000Z'),
-    categories: [
-      {
-        categoryName: '探索と深化',
-        totalQuestions: levels.explorationDeepening.length,
-        answers: makeAnswers('探索と深化', levels.explorationDeepening),
-      },
-      {
-        categoryName: '個人と協調',
-        totalQuestions: levels.soloCollaboration.length,
-        answers: makeAnswers('個人と協調', levels.soloCollaboration),
-      },
-    ],
+    categories,
     ...overrides,
   };
 }
@@ -181,10 +191,12 @@ describe('mapTemperamentAnswers', () => {
     expect(mapTemperamentAnswers(playstyle)).toEqual([]);
   });
 
-  it('PLAYSTYLE_CATEGORY_AXIS は seed 契約どおりの2軸対応', () => {
+  it('PLAYSTYLE_CATEGORY_AXIS は seed 契約どおりの4軸対応（app core answers.ts と共有）', () => {
     expect(PLAYSTYLE_CATEGORY_AXIS).toEqual({
       探索と深化: 'explorationDeepening',
       個人と協調: 'soloCollaboration',
+      計画と即興: 'planningImprovisation',
+      堅実と挑戦: 'stabilityChallenge',
     });
   });
 });
@@ -262,25 +274,46 @@ describe('buildSourceSnapshot', () => {
 // ---------------------------------------------------------------------------
 
 describe('computeClassResult', () => {
-  it('playstyle あり → temperament が set された完全な ClassResult を返す', () => {
+  it('playstyle 全4軸あり → full な TemperamentSummary（code 確定）を持つ ClassResult を返す', () => {
     const source = makeVocationSource();
+    // 全4軸を高 level で回答 → 全軸 determined → completeness='full'・code 確定。
     const playstyle = makePlaystyle({
       explorationDeepening: [4, 4, 4], // 高 → deepener
       soloCollaboration: [4, 4, 4], // 高 → collab
+      planningImprovisation: [4, 4, 4], // 高 → improviser
+      stabilityChallenge: [4, 4, 4], // 高 → challenger
     });
     const result = computeClassResult(source, playstyle);
-    expect(result.temperament).toBe('deepener_collab');
+    expect(result.temperament).not.toBeNull();
+    expect(result.temperament!.completeness).toBe('full');
+    expect(result.temperament!.code).toBe('deepener-collab-improviser-challenger');
     expect(result.primaryVocation).toBeTruthy();
     expect(result.className.length).toBeGreaterThan(0);
     // vocationVector は7キー常在
     expect(Object.keys(result.vocationVector).length).toBe(7);
   });
 
+  it('playstyle 一部軸のみ → partial な TemperamentSummary（code=null）', () => {
+    const source = makeVocationSource();
+    // 2軸のみ回答 → determined 2/4 → completeness='partial'・code=null。
+    const playstyle = makePlaystyle({
+      explorationDeepening: [4, 4, 4],
+      soloCollaboration: [4, 4, 4],
+    });
+    const result = computeClassResult(source, playstyle);
+    expect(result.temperament).not.toBeNull();
+    expect(result.temperament!.completeness).toBe('partial');
+    expect(result.temperament!.code).toBeNull();
+    // determined 軸の極のみ poles に載る
+    expect(result.temperament!.poles.explorationDeepening).toBe('deepener');
+    expect(result.temperament!.poles.soloCollaboration).toBe('collab');
+    expect(result.temperament!.poles.planningImprovisation).toBeUndefined();
+  });
+
   it('playstyle 未回答（null）→ temperament=null の partial だが valid な ClassResult', () => {
     const source = makeVocationSource();
     const result = computeClassResult(source, null);
     expect(result.temperament).toBeNull();
-    expect(result.temperamentBalanced).toBe(false);
     expect(result.className.length).toBeGreaterThan(0);
     // confidence は totalAnswered で決まる（answeredCount=10 >= 8 → normal）
     expect(result.confidence).toBe('normal');

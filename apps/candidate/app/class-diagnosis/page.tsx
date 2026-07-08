@@ -26,10 +26,14 @@ import {
   getLatestClassDiagnosis,
   getCandidateVocationSource,
   getCandidatePlaystyleResponse,
+  getPlaystyleSurveyId,
 } from '@bulr/db';
 
 import { ClassDiagnosisView } from './_components/class-diagnosis-view';
 import { buildSourceSignature } from './_lib/build-diagnosis';
+import { mapTemperamentAnswers } from '../_lib/temperament/answers';
+import { scoreTemperament } from '../_lib/temperament/score';
+import { normalizeClassResultTemperament } from '../_lib/temperament/legacy';
 
 export default async function ClassDiagnosisPage() {
   // ── アクセス制御 ──（Req 11.1）
@@ -45,11 +49,12 @@ export default async function ClassDiagnosisPage() {
     throw err;
   }
 
-  // ── 本人所有スコープでレコード・診断入力を取得 ──
-  const [record, source, playstyle] = await Promise.all([
+  // ── 本人所有スコープでレコード・診断入力 + playstyle アンケート id を取得 ──
+  const [record, source, playstyle, playstyleSurveyId] = await Promise.all([
     getLatestClassDiagnosis(candidateProfileId),
     getCandidateVocationSource(candidateProfileId),
     getCandidatePlaystyleResponse(candidateProfileId),
+    getPlaystyleSurveyId(),
   ]);
 
   // ── フラグ算出 ──
@@ -59,6 +64,27 @@ export default async function ClassDiagnosisPage() {
   // 現在の診断入力署名（保存済み署名との差分で陳腐化を判定）（Req 6.2/6.3）。
   const currentSig = buildSourceSignature(source, playstyle?.responseId ?? null);
   const isStale = record !== null && record.sourceSignature !== currentSig;
+
+  // playstyle 回答をライブ算出（気質のみ回答者への気質結果提示に用いる, Req 6.2）。
+  const playstyleProfile = scoreTemperament(mapTemperamentAnswers(playstyle));
+
+  // 気質アンケートへの deep-link（未 seed 時は一覧へフォールバック, Req 6.1/error-handling）。
+  const playstyleSurveyHref = playstyleSurveyId
+    ? `/skill-survey/${playstyleSurveyId}`
+    : '/skill-survey';
+
+  // 既存レコードの気質を legacy 正規化してから描画する（旧行を partial 化, Req 7.4）。
+  const normalizedRecord = record
+    ? {
+        ...record,
+        result: {
+          ...record.result,
+          temperament: normalizeClassResultTemperament(
+            record.result.temperament,
+          ),
+        },
+      }
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-[1000px] px-4 py-8 md:px-12 md:py-12">
@@ -72,11 +98,13 @@ export default async function ClassDiagnosisPage() {
       </header>
 
       <ClassDiagnosisView
-        record={record}
-        flavor={record?.llmFlavor ?? null}
+        record={normalizedRecord}
+        flavor={normalizedRecord?.llmFlavor ?? null}
         hasSkill={hasSkill}
         hasPlaystyle={hasPlaystyle}
         isStale={isStale}
+        playstyleProfile={playstyleProfile}
+        playstyleSurveyHref={playstyleSurveyHref}
       />
     </main>
   );

@@ -46,18 +46,4 @@ describe('VocationRadar', () => {
     expect(container.textContent).not.toContain(String(DISTINCTIVE_SCORE));
     expect(container.textContent).not.toContain('42');
   });
-
-  it('気質2軸（任意）を数値なしで受け取っても破綻しない (R4.4)', () => {
-    const { container } = render(
-      <VocationRadar
-        vocationVector={VECTOR}
-        temperamentAxes={{ explorationDeepening: 70, soloCollaboration: 30 }}
-      />,
-    );
-    // 職掌ラベルは提示される
-    expect(within(screen.getByTestId('vocation-radar-labels')).getByText('前衛')).toBeInTheDocument();
-    // 気質軸の数値は漏れない
-    expect(container.textContent).not.toContain('70');
-    expect(container.textContent).not.toContain('30');
-  });
 });

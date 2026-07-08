@@ -12,6 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'スキルアンケート', href: '/skill-survey', symbol: 'assessment', match: 'prefix' },
   { label: '自己分析', href: '/self-analysis', symbol: 'psychology', match: 'prefix' },
   { label: 'クラス診断', href: '/class-diagnosis', symbol: 'swords', match: 'prefix' },
+  { label: 'プレイスタイル診断', href: '/playstyle-diagnosis', symbol: 'tune', match: 'prefix' },
   { label: '履歴書', href: '/resume', symbol: 'description', match: 'prefix' },
   { label: '模擬面接', href: '/mock-interview', symbol: 'forum', match: 'prefix' },
   { label: 'エントリー', href: '/entries', symbol: 'send', match: 'prefix' },

@@ -21,13 +21,11 @@
  * Requirements: 4.1, 4.3, 4.4, 7.3
  */
 
-import type { ClassResult, ClassFlavor } from '@bulr/types';
+import type { ClassResult, ClassFlavor, TemperamentSummary } from '@bulr/types';
 
-import {
-  VOCATION_LABELS,
-  TITLE_LABELS,
-  TEMPERAMENT_LABELS,
-} from '../_lib/definitions';
+import { TEMPERAMENT_ARCHETYPES } from '../../_lib/temperament/archetypes';
+import { AXES, POLE_LABELS } from '../../_lib/temperament/axes';
+import { VOCATION_LABELS, TITLE_LABELS } from '../_lib/definitions';
 
 interface ClassCardProps {
   result: ClassResult;
@@ -35,26 +33,44 @@ interface ClassCardProps {
 }
 
 /**
+ * determined 軸の極ラベル（POLE_LABELS）を canonical order で列挙して '・' 連結する。
+ * partial 診断のバッジ・フォールバック文言に用いる（数値なし, R4.4）。
+ */
+function determinedPoleLabels(summary: TemperamentSummary): string[] {
+  return AXES.flatMap((axis) => {
+    const pole = summary.poles[axis];
+    return pole ? [POLE_LABELS[pole]] : [];
+  });
+}
+
+/**
  * flavor=null 時のテンプレートフォールバック（R7.3）。
  * ラベルのみから決定論的にフレーバー相当の3文（tagline/description/nextStepHint）を組成する。
  * 数値は一切含めない（R4.4）。
+ *
+ * 気質は summary の completeness に応じて扱いを変える:
+ *  - full（code あり）: アーキタイプの name/description を用いた地に足のついた説明にする。
+ *  - partial: アーキタイプを捏造せず、職掌のみのテキストにフォールバックする（R7.4）。
+ *  - null: 職掌のみのテキスト。
  */
 function buildTemplateFlavor(result: ClassResult): ClassFlavor {
   const vocationLabel = VOCATION_LABELS[result.primaryVocation];
-  const titleLabel = TITLE_LABELS[result.title];
-  const temperamentLabel = result.temperament
-    ? TEMPERAMENT_LABELS[result.temperament]
-    : null;
 
   const subLabels = result.subVocations.map((v) => VOCATION_LABELS[v]);
   const subPhrase = subLabels.length > 0 ? `${subLabels.join('・')}の素養も併せ持つ` : '';
 
-  const tagline = temperamentLabel
-    ? `${temperamentLabel}な${vocationLabel}`
+  const temperament = result.temperament;
+  const archetype =
+    temperament && temperament.completeness === 'full' && temperament.code
+      ? TEMPERAMENT_ARCHETYPES[temperament.code]
+      : null;
+
+  const tagline = archetype
+    ? `${archetype.name}な${vocationLabel}`
     : `${vocationLabel}`;
 
-  const description = temperamentLabel
-    ? `あなたは「${vocationLabel}」を主軸に、${temperamentLabel}のスタイルで力を発揮するタイプです。${subPhrase ? `${subPhrase}バランスが特徴です。` : ''}`
+  const description = archetype
+    ? `あなたは「${vocationLabel}」を主軸に、${archetype.description}${subPhrase ? `${subPhrase}バランスが特徴です。` : ''}`
     : `あなたは「${vocationLabel}」を主軸に力を発揮するタイプです。${subPhrase ? `${subPhrase}バランスが特徴です。` : ''}`;
 
   const nextStepHint = subLabels.length > 0
@@ -72,10 +88,17 @@ export function ClassCard({ result, flavor }: ClassCardProps) {
 
   const primaryLabel = VOCATION_LABELS[result.primaryVocation];
   const titleLabel = TITLE_LABELS[result.title];
-  const temperamentLabel = result.temperament
-    ? TEMPERAMENT_LABELS[result.temperament]
-    : null;
   const subLabels = result.subVocations.map((v) => VOCATION_LABELS[v]);
+
+  const temperament = result.temperament;
+  const fullArchetype =
+    temperament && temperament.completeness === 'full' && temperament.code
+      ? TEMPERAMENT_ARCHETYPES[temperament.code]
+      : null;
+  const partialPoleLabels =
+    temperament && temperament.completeness === 'partial'
+      ? determinedPoleLabels(temperament)
+      : [];
 
   return (
     <section
@@ -98,9 +121,19 @@ export function ClassCard({ result, flavor }: ClassCardProps) {
         <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
           {titleLabel}
         </span>
-        {temperamentLabel ? (
-          <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-800">
-            {temperamentLabel}
+        {fullArchetype ? (
+          <span
+            className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-800"
+            data-testid="class-card-temperament"
+          >
+            {fullArchetype.shortLabel}
+          </span>
+        ) : partialPoleLabels.length > 0 ? (
+          <span
+            className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-800"
+            data-testid="class-card-temperament"
+          >
+            {partialPoleLabels.join('・')}
           </span>
         ) : (
           <span
@@ -111,6 +144,16 @@ export function ClassCard({ result, flavor }: ClassCardProps) {
           </span>
         )}
       </div>
+
+      {/* partial 診断: 残りの気質設問に答えるとタイプが確定する旨の注記（R7.4, 数値なし） */}
+      {partialPoleLabels.length > 0 ? (
+        <p
+          className="mt-2 text-xs text-muted"
+          data-testid="class-card-temperament-partial-note"
+        >
+          残りの気質の設問に答えると、あなたの気質タイプが確定します。
+        </p>
+      ) : null}
 
       {/* 副職掌（あれば） */}
       {subLabels.length > 0 ? (

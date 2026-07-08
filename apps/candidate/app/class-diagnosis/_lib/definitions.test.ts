@@ -2,11 +2,8 @@ import { describe, it, expect } from "vitest";
 import type { Vocation } from "@bulr/types";
 import {
   VOCATIONS,
-  TEMPERAMENTS,
   TITLES,
-  TEMPERAMENT_AXES,
   VOCATION_LABELS,
-  TEMPERAMENT_LABELS,
   TITLE_LABELS,
   CATEGORY_AFFINITY,
   JOBTYPE_DEFAULT_VOCATION,
@@ -17,7 +14,6 @@ import {
   BREADTH_WIDE_MIN,
   DEPTH_DEEP_MIN,
   LOW_CONFIDENCE_MIN_ANSWERS,
-  TEMPERAMENT_MIDPOINT,
 } from "./definitions";
 
 /**
@@ -121,26 +117,12 @@ describe("VOCATIONS", () => {
   });
 });
 
-describe("TEMPERAMENTS / TITLES / AXES ラベル", () => {
-  it("4気質すべてにラベルがある", () => {
-    expect(TEMPERAMENTS).toHaveLength(4);
-    for (const t of TEMPERAMENTS) {
-      expect(TEMPERAMENT_LABELS[t]).toBeTruthy();
-    }
-  });
-
+describe("TITLES ラベル", () => {
   it("4称号すべてにラベルがある", () => {
     expect(TITLES).toHaveLength(4);
     for (const t of TITLES) {
       expect(TITLE_LABELS[t]).toBeTruthy();
     }
-  });
-
-  it("2気質軸を保持する", () => {
-    expect(TEMPERAMENT_AXES).toEqual([
-      "explorationDeepening",
-      "soloCollaboration",
-    ]);
   });
 });
 
@@ -256,6 +238,5 @@ describe("判定パラメータ定数", () => {
     expect(BREADTH_WIDE_MIN).toBe(4);
     expect(DEPTH_DEEP_MIN).toBe(70);
     expect(LOW_CONFIDENCE_MIN_ANSWERS).toBe(8);
-    expect(TEMPERAMENT_MIDPOINT).toBe(50);
   });
 });
