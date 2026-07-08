@@ -39,6 +39,8 @@ import Link from 'next/link';
 import type { ClassResult, ClassFlavor } from '@bulr/types';
 import type { ClassDiagnosisRecord } from '@bulr/db';
 
+import type { TemperamentProfile } from '../../_lib/temperament/score';
+import { PlaystyleResult } from '../../playstyle-diagnosis/_components/playstyle-result';
 import { ClassCard } from './class-card';
 import { SharePanel } from './share-panel';
 import { GenerateButton } from './generate-button';
@@ -90,6 +92,13 @@ export interface ClassDiagnosisViewProps {
   hasPlaystyle: boolean;
   /** 最新回答が診断の生成元より新しい（陳腐化）なら true（Req 6.2/6.3） */
   isStale: boolean;
+  /**
+   * 候補者の playstyle 回答をライブ算出した気質プロフィール（completeness none/partial/full）。
+   * 未回答時は none。気質のみ回答者（!hasSkill && hasPlaystyle）に気質結果を提示する（Req 6.2）。
+   */
+  playstyleProfile: TemperamentProfile;
+  /** 気質アンケートへの deep-link（page が解決。未 seed 時は一覧 /skill-survey へフォールバック）。 */
+  playstyleSurveyHref: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -162,11 +171,44 @@ export function ClassDiagnosisView({
   hasSkill,
   hasPlaystyle,
   isStale,
+  playstyleProfile,
+  playstyleSurveyHref,
 }: ClassDiagnosisViewProps) {
   // -------------------------------------------------------------------------
-  // NoVocation: 診断もスキル回答もない（判定材料なし）（Req 8.1）
+  // NoVocation: 診断がなく、スキル未回答（職掌が判定できない）。
+  //   - 気質のみ回答済み（hasPlaystyle）: 気質結果を提示し（Req 6.2）、続けてスキル診断に
+  //     回答すると RPG クラスが解放される旨の次の一歩導線を併記する（Req 6.3）。
+  //   - 気質も未回答: スキル診断へ誘導する CTA のみ（Req 8.1）。
   // -------------------------------------------------------------------------
   if (!record && !hasSkill) {
+    if (hasPlaystyle) {
+      return (
+        <div className="space-y-6">
+          <PlaystyleResult
+            profile={playstyleProfile}
+            playstyleSurveyHref={playstyleSurveyHref}
+          />
+
+          <div className="rounded-card border border-orange-300 bg-orange-50 p-6 text-center sm:text-left">
+            <h2 className="text-base font-bold text-gray-900">
+              RPGクラスを解放するには
+            </h2>
+            <p className="mt-2 text-sm text-gray-700">
+              スキル診断に回答すると、職掌が判定され、気質と組み合わせたあなたの
+              RPGクラスが解放されます。
+            </p>
+            <Link
+              href="/skill-survey"
+              className={`mt-4 inline-flex min-w-56 items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium ${PRIMARY_BTN}`}
+              data-testid="class-diagnosis-skill-unlock-cta"
+            >
+              スキル診断に回答してクラスを解放する
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center gap-6 py-12 text-center">
         <div className="space-y-2">
@@ -254,7 +296,7 @@ export function ClassDiagnosisView({
               気質診断に回答すると、クラスがより具体的に確定します。
             </p>
             <Link
-              href="/skill-survey"
+              href={playstyleSurveyHref}
               className={`inline-flex min-w-56 items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium ${PRIMARY_BTN}`}
               data-testid="class-diagnosis-temperament-cta"
             >
