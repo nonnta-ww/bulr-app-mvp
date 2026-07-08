@@ -100,7 +100,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 6.2_
   - _Depends: 4.4_
 
-- [ ] 5.2 DB統合・退行・全体検証
+- [x] 5.2 DB統合・退行・全体検証
   - DB 統合（アンケート提供・id 解決・本人回答取得）に加え、思考スタイルアンケートが既存の職種スキルアンケート一覧・自己分析対象に**含まれない**こと（既存 `kind='skill'` 包含フィルタによる自動除外）を検証。候補者 typecheck とビルドが通り、既存テスト群が退行しないことを確認。
   - 完了状態: 新規＋既存のユニット/統合/コンポーネントテストが全て緑で、候補者 typecheck とビルドが通り、思考スタイルアンケートが一覧に漏出しない。
   - _Requirements: 5.1, 5.4, 5.5, 6.1, 6.3_
@@ -115,3 +115,6 @@
 - **DB 統合テストは直列・inline env**: `packages/db` の統合テストは `fileParallelism:false`／inline env、`DATABASE_URL` 未設定なら describe.skip。クリーンな dev DB で実行する。
 - **seed の環境反映**: enum migration 適用後、思考スタイル seed を dev/prod にシードスクリプトで投入し動作確認する（自動反映ではない）。
 - **enum migration 番号衝突**: `survey_kind` への値追加 migration はマージ時に番号衝突しうる。既存運用（振り直し）で解消する。
+- **candidate vitest パスは app 相対**: `pnpm --filter @bulr/candidate test app/...`（`apps/candidate/app/...` ではない）。repo-root 相対だと "No test files found"。
+- **回帰結果（task 5.2, 2026-07-08）**: `@bulr/db` 98テスト緑（18ファイル）/ `@bulr/candidate` 249緑・4skip / candidate typecheck 緑。既存 playstyle・class-diagnosis 群も緑で退行なし。
+- **`next build` は worktree の env 不足でフル完走しない（既知・thinking-style 非依存）**: Turbopack「Compiled successfully」+ TypeScript 完走までは成功（＝thinking-style ルートはコンパイル・型検査を通過）。その後の page-data collection で無関係ルート（`/api/auth/[...all]`, `/invitations/[token]`）が `DATABASE_URL`/`BETTER_AUTH_SECRET` 未設定により失敗する。これは main/playstyle build も同一で、thinking-style コードの欠陥ではない。本番/CI は env 完備のため通る。ローカルでフル build する場合は `.env.local`（本番相当の secrets）が必要。
