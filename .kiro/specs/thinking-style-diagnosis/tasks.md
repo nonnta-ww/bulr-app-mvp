@@ -38,7 +38,7 @@
 
 ## 3. DB: seed とクエリ
 
-- [ ] 3.1 (P) 思考スタイルアンケートの seed（4軸24問）
+- [x] 3.1 (P) 思考スタイルアンケートの seed（4軸24問）
   - `kind`/`jobType`='thinking_style'、4カテゴリ（抽象と具体／論理と直感／収束と発散／理論と実践）×6問（自然表現3＋反転表現3）＝24問を投入。level 高＝第2極 に正規化。category 名は 1.3 の軸マッピングと一致させ、subcategory は非null。冪等 upsert で再投入しても重複・破壊しない。seed runner のバレルに登録。
   - DB 統合テスト（inline env・直列）: seed 後に `kind/jobType='thinking_style'` が1件・期待 title・4カテゴリ×6問・subcategory 非null。4カテゴリの回答から4軸すべてが determined の採点入力になる。
   - 完了状態: seed 実行で4軸24問が投入され、4軸回答から16型が確定できる。
