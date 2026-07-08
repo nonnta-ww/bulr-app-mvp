@@ -7,3 +7,4 @@ export * from './entry';
 export * from './mock-interview';
 export * from './self-analysis';
 export * from './class-diagnosis/index';
+export * from './thinking-style/index';

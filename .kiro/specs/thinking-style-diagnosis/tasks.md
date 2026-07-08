@@ -46,7 +46,7 @@
   - _Boundary: thinking-style survey seed_
   - _Depends: 1.3, 2.1_
 
-- [ ] 3.2 (P) アンケート id 解決クエリ
+- [x] 3.2 (P) アンケート id 解決クエリ
   - 思考スタイルアンケート（`kind='thinking_style'`）の id を1件返すクエリを追加しバレル登録。未投入時は null。
   - DB 統合テスト: 解決 id が直接 SELECT と一致し、未投入で null が返る。
   - 完了状態: seed 済み環境で思考スタイルアンケートの id が取得でき、未投入で null が返る。
