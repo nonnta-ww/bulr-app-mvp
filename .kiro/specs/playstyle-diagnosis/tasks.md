@@ -135,3 +135,9 @@
   - 完了状態: 既存＋新規のユニット/統合/コンポーネントテストが全て緑で、候補者 typecheck とビルドが通る。
   - _Requirements: 5.5, 7.1, 7.5_
   - _Depends: 2.1, 2.2, 2.3, 3.1, 3.2_
+
+## Implementation Notes
+
+- **vitest(esbuild) は型チェックしない**: 個別ファイルの `pnpm --filter @bulr/candidate test <file>` は esbuild でトランスパイルするため型エラーを素通りする。`noUncheckedIndexedAccess` 由来の型エラー（例 `const [a1,a2,a3,a4] = AXES` が `TemperamentAxis | undefined`）は full `tsc --noEmit` で初めて顕在化する。Foundation の純関数/データタスクは vitest 緑でも full typecheck は task 5.2 まで担保されない。archetypes.test.ts はガード追加で解消済み。
+- **Phase 2 完了時点**: `@bulr/candidate typecheck` の残エラーは `class-diagnosis-view.test.tsx` の旧 temperament fixture のみ（task 4.5 で解消予定）。それ以外は緑。
+- **`pnpm --filter` が sibling worktree を誤解決しうる**: AIパッケージ検証時、`--filter` が別 worktree を掴む場合あり。パッケージ内で `pnpm run` する方が確実（reviewer 2.3 の知見）。
