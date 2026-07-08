@@ -19,7 +19,7 @@
   - _Boundary: axes.ts, archetypes.ts_
   - _Depends: 1.1_
 
-- [ ] 1.3 気質スコアリング純関数（partial 対応）
+- [x] 1.3 気質スコアリング純関数（partial 対応）
   - 気質回答を4軸で採点し、回答済み軸のみ `determined=true`（未回答軸は中点で埋めない）、中点ちょうどは既定極＋balanced、充足度（none/partial/full）と full 時のみ非null の code を決定論導出。ClassResult 用 summary への射影も提供。
   - 単体テスト: 空（none）／2軸のみ（partial・未回答軸 determined=false）／4軸（full・code 非null）／中点 balanced／逆転吸収／同一入力同一出力。
   - 完了状態: 単体テストが緑で、部分回答が嘘の完全型にならず、4軸回答で16型のいずれかに確定する。
