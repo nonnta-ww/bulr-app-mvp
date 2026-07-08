@@ -3,11 +3,37 @@
 
 import { generateObject } from 'ai';
 import { claudeSonnet46 } from '@bulr/ai';
+import type { TemperamentSummary } from '@bulr/types';
 import {
   classFlavorSchema,
   type ClassFlavorInput,
   type ClassFlavorGenResult,
 } from './schema';
+
+/**
+ * 気質サマリを、app-local ラベルに依存せず @bulr/types のトークン（極 token・code・balanced 軸）
+ * のみで言葉化する。数値は一切含めない（Grounding R7.2）。
+ * app-local の日本語ラベルはここでは import できないため、確定した極トークンを語彙として渡す。
+ */
+export function describeTemperament(
+  temperament: TemperamentSummary | null,
+): string {
+  if (temperament === null || temperament.completeness === 'none') {
+    return '未確定';
+  }
+  const parts: string[] = [];
+  const poleTokens = Object.values(temperament.poles);
+  if (poleTokens.length > 0) {
+    parts.push(`確定した気質傾向: ${poleTokens.join(' / ')}`);
+  }
+  if (temperament.balancedAxes.length > 0) {
+    parts.push(`拮抗（バランス）軸: ${temperament.balancedAxes.join(' / ')}`);
+  }
+  if (temperament.code !== null) {
+    parts.push(`気質コード: ${temperament.code}`);
+  }
+  return parts.length > 0 ? parts.join('、') : '未確定';
+}
 
 // ──────────────────────────────────────────────
 // プロンプトビルダー（純関数・テスト可能）
@@ -58,7 +84,7 @@ export function buildClassFlavorPrompt(input: ClassFlavorInput): string {
     `クラス名: ${result.className}`,
     `主職掌: ${result.primaryVocation}`,
     `副職掌: ${result.subVocations.length > 0 ? result.subVocations.join(' / ') : 'なし'}`,
-    `気質: ${result.temperament ?? '未確定'}`,
+    `気質: ${describeTemperament(result.temperament)}`,
     `称号: ${result.title}`,
     `代表職掌: ${result.representativeVocation}`,
   ];

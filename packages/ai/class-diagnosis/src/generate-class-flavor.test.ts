@@ -7,6 +7,7 @@ import { classFlavorSchema } from './schema';
 import {
   buildClassFlavorSystemPrompt,
   buildClassFlavorPrompt,
+  describeTemperament,
 } from './generate-class-flavor';
 import type { ClassFlavorInput } from './schema';
 
@@ -23,8 +24,15 @@ const sampleResult: ClassResult = {
     strategist: 3,
     ranger: 20,
   },
-  temperament: 'explorer_solo',
-  temperamentBalanced: false,
+  temperament: {
+    poles: {
+      explorationDeepening: 'explorer',
+      soloCollaboration: 'solo',
+    },
+    balancedAxes: ['planningImprovisation'],
+    code: null,
+    completeness: 'partial',
+  },
   title: 'specialist',
   representativeVocation: 'vanguard',
   className: '前衛の探究者',
@@ -136,5 +144,54 @@ describe('buildClassFlavorPrompt', () => {
 
   it('does NOT include raw numeric vocationVector values (Grounding proof)', () => {
     expect(prompt).not.toContain('87.5');
+  });
+
+  it('renders temperament summary tokens, not [object Object]', () => {
+    expect(prompt).not.toContain('[object Object]');
+    expect(prompt).toContain('explorer');
+  });
+});
+
+describe('describeTemperament', () => {
+  it('returns 未確定 for null', () => {
+    expect(describeTemperament(null)).toBe('未確定');
+  });
+
+  it('returns 未確定 for completeness none', () => {
+    expect(
+      describeTemperament({
+        poles: {},
+        balancedAxes: [],
+        code: null,
+        completeness: 'none',
+      }),
+    ).toBe('未確定');
+  });
+
+  it('includes determined pole tokens and balanced axes', () => {
+    const desc = describeTemperament({
+      poles: { explorationDeepening: 'explorer', soloCollaboration: 'solo' },
+      balancedAxes: ['planningImprovisation'],
+      code: null,
+      completeness: 'partial',
+    });
+    expect(desc).toContain('explorer');
+    expect(desc).toContain('solo');
+    expect(desc).toContain('planningImprovisation');
+  });
+
+  it('includes the code when completeness is full', () => {
+    const desc = describeTemperament({
+      poles: {
+        explorationDeepening: 'explorer',
+        soloCollaboration: 'solo',
+        planningImprovisation: 'planner',
+        stabilityChallenge: 'stabilizer',
+      },
+      balancedAxes: [],
+      code: 'explorer-solo-planner-stabilizer',
+      completeness: 'full',
+    });
+    expect(desc).toContain('explorer-solo-planner-stabilizer');
   });
 });

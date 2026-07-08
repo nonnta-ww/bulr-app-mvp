@@ -61,7 +61,7 @@
   - _Boundary: class-card.tsx, vocation-radar.tsx_
   - _Depends: 1.1, 2.1_
 
-- [ ] 2.3 (P) クラスフレーバー生成（AI）の消費追従
+- [x] 2.3 (P) クラスフレーバー生成（AI）の消費追従
   - `@bulr/ai-class-diagnosis` の ClassResult 消費箇所を確認し、temperament を直接参照している箇所を新形状へ修正（className 文字列利用なら最小変更）。
   - 完了状態: `@bulr/ai-class-diagnosis` の typecheck/build が新 ClassResult で通る。
   - _Requirements: 7.1_
