@@ -30,7 +30,7 @@
 
 ## 2. Foundation: スキーマ（アンケート種別）
 
-- [ ] 2.1 アンケート種別 enum に思考スタイルを追加
+- [x] 2.1 アンケート種別 enum に思考スタイルを追加
   - `survey_kind` enum に `thinking_style` 値を追加し、drizzle migration を生成する。既存値は不変（後方互換）。マージ時の migration 番号衝突は既存運用（振り直し）で解消する。
   - 完了状態: migration 適用後、`kind='thinking_style'` を持つ survey を保存でき、既存 survey は影響を受けない。
   - _Requirements: 5.1_

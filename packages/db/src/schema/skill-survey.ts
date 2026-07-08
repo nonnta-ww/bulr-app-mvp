@@ -19,7 +19,7 @@ export const questionType = pgEnum('question_type', [
 
 export const scoreKind = pgEnum('score_kind', ['proficiency', 'recency', 'frequency', 'polarity']);
 
-export const surveyKind = pgEnum('survey_kind', ['skill', 'playstyle']);
+export const surveyKind = pgEnum('survey_kind', ['skill', 'playstyle', 'thinking_style']);
 
 // --- Tables ---
 

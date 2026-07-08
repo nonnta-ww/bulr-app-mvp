@@ -1,0 +1,1 @@
+ALTER TYPE "public"."survey_kind" ADD VALUE 'thinking_style';
