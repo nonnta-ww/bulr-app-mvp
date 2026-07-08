@@ -4,7 +4,7 @@
 
 ## 1. Foundation: 契約型と気質判定コア
 
-- [ ] 1.1 気質の契約型を4軸16型へ拡張（@bulr/types）
+- [x] 1.1 気質の契約型を4軸16型へ拡張（@bulr/types）
   - `TemperamentAxis` を4軸（探索⇔深化／個人⇔協調／計画⇔即興／堅実⇔挑戦）へ拡張し、極 union（軸ごと2値）・`TemperamentCode`（極の直積 template-literal 型で16通りを型網羅）・`TemperamentCompleteness`・`TemperamentSummary` を定義。
   - `ClassResult.temperament` を `TemperamentSummary | null` へ変更、`temperamentBalanced` を廃止（summary の `balancedAxes` へ）。旧4値は `LegacyTemperament` として legacy 正規化の入力にのみ温存。
   - 完了状態: `@bulr/types` の typecheck が通り、`TemperamentCode` が16通りを型で表現し、`ClassResult` が新 temperament 形状になる。
