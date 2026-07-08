@@ -53,7 +53,7 @@
   - _Boundary: assemble.ts, build-diagnosis.ts_
   - _Depends: 1.3, 1.4_
 
-- [ ] 2.2 クラスカード・レーダーの気質描画追従
+- [x] 2.2 クラスカード・レーダーの気質描画追従
   - クラスカードを気質 summary（極・短ラベル）から描画し、partial 時は「残り軸に回答」導線を出す。職掌レーダーの未使用 temperamentAxes prop を撤去。
   - 既存の該当コンポーネントテストを新契約へ更新。
   - 完了状態: クラスカードが新 summary で崩れず描画され、partial で残軸導線が出る。

@@ -9,8 +9,6 @@
  *  - <Tooltip> は職掌ラベルのみを見せ、数値を出さないよう formatter で空文字化する。
  * 形状（レーダーの広がり）でバランスを伝え、スコアは見せない。
  *
- * 気質2軸（temperamentAxes）は任意で受け取り、数値なしのラベル注記として下部に添える。
- *
  * このコンポーネントは 'use client' で SSR 対象外。
  * コンシューマー（diagnosis view）は dynamic(ssr:false) でインポートすること。
  *
@@ -35,18 +33,13 @@ const RADAR_COLOR = '#f28705'; // Zenith primary（オレンジ）
 
 interface VocationRadarProps {
   vocationVector: VocationVector;
-  /** 気質2軸（0..100）。null/未指定なら注記を出さない。数値は表示しない（R4.4）。 */
-  temperamentAxes?: {
-    explorationDeepening: number;
-    soloCollaboration: number;
-  } | null;
 }
 
 /**
  * 7職掌レーダー。VOCATIONS の決定論的順序で軸を並べ、ラベルは VOCATION_LABELS を用いる。
  * 数値（目盛り・ツールチップ値）は一切表示しない（R4.4）。
  */
-export function VocationRadar({ vocationVector, temperamentAxes }: VocationRadarProps) {
+export function VocationRadar({ vocationVector }: VocationRadarProps) {
   const points = VOCATIONS.map((vocation) => ({
     vocationLabel: VOCATION_LABELS[vocation],
     // レーダー形状を描くための内部値。UI 上には数値として露出しない（R4.4）。
@@ -99,14 +92,6 @@ export function VocationRadar({ vocationVector, temperamentAxes }: VocationRadar
           />
         </RadarChart>
       </ResponsiveContainer>
-
-      {/* 気質2軸の注記（数値なし, R4.4） */}
-      {temperamentAxes ? (
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
-          <span>探索 ⇔ 深化</span>
-          <span>個人 ⇔ 協調</span>
-        </div>
-      ) : null}
     </div>
   );
 }

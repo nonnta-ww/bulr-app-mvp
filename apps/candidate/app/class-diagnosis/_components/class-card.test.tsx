@@ -10,16 +10,45 @@
  *  - 隣接クラスの成長ヒント（nextStepHint 相当）が表示される（R4.3）。
  */
 
-import type { ClassResult, ClassFlavor } from '@bulr/types';
+import type {
+  ClassResult,
+  ClassFlavor,
+  TemperamentSummary,
+} from '@bulr/types';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
 import { ClassCard } from './class-card';
+import { TEMPERAMENT_ARCHETYPES } from '../../_lib/temperament/archetypes';
 
 afterEach(cleanup);
 
 // ベクトルに識別可能な数値（87.5）を含めて、DOM に漏れていないことを検査する。
 const DISTINCTIVE_SCORE = 87.5;
+
+// full 診断: 4軸すべて determined、code 確定（アーキタイプあり）。
+const FULL_TEMPERAMENT: TemperamentSummary = {
+  poles: {
+    explorationDeepening: 'deepener',
+    soloCollaboration: 'solo',
+    planningImprovisation: 'planner',
+    stabilityChallenge: 'stabilizer',
+  },
+  balancedAxes: [],
+  code: 'deepener-solo-planner-stabilizer',
+  completeness: 'full',
+};
+
+// partial 診断: 一部の軸のみ determined、code は null。
+const PARTIAL_TEMPERAMENT: TemperamentSummary = {
+  poles: {
+    explorationDeepening: 'deepener',
+    soloCollaboration: 'solo',
+  },
+  balancedAxes: [],
+  code: null,
+  completeness: 'partial',
+};
 
 function makeResult(overrides: Partial<ClassResult> = {}): ClassResult {
   return {
@@ -34,8 +63,7 @@ function makeResult(overrides: Partial<ClassResult> = {}): ClassResult {
       strategist: 2,
       ranger: 1,
     },
-    temperament: 'deepener_solo',
-    temperamentBalanced: false,
+    temperament: FULL_TEMPERAMENT,
     title: 'specialist',
     representativeVocation: 'vanguard',
     className: 'スペシャリスト・孤高の深化者な前衛',
@@ -51,18 +79,47 @@ const FULL_FLAVOR: ClassFlavor = {
 };
 
 describe('ClassCard', () => {
-  it('確定診断: className・職掌/称号/気質ラベル・フレーバー文を表示する (R4.1)', () => {
+  it('full 診断: className・職掌/称号・アーキタイプ shortLabel・フレーバー文を表示する (R4.1/7.2)', () => {
     render(<ClassCard result={makeResult()} flavor={FULL_FLAVOR} />);
 
     expect(screen.getByText('スペシャリスト・孤高の深化者な前衛')).toBeInTheDocument();
     // 主職掌ラベル（バッジ）
     expect(screen.getByTestId('class-card-vocation')).toHaveTextContent('前衛');
-    // 称号・気質のバッジラベル
+    // 称号ラベル
     expect(screen.getByText('スペシャリスト')).toBeInTheDocument();
-    expect(screen.getByText('孤高の深化者')).toBeInTheDocument();
+    // 気質バッジはアーキタイプの shortLabel を表示する（full）
+    const archetype = TEMPERAMENT_ARCHETYPES['deepener-solo-planner-stabilizer'];
+    expect(screen.getByTestId('class-card-temperament')).toHaveTextContent(
+      archetype.shortLabel,
+    );
+    // partial 注記は出ない
+    expect(screen.queryByTestId('class-card-temperament-partial-note')).toBeNull();
     // フレーバー文
     expect(screen.getByText(FULL_FLAVOR.tagline)).toBeInTheDocument();
     expect(screen.getByText(FULL_FLAVOR.description)).toBeInTheDocument();
+  });
+
+  it('partial 診断: 確定した極ラベルを表示し、タイプを捏造しない (R7.4)', () => {
+    render(
+      <ClassCard
+        result={makeResult({ temperament: PARTIAL_TEMPERAMENT })}
+        flavor={null}
+      />,
+    );
+
+    // 確定した極ラベル（探索軸=深化 / 社会軸=個人）が '・' 連結で表示される
+    const badge = screen.getByTestId('class-card-temperament');
+    expect(badge).toHaveTextContent('深化・個人');
+    // 残り設問への案内注記（R7.4）
+    expect(
+      screen.getByTestId('class-card-temperament-partial-note'),
+    ).toBeInTheDocument();
+    // full アーキタイプ（shortLabel/name）は捏造されない
+    const archetype = TEMPERAMENT_ARCHETYPES['deepener-solo-planner-stabilizer'];
+    expect(badge.textContent).not.toContain(archetype.shortLabel);
+    expect(screen.queryByText(new RegExp(archetype.name))).toBeNull();
+    // 気質未診断バッジは出ない
+    expect(screen.queryByTestId('class-card-temperament-missing')).toBeNull();
   });
 
   it('隣接クラスの成長ヒントを表示する (R4.3)', () => {
