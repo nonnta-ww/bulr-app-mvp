@@ -9,7 +9,7 @@
  *
  * 検証観点（要件マッピング）:
  *  1. 完全フロー（skill + playstyle）: 最新版が永続化され、result.vocationVector は全7職掌キー（R12/R4.1）、
- *     temperament は有効な象限（非 null）、className は非空（R4.1/R8.1）。
+ *     temperament は有効な TemperamentSummary（非 null・determined 軸の極は第2極）、className は非空（R4.1/R8.1）。
  *  2. 代表クラス（business read-only）: getRepresentativeClass は className/primaryVocation/title のみ開示（R10.1）。
  *  3. 部分状態（playstyle 未回答）: computeClassResult(..., null).temperament === null かつ vocationVector は7キー（R8.2）。
  *  4. 陳腐化 → 新版: 新 skill response 追加で signature が変化 → 別版が追記され、latest が最新版（R6.2/R6.3）。
@@ -46,13 +46,6 @@ let dbmod: DbModule;
 // drizzle クライアント（barrel 経由）・スキーマ（subpath export 経由）を動的取得する。
 let db: DbModule['db'];
 let schema: typeof import('@bulr/db/schema');
-
-const VALID_TEMPERAMENTS = new Set([
-  'explorer_solo',
-  'explorer_collab',
-  'deepener_solo',
-  'deepener_collab',
-]);
 
 /** 7職掌キー（VocationVector は全キー常在 — R12.1/R12.2）。 */
 const EXPECTED_VOCATIONS = [
@@ -285,11 +278,27 @@ describeDb('class-diagnosis クリティカルフロー統合テスト', () => {
     const vocationKeys = Object.keys(vector).sort();
     expect(vocationKeys).toEqual(EXPECTED_VOCATIONS);
 
-    // temperament は有効象限（非 null, R8.1）。
-    expect(result.temperament).not.toBeNull();
-    expect(VALID_TEMPERAMENTS.has(result.temperament as string)).toBe(true);
-    // 全設問 level 最大 → deepener_collab に決定論的に落ちる。
-    expect(result.temperament).toBe('deepener_collab');
+    // temperament は有効な TemperamentSummary（非 null, R8.1）。
+    const summary = result.temperament;
+    expect(summary).not.toBeNull();
+    // playstyle 回答あり → determined 軸が1つ以上 → completeness は partial か full。
+    expect(['partial', 'full']).toContain(summary!.completeness);
+    // 全設問 level 最大（seed 契約: 高 level = 第2極寄り）→ determined 軸は全て第2極に落ちる。
+    const SECOND_POLES = new Set([
+      'deepener',
+      'collab',
+      'improviser',
+      'challenger',
+    ]);
+    for (const pole of Object.values(summary!.poles)) {
+      expect(SECOND_POLES.has(pole as string)).toBe(true);
+    }
+    // full のときのみ code が確定する（INVARIANT: code 非null ⇔ full）。
+    if (summary!.completeness === 'full') {
+      expect(summary!.code).not.toBeNull();
+    } else {
+      expect(summary!.code).toBeNull();
+    }
 
     // className は非空。
     expect(typeof result.className).toBe('string');

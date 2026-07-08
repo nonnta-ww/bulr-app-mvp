@@ -10,41 +10,32 @@
  *
  * 契約:
  *  - 職掌ベクトル: CandidateVocationSource.categories を VocationInput へ写像（jobType 併記, task 3.1）。
- *  - 気質: playstyle 回答のカテゴリ名 → 軸（PLAYSTYLE_CATEGORY_AXIS）へ写像。seed（task 5）は
- *    「stored level が高いほど第2極寄り」に正規化済みのため reverse=false・maxLevel=4 で渡す。
- *  - playstyle 未回答（null / 空）→ 気質 null（partial 診断, R8.2）。
+ *  - 気質: playstyle 回答のカテゴリ名 → 軸（app core answers.ts の PLAYSTYLE_CATEGORY_AXIS）へ写像し
+ *    scoreTemperament（partial 対応・常に profile を返す）で採点する。standalone と同一の単一ソースを共有（R7.1）。
+ *  - playstyle 未回答（null / 空）→ profile.completeness==='none' → assembleClass が temperament=null へ（partial 診断, R8.2）。
  *  - 版署名（sourceSignature）: 寄与 skill responseId をソート後、playstyle responseId（or '-'）を付す。
  */
 
 import type {
   ClassResult,
-  TemperamentAxis,
   ClassDiagnosisSourceSnapshot,
 } from '@bulr/types';
 import type { CandidateVocationSource, SurveyResponseForAnalysis } from '@bulr/db';
 
 import { foldVocations, type VocationInput } from './vocation';
-import { scoreTemperament, type TemperamentAnswer } from './temperament';
 import { resolveTitle } from './title';
 import { assembleClass } from './assemble';
+import { mapTemperamentAnswers, PLAYSTYLE_CATEGORY_AXIS } from '../../_lib/temperament/answers';
+import { scoreTemperament } from '../../_lib/temperament/score';
+
+// 気質軸への写像（PLAYSTYLE_CATEGORY_AXIS）と回答束の写像（mapTemperamentAnswers）は
+// app core `_lib/temperament/answers.ts`（standalone と共有する単一ソース, R7.1）へ移管済み。
+// クラス診断はここから re-export して従来の公開面を保つ。
+export { mapTemperamentAnswers, PLAYSTYLE_CATEGORY_AXIS };
 
 // ---------------------------------------------------------------------------
 // 定数
 // ---------------------------------------------------------------------------
-
-/**
- * playstyle seed（task 5）のカテゴリ名 → 気質軸の対応（seed 契約）。
- * カテゴリ名は seed 側で安定キーとして固定されている（playstyle.ts のコメント参照）。
- */
-export const PLAYSTYLE_CATEGORY_AXIS: Record<string, TemperamentAxis> = {
-  探索と深化: 'explorationDeepening',
-  個人と協調: 'soloCollaboration',
-};
-
-/**
- * playstyle Likert の最大 level（0..4 の 5 段階）。seed（task 5）と一致させること。
- */
-const PLAYSTYLE_MAX_LEVEL = 4;
 
 /** playstyle 未回答時の版署名センチネル（responseId の代わり）。 */
 const PLAYSTYLE_SENTINEL = '-';
@@ -66,42 +57,6 @@ export function mapVocationInput(source: CandidateVocationSource): VocationInput
       answeredCount: c.answeredCount,
     })),
   };
-}
-
-// ---------------------------------------------------------------------------
-// 気質入力の写像
-// ---------------------------------------------------------------------------
-
-/**
- * playstyle 回答束を scoreTemperament の入力（TemperamentAnswer[]）へ写像する。
- *
- * カテゴリ名が PLAYSTYLE_CATEGORY_AXIS に解決でき、かつ selectedLevels が非空の回答のみを対象に
- * `{ axis, level: selectedLevels[0], reverse: false, maxLevel: 4 }` を emit する。
- * seed が「高 level = 第2極寄り」に正規化済みのため reverse は常に false。
- * playstyle が null / 対象回答なし → 空配列（→ scoreTemperament が null を返し partial 診断, R8.2）。
- */
-export function mapTemperamentAnswers(
-  playstyle: SurveyResponseForAnalysis | null,
-): TemperamentAnswer[] {
-  if (!playstyle) {
-    return [];
-  }
-
-  const result: TemperamentAnswer[] = [];
-  for (const category of playstyle.categories) {
-    const axis = PLAYSTYLE_CATEGORY_AXIS[category.categoryName];
-    if (!axis) {
-      continue;
-    }
-    for (const answer of category.answers) {
-      const level = answer.selectedLevels[0];
-      if (level === undefined) {
-        continue;
-      }
-      result.push({ axis, level, reverse: false, maxLevel: PLAYSTYLE_MAX_LEVEL });
-    }
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -152,19 +107,20 @@ export function buildSourceSnapshot(
 // ---------------------------------------------------------------------------
 
 /**
- * 職掌ソース + playstyle 回答から ClassResult を決定論的に組み立てる（R1.1/8.2/8.3/12.2）。
+ * 職掌ソース + playstyle 回答から ClassResult を決定論的に組み立てる（R1.1/7.2/8.2/8.3/12.2）。
  *
- * foldVocations → scoreTemperament（playstyle 未回答なら null）→ resolveTitle → assembleClass。
- * playstyle 未回答時は temperament=null の partial 診断となる（confidence は totalAnswered で決まる）。
+ * foldVocations → scoreTemperament（常に profile を返す・partial 対応）→ resolveTitle → assembleClass。
+ * playstyle 未回答時は profile.completeness==='none' となり assembleClass が temperament=null の
+ * partial 診断へ落とす（confidence は totalAnswered で決まる）。
  */
 export function computeClassResult(
   source: CandidateVocationSource,
   playstyle: SurveyResponseForAnalysis | null,
 ): ClassResult {
   const vocationResult = foldVocations(mapVocationInput(source));
-  const temperamentResult = scoreTemperament(mapTemperamentAnswers(playstyle));
+  const profile = scoreTemperament(mapTemperamentAnswers(playstyle));
   const titleResult = resolveTitle(vocationResult);
-  return assembleClass(vocationResult, temperamentResult, titleResult);
+  return assembleClass(vocationResult, profile, titleResult);
 }
 
 // ---------------------------------------------------------------------------
