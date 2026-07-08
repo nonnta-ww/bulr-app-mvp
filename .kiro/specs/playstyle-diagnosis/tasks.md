@@ -35,7 +35,7 @@
   - _Boundary: answers.ts_
   - _Depends: 1.1_
 
-- [ ] 1.5 (P) 旧4型レコードの互換正規化
+- [x] 1.5 (P) 旧4型レコードの互換正規化
   - 永続化済みの旧気質値（4象限）を、探索/深化・個人/協調の2軸のみ determined の partial summary へ写像。新 summary はそのまま（冪等）、null は null。総関数（未知値でも throw しない）。
   - 単体テスト: 旧4値→2軸 determined partial（code=null）／新 summary 冪等／null。
   - 完了状態: 旧レコードの temperament を渡しても例外なく partial summary に正規化される。
