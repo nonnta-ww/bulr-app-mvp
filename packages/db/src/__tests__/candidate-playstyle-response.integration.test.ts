@@ -147,9 +147,9 @@ describeDb('candidate-playstyle-response 統合テスト', () => {
     expect(result!.responseId).toBe(resp!.id);
     expect(result!.surveyId).toBe(psSurvey!.id);
     expect(result!.jobType).toBe('playstyle');
-    // 気質カテゴリ（探索と深化 / 個人と協調）が回答束に含まれる
+    // 気質4カテゴリ（探索と深化 / 個人と協調 / 計画と即興 / 堅実と挑戦）が回答束に含まれる
     const categoryNames = result!.categories.map((c) => c.categoryName).sort();
-    expect(categoryNames).toEqual(['個人と協調', '探索と深化'].sort());
+    expect(categoryNames).toEqual(['個人と協調', '探索と深化', '計画と即興', '堅実と挑戦'].sort());
     // 回答した設問には selectedLevels が解決されている（Likert level）
     const answered = result!.categories.flatMap((c) => c.answers).filter((a) => a.selectedLabels.length > 0);
     expect(answered.length).toBeGreaterThan(0);
