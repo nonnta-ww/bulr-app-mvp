@@ -2,3 +2,4 @@
 export * from './candidate-vocation-source';
 export * from './candidate-playstyle-response';
 export * from './class-diagnosis-query';
+export * from './get-playstyle-survey-id';
