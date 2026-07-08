@@ -22,6 +22,9 @@ const DIGIT_RE = /[0-9０-９]/;
 /** AXIS_POLES の canonical order の直積から全16 code を列挙する。 */
 function enumerateCodes(): TemperamentCode[] {
   const [a1, a2, a3, a4] = AXES;
+  if (!a1 || !a2 || !a3 || !a4) {
+    throw new Error("AXES は4軸を持つ必要があります");
+  }
   const codes: TemperamentCode[] = [];
   for (const p1 of [AXIS_POLES[a1].low, AXIS_POLES[a1].high]) {
     for (const p2 of [AXIS_POLES[a2].low, AXIS_POLES[a2].high]) {
