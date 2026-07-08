@@ -12,7 +12,7 @@
   - _Requirements: 1.1, 1.3, 1.6, 2.4_
   - _Boundary: thinking-style axes, archetypes_
 
-- [ ] 1.2 (P) 思考スタイルのスコアリング純関数（partial 対応）
+- [x] 1.2 (P) 思考スタイルのスコアリング純関数（partial 対応）
   - 回答を4軸で採点し、回答済み軸のみ determined、中点ちょうどは既定極＋balanced、充足度（none/partial/full）と full 時のみ非null の code を決定論導出。逆転設問の向きを吸収する。外部サービス（LLM 等）に依存しない。
   - 単体テスト: 空（none）／一部軸のみ（partial・未回答軸 determined=false）／4軸（full・code 非null）／中点 balanced／逆転吸収／同一入力同一出力。
   - 完了状態: 単体テストが緑で、部分回答が嘘の完全型にならず、4軸回答で16型のいずれかに確定する。
