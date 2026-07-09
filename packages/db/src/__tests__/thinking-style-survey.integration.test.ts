@@ -142,6 +142,16 @@ describeDb('thinking-style-survey seed 統合テスト', () => {
     expect([...kinds]).toEqual(['polarity']);
   });
 
+  it('設問は全て必須（isRequired=true）である (Req 5.6)', async () => {
+    const qIds = await getThinkingStyleQuestionIds();
+    expect(qIds).toHaveLength(24);
+    const qs = await db
+      .select({ isRequired: skillSurveyQuestion.isRequired })
+      .from(skillSurveyQuestion)
+      .where(inArray(skillSurveyQuestion.id, qIds));
+    expect(qs.every((q) => q.isRequired)).toBe(true);
+  });
+
   it('各設問は5択で level が 0..4 を網羅する (Req 5.3)', async () => {
     const qIds = await getThinkingStyleQuestionIds();
     for (const qId of qIds) {
