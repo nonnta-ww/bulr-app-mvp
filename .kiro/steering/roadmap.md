@@ -60,7 +60,7 @@ bulr は2フェーズで進行する。
 > 確定した12アーキタイプ: Builder / Architect / Guardian / Firefighter / Innovator / Optimizer / Researcher / Mentor / Commander / Strategist / Integrator / Craftsman。
 > 小 spec `class-catch-names`（未実装・requirements/design のみ生成）は本 Wave の `diagnosis-archetypes` に吸収・置換（`.kiro/specs/class-catch-names/SUPERSEDED.md` 参照）。
 
-- [ ] diagnosis-archetypes — 12アーキタイプ体系＋(職掌×気質)からの決定論的導出エンジン＋提示UI（ヒーロー=アーキタイプ／説明的className を副題／おまけのゲーム風異名）＋タイプ別 SVG シンボル。旧 class-catch-names を置換。まず現行データで導出可能なタイプをカバーし、未充足タイプは graceful fallback。Dependencies: none（既存 rpg-class-diagnosis 資産を再利用）
+- [x] diagnosis-archetypes — 12アーキタイプ体系＋(職掌×気質)からの決定論的導出エンジン＋提示UI（ヒーロー=アーキタイプ／説明的className を副題／おまけのゲーム風異名）＋タイプ別 SVG シンボル。旧 class-catch-names を置換。まず現行データで導出可能なタイプをカバーし、未充足タイプは graceful fallback。Dependencies: none（既存 rpg-class-diagnosis 資産を再利用）。**実装完了・PR #44 マージ済(2026-07-10)**
 - [ ] worklife-disposition-survey — 現4気質軸（探索深化/個人協調/計画即興/堅実挑戦）に無い志向信号（改善志向/障害対応/育成/調整・橋渡し/新技術採用）を測る診断。Optimizer / Firefighter / Mentor / Integrator / Innovator の判別を可能にする。Dependencies: diagnosis-archetypes
 - [ ] sage-survey — 賢者（AI/ML・データ）スキルアンケートを seed 追加。Researcher アーキタイプ＋sage 職掌を開放（JOBTYPE_DEFAULT_VOCATION に1行）。Dependencies: diagnosis-archetypes
 - [ ] pdm-strategist-survey — 策士（PdM）スキルアンケートを seed 追加。Strategist アーキタイプ＋strategist 職掌を開放。Dependencies: diagnosis-archetypes

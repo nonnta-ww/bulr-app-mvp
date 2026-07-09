@@ -1,0 +1,103 @@
+# Implementation Plan
+
+- [ ] 1. Foundation: スキーマ enum 拡張とシード共通ランナーの受け入れ拡張
+- [ ] 1.1 `survey_kind` enum への値追加と migration
+  - `packages/db/src/schema/skill-survey.ts` の `surveyKind` pgEnum に `'worklife_disposition'` を追加する（既存値 `'skill' | 'playstyle' | 'thinking_style'` は変更しない）。
+  - drizzle-kit generate で `ALTER TYPE survey_kind ADD VALUE 'worklife_disposition'` の migration を1本生成する。
+  - 観測可能な完了条件: migration 適用後、`SELECT unnest(enum_range(NULL::survey_kind))` に `worklife_disposition` が含まれる。
+  - _Requirements: 1.1, 1.7_
+- [ ] 1.2 seed 共通ランナーの kind union 拡張
+  - `packages/db/src/seeds/skill-surveys/runner.ts` の `SkillSurveySeedData['kind']` union に `'worklife_disposition'` を追加する（既存3値は変更しない、加算のみ）。
+  - 観測可能な完了条件: `runSkillSurveySeed` を `kind: 'worklife_disposition'` で呼び出す型チェックが通る。
+  - _Requirements: 1.1, 1.7_
+  - _Boundary: seeds/skill-surveys/runner.ts_
+
+- [ ] 2. Core: 志向アンケート seed データ投入
+- [ ] 2.1 志向アンケート seed データの作成
+  - `packages/db/src/seeds/skill-surveys/worklife-disposition.ts` を新設し、`jobType='worklife-disposition'`・`kind='worklife_disposition'`・5カテゴリ（改善志向／障害対応志向／育成志向／調整・橋渡し志向／新技術採用志向）× 各4問の5段階 Likert（`scoringKind='polarity'`、level 0..4、natural表現のみ）を定義する。
+  - 各カテゴリの `subcategory` を非null（`'働き方の志向'`）で設定する。
+  - `runWorklifeDispositionSkillSurveySeed(db)` をエクスポートし `runSkillSurveySeed(db, worklifeDispositionSurveySeed, { logLabel: 'worklife-disposition' })` に委譲する。
+  - `packages/db/src/seeds/index.ts` に `runWorklifeDispositionSkillSurveySeed` を登録し `main()` で呼ぶ。
+  - 観測可能な完了条件: dev DB にシード実行後、`skill_survey` に `jobType='worklife-disposition'` の行が1件存在し、5カテゴリ×4問×5選択肢が投入されている。
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
+  - _Boundary: seeds/skill-surveys/worklife-disposition.ts_
+  - _Depends: 1.1, 1.2_
+
+- [ ] 3. Core: 志向スコアリング純関数（app ローカル）
+- [ ] 3.1 (P) カテゴリ対応表と回答マッピング
+  - `apps/candidate/app/class-diagnosis/_lib/worklife-disposition/category-map.ts` に seed カテゴリ名（5件）→ `DispositionKey` の対応表を定義する。`DispositionKey` は `../archetype/dispositions` から import する（再定義しない）。
+  - `apps/candidate/app/class-diagnosis/_lib/worklife-disposition/answers.ts` に `WorklifeDispositionAnswer` 型と `mapWorklifeDispositionAnswers(response)` を実装する。`response === null` のとき空配列を返し、対応表に無いカテゴリは無視する。
+  - 観測可能な完了条件: `mapWorklifeDispositionAnswers(null)` が `[]` を返す単体テストが通る。
+  - スコアリング関連の型（`WorklifeDispositionAnswer` 等）は app ローカル（`class-diagnosis/_lib/worklife-disposition/`）に閉じ、`@bulr/types` へは追加しない（クロスパッケージ消費者なしのため）。
+  - _Requirements: 2.1, 2.6, 6.2_
+  - _Boundary: _lib/worklife-disposition/category-map.ts, _lib/worklife-disposition/answers.ts_
+- [ ] 3.2 (P) 決定論スコアリング関数
+  - `apps/candidate/app/class-diagnosis/_lib/worklife-disposition/score.ts` に `scoreWorklifeDispositions(answers: WorklifeDispositionAnswer[]): DispositionScores` を実装する。`DispositionKey`ごとに `(level/maxLevel*100)` の平均を2桁丸めで算出し、0..100にクランプする。回答の無い `DispositionKey` はキー自体を省略し、`answers=[]` のときは `{}` を返す。
+  - 副作用・乱数・日付非依存の純関数として実装する（同一入力→同一出力）。
+  - `DispositionKey`/`DispositionScores` は `../archetype/dispositions` から import するのみとし、独自に再定義しない（`diagnosis-archetypes` 所有の契約）。
+  - 観測可能な完了条件: 同一 `answers` を2回渡して同一の `DispositionScores` オブジェクト値が返ることを検証するテストが通る。
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 6.2_
+  - _Boundary: _lib/worklife-disposition/score.ts_
+- [ ] 3.3 スコアリングの単体テスト
+  - `category-map.test.ts` / `answers.test.ts` / `score.test.ts` を追加し、空配列→`{}`、未回答カテゴリのキー省略、クランプ境界（level=0→0点、level=4→100点）、決定論性を検証する。
+  - 観測可能な完了条件: `pnpm --filter candidate test` で上記3ファイルの全ケースが green。
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - _Depends: 3.1, 3.2_
+
+- [ ] 4. Core: DB query（survey id 解決・本人回答取得）
+- [ ] 4.1 (P) survey id 解決 query
+  - `packages/db/src/queries/worklife-disposition/get-worklife-disposition-survey-id.ts` に `getWorklifeDispositionSurveyId(): Promise<string | null>` を実装する（`kind='worklife_disposition'` で1件 SELECT、`thinking-style` 対応物と同型）。
+  - 観測可能な完了条件: seed 投入済み DB に対して呼び出すと該当 survey の id を返す。
+  - _Requirements: 6.1_
+  - _Boundary: queries/worklife-disposition/get-worklife-disposition-survey-id.ts_
+  - _Depends: 1.1_
+- [ ] 4.2 (P) 本人回答取得 query
+  - `packages/db/src/queries/worklife-disposition/candidate-worklife-disposition-response.ts` に `getCandidateWorklifeDispositionResponse(candidateProfileId): Promise<SurveyResponseForAnalysis | null>` を実装する。内部で survey を特定し `getLatestSurveyResponseForAnalysis(candidateProfileId, surveyId)` に委譲する（本人スコープ限定）。
+  - `packages/db/src/queries/worklife-disposition/index.ts` バレルを作成し、上位バレル（`packages/db/src/queries/index.ts` 等）から re-export する。
+  - 観測可能な完了条件: 未回答候補者に対しては `null`、回答済み候補者に対しては本人の回答のみを返す。
+  - _Requirements: 3.1, 3.5, 6.1_
+  - _Boundary: queries/worklife-disposition/candidate-worklife-disposition-response.ts_
+  - _Depends: 1.1_
+- [ ] 4.3 DB query の統合テスト
+  - `worklife-disposition-survey.integration.test.ts`（seed 投入結果の検証・冪等性）、`get-worklife-disposition-survey-id.integration.test.ts`、`candidate-worklife-disposition-response.integration.test.ts`、`worklife-disposition-list-exclusion.integration.test.ts`（`getAnsweredSurveysForCandidate` 一覧から除外されることの確認）を追加する。
+  - `fileParallelism:false` かつクリーン DB 前提で実行する（既存 DB テスト運用に準拠）。
+  - 観測可能な完了条件: `packages/db` の統合テストスイートが `--concurrency=1` で green。
+  - _Requirements: 1.1, 1.5, 1.6, 3.1, 3.5, 6.1, 6.3, 6.4_
+  - _Depends: 2.1, 4.1, 4.2_
+
+- [ ] 5. Integration: class-diagnosis への配線
+- [ ] 5.1 page.tsx での取得・ライブスコアリング
+  - `apps/candidate/app/class-diagnosis/page.tsx` で `getCandidateWorklifeDispositionResponse(candidateProfileId)` を既存の `Promise.all` 並列取得に追加する。
+  - 取得した response を `mapWorklifeDispositionAnswers` → `scoreWorklifeDispositions` に通し `DispositionScores` を算出する。
+  - 算出した `dispositions` を `ClassDiagnosisView` へ新規 props として渡す。
+  - 観測可能な完了条件: 志向アンケート未回答の候補者でページを開いても例外なくレンダリングされ、`dispositions` は空オブジェクトとして渡る。
+  - _Requirements: 3.1, 3.2, 4.1, 4.2, 4.3_
+  - _Boundary: class-diagnosis/page.tsx_
+  - _Depends: 3.2, 4.2_
+- [ ] 5.2 ClassDiagnosisView・ClassCard・SharePanel への props 中継
+  - `class-diagnosis-view.tsx` に `dispositions: DispositionScores` props（既定 `{}`）を追加し、`ClassCard`/`SharePanel` へそのまま中継する。
+  - `class-card.tsx` に `dispositions` props を追加し、`resolveArchetype(result)` の呼び出しを `resolveArchetype(result, dispositions)` に変更する。
+  - `share-panel.tsx` に `dispositions` props を追加し、`toShareText(result)` を `toShareText(result, dispositions)` に変更、内部の `resolveArchetype` 呼び出しへ伝播する。
+  - 観測可能な完了条件: `dispositions` を省略（未指定）してレンダリングした既存テストが引き続き green（回帰なし）。
+  - _Requirements: 3.2, 3.3, 3.4, 5.1, 5.2, 5.3_
+  - _Boundary: class-diagnosis-view.tsx, class-card.tsx, share-panel.tsx_
+  - _Depends: 5.1_
+- [ ] 5.3 既存状態分岐の非干渉確認
+  - `class-diagnosis-flow.test.ts` に、志向アンケート未回答時でも既存の状態分岐（NoVocation/Empty/PartialNoTemperament/Complete/VizOnly/Stale）の判定条件（`hasSkill`/`hasPlaystyle`/`isStale`）が変化しないことを確認するケースを追加する。
+  - 観測可能な完了条件: 既存フローテストが全て green のまま、志向アンケート有無をパラメータ化したケースが追加されている。
+  - _Requirements: 4.4_
+  - _Depends: 5.1_
+
+- [ ] 6. Validation: UI 回帰・統合的な弁別力の検証
+- [ ] 6.1 (P) ClassCard/SharePanel のコンポーネントテスト更新
+  - `class-card.test.tsx` に、`dispositions` を強く与えたケースで Optimizer/Firefighter/Mentor/Integrator のいずれかへ表示アーキタイプが変化することを検証するケースを追加する。
+  - `share-panel.test.tsx` に、`dispositions` 指定時に共有テキストのアーキタイプ名部分が変化すること、および共有テキストに回答ラベル・数値・志向名そのものが含まれないことを検証するケースを追加する。
+  - 観測可能な完了条件: 両テストファイルが `dispositions` あり/なしの双方のケースを含めて green。
+  - _Requirements: 3.3, 5.1, 5.2, 5.3_
+  - _Boundary: class-card.test.tsx, share-panel.test.tsx_
+  - _Depends: 5.2_
+- [ ]* 6.2 志向スコア→アーキタイプ変化のエンドツーエンド確認
+  - 5志向すべてに満点回答したケース・すべて未回答のケースで `class-diagnosis` ページ全体（page.tsx→view→card）を通した結果に数値スコアが一切露出しないことを確認する回帰テストを追加する。
+  - 観測可能な完了条件: 数値・偏差値・順位を含む文字列が描画結果に含まれないことをアサートするテストが green。
+  - _Requirements: 5.1, 5.2_
+  - _Depends: 6.1_
