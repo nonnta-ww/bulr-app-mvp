@@ -61,7 +61,12 @@ const REVERSE_LIKERT: Array<{ text: string; displayOrder: number; level: number 
 
 type Orientation = 'natural' | 'reverse';
 
-/** 5 段階 Likert 設問を組み立てるヘルパ（single_choice / polarity 固定）。 */
+/**
+ * 5 段階 Likert 設問を組み立てるヘルパ（single_choice / polarity 固定）。
+ * 全設問 `isRequired: true`（必須）。診断は全4軸の回答で確定タイプを返す前提のため、
+ * 送信時に全問回答をサーバ検証で強制する。新規回答の充足度は full か none のみとなる。
+ * partial は既存 class_diagnosis の旧2軸レコード（legacy 正規化）互換のために温存する。
+ */
 function likertQuestion(
   text: string,
   displayOrder: number,
@@ -71,6 +76,7 @@ function likertQuestion(
     text,
     questionType: 'single_choice',
     scoringKind: 'polarity',
+    isRequired: true,
     displayOrder,
     choices: orientation === 'natural' ? NATURAL_LIKERT : REVERSE_LIKERT,
   };
