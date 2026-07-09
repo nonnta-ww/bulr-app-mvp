@@ -20,6 +20,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 
 import { ClassCard } from './class-card';
 import { TEMPERAMENT_ARCHETYPES } from '../../_lib/temperament/archetypes';
+import { ARCHETYPES } from '../_lib/archetype/definitions';
+import { resolveArchetype } from '../_lib/archetype/resolve';
 
 afterEach(cleanup);
 
@@ -166,5 +168,35 @@ describe('ClassCard', () => {
     // 識別可能なベクトル値が DOM に現れない
     expect(container.textContent).not.toContain(String(DISTINCTIVE_SCORE));
     expect(container.textContent).not.toContain('42');
+  });
+});
+
+describe('ClassCard — アーキタイプ主役 (spec: diagnosis-archetypes)', () => {
+  it('ヒーロー=アーキタイプ名＋一行説明＋シンボル、副題=className を表示する (R4.1/4.2/4.3/6.2)', () => {
+    const result = makeResult();
+    const expected = ARCHETYPES[resolveArchetype(result)];
+
+    const { container } = render(<ClassCard result={result} flavor={FULL_FLAVOR} />);
+
+    // ヒーロー: 導出されたアーキタイプ名と一行説明
+    expect(screen.getByTestId('class-card-archetype-name')).toHaveTextContent(expected.name);
+    expect(screen.getByTestId('class-card-archetype-tagline')).toHaveTextContent(expected.tagline);
+    // シンボル（自己完結 SVG, role=img）
+    expect(container.querySelector('svg[role="img"]')).not.toBeNull();
+    // 従来の説明的クラス名は副題として残る
+    expect(screen.getByTestId('class-card-classname')).toHaveTextContent(result.className);
+  });
+
+  it('ゲーム風異名をおまけ（従属）として表示する (R5.2)', () => {
+    const result = makeResult();
+    const expected = ARCHETYPES[resolveArchetype(result)];
+    render(<ClassCard result={result} flavor={FULL_FLAVOR} />);
+    expect(screen.getByTestId('class-card-game-alias')).toHaveTextContent(expected.gameAlias);
+  });
+
+  it('称号ラベルを併記する (R4.4)', () => {
+    render(<ClassCard result={makeResult()} flavor={FULL_FLAVOR} />);
+    // title='specialist' → 「スペシャリスト」バッジ
+    expect(screen.getByText('スペシャリスト')).toBeInTheDocument();
   });
 });

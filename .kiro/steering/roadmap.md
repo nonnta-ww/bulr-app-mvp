@@ -4,6 +4,7 @@
 > このファイルは `/kiro-spec-batch` が読む dependency-order list として機能する。
 >
 > **更新 2026-05-23**: Stage 1 MVP（7 spec）完了。Stage 2 再設計（候補者/企業/運営の3アプリ化）を追加。Stage 2 の詳細設計は `docs/superpowers/specs/2026-05-23-bulr-candidate-business-split-design.md` を参照。
+> **更新 2026-07-09**: Wave 8「診断アーキタイプ体系」を追加（診断ファミリー rpg-class-diagnosis / thinking-style-diagnosis / playstyle-diagnosis の再設計）。小 spec `class-catch-names` は `diagnosis-archetypes` に吸収・置換（superseded）。
 
 ## Overview
 
@@ -51,6 +52,18 @@ bulr は2フェーズで進行する。
 > Wave 7 着手前の MVP は tag `v0-mvp` / branch `legacy/mvp-v0` として保存（フォークはしない）。経緯と方針は `docs/superpowers/specs/2026-06-11-wave7-inplace-evolution-and-mvp-snapshot.md` を参照。
 
 - [ ] realtime-interview-capture — ミーティングボット（Zoom / Meet / Teams 自動参加、対面はブラウザ連続録音）＋リアルタイム文字起こし・話者分離＋操作不要サイドパネル（カバレッジ進捗＋質問候補 3 件の自動更新）。状態A/B ターン録音 UI を廃止し、評価パイプライン（5次元・pattern_coverage・session_report）の入力をライブトランスクリプトに差し替える。Dependencies: session-from-entry
+
+### Wave 8 — 診断アーキタイプ体系（RPGクラス診断の再設計）
+
+既存の診断ファミリー（rpg-class-diagnosis / thinking-style-diagnosis / playstyle-diagnosis）を、現実の開発チームで「あの人こういう人だよね」と通じる **12のプロ・アーキタイプ** へ再設計する。決め手＝(1)性別中立、(2)現実の開発チームで普段使いできる認識可能なタイプ、(3)おまけの「ゲームに例えるなら」異名、(4)タイプごとの SVG シンボル。既存の(職掌 vocation vector × 気質 temperament)スコアリングを再利用し、そこから決定論的にアーキタイプを導出する。北極星（12タイプ）から逆算でアンケートを拡充する。詳細は各 brief.md 参照。
+
+> 確定した12アーキタイプ: Builder / Architect / Guardian / Firefighter / Innovator / Optimizer / Researcher / Mentor / Commander / Strategist / Integrator / Craftsman。
+> 小 spec `class-catch-names`（未実装・requirements/design のみ生成）は本 Wave の `diagnosis-archetypes` に吸収・置換（`.kiro/specs/class-catch-names/SUPERSEDED.md` 参照）。
+
+- [ ] diagnosis-archetypes — 12アーキタイプ体系＋(職掌×気質)からの決定論的導出エンジン＋提示UI（ヒーロー=アーキタイプ／説明的className を副題／おまけのゲーム風異名）＋タイプ別 SVG シンボル。旧 class-catch-names を置換。まず現行データで導出可能なタイプをカバーし、未充足タイプは graceful fallback。Dependencies: none（既存 rpg-class-diagnosis 資産を再利用）
+- [ ] worklife-disposition-survey — 現4気質軸（探索深化/個人協調/計画即興/堅実挑戦）に無い志向信号（改善志向/障害対応/育成/調整・橋渡し/新技術採用）を測る診断。Optimizer / Firefighter / Mentor / Integrator / Innovator の判別を可能にする。Dependencies: diagnosis-archetypes
+- [ ] sage-survey — 賢者（AI/ML・データ）スキルアンケートを seed 追加。Researcher アーキタイプ＋sage 職掌を開放（JOBTYPE_DEFAULT_VOCATION に1行）。Dependencies: diagnosis-archetypes
+- [ ] pdm-strategist-survey — 策士（PdM）スキルアンケートを seed 追加。Strategist アーキタイプ＋strategist 職掌を開放。Dependencies: diagnosis-archetypes
 
 ### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
 
