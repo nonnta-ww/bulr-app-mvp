@@ -21,6 +21,14 @@ import {
  * このリストのすべてのペアが非空の職掌重みに解決されることをアフィニティ網羅テストで保証する。
  */
 const SEEDED_JOBTYPE_CATEGORIES: Record<string, readonly string[]> = {
+  "ai-ml": [
+    "機械学習基礎",
+    "モデル開発・評価",
+    "データエンジニアリング",
+    "推薦・検索",
+    "MLOps",
+    "分析・可視化",
+  ],
   "ai-driven-development": [
     "AI支援開発ツール",
     "開発スタイル・ワークフロー",
@@ -87,6 +95,7 @@ const EXPECTED_JOBTYPE_DEFAULT: Record<string, Vocation> = {
   "infrastructure-sre": "guardian",
   "engineering-manager": "commander",
   "ai-driven-development": "ranger",
+  "ai-ml": "sage",
 };
 
 const sumWeights = (w: Partial<Record<Vocation, number>>): number =>
@@ -127,15 +136,18 @@ describe("TITLES ラベル", () => {
 });
 
 describe("JOBTYPE_DEFAULT_VOCATION", () => {
-  it("seed 済み5職種を既定職掌へマップする", () => {
+  it("seed 済み6職種を既定職掌へマップする", () => {
     for (const [jobType, vocation] of Object.entries(EXPECTED_JOBTYPE_DEFAULT)) {
       expect(JOBTYPE_DEFAULT_VOCATION[jobType]).toBe(vocation);
     }
   });
 
-  it("sage/strategist に対応する jobType は存在しない（非活性枠）", () => {
+  it("sage は ai-ml で開放済み・strategist は依然非活性枠", () => {
+    // sage は sage-survey spec で `ai-ml` → 'sage' として開放された。
+    expect(JOBTYPE_DEFAULT_VOCATION["ai-ml"]).toBe("sage");
     const mappedVocations = Object.values(JOBTYPE_DEFAULT_VOCATION);
-    expect(mappedVocations).not.toContain("sage");
+    expect(mappedVocations).toContain("sage");
+    // strategist は対応 survey 未整備のため依然どの jobType にもマップされない。
     expect(mappedVocations).not.toContain("strategist");
   });
 });
@@ -198,6 +210,30 @@ describe("resolveCategoryVocationWeights — アフィニティ網羅", () => {
     expect(weights).toEqual({ rearguard: 0.5, guardian: 0.5 });
   });
 
+  it("ai-ml 追加後も既存 jobType の解決結果が不変である（非回帰）", () => {
+    // 新しい jobType キーの追加は純粋なキー参照である resolver の
+    // 既存 jobType 解決に影響しない。代表点で明示的に確認する。
+    expect(resolveCategoryVocationWeights("frontend", "HTML・CSS")).toEqual({
+      vanguard: 1,
+    });
+    expect(resolveCategoryVocationWeights("backend", "データベース")).toEqual({
+      rearguard: 1,
+    });
+    expect(
+      resolveCategoryVocationWeights("infrastructure-sre", "ネットワーク"),
+    ).toEqual({ guardian: 1 });
+    expect(
+      resolveCategoryVocationWeights("engineering-manager", "採用・チーム組成"),
+    ).toEqual({ commander: 1 });
+    expect(
+      resolveCategoryVocationWeights("ai-driven-development", "テクニック"),
+    ).toEqual({ ranger: 1 });
+    // 明示 affinity（横断カテゴリ）も不変。
+    expect(
+      resolveCategoryVocationWeights("frontend", "バックエンド連携"),
+    ).toEqual({ vanguard: 0.6, rearguard: 0.4 });
+  });
+
   it("重みは 0..1 の範囲に収まる", () => {
     for (const entry of Object.values(CATEGORY_AFFINITY)) {
       for (const w of Object.values(entry)) {
@@ -208,8 +244,8 @@ describe("resolveCategoryVocationWeights — アフィニティ網羅", () => {
   });
 });
 
-describe("sage / strategist は非活性枠", () => {
-  it("VOCATIONS には含まれるが、どの現行 resolver 出力にも現れない", () => {
+describe("sage は開放済み / strategist は非活性枠", () => {
+  it("sage は ai-ml survey の resolver 出力に現れ、strategist は現れない", () => {
     expect(VOCATIONS).toContain("sage");
     expect(VOCATIONS).toContain("strategist");
 
@@ -225,8 +261,18 @@ describe("sage / strategist は非活性枠", () => {
         }
       }
     }
-    expect(produced.has("sage")).toBe(false);
+    // sage は ai-ml（AI/ML・データ）survey の全カテゴリが解決する（sage-survey spec）。
+    expect(produced.has("sage")).toBe(true);
+    // strategist は依然どの seed 済み jobType からも解決されない（非活性枠）。
     expect(produced.has("strategist")).toBe(false);
+  });
+
+  it("ai-ml の各カテゴリは { sage: 1 } に解決される", () => {
+    for (const category of SEEDED_JOBTYPE_CATEGORIES["ai-ml"] ?? []) {
+      expect(resolveCategoryVocationWeights("ai-ml", category)).toEqual({
+        sage: 1,
+      });
+    }
   });
 });
 
