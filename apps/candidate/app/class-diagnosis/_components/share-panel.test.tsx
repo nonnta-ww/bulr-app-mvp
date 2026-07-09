@@ -15,6 +15,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 import { SharePanel, toShareText } from './share-panel';
 import { TITLE_LABELS } from '../_lib/definitions';
+import { ARCHETYPES } from '../_lib/archetype/definitions';
+import { resolveArchetype } from '../_lib/archetype/resolve';
 
 afterEach(() => {
   cleanup();
@@ -62,6 +64,19 @@ describe('toShareText', () => {
     const result = makeResult();
     const text = toShareText(result);
 
+    expect(text).toContain(result.className);
+    expect(text).toContain(TITLE_LABELS[result.title]);
+  });
+
+  it('先頭に主アーキタイプ名を含み、クラス名・称号を補助的に残す (R7.1/7.2)', () => {
+    const result = makeResult();
+    const expected = ARCHETYPES[resolveArchetype(result)];
+    const text = toShareText(result);
+    const firstLine = text.split('\n')[0];
+
+    // 先頭行にアーキタイプ名（R7.1）
+    expect(firstLine).toContain(expected.name);
+    // クラス名・称号は補助行として保持（R7.2）
     expect(text).toContain(result.className);
     expect(text).toContain(TITLE_LABELS[result.title]);
   });

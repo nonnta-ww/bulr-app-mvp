@@ -26,6 +26,9 @@ import type { ClassResult, ClassFlavor, TemperamentSummary } from '@bulr/types';
 import { TEMPERAMENT_ARCHETYPES } from '../../_lib/temperament/archetypes';
 import { AXES, POLE_LABELS } from '../../_lib/temperament/axes';
 import { VOCATION_LABELS, TITLE_LABELS } from '../_lib/definitions';
+import { ARCHETYPES } from '../_lib/archetype/definitions';
+import { resolveArchetype } from '../_lib/archetype/resolve';
+import { ArchetypeSymbol } from './archetype-symbol';
 
 interface ClassCardProps {
   result: ClassResult;
@@ -86,6 +89,9 @@ function buildTemplateFlavor(result: ClassResult): ClassFlavor {
 export function ClassCard({ result, flavor }: ClassCardProps) {
   const effectiveFlavor = flavor ?? buildTemplateFlavor(result);
 
+  // 主役アーキタイプを既存フィールドから決定論的に導出（spec: diagnosis-archetypes, R2/R4）。
+  const archetype = ARCHETYPES[resolveArchetype(result)];
+
   const primaryLabel = VOCATION_LABELS[result.primaryVocation];
   const titleLabel = TITLE_LABELS[result.title];
   const subLabels = result.subVocations.map((v) => VOCATION_LABELS[v]);
@@ -106,8 +112,29 @@ export function ClassCard({ result, flavor }: ClassCardProps) {
       aria-label="クラス診断カード"
       data-testid="class-card"
     >
-      {/* クラス名（最も目立たせる） */}
-      <h2 className="text-2xl font-bold text-gray-900">{result.className}</h2>
+      {/* 主役: アーキタイプ（シンボル＋名称＋一行説明） */}
+      <div className="flex items-center gap-4">
+        <ArchetypeSymbol id={archetype.id} size={64} className="shrink-0" />
+        <div className="min-w-0">
+          <h2
+            className="text-2xl font-bold text-gray-900"
+            data-testid="class-card-archetype-name"
+          >
+            {archetype.name}
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-700" data-testid="class-card-archetype-tagline">
+            {archetype.tagline}
+          </p>
+        </div>
+      </div>
+
+      {/* 従来の説明的クラス名（副題）＋ おまけのゲーム風異名 */}
+      <p className="mt-2 text-xs text-muted">
+        <span data-testid="class-card-classname">{result.className}</span>
+        <span className="ml-2" data-testid="class-card-game-alias">
+          ／ ゲームに例えるなら「{archetype.gameAlias}」
+        </span>
+      </p>
 
       {/* 職掌・称号・気質のバッジ列 */}
       <div className="mt-3 flex flex-wrap items-center gap-2">

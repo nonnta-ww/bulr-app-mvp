@@ -23,7 +23,9 @@ import { useCallback, useState } from 'react';
 
 import type { ClassResult } from '@bulr/types';
 
-import { TITLE_LABELS, VOCATION_LABELS } from '../_lib/definitions';
+import { TITLE_LABELS } from '../_lib/definitions';
+import { ARCHETYPES } from '../_lib/archetype/definitions';
+import { resolveArchetype } from '../_lib/archetype/resolve';
 
 /** 共有テキストに付ける固定ブラーブ（PII・数値なし）。 */
 const SHARE_HASHTAG = '#Webエンジニアクラス診断';
@@ -36,11 +38,12 @@ const SHARE_BLURB = 'あなたのWebエンジニアとしてのクラスは？';
  */
 export function toShareText(result: ClassResult): string {
   const titleLabel = TITLE_LABELS[result.title];
-  const vocationLabel = VOCATION_LABELS[result.primaryVocation];
+  // 主役アーキタイプを既存フィールドから導出（spec: diagnosis-archetypes, R7）。
+  const archetype = ARCHETYPES[resolveArchetype(result)];
 
   return [
-    `私のクラスは「${result.className}」でした。`,
-    `称号: ${titleLabel} / 職掌: ${vocationLabel}`,
+    `私のタイプは「${archetype.name}」！`,
+    `（${result.className} / 称号: ${titleLabel}）`,
     SHARE_BLURB,
     SHARE_HASHTAG,
   ].join('\n');
