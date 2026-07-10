@@ -5,6 +5,7 @@
 >
 > **更新 2026-05-23**: Stage 1 MVP（7 spec）完了。Stage 2 再設計（候補者/企業/運営の3アプリ化）を追加。Stage 2 の詳細設計は `docs/superpowers/specs/2026-05-23-bulr-candidate-business-split-design.md` を参照。
 > **更新 2026-07-09**: Wave 8「診断アーキタイプ体系」を追加（診断ファミリー rpg-class-diagnosis / thinking-style-diagnosis / playstyle-diagnosis の再設計）。小 spec `class-catch-names` は `diagnosis-archetypes` に吸収・置換（superseded）。
+> **更新 2026-07-10**: Wave 8 完全クローズ。diagnosis-archetypes(PR#44) + survey 3本（sage PR#46 / pdm-strategist PR#47 / worklife-disposition PR#48）を全マージ。全7職掌が活性化し、全12アーキタイプが到達可能に。計画済み Wave 1〜8 は実質すべて実装完了。
 
 ## Overview
 
@@ -61,9 +62,9 @@ bulr は2フェーズで進行する。
 > 小 spec `class-catch-names`（未実装・requirements/design のみ生成）は本 Wave の `diagnosis-archetypes` に吸収・置換（`.kiro/specs/class-catch-names/SUPERSEDED.md` 参照）。
 
 - [x] diagnosis-archetypes — 12アーキタイプ体系＋(職掌×気質)からの決定論的導出エンジン＋提示UI（ヒーロー=アーキタイプ／説明的className を副題／おまけのゲーム風異名）＋タイプ別 SVG シンボル。旧 class-catch-names を置換。まず現行データで導出可能なタイプをカバーし、未充足タイプは graceful fallback。Dependencies: none（既存 rpg-class-diagnosis 資産を再利用）。**実装完了・PR #44 マージ済(2026-07-10)**
-- [ ] worklife-disposition-survey — 現4気質軸（探索深化/個人協調/計画即興/堅実挑戦）に無い志向信号（改善志向/障害対応/育成/調整・橋渡し/新技術採用）を測る診断。Optimizer / Firefighter / Mentor / Integrator / Innovator の判別を可能にする。Dependencies: diagnosis-archetypes
-- [ ] sage-survey — 賢者（AI/ML・データ）スキルアンケートを seed 追加。Researcher アーキタイプ＋sage 職掌を開放（JOBTYPE_DEFAULT_VOCATION に1行）。Dependencies: diagnosis-archetypes
-- [ ] pdm-strategist-survey — 策士（PdM）スキルアンケートを seed 追加。Strategist アーキタイプ＋strategist 職掌を開放。Dependencies: diagnosis-archetypes
+- [x] worklife-disposition-survey — 現4気質軸（探索深化/個人協調/計画即興/堅実挑戦）に無い志向信号（改善志向/障害対応/育成/調整・橋渡し/新技術採用）を測る診断。Optimizer / Firefighter / Mentor / Integrator / Innovator の判別を可能にする。Dependencies: diagnosis-archetypes。**実装完了・PR #48 マージ済(2026-07-10)**（survey_kind enum 加算 migration 0022＋polarity Likert seed＋app-local 決定論スコアリング＋class-diagnosis 配線。resolve/signature 無改修）
+- [x] sage-survey — 賢者（AI/ML・データ）スキルアンケートを seed 追加。Researcher アーキタイプ＋sage 職掌を開放（JOBTYPE_DEFAULT_VOCATION に1行）。Dependencies: diagnosis-archetypes。**実装完了・PR #46 マージ済(2026-07-10)**（jobType=ai-ml, 6カテゴリ seed＋ai-ml→sage マッピング）
+- [x] pdm-strategist-survey — 策士（PdM）スキルアンケートを seed 追加。Strategist アーキタイプ＋strategist 職掌を開放。Dependencies: diagnosis-archetypes。**実装完了・PR #47 マージ済(2026-07-10)**（jobType=product-manager, 8コンピテンシー seed＋product-manager→strategist マッピング。EM と職能境界分離）
 
 ### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
 
