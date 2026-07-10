@@ -52,7 +52,7 @@ bulr は2フェーズで進行する。
 
 > Wave 7 着手前の MVP は tag `v0-mvp` / branch `legacy/mvp-v0` として保存（フォークはしない）。経緯と方針は `docs/superpowers/specs/2026-06-11-wave7-inplace-evolution-and-mvp-snapshot.md` を参照。
 
-- [ ] realtime-interview-capture — ミーティングボット（Zoom / Meet / Teams 自動参加、対面はブラウザ連続録音）＋リアルタイム文字起こし・話者分離＋操作不要サイドパネル（カバレッジ進捗＋質問候補 3 件の自動更新）。状態A/B ターン録音 UI を廃止し、評価パイプライン（5次元・pattern_coverage・session_report）の入力をライブトランスクリプトに差し替える。Dependencies: session-from-entry
+- [x] realtime-interview-capture — ミーティングボット（Zoom / Meet / Teams 自動参加、対面はブラウザ連続録音）＋リアルタイム文字起こし・話者分離＋操作不要サイドパネル（カバレッジ進捗＋質問候補 3 件の自動更新）。状態A/B ターン録音 UI を廃止し、評価パイプライン（5次元・pattern_coverage・session_report）の入力をライブトランスクリプトに差し替える。Dependencies: session-from-entry。**実装完了（コード完成・PR #8〜#31 マージ済, spec phase=implemented）**。監査(2026-07-10): 全29サブタスク実コード裏付け・関連390テスト全pass・旧状態A/B UI 完全削除。**Stage 1 本番投入前の前提条件**: (1) Recall.ai 実キー接続（`RECALL_API_KEY`/`RECALL_WEBHOOK_SECRET` は現在プレースホルダ＝env待ち）、(2) 実面接での遅延実測（task 8.3 research.md を実値更新）。既知の別 spec 判断: Req1.6 の consent ゲートは `consent_obtained_at` 既定値により実質 vacuous（明示同意モデル化は別 spec）。
 
 ### Wave 8 — 診断アーキタイプ体系（RPGクラス診断の再設計）
 
