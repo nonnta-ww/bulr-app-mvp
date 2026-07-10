@@ -17,6 +17,7 @@ import { SharePanel, toShareText } from './share-panel';
 import { TITLE_LABELS } from '../_lib/definitions';
 import { ARCHETYPES } from '../_lib/archetype/definitions';
 import { resolveArchetype } from '../_lib/archetype/resolve';
+import type { DispositionScores } from '../_lib/archetype/dispositions';
 
 afterEach(() => {
   cleanup();
@@ -91,6 +92,39 @@ describe('toShareText', () => {
     expect(text).not.toContain(String(DISTINCTIVE_SCORE));
     // 一切の数字を含めない（R5.2 の厳格運用）。
     expect(text).not.toMatch(/\d/);
+  });
+
+  it('dispositions を強く与えると共有テキストのアーキタイプ名が変化する (R3.3)', () => {
+    const result = makeResult();
+    const baseFirstLine = toShareText(result).split('\n')[0];
+
+    const strong: DispositionScores = { improvement: 100 };
+    const withDisp = ARCHETYPES[resolveArchetype(result, strong)];
+    const withFirstLine = toShareText(result, strong).split('\n')[0];
+
+    // 先頭行のアーキタイプ名が変化し、変化先の名称を含む。
+    expect(withFirstLine).not.toBe(baseFirstLine);
+    expect(withFirstLine).toContain(withDisp.name);
+  });
+
+  it('dispositions 指定時も回答ラベル・数値・志向名そのものを含めない (R5.1/5.2/5.3)', () => {
+    const result = makeResult();
+    const text = toShareText(result, {
+      improvement: 100,
+      incident: 50,
+      mentoring: 25,
+    });
+
+    // 数値・回答ラベルは含めない。
+    expect(text).not.toMatch(/\d/);
+    expect(text).not.toContain(DISTINCTIVE_ANSWER);
+    // 志向名そのもの（カテゴリ名・DispositionKey）は共有テキストに露出させない。
+    for (const name of ['改善志向', '障害対応志向', '育成志向', '調整・橋渡し志向', '新技術採用志向']) {
+      expect(text).not.toContain(name);
+    }
+    for (const key of ['improvement', 'incident', 'mentoring', 'coordination', 'newTech']) {
+      expect(text).not.toContain(key);
+    }
   });
 });
 

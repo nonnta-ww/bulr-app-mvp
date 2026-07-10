@@ -28,11 +28,17 @@ import { AXES, POLE_LABELS } from '../../_lib/temperament/axes';
 import { VOCATION_LABELS, TITLE_LABELS } from '../_lib/definitions';
 import { ARCHETYPES } from '../_lib/archetype/definitions';
 import { resolveArchetype } from '../_lib/archetype/resolve';
+import type { DispositionScores } from '../_lib/archetype/dispositions';
 import { ArchetypeSymbol } from './archetype-symbol';
 
 interface ClassCardProps {
   result: ClassResult;
   flavor: ClassFlavor | null;
+  /**
+   * 働き方の志向スコア（worklife-disposition-survey が供給）。既定 `{}`。
+   * Optimizer / Firefighter / Mentor / Integrator / Innovator の判別に用いる。
+   */
+  dispositions?: DispositionScores;
 }
 
 /**
@@ -86,11 +92,11 @@ function buildTemplateFlavor(result: ClassResult): ClassFlavor {
 /**
  * クラスカード。flavor の有無に関わらず常に完全描画する（R7.3）。
  */
-export function ClassCard({ result, flavor }: ClassCardProps) {
+export function ClassCard({ result, flavor, dispositions = {} }: ClassCardProps) {
   const effectiveFlavor = flavor ?? buildTemplateFlavor(result);
 
-  // 主役アーキタイプを既存フィールドから決定論的に導出（spec: diagnosis-archetypes, R2/R4）。
-  const archetype = ARCHETYPES[resolveArchetype(result)];
+  // 主役アーキタイプを既存フィールド＋志向スコアから決定論的に導出（spec: diagnosis-archetypes, R2/R4）。
+  const archetype = ARCHETYPES[resolveArchetype(result, dispositions)];
 
   const primaryLabel = VOCATION_LABELS[result.primaryVocation];
   const titleLabel = TITLE_LABELS[result.title];

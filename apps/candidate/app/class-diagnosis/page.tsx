@@ -27,6 +27,7 @@ import {
   getCandidateVocationSource,
   getCandidatePlaystyleResponse,
   getPlaystyleSurveyId,
+  getCandidateWorklifeDispositionResponse,
 } from '@bulr/db';
 
 import { ClassDiagnosisView } from './_components/class-diagnosis-view';
@@ -34,6 +35,8 @@ import { buildSourceSignature } from './_lib/build-diagnosis';
 import { mapTemperamentAnswers } from '../_lib/temperament/answers';
 import { scoreTemperament } from '../_lib/temperament/score';
 import { normalizeClassResultTemperament } from '../_lib/temperament/legacy';
+import { mapWorklifeDispositionAnswers } from './_lib/worklife-disposition/answers';
+import { scoreWorklifeDispositions } from './_lib/worklife-disposition/score';
 
 export default async function ClassDiagnosisPage() {
   // ── アクセス制御 ──（Req 11.1）
@@ -49,13 +52,15 @@ export default async function ClassDiagnosisPage() {
     throw err;
   }
 
-  // ── 本人所有スコープでレコード・診断入力 + playstyle アンケート id を取得 ──
-  const [record, source, playstyle, playstyleSurveyId] = await Promise.all([
-    getLatestClassDiagnosis(candidateProfileId),
-    getCandidateVocationSource(candidateProfileId),
-    getCandidatePlaystyleResponse(candidateProfileId),
-    getPlaystyleSurveyId(),
-  ]);
+  // ── 本人所有スコープでレコード・診断入力 + playstyle/志向 アンケートを取得 ──
+  const [record, source, playstyle, playstyleSurveyId, worklifeResponse] =
+    await Promise.all([
+      getLatestClassDiagnosis(candidateProfileId),
+      getCandidateVocationSource(candidateProfileId),
+      getCandidatePlaystyleResponse(candidateProfileId),
+      getPlaystyleSurveyId(),
+      getCandidateWorklifeDispositionResponse(candidateProfileId),
+    ]);
 
   // ── フラグ算出 ──
   const hasSkill = source.surveys.length > 0;
@@ -67,6 +72,11 @@ export default async function ClassDiagnosisPage() {
 
   // playstyle 回答をライブ算出（気質のみ回答者への気質結果提示に用いる, Req 6.2）。
   const playstyleProfile = scoreTemperament(mapTemperamentAnswers(playstyle));
+
+  // 働き方の志向をライブ算出（未回答時は {} で既存挙動と一致, worklife-disposition-survey R3.1/4.1）。
+  const dispositions = scoreWorklifeDispositions(
+    mapWorklifeDispositionAnswers(worklifeResponse),
+  );
 
   // 気質アンケートへの deep-link（未 seed 時は一覧へフォールバック, Req 6.1/error-handling）。
   const playstyleSurveyHref = playstyleSurveyId
@@ -105,6 +115,7 @@ export default async function ClassDiagnosisPage() {
         isStale={isStale}
         playstyleProfile={playstyleProfile}
         playstyleSurveyHref={playstyleSurveyHref}
+        dispositions={dispositions}
       />
     </main>
   );

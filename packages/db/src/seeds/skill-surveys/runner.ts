@@ -35,10 +35,10 @@ export type SkillSurveySeedData = {
   jobType: string;
   /**
    * survey の種別（既定: 'skill'）。playstyle 診断は 'playstyle'、
-   * 思考スタイル診断は 'thinking_style' を指定する。
+   * 思考スタイル診断は 'thinking_style'、働き方の志向診断は 'worklife_disposition' を指定する。
    * 初回 insert 時のみ設定し、onConflict の set には含めない（既存行の kind は不変）。
    */
-  kind?: 'skill' | 'playstyle' | 'thinking_style';
+  kind?: 'skill' | 'playstyle' | 'thinking_style' | 'worklife_disposition';
   title: string;
   categories: Array<{
     name: string;
