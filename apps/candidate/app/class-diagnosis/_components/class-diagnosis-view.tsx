@@ -40,6 +40,7 @@ import type { ClassResult, ClassFlavor } from '@bulr/types';
 import type { ClassDiagnosisRecord } from '@bulr/db';
 
 import type { TemperamentProfile } from '../../_lib/temperament/score';
+import type { DispositionScores } from '../_lib/archetype/dispositions';
 import { PlaystyleResult } from '../../playstyle-diagnosis/_components/playstyle-result';
 import { ClassCard } from './class-card';
 import { SharePanel } from './share-panel';
@@ -99,6 +100,12 @@ export interface ClassDiagnosisViewProps {
   playstyleProfile: TemperamentProfile;
   /** 気質アンケートへの deep-link（page が解決。未 seed 時は一覧 /skill-survey へフォールバック）。 */
   playstyleSurveyHref: string;
+  /**
+   * 働き方の志向スコア（worklife-disposition-survey が page でライブ算出）。既定 `{}`。
+   * ClassCard / SharePanel の resolveArchetype へ中継し、Optimizer/Firefighter/Mentor/
+   * Integrator/Innovator の判別に用いる（未回答時は `{}` で既存挙動と一致）。
+   */
+  dispositions?: DispositionScores;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,13 +153,15 @@ function VizOnlyNote() {
 function DiagnosisVisualization({
   result,
   flavor,
+  dispositions,
 }: {
   result: ClassResult;
   flavor: ClassFlavor | null;
+  dispositions: DispositionScores;
 }) {
   return (
     <div className="space-y-6">
-      <ClassCard result={result} flavor={flavor} />
+      <ClassCard result={result} flavor={flavor} dispositions={dispositions} />
       <div className="rounded-card border border-hairline bg-card p-6">
         <h3 className="mb-4 text-base font-bold text-gray-900">職掌バランス</h3>
         <VocationRadar vocationVector={result.vocationVector} />
@@ -173,6 +182,7 @@ export function ClassDiagnosisView({
   isStale,
   playstyleProfile,
   playstyleSurveyHref,
+  dispositions = {},
 }: ClassDiagnosisViewProps) {
   // -------------------------------------------------------------------------
   // NoVocation: 診断がなく、スキル未回答（職掌が判定できない）。
@@ -274,7 +284,7 @@ export function ClassDiagnosisView({
           <p className="mb-4 text-xs text-muted">
             ※ 以下は最後に生成された診断です（最新の回答に基づいていない可能性があります）。
           </p>
-          <DiagnosisVisualization result={result} flavor={flavor} />
+          <DiagnosisVisualization result={result} flavor={flavor} dispositions={dispositions} />
         </div>
       </div>
     );
@@ -286,7 +296,7 @@ export function ClassDiagnosisView({
   if (isPartial) {
     return (
       <div className="space-y-6">
-        <DiagnosisVisualization result={result} flavor={flavor} />
+        <DiagnosisVisualization result={result} flavor={flavor} dispositions={dispositions} />
 
         {isVizOnly ? <VizOnlyNote /> : null}
 
@@ -315,11 +325,11 @@ export function ClassDiagnosisView({
   // -------------------------------------------------------------------------
   return (
     <div className="space-y-6">
-      <DiagnosisVisualization result={result} flavor={flavor} />
+      <DiagnosisVisualization result={result} flavor={flavor} dispositions={dispositions} />
 
       {isVizOnly ? <VizOnlyNote /> : null}
 
-      <SharePanel result={result} />
+      <SharePanel result={result} dispositions={dispositions} />
 
       <div className="flex flex-col items-stretch gap-2 border-t border-hairline pt-6 sm:items-end">
         <p className="text-xs text-muted">

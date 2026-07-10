@@ -22,6 +22,16 @@ import { ClassCard } from './class-card';
 import { TEMPERAMENT_ARCHETYPES } from '../../_lib/temperament/archetypes';
 import { ARCHETYPES } from '../_lib/archetype/definitions';
 import { resolveArchetype } from '../_lib/archetype/resolve';
+import type { DispositionScores } from '../_lib/archetype/dispositions';
+
+/** 志向で判別されるアーキタイプ（disposition 加点を持つ signature）。 */
+const DISPOSITION_DRIVEN = [
+  'optimizer',
+  'firefighter',
+  'mentor',
+  'integrator',
+  'innovator',
+];
 
 afterEach(cleanup);
 
@@ -198,5 +208,50 @@ describe('ClassCard — アーキタイプ主役 (spec: diagnosis-archetypes)', 
     render(<ClassCard result={makeResult()} flavor={FULL_FLAVOR} />);
     // title='specialist' → 「スペシャリスト」バッジ
     expect(screen.getByText('スペシャリスト')).toBeInTheDocument();
+  });
+});
+
+describe('ClassCard — dispositions 配線 (spec: worklife-disposition-survey)', () => {
+  it('dispositions 未指定（既定 {}）は既存の表示アーキタイプを変えない（回帰なし, R3.3）', () => {
+    const result = makeResult();
+    // dispositions 省略時は resolveArchetype(result, {}) と等価。
+    const expected = ARCHETYPES[resolveArchetype(result)];
+    render(<ClassCard result={result} flavor={FULL_FLAVOR} />);
+    expect(screen.getByTestId('class-card-archetype-name')).toHaveTextContent(
+      expected.name,
+    );
+  });
+
+  it('dispositions を強く与えると志向駆動アーキタイプへ主役が変化する (R3.3)', () => {
+    const result = makeResult();
+    const base = ARCHETYPES[resolveArchetype(result)];
+
+    // 改善志向を最大化 → Optimizer（improvement 加点）が優勢になる。
+    const strong: DispositionScores = { improvement: 100 };
+    const withDisp = ARCHETYPES[resolveArchetype(result, strong)];
+
+    // 主役が変化し、変化先は志向駆動アーキタイプ集合に属する。
+    expect(withDisp.id).not.toBe(base.id);
+    expect(DISPOSITION_DRIVEN).toContain(withDisp.id);
+
+    render(
+      <ClassCard result={result} flavor={FULL_FLAVOR} dispositions={strong} />,
+    );
+    expect(screen.getByTestId('class-card-archetype-name')).toHaveTextContent(
+      withDisp.name,
+    );
+  });
+
+  it('dispositions を渡しても数値スコアは一切表示しない (R5.1)', () => {
+    const { container } = render(
+      <ClassCard
+        result={makeResult()}
+        flavor={FULL_FLAVOR}
+        dispositions={{ improvement: 100, incident: 73 }}
+      />,
+    );
+    // 志向スコアの数値が DOM に漏れない。
+    expect(container.textContent).not.toContain('100');
+    expect(container.textContent).not.toContain('73');
   });
 });

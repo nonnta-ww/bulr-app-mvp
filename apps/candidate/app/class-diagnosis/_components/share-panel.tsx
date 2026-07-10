@@ -26,6 +26,7 @@ import type { ClassResult } from '@bulr/types';
 import { TITLE_LABELS } from '../_lib/definitions';
 import { ARCHETYPES } from '../_lib/archetype/definitions';
 import { resolveArchetype } from '../_lib/archetype/resolve';
+import type { DispositionScores } from '../_lib/archetype/dispositions';
 
 /** 共有テキストに付ける固定ブラーブ（PII・数値なし）。 */
 const SHARE_HASHTAG = '#Webエンジニアクラス診断';
@@ -36,10 +37,13 @@ const SHARE_BLURB = 'あなたのWebエンジニアとしてのクラスは？';
  * クラス名・称号ラベル・主職掌ラベル・固定ブラーブ／ハッシュタグのみで構成する。
  * 候補者識別子・回答内容・vocationVector 数値・confidence 等の PII や数値は含めない。
  */
-export function toShareText(result: ClassResult): string {
+export function toShareText(
+  result: ClassResult,
+  dispositions: DispositionScores = {},
+): string {
   const titleLabel = TITLE_LABELS[result.title];
-  // 主役アーキタイプを既存フィールドから導出（spec: diagnosis-archetypes, R7）。
-  const archetype = ARCHETYPES[resolveArchetype(result)];
+  // 主役アーキタイプを既存フィールド＋志向スコアから導出（spec: diagnosis-archetypes, R7）。
+  const archetype = ARCHETYPES[resolveArchetype(result, dispositions)];
 
   return [
     `私のタイプは「${archetype.name}」！`,
@@ -51,15 +55,17 @@ export function toShareText(result: ClassResult): string {
 
 interface SharePanelProps {
   result: ClassResult;
+  /** 働き方の志向スコア（worklife-disposition-survey が供給）。既定 `{}`。 */
+  dispositions?: DispositionScores;
 }
 
 /**
  * 共有パネル。共有テキストのプレビューとコピー/共有ボタンを表示する。
  * クリップボード／Web Share API が使えない環境でもクラッシュしない。
  */
-export function SharePanel({ result }: SharePanelProps) {
+export function SharePanel({ result, dispositions = {} }: SharePanelProps) {
   const [copied, setCopied] = useState(false);
-  const shareText = toShareText(result);
+  const shareText = toShareText(result, dispositions);
 
   const handleShare = useCallback(async () => {
     let didCopy = false;
