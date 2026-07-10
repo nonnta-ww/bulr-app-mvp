@@ -63,7 +63,8 @@ export const TITLE_LABELS: Record<Title, string> = {
  * jobType → 既定職掌。
  * seed 済み skill-survey の各職種を主軸となる職掌へマップする。
  * このマップに無い jobType（未知 / 未整備の survey）は寄与しない（resolver が空を返す）。
- * sage(賢者)・strategist(策士) は対応 survey 未整備のため本マップに含めない＝非活性枠。
+ * sage(賢者) は `ai-ml` survey（AI/ML・データ専門）で開放済み（sage-survey spec）。
+ * strategist(策士) は対応 survey 未整備のため本マップに含めない＝非活性枠。
  * 対応 survey を追加すれば、ここに1行足すだけで自動的に開放される（R9.2/9.3）。
  */
 export const JOBTYPE_DEFAULT_VOCATION: Record<string, Vocation> = {
@@ -72,6 +73,7 @@ export const JOBTYPE_DEFAULT_VOCATION: Record<string, Vocation> = {
   "infrastructure-sre": "guardian",
   "engineering-manager": "commander",
   "ai-driven-development": "ranger",
+  "ai-ml": "sage", // sage-survey spec: AI/ML・データ専門で sage 職掌を開放
 };
 
 /**
