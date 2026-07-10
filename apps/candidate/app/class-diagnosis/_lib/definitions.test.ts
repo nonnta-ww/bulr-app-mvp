@@ -61,6 +61,17 @@ const SEEDED_JOBTYPE_CATEGORIES: Record<string, readonly string[]> = {
     "チーム文化・エンゲージメント",
     "プロセス・オペレーショナルエクセレンス",
   ],
+  "product-manager": [
+    "PdM経験プロフィール",
+    "プロダクト戦略",
+    "ディスカバリー・顧客理解",
+    "優先順位付け・意思決定",
+    "ロードマップ・実行推進",
+    "データドリブン運用",
+    "ステークホルダー・組織連携",
+    "GTM・グロース連携",
+    "UX・ビジネス・テクノロジーの越境",
+  ],
   frontend: [
     "HTML・CSS",
     "JavaScript",
@@ -96,6 +107,7 @@ const EXPECTED_JOBTYPE_DEFAULT: Record<string, Vocation> = {
   "engineering-manager": "commander",
   "ai-driven-development": "ranger",
   "ai-ml": "sage",
+  "product-manager": "strategist",
 };
 
 const sumWeights = (w: Partial<Record<Vocation, number>>): number =>
@@ -136,19 +148,22 @@ describe("TITLES ラベル", () => {
 });
 
 describe("JOBTYPE_DEFAULT_VOCATION", () => {
-  it("seed 済み6職種を既定職掌へマップする", () => {
+  it("seed 済み7職種を既定職掌へマップする", () => {
     for (const [jobType, vocation] of Object.entries(EXPECTED_JOBTYPE_DEFAULT)) {
       expect(JOBTYPE_DEFAULT_VOCATION[jobType]).toBe(vocation);
     }
   });
 
-  it("sage は ai-ml で開放済み・strategist は依然非活性枠", () => {
-    // sage は sage-survey spec で `ai-ml` → 'sage' として開放された。
+  it("sage は ai-ml で・strategist は product-manager で開放済み（全7職掌が活性）", () => {
+    // sage は sage-survey spec で `ai-ml` → 'sage'、
+    // strategist は pdm-strategist-survey spec で `product-manager` → 'strategist' として開放された。
     expect(JOBTYPE_DEFAULT_VOCATION["ai-ml"]).toBe("sage");
+    expect(JOBTYPE_DEFAULT_VOCATION["product-manager"]).toBe("strategist");
     const mappedVocations = Object.values(JOBTYPE_DEFAULT_VOCATION);
     expect(mappedVocations).toContain("sage");
-    // strategist は対応 survey 未整備のため依然どの jobType にもマップされない。
-    expect(mappedVocations).not.toContain("strategist");
+    expect(mappedVocations).toContain("strategist");
+    // 7職掌すべてがいずれかの jobType にマップされている（非活性枠は解消）。
+    expect(new Set(mappedVocations)).toEqual(new Set(VOCATIONS));
   });
 });
 
@@ -210,7 +225,7 @@ describe("resolveCategoryVocationWeights — アフィニティ網羅", () => {
     expect(weights).toEqual({ rearguard: 0.5, guardian: 0.5 });
   });
 
-  it("ai-ml 追加後も既存 jobType の解決結果が不変である（非回帰）", () => {
+  it("product-manager 追加後も既存 jobType の解決結果が不変である（非回帰）", () => {
     // 新しい jobType キーの追加は純粋なキー参照である resolver の
     // 既存 jobType 解決に影響しない。代表点で明示的に確認する。
     expect(resolveCategoryVocationWeights("frontend", "HTML・CSS")).toEqual({
@@ -228,6 +243,10 @@ describe("resolveCategoryVocationWeights — アフィニティ網羅", () => {
     expect(
       resolveCategoryVocationWeights("ai-driven-development", "テクニック"),
     ).toEqual({ ranger: 1 });
+    // 先行して開放された ai-ml → sage も不変。
+    expect(
+      resolveCategoryVocationWeights("ai-ml", "MLOps"),
+    ).toEqual({ sage: 1 });
     // 明示 affinity（横断カテゴリ）も不変。
     expect(
       resolveCategoryVocationWeights("frontend", "バックエンド連携"),
@@ -244,11 +263,8 @@ describe("resolveCategoryVocationWeights — アフィニティ網羅", () => {
   });
 });
 
-describe("sage は開放済み / strategist は非活性枠", () => {
-  it("sage は ai-ml survey の resolver 出力に現れ、strategist は現れない", () => {
-    expect(VOCATIONS).toContain("sage");
-    expect(VOCATIONS).toContain("strategist");
-
+describe("全7職掌が seed 済み survey から解決される（非活性枠は解消）", () => {
+  it("sage・strategist を含む7職掌すべてが resolver 出力に現れる", () => {
     const produced = new Set<Vocation>();
     for (const [jobType, categories] of Object.entries(
       SEEDED_JOBTYPE_CATEGORIES,
@@ -261,10 +277,14 @@ describe("sage は開放済み / strategist は非活性枠", () => {
         }
       }
     }
-    // sage は ai-ml（AI/ML・データ）survey の全カテゴリが解決する（sage-survey spec）。
+    // sage は ai-ml（sage-survey spec）、strategist は product-manager
+    // （pdm-strategist-survey spec）の全カテゴリが解決する。
     expect(produced.has("sage")).toBe(true);
-    // strategist は依然どの seed 済み jobType からも解決されない（非活性枠）。
-    expect(produced.has("strategist")).toBe(false);
+    expect(produced.has("strategist")).toBe(true);
+    // 7職掌すべてがいずれかの seed 済み survey から解決される。
+    for (const v of VOCATIONS) {
+      expect(produced.has(v), `${v} がどの resolver 出力にも現れない`).toBe(true);
+    }
   });
 
   it("ai-ml の各カテゴリは { sage: 1 } に解決される", () => {
@@ -272,6 +292,16 @@ describe("sage は開放済み / strategist は非活性枠", () => {
       expect(resolveCategoryVocationWeights("ai-ml", category)).toEqual({
         sage: 1,
       });
+    }
+  });
+
+  it("product-manager の各カテゴリは { strategist: 1 } に解決される", () => {
+    for (const category of SEEDED_JOBTYPE_CATEGORIES["product-manager"] ?? []) {
+      expect(resolveCategoryVocationWeights("product-manager", category)).toEqual(
+        {
+          strategist: 1,
+        },
+      );
     }
   });
 });
