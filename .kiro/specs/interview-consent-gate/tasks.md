@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Foundation: スキーマと同意文基盤
-- [ ] 1.1 consent スキーマ変更と migration 0023
+- [x] 1.1 consent スキーマ変更と migration 0023
   - interview_session の consent_obtained_at を nullable 化し default を撤去する
   - consent_method enum（interviewer_attestation）と consent_actor_id（text, FK なし＝将来の候補者主体を許容）を追加する
   - migration 0023 に既存行の consent_obtained_at を null 化するデータ移行を含める
