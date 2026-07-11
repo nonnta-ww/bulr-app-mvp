@@ -56,7 +56,7 @@
   - _Requirements: 1.2, 2.1, 2.2_
   - _Depends: 2.2, 1.2_
   - _Boundary: capture-start-panel, live-capture-runner, interview session page_
-- [ ] 3.3 (P) admin の consent null 安全表示確認
+- [x] 3.3 (P) admin の consent null 安全表示確認
   - 同意取得日時が null のとき admin セッション詳細が安全に描画されることを確認する
   - json-export が nullable な consent_obtained_at を安全に直列化することを確認する
   - 完了状態: consent_obtained_at=null のセッションで admin 詳細と json-export がエラーなく動作
