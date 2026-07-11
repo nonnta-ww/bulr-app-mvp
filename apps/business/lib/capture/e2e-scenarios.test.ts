@@ -900,6 +900,8 @@ describe('E2E シナリオ統合テスト — realtime-interview-capture', () =>
         planned_pattern_codes: [testPatternCode],
         entry_id: null,
         candidate_id: null,
+        consent_method: null,
+        consent_actor_id: null,
       };
 
       const spy = vi

@@ -184,6 +184,8 @@ describe('startCapture / stopCapture Server Actions', () => {
         planned_pattern_codes: [],
         entry_id: null,
         candidate_id: null,
+        consent_method: null,
+        consent_actor_id: null,
       };
 
       const spy = vi
