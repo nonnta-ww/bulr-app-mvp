@@ -19,6 +19,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getInterviewSession, loadSessionWithTurns } from '@bulr/db/queries';
 import { requireUser } from '@bulr/auth/server';
 
+import { getCurrentConsentNotice } from '@/lib/consent/consent-notice';
 import { LiveCaptureRunner } from '../_components/live/live-capture-runner';
 import { SessionHeader } from './_components/session-header';
 
@@ -69,9 +70,14 @@ export default async function InterviewSessionPage({ params }: Props) {
   }
 
   // 同意取得済みフラグ（Req 1.6）
-  // consent_obtained_at は DB 上 notNull だが、型上 null チェックを行って CaptureStartPanel に渡す
+  // consent_obtained_at は nullable（interview-consent-gate migration 0023）。
+  // null の間は未同意として CaptureStartPanel（→ ConsentStep）に伝播する。
   const consentObtained =
     interviewSessionResult.session.consent_obtained_at !== null;
+
+  // 現行版の同意文（interview-consent-gate task 3.2）。
+  // 未同意時に CaptureStartPanel → ConsentStep へ伝播し、面接官へ提示する。
+  const notice = getCurrentConsentNotice();
 
   // 前回試行した会議 URL（CaptureStartPanel の初期値、失敗後のリトライに使う）
   const initialMeetingUrl = interviewSessionResult.session.meeting_url ?? null;
@@ -86,6 +92,7 @@ export default async function InterviewSessionPage({ params }: Props) {
         <LiveCaptureRunner
           sessionId={sessionId}
           consentObtained={consentObtained}
+          notice={notice}
           initialMeetingUrl={initialMeetingUrl}
         />
       </div>

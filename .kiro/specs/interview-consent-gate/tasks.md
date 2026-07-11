@@ -48,7 +48,7 @@
   - _Requirements: 2.4, 5.2_
   - _Depends: 1.1_
   - _Boundary: create-session_
-- [ ] 3.2 キャプチャ画面の同意ステップ配線（integration）
+- [x] 3.2 キャプチャ画面の同意ステップ配線（integration）
   - capture-start-panel の未同意ブロックのエラー表示を consent-step の描画に差し替える
   - キャプチャ画面が現行版同意文と sessionId を伝播する（consentObtained は既存伝播を利用）
   - コンポーネントテスト: 未同意時に consent-step を描画し開始系ボタンが disabled であること
@@ -69,9 +69,11 @@
   - consent_obtained_at=null で startCapture が CONSENT_REQUIRED を返す
   - 同意 set 後は開始許可となり、recall / mic 両経路で同一挙動であること
   - create-session が null 作成し、migration が既存行を null 化していること
-  - 完了状態: 上記シナリオの統合テストが pass
+  - **既存ゲートテストの consent seeding 修正**: 自動同意前提で書かれた rtic のゲート後テストが、default 撤去でゲートに弾かれ CONSENT_REQUIRED を受ける。ゲート後の挙動（bot作成/mic録音）を検証するテストは事前に consent_obtained_at 済みの session を用意するよう修正する。対象: `app/(interviewer)/interviews/[sessionId]/_actions/capture-actions.test.ts`（6件）, `lib/capture/e2e-scenarios.test.ts` のゲート系。
+  - 完了状態: 上記シナリオの統合テストが pass し、business の全テストが green
   - _Requirements: 1.1, 1.3, 1.4, 5.1, 5.2_
   - _Depends: 3.1, 3.2_
+  - _Boundary: capture-actions.test.ts, e2e-scenarios.test.ts（rtic 所有だが本 spec のゲート実効化に伴う consent seeding 修正）_
 - [ ] 4.2 面接官同意フロー E2E
   - セッション作成→開始 disabled→同意ステップ→チェック確定→画面再取得後に開始解禁の通し確認
   - 完了状態: フロー全体が通しで pass
@@ -83,3 +85,4 @@
 - 1.1 波及: migration 0023 で interview_session に nullable 2列（consent_method / consent_actor_id）を追加した結果、`interviewSession.$inferSelect` を全項目構築する既存モックが typecheck 赤になる。session 行モックを新規に作る/触るタスク（2.1, 3.x, 4.x）は必ず `consent_method: null` / `consent_actor_id: null` を含めること。baseline 修復済み: capture-actions.test.ts / e2e-scenarios.test.ts（commit bb0a329）。
 - drizzle-kit 系コマンドは DATABASE_URL/DIRECT_URL を packages/db/.env.local の値で inline 上書きして実行（localhost:5434 bulr_dev）。generate はデータ移行 SQL を出さないので手書き追記が必要。
 - worktree 環境: apps/business・packages/db・apps/admin の .env.local をメインリポジトリからコピー済み（gitignore 済み）。
+- ゲート実効化の波及（3.2 時点で確認）: default 撤去＋自動同意停止により、自動同意前提で書かれた rtic のゲート後テスト6件（capture-actions.test.ts）が `Received: CONSENT_REQUIRED` で失敗する＝ゲートが正しく作動した証拠。これは task 4.1 で consent seeding 修正として扱う（design の Revalidation Triggers で予見済み）。3.2 の境界外。

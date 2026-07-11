@@ -19,6 +19,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { LiveSegment } from '../../../../../lib/capture/live-state';
+import type { ConsentNotice } from '@/lib/consent/consent-notice';
 
 // ---------------------------------------------------------------------------
 // モジュールモック（vi.mock はファイル先頭に巻き上げられる）
@@ -48,6 +49,18 @@ vi.mock('../../[sessionId]/_actions/stop-capture', () => ({
 vi.mock('../../[sessionId]/_actions/pause-capture', () => ({
   pauseCapture: vi.fn(),
   resumeCapture: vi.fn(),
+}));
+
+// record-consent: CaptureStartPanel が consent-step を静的 import するため、
+// consentObtained=true で未描画のテストでも 'use server' 実体（@bulr/db 等）の
+// import 解決を通す必要がある。空実装で import 解決のみ通す。
+vi.mock('../../[sessionId]/_actions/record-consent', () => ({
+  recordConsent: vi.fn(),
+}));
+
+// consent-step が useRouter().refresh を参照するため import 解決を通す。
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -81,6 +94,15 @@ function makeDefaultHookResult(overrides?: Partial<HookResult>): HookResult {
     ...overrides,
   };
 }
+
+const NOTICE: ConsentNotice = {
+  version: 'ja-v1',
+  title: '面接録音・録画に関する同意のご説明（候補者向け）',
+  recordingTarget: 'テスト用録音対象説明',
+  purpose: 'テスト用利用目的説明',
+  retention: 'テスト用保持期間説明（30日）',
+  dataHandling: 'テスト用データ取り扱い説明',
+};
 
 function makeLiveSegment(seq: number): LiveSegment {
   return {
@@ -121,6 +143,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -141,6 +164,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -160,6 +184,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -178,6 +203,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -200,6 +226,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -216,6 +243,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -240,6 +268,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="session-finish"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
         />,
@@ -264,6 +293,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="session-abort"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
         />,
@@ -289,6 +319,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="mic-finish"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
           finalizeCapture={mockFinalize as never}
@@ -313,6 +344,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="recall-finish"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={mockStop as never}
           finalizeCapture={mockFinalize as never}
@@ -335,6 +367,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="session-pause"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
           pauseCapture={mockPause as never}
@@ -357,6 +390,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="session-resume"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
           resumeCapture={mockResume as never}
@@ -382,6 +416,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="session-start"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={mockStart as never}
           stopCapture={vi.fn() as never}
         />,
@@ -410,6 +445,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="mic-session"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -429,6 +465,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="recall-session"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -448,6 +485,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="paused-session"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -471,6 +509,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="mic-session"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -489,6 +528,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="mic-session"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -516,6 +556,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -534,6 +575,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -557,6 +599,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -572,6 +615,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -589,6 +633,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -607,6 +652,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -625,6 +671,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -640,6 +687,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -662,6 +710,7 @@ describe('LiveCaptureRunner', () => {
         <LiveCaptureRunner
           sessionId="s1"
           consentObtained={true}
+          notice={NOTICE}
           startCapture={vi.fn() as never}
           stopCapture={vi.fn() as never}
         />,
@@ -669,6 +718,40 @@ describe('LiveCaptureRunner', () => {
 
       expect(screen.getByLabelText(/経過時間/i)).toBeInTheDocument();
       expect(screen.getByText(/残り 5 パターン/i)).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 同意ステップ配線 (interview-consent-gate task 3.2, Req 1.2, 2.1, 2.2)
+  // -------------------------------------------------------------------------
+
+  describe('同意ステップ配線 (Req 1.2, 2.1, 2.2)', () => {
+    it('consentObtained=false のとき sessionId と notice が CaptureStartPanel 経由で ConsentStep に伝播し、同意ステップが表示され開始系ボタンが disabled になる', () => {
+      vi.mocked(useLiveState).mockReturnValue(makeDefaultHookResult({ captureStatus: 'idle' }));
+
+      render(
+        <LiveCaptureRunner
+          sessionId="s1"
+          consentObtained={false}
+          notice={NOTICE}
+          startCapture={vi.fn() as never}
+          stopCapture={vi.fn() as never}
+        />,
+      );
+
+      // ConsentStep の同意文タイトル（notice.title が伝播している）
+      expect(screen.getByText(NOTICE.title)).toBeInTheDocument();
+      // ConsentStep のチェックボックス
+      expect(
+        screen.getByLabelText('候補者から録音同意を口頭で得た'),
+      ).toBeInTheDocument();
+      // 開始系ボタンは二重ガードにより disabled のまま
+      expect(
+        screen.getByRole('button', { name: /オンライン会議を録音開始/i }),
+      ).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: /対面録音で開始/i }),
+      ).toBeDisabled();
     });
   });
 });

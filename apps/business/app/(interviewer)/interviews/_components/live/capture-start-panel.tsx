@@ -6,8 +6,15 @@
  * 責務:
  *  - 会議 URL 入力フォーム（Zoom / Google Meet / Microsoft Teams の形式エラー表示）— Req 1.1, 1.2
  *  - ボット参加失敗時の理由表示 + 再試行 / 対面切替ボタン — Req 1.4
- *  - 同意未記録エラー表示と開始ブロック — Req 1.6
+ *  - 未同意時は ConsentStep（同意ステップ）を描画し、開始系ボタンを disabled にする — Req 1.2, 1.6, 2.1, 2.2
  *  - 対面録音で開始（マイクモード）の主要パス — Req 1.5
+ *
+ * # 二重ガード（interview-consent-gate task 3.2）
+ *
+ * `!consentObtained` のとき、エラー表示ではなく ConsentStep（同意文提示＋チェック＋確定）を
+ * 描画する。開始系ボタンの `disabled={!consentObtained}` は既存のまま維持し、
+ * ConsentStep 表示と開始ボタン disable の二重ガードとする（consent-step 確定 →
+ * recordConsent → router.refresh → consentObtained が反転して初めて開始可能になる）。
  *
  * # クライアント・サーバー検証の分離
  *
@@ -17,13 +24,15 @@
  * このコンポーネントの検証はあくまで即時フィードバックのためのものである。
  * クライアント検証を通過した URL でも、サーバー側で再検証・認可が行われる。
  *
- * Requirements: 1.1, 1.2, 1.4, 1.5, 1.6
- * Design: LiveCaptureRunner / CaptureStartPanel / "Error Handling"（ボット参加失敗）
- *         / Requirements Traceability 行 1.1, 1.2, 1.4, 1.6
+ * Requirements: 1.1, 1.2, 1.4, 1.5, 1.6, 2.1, 2.2
+ * Design: LiveCaptureRunner / CaptureStartPanel（変更）/ consent-step
+ *         / "Error Handling"（ボット参加失敗）/ Requirements Traceability 行 1.1, 1.2, 1.4, 1.6, 2.1, 2.2
  */
 
 import { useState } from 'react';
 import { isValidMeetingUrl } from './meeting-url-client';
+import { ConsentStep } from './consent-step';
+import type { ConsentNotice } from '@/lib/consent/consent-notice';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -53,9 +62,21 @@ export interface CaptureStartPanelProps {
 
   /**
    * 同意取得済みフラグ（Req 1.6）。
-   * false の場合は同意エラーを表示し、すべてのアクションボタンを disabled にする。
+   * false の場合は ConsentStep（同意ステップ）を表示し、すべてのアクションボタンを disabled にする。
    */
   consentObtained: boolean;
+
+  /**
+   * セッション ID（Req 2.1）。
+   * `!consentObtained` のとき ConsentStep に渡し、recordConsent の対象セッションを特定する。
+   */
+  sessionId: string;
+
+  /**
+   * 現行版の同意文（Req 4.1, 4.2）。
+   * `!consentObtained` のとき ConsentStep に渡して描画する。
+   */
+  notice: ConsentNotice;
 
   /**
    * 現在の capture_status（idle | failed）。
@@ -100,10 +121,6 @@ function getJoinFailureMessage(code: JoinFailureCode): string {
 const URL_FORMAT_ERROR =
   'URL の形式が正しくありません。Zoom / Google Meet / Microsoft Teams の会議 URL を入力してください。';
 
-/** 同意未記録エラー文言（Req 1.6）。 */
-const CONSENT_ERROR =
-  '同意の記録がありません。キャプチャを開始する前に候補者の同意を記録してください。';
-
 // ---------------------------------------------------------------------------
 // コンポーネント
 // ---------------------------------------------------------------------------
@@ -118,6 +135,8 @@ export function CaptureStartPanel({
   onStartRecall,
   onStartMic,
   consentObtained,
+  sessionId,
+  notice,
   captureStatus,
   joinFailureCode,
   lastMeetingUrl,
@@ -174,14 +193,9 @@ export function CaptureStartPanel({
         <h2 className="text-base font-semibold text-ink">キャプチャ方法</h2>
       </div>
 
-      {/* ── 同意未記録エラー（Req 1.6） ─────────────────────────────────── */}
+      {/* ── 同意ステップ（未同意時）（Req 1.2, 2.1, 2.2） ────────────────── */}
       {!consentObtained && (
-        <div
-          role="alert"
-          className="consent-error rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {CONSENT_ERROR}
-        </div>
+        <ConsentStep sessionId={sessionId} notice={notice} />
       )}
 
       {/* ── ボット参加失敗エラー（Req 1.4） ──────────────────────────────── */}

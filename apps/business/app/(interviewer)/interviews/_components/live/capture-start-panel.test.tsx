@@ -7,19 +7,30 @@
  *  - 有効な Zoom / Meet URL を送信すると onStartRecall が URL 引数で呼ばれる（Req 1.1）
  *  - 参加失敗状態では失敗理由・再試行・対面切替ボタンが表示される（Req 1.4）
  *  - 再試行ボタンで onStartRecall が呼ばれ、対面切替で onStartMic が呼ばれる（Req 1.4）
- *  - 同意未記録状態では同意エラーが表示され開始ボタンが disabled になる（Req 1.6）
+ *  - 同意未記録状態では ConsentStep（同意ステップ）が表示され開始ボタンが disabled になる（Req 1.2, 1.6, 2.1, 2.2）
  *  - disabled ボタンをクリックしても onStartRecall は呼ばれない（Req 1.6）
  *
- * Requirements: 1.1, 1.2, 1.4, 1.6
- * Design: CaptureStartPanel / "LiveCaptureRunner / CaptureStartPanel …"
+ * Requirements: 1.1, 1.2, 1.4, 1.6, 2.1, 2.2
+ * Design: CaptureStartPanel（変更）/ consent-step / "LiveCaptureRunner / CaptureStartPanel …"
  *         / "Error Handling"（ボット参加失敗 → 理由表示 + 再試行/対面切替）
- *         / Requirements Traceability 行 1.1, 1.2, 1.4, 1.6
+ *         / Requirements Traceability 行 1.1, 1.2, 1.4, 1.6, 2.1, 2.2
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ConsentNotice } from '@/lib/consent/consent-notice';
 import { CaptureStartPanel } from './capture-start-panel';
+
+// consent-step が呼ぶ実 recordConsent は '@bulr/auth/server'（'server-only'）経由のため、
+// jsdom 環境のコンポーネントテストでは読み込めない。import 解決を通すためだけの空実装。
+vi.mock('../../[sessionId]/_actions/record-consent', () => ({
+  recordConsent: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 afterEach(() => {
   cleanup();
@@ -35,6 +46,17 @@ const VALID_MEET_URL = 'https://meet.google.com/abc-defg-hij';
 const VALID_TEAMS_URL =
   'https://teams.microsoft.com/l/meetup-join/19%3ameeting_abcDEF';
 const INVALID_URL = 'https://example.com/x';
+
+const SESSION_ID = 'session-1';
+
+const NOTICE: ConsentNotice = {
+  version: 'ja-v1',
+  title: '面接録音・録画に関する同意のご説明（候補者向け）',
+  recordingTarget: 'テスト用録音対象説明',
+  purpose: 'テスト用利用目的説明',
+  retention: 'テスト用保持期間説明（30日）',
+  dataHandling: 'テスト用データ取り扱い説明',
+};
 
 // ---------------------------------------------------------------------------
 // テストスイート
@@ -55,6 +77,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -78,6 +102,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -103,6 +129,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -123,6 +151,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -142,6 +172,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -161,6 +193,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={vi.fn()}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -183,6 +217,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={vi.fn()}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="failed"
           joinFailureCode="timeout"
           lastMeetingUrl={VALID_ZOOM_URL}
@@ -208,6 +244,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="failed"
           joinFailureCode="timeout"
           lastMeetingUrl={VALID_ZOOM_URL}
@@ -229,6 +267,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={vi.fn()}
           onStartMic={onStartMic}
           consentObtained={true}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="failed"
           joinFailureCode="join_failed"
           lastMeetingUrl={VALID_ZOOM_URL}
@@ -242,23 +282,30 @@ describe('CaptureStartPanel', () => {
   });
 
   // --------------------------------------------------------------------------
-  // Req 1.6: 同意未記録状態のエラー表示と開始ブロック
+  // Req 1.2, 1.6, 2.1, 2.2: 同意未記録状態の ConsentStep 表示と開始ブロック（task 3.2 配線）
   // --------------------------------------------------------------------------
 
-  describe('同意未記録状態 (consentObtained=false) (Req 1.6)', () => {
-    it('同意エラーメッセージが表示される', () => {
+  describe('同意未記録状態 (consentObtained=false) (Req 1.2, 1.6, 2.1, 2.2)', () => {
+    it('ConsentStep（同意ステップ）が表示される: 同意文タイトルとチェックボックスが描画される', () => {
       render(
         <CaptureStartPanel
           onStartRecall={vi.fn()}
           onStartMic={vi.fn()}
           consentObtained={false}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
 
-      const alert = screen.getByRole('alert');
-      expect(alert).toBeInTheDocument();
-      expect(alert.textContent).toMatch(/同意/);
+      // consent-step の同意文タイトル（notice.title）
+      expect(screen.getByText(NOTICE.title)).toBeInTheDocument();
+      // consent-step のチェックボックス「候補者から録音同意を口頭で得た」
+      expect(
+        screen.getByLabelText('候補者から録音同意を口頭で得た'),
+      ).toBeInTheDocument();
+      // 旧 CONSENT_ERROR alert は表示されない（consent-step が同ブロックを差し替える）
+      expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('録音開始ボタンが disabled になる', () => {
@@ -267,6 +314,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={vi.fn()}
           onStartMic={vi.fn()}
           consentObtained={false}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );
@@ -283,6 +332,8 @@ describe('CaptureStartPanel', () => {
           onStartRecall={onStartRecall}
           onStartMic={vi.fn()}
           consentObtained={false}
+          sessionId={SESSION_ID}
+          notice={NOTICE}
           captureStatus="idle"
         />,
       );

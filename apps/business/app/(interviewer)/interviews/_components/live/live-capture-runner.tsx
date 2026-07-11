@@ -28,6 +28,7 @@ import { CaptureStartPanel } from './capture-start-panel';
 import { LiveTranscriptPane } from './live-transcript-pane';
 import { SidePanel } from './side-panel';
 import type { LiveState } from '../../../../../lib/capture/live-state';
+import type { ConsentNotice } from '@/lib/consent/consent-notice';
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -49,6 +50,12 @@ export interface LiveCaptureRunnerProps {
    * CaptureStartPanel に委譲して開始ボタンの有効/無効を制御する。
    */
   consentObtained: boolean;
+  /**
+   * 現行版の同意文（interview-consent-gate design.md: consent-notice）。
+   * ページ（Server Component）から getCurrentConsentNotice() の結果を渡す。
+   * consentObtained=false のとき CaptureStartPanel → ConsentStep へ伝播する。
+   */
+  notice: ConsentNotice;
   /**
    * 前回試行した会議 URL の初期値（CaptureStartPanel の lastMeetingUrl に渡す）。
    * ページから session.meeting_url を渡す。
@@ -133,6 +140,7 @@ function isActiveState(status: LiveState['captureStatus']): boolean {
 export function LiveCaptureRunner({
   sessionId,
   consentObtained,
+  notice,
   initialMeetingUrl,
   startCapture = defaultStartCapture as (input: StartCaptureInput) => Promise<unknown>,
   stopCapture = defaultStopCapture as (input: StopCaptureInput) => Promise<unknown>,
@@ -212,6 +220,8 @@ export function LiveCaptureRunner({
           {/* Req 3.5 制御要素 1/3: キャプチャ開始（CaptureStartPanel が recall / mic を提供） */}
           <CaptureStartPanel
             consentObtained={consentObtained}
+            sessionId={sessionId}
+            notice={notice}
             captureStatus={captureStatus as 'idle' | 'failed'}
             onStartRecall={handleStartRecall}
             onStartMic={handleStartMic}
