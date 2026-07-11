@@ -19,7 +19,7 @@
   - _Boundary: consent-notice_
 
 - [ ] 2. Core: 同意記録と取得UI
-- [ ] 2.1 recordConsent Server Action
+- [x] 2.1 recordConsent Server Action
   - 面接官アテステーションで consent_obtained_at / consent_version / consent_method / consent_actor_id を単一更新で原子的に set する
   - 版はサーバー側の現行版定数を stamp し、記録版＝提示版を保証する（client 送信版に依存しない）
   - 既に同意済みなら書き込まず成功を返す（冪等 no-op）
