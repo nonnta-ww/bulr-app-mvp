@@ -9,7 +9,7 @@
   - drizzle-kit 実行は DIRECT_URL/DATABASE_URL を inline 上書きして行う
   - 完了状態: migrate 適用後、任意セッションで consent_obtained_at が null を取り得ることを確認
   - _Requirements: 3.3, 3.4, 5.1_
-- [ ] 1.2 (P) 版管理された同意文 registry
+- [x] 1.2 (P) 版管理された同意文 registry
   - 現行版 ja-v1 の同意文（録音対象・利用目的・保持期間・データ扱い）を app ローカルに定義する
   - 保持期間の記述を音声30日自動削除ポリシーと整合させる
   - 現行版取得関数が version==='ja-v1' を返し必須4要素を含むユニットテスト
@@ -77,3 +77,9 @@
   - 完了状態: フロー全体が通しで pass
   - _Requirements: 2.1, 2.2, 1.1, 1.2_
   - _Depends: 3.2_
+
+## Implementation Notes
+
+- 1.1 波及: migration 0023 で interview_session に nullable 2列（consent_method / consent_actor_id）を追加した結果、`interviewSession.$inferSelect` を全項目構築する既存モックが typecheck 赤になる。session 行モックを新規に作る/触るタスク（2.1, 3.x, 4.x）は必ず `consent_method: null` / `consent_actor_id: null` を含めること。baseline 修復済み: capture-actions.test.ts / e2e-scenarios.test.ts（commit bb0a329）。
+- drizzle-kit 系コマンドは DATABASE_URL/DIRECT_URL を packages/db/.env.local の値で inline 上書きして実行（localhost:5434 bulr_dev）。generate はデータ移行 SQL を出さないので手書き追記が必要。
+- worktree 環境: apps/business・packages/db・apps/admin の .env.local をメインリポジトリからコピー済み（gitignore 済み）。
