@@ -65,7 +65,7 @@
   - _Boundary: admin session detail, admin json-export_
 
 - [ ] 4. Validation: ゲート実効化とE2E
-- [ ] 4.1 ゲート実効化の統合テスト
+- [x] 4.1 ゲート実効化の統合テスト
   - consent_obtained_at=null で startCapture が CONSENT_REQUIRED を返す
   - 同意 set 後は開始許可となり、recall / mic 両経路で同一挙動であること
   - create-session が null 作成し、migration が既存行を null 化していること

@@ -386,8 +386,11 @@ describe('E2E シナリオ統合テスト — realtime-interview-capture', () =>
       ai_perspective: 'AI 観点',
     });
 
-    // interview_session（consent_obtained_at = デフォルト now()、capture_status='idle'）
+    // interview_session（capture_status='idle'）
     // started_at = epoch(0): start_time 秒 → started_at_ms ms の変換を直接可能にする
+    // 同意ゲート実効化（interview-consent-gate）に伴い consent_obtained_at の DB デフォルトは
+    // 撤去された（default null）ため、ゲート後の E2E シナリオ用に明示的に同意済み状態で seed する。
+    // 同意未記録セッションのゲート拒否は別テスト（後述）で spy により個別に検証する。
     await db.insert(schema.interviewSession).values({
       id: sessionId,
       interviewer_id: TEST_USER_ID,
@@ -396,6 +399,9 @@ describe('E2E シナリオ統合テスト — realtime-interview-capture', () =>
       planned_pattern_codes: [testPatternCode],
       capture_status: 'idle',
       started_at: new Date(0),
+      consent_obtained_at: new Date(),
+      consent_method: 'interviewer_attestation',
+      consent_actor_id: TEST_USER_ID,
     });
   });
 
@@ -865,11 +871,12 @@ describe('E2E シナリオ統合テスト — realtime-interview-capture', () =>
   // consent_obtained_at = null のセッションで startCapture が CONSENT_REQUIRED を返すこと。
   //
   // 設計上の注記:
-  //   interview_session.consent_obtained_at は DB スキーマで notNull/defaultNow のため、
-  //   INSERT では null を直接セットできない。そのため capture-actions.test.ts と同じ
+  //   interview-consent-gate spec（migration 0023）で consent_obtained_at は nullable 化された
+  //   （beforeEach で同意済み状態を seed している通り、直接 null で INSERT すること自体は可能）。
+  //   本テストはあえて capture-actions.test.ts と同じ
   //   「db.query.interviewSession.findFirst を spy して null consent を持つ行を返す」
-  //   アプローチで consent ゲートを検証する。
-  //   これは task 2.5 のテストと同一パターンであり、スキーマ制約の documented limitation。
+  //   アプローチで consent ゲートを検証する（他 E2E シナリオと beforeEach を共有しつつ、
+  //   このケースのみ未同意状態を差し込むため）。
   // =========================================================================
 
   describe('シナリオ 4: 同意なし開始拒否（Req 1.6）', () => {
