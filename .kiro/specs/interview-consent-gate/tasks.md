@@ -41,7 +41,7 @@
   - _Boundary: consent-step_
 
 - [ ] 3. Integration: 配線と自動同意停止
-- [ ] 3.1 (P) create-session の自動同意停止
+- [x] 3.1 (P) create-session の自動同意停止
   - セッション作成時に consent 列を書かず null で作成する
   - 旧コメント（Requirement 3.8/3.9）を本 spec による supersede に更新する
   - 完了状態: 新規作成セッションの consent_obtained_at が null になる
