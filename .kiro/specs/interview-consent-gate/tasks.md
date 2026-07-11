@@ -74,7 +74,7 @@
   - _Requirements: 1.1, 1.3, 1.4, 5.1, 5.2_
   - _Depends: 3.1, 3.2_
   - _Boundary: capture-actions.test.ts, e2e-scenarios.test.ts（rtic 所有だが本 spec のゲート実効化に伴う consent seeding 修正）_
-- [ ] 4.2 面接官同意フロー E2E
+- [x] 4.2 面接官同意フロー E2E
   - セッション作成→開始 disabled→同意ステップ→チェック確定→画面再取得後に開始解禁の通し確認
   - 完了状態: フロー全体が通しで pass
   - _Requirements: 2.1, 2.2, 1.1, 1.2_
