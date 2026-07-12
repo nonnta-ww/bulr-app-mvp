@@ -6,6 +6,7 @@
 > **更新 2026-05-23**: Stage 1 MVP（7 spec）完了。Stage 2 再設計（候補者/企業/運営の3アプリ化）を追加。Stage 2 の詳細設計は `docs/superpowers/specs/2026-05-23-bulr-candidate-business-split-design.md` を参照。
 > **更新 2026-07-09**: Wave 8「診断アーキタイプ体系」を追加（診断ファミリー rpg-class-diagnosis / thinking-style-diagnosis / playstyle-diagnosis の再設計）。小 spec `class-catch-names` は `diagnosis-archetypes` に吸収・置換（superseded）。
 > **更新 2026-07-10**: Wave 8 完全クローズ。diagnosis-archetypes(PR#44) + survey 3本（sage PR#46 / pdm-strategist PR#47 / worklife-disposition PR#48）を全マージ。全7職掌が活性化し、全12アーキタイプが到達可能に。計画済み Wave 1〜8 は実質すべて実装完了。
+> **更新 2026-07-11**: Wave 6+ 発散（次の1手検討）の結果、#1 Wave 7 本番投入（Recall）を選択。その唯一の spec 相当コードスライスとして `interview-consent-gate` を spec 化（requirements/design/tasks 承認済み・実装未着手）。env 実キー接続・実面接遅延実測は ops として spec 外で並行。発散の詳細は `docs/superpowers/specs/2026-07-11-interview-consent-gate-design.md`。
 
 ## Overview
 
@@ -66,9 +67,13 @@ bulr は2フェーズで進行する。
 - [x] sage-survey — 賢者（AI/ML・データ）スキルアンケートを seed 追加。Researcher アーキタイプ＋sage 職掌を開放（JOBTYPE_DEFAULT_VOCATION に1行）。Dependencies: diagnosis-archetypes。**実装完了・PR #46 マージ済(2026-07-10)**（jobType=ai-ml, 6カテゴリ seed＋ai-ml→sage マッピング）
 - [x] pdm-strategist-survey — 策士（PdM）スキルアンケートを seed 追加。Strategist アーキタイプ＋strategist 職掌を開放。Dependencies: diagnosis-archetypes。**実装完了・PR #47 マージ済(2026-07-10)**（jobType=product-manager, 8コンピテンシー seed＋product-manager→strategist マッピング。EM と職能境界分離）
 
-### Wave 6+ — Later（保留・spec 化は時期到来時に判断）
+### Wave 6+ — 次の1手（Wave 7 本番投入）＋ Later（保留）
 
-スカウト層（候補者プール検索＋企業のスカウト課金）／L3 年収査定（bulr 自身のデータ蓄積後）／マッチング／模擬面接の音声対応／マルチテナント本格化。
+**選択済み（2026-07-11）**: Wave 6+ 発散を〈事業インパクト×実装コスト×前提充足〉で整理した結果、次の1手は **#1 Wave 7 本番投入（Recall）**。保留候補（スカウト/マッチング/L3査定/マルチテナント）は「プール＋データ＋有料企業の実需」を共通ブロッカーとして持つ時期尚早クラスタと判断し、今回は見送り。対面パスは話者分離を持たず（LLM 事後推測のみ）Recall の代替にならないため、Recall を本番検証の主役とする。
+
+- [ ] interview-consent-gate — Wave 7 本番投入の唯一の spec 相当コードスライス。vacuous な consent ゲート（`consent_obtained_at` の `notNull().defaultNow()` により null チェックが到達不能）を実効化する。同意モデルは案C・ハイブリッド（面接官アテステーションで今実装・記録スキーマは候補者セルフ同意を後付け可能に）。スコープ: スキーマ nullable 化＋`consent_method`/`consent_actor_id` 追加（migration 0023・既存行 null 化）／`recordConsent`（原子的・冪等・単段返却）／同意ステップ UI（既存 read-path 再利用）／版管理された同意文 registry。Dependencies: realtime-interview-capture（Req 1.6/7.5 を実効化）。**spec 化完了（requirements/design/tasks 承認済み・実装未着手, 2026-07-11）**。ops 側（Recall 実キー接続・実面接遅延実測）は spec 外で並行。
+
+**Later（保留・spec 化は時期到来時に判断）**: スカウト層（候補者プール検索＋企業のスカウト課金）／L3 年収査定（bulr 自身のデータ蓄積後）／マッチング／模擬面接の音声対応／マルチテナント本格化。
 
 ## Existing Spec Updates
 

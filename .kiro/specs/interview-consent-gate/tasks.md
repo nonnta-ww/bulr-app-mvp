@@ -1,0 +1,88 @@
+# Implementation Plan
+
+- [ ] 1. Foundation: スキーマと同意文基盤
+- [x] 1.1 consent スキーマ変更と migration 0023
+  - interview_session の consent_obtained_at を nullable 化し default を撤去する
+  - consent_method enum（interviewer_attestation）と consent_actor_id（text, FK なし＝将来の候補者主体を許容）を追加する
+  - migration 0023 に既存行の consent_obtained_at を null 化するデータ移行を含める
+  - consent_version は notNull default 'ja-v1' を維持する
+  - drizzle-kit 実行は DIRECT_URL/DATABASE_URL を inline 上書きして行う
+  - 完了状態: migrate 適用後、任意セッションで consent_obtained_at が null を取り得ることを確認
+  - _Requirements: 3.3, 3.4, 5.1_
+- [x] 1.2 (P) 版管理された同意文 registry
+  - 現行版 ja-v1 の同意文（録音対象・利用目的・保持期間・データ扱い）を app ローカルに定義する
+  - 保持期間の記述を音声30日自動削除ポリシーと整合させる
+  - 現行版取得関数が version==='ja-v1' を返し必須4要素を含むユニットテスト
+  - 文言はプレースホルダで実装し、法務確定後に本文のみ差し替え可能とする（版キー不変）
+  - 完了状態: 現行版取得関数が必須4要素を含む ja-v1 を返す
+  - _Requirements: 4.1, 4.2, 4.4_
+  - _Boundary: consent-notice_
+
+- [ ] 2. Core: 同意記録と取得UI
+- [x] 2.1 recordConsent Server Action
+  - 面接官アテステーションで consent_obtained_at / consent_version / consent_method / consent_actor_id を単一更新で原子的に set する
+  - 版はサーバー側の現行版定数を stamp し、記録版＝提示版を保証する（client 送信版に依存しない）
+  - 既に同意済みなら書き込まず成功を返す（冪等 no-op）
+  - 非担当者は requireSessionOwnership で拒否する
+  - handler は同意記録データを直接返す単段契約とする（二重ラップ回避）
+  - ユニットテスト: 4列 set / 冪等 no-op / 非担当者拒否 / 版のサーバー stamp
+  - 完了状態: 未同意セッションで呼ぶと consent 4列が整合状態で永続化される
+  - _Requirements: 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.3, 6.1, 6.2, 6.3_
+  - _Depends: 1.1, 1.2_
+  - _Boundary: recordConsent_
+- [x] 2.2 consent-step コンポーネント
+  - 同意文を描画し「候補者から録音同意を口頭で得た」チェックと確定ボタンを提供する
+  - 確定時に同意記録アクションを呼び、成功（単段判定）で画面を再取得して consent 状態を反転させる
+  - チェック未了は確定ボタンを disabled にする
+  - コンポーネントテスト: 未チェックで確定 disabled / 確定で同意記録アクション呼び出し
+  - 完了状態: 確定操作で同意記録アクションが呼ばれ、成功後に画面が再取得される
+  - _Requirements: 2.1, 2.2_
+  - _Depends: 1.2, 2.1_
+  - _Boundary: consent-step_
+
+- [ ] 3. Integration: 配線と自動同意停止
+- [x] 3.1 (P) create-session の自動同意停止
+  - セッション作成時に consent 列を書かず null で作成する
+  - 旧コメント（Requirement 3.8/3.9）を本 spec による supersede に更新する
+  - 完了状態: 新規作成セッションの consent_obtained_at が null になる
+  - _Requirements: 2.4, 5.2_
+  - _Depends: 1.1_
+  - _Boundary: create-session_
+- [x] 3.2 キャプチャ画面の同意ステップ配線（integration）
+  - capture-start-panel の未同意ブロックのエラー表示を consent-step の描画に差し替える
+  - キャプチャ画面が現行版同意文と sessionId を伝播する（consentObtained は既存伝播を利用）
+  - コンポーネントテスト: 未同意時に consent-step を描画し開始系ボタンが disabled であること
+  - 完了状態: 未同意セッションのキャプチャ画面で consent-step が表示され開始系ボタンが disabled
+  - _Requirements: 1.2, 2.1, 2.2_
+  - _Depends: 2.2, 1.2_
+  - _Boundary: capture-start-panel, live-capture-runner, interview session page_
+- [x] 3.3 (P) admin の consent null 安全表示確認
+  - 同意取得日時が null のとき admin セッション詳細が安全に描画されることを確認する
+  - json-export が nullable な consent_obtained_at を安全に直列化することを確認する
+  - 完了状態: consent_obtained_at=null のセッションで admin 詳細と json-export がエラーなく動作
+  - _Requirements: 5.1_
+  - _Depends: 1.1_
+  - _Boundary: admin session detail, admin json-export_
+
+- [ ] 4. Validation: ゲート実効化とE2E
+- [x] 4.1 ゲート実効化の統合テスト
+  - consent_obtained_at=null で startCapture が CONSENT_REQUIRED を返す
+  - 同意 set 後は開始許可となり、recall / mic 両経路で同一挙動であること
+  - create-session が null 作成し、migration が既存行を null 化していること
+  - **既存ゲートテストの consent seeding 修正**: 自動同意前提で書かれた rtic のゲート後テストが、default 撤去でゲートに弾かれ CONSENT_REQUIRED を受ける。ゲート後の挙動（bot作成/mic録音）を検証するテストは事前に consent_obtained_at 済みの session を用意するよう修正する。対象: `app/(interviewer)/interviews/[sessionId]/_actions/capture-actions.test.ts`（6件）, `lib/capture/e2e-scenarios.test.ts` のゲート系。
+  - 完了状態: 上記シナリオの統合テストが pass し、business の全テストが green
+  - _Requirements: 1.1, 1.3, 1.4, 5.1, 5.2_
+  - _Depends: 3.1, 3.2_
+  - _Boundary: capture-actions.test.ts, e2e-scenarios.test.ts（rtic 所有だが本 spec のゲート実効化に伴う consent seeding 修正）_
+- [x] 4.2 面接官同意フロー E2E
+  - セッション作成→開始 disabled→同意ステップ→チェック確定→画面再取得後に開始解禁の通し確認
+  - 完了状態: フロー全体が通しで pass
+  - _Requirements: 2.1, 2.2, 1.1, 1.2_
+  - _Depends: 3.2_
+
+## Implementation Notes
+
+- 1.1 波及: migration 0023 で interview_session に nullable 2列（consent_method / consent_actor_id）を追加した結果、`interviewSession.$inferSelect` を全項目構築する既存モックが typecheck 赤になる。session 行モックを新規に作る/触るタスク（2.1, 3.x, 4.x）は必ず `consent_method: null` / `consent_actor_id: null` を含めること。baseline 修復済み: capture-actions.test.ts / e2e-scenarios.test.ts（commit bb0a329）。
+- drizzle-kit 系コマンドは DATABASE_URL/DIRECT_URL を packages/db/.env.local の値で inline 上書きして実行（localhost:5434 bulr_dev）。generate はデータ移行 SQL を出さないので手書き追記が必要。
+- worktree 環境: apps/business・packages/db・apps/admin の .env.local をメインリポジトリからコピー済み（gitignore 済み）。
+- ゲート実効化の波及（3.2 時点で確認）: default 撤去＋自動同意停止により、自動同意前提で書かれた rtic のゲート後テスト6件（capture-actions.test.ts）が `Received: CONSENT_REQUIRED` で失敗する＝ゲートが正しく作動した証拠。これは task 4.1 で consent seeding 修正として扱う（design の Revalidation Triggers で予見済み）。3.2 の境界外。

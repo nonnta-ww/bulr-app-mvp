@@ -14,6 +14,8 @@ export const sessionStatus = pgEnum('interview_session_status', [
 
 export const captureProvider = pgEnum('capture_provider', ['recall', 'mic']);
 
+export const consentMethod = pgEnum('consent_method', ['interviewer_attestation']);
+
 export const captureStatus = pgEnum('capture_status', [
   'idle',
   'bot_joining',
@@ -38,10 +40,15 @@ export const interviewSession = pgTable(
     status: sessionStatus('status').notNull().default('draft'),
     role: text('role').notNull().default('backend'),
     planned_pattern_codes: text('planned_pattern_codes').array().notNull(),
-    consent_obtained_at: timestamp('consent_obtained_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    // 導入前は defaultNow() で全セッションが自動同意扱いになっていた（ゲートが vacuous）。
+    // interview-consent-gate spec（migration 0023）で nullable 化・default 撤去し、
+    // 面接官アテステーションによる明示 recordConsent のみが値を set する。
+    consent_obtained_at: timestamp('consent_obtained_at', { withTimezone: true }),
     consent_version: text('consent_version').notNull().default('ja-v1'),
+    // interview-consent-gate spec（migration 0023）で追加。将来の候補者セルフ同意（案B）を
+    // enum 値追加のみで載せられるよう consent_actor_id は主体多型を許容し FK を張らない。
+    consent_method: consentMethod('consent_method'),
+    consent_actor_id: text('consent_actor_id'),
     started_at: timestamp('started_at', { withTimezone: true }),
     completed_at: timestamp('completed_at', { withTimezone: true }),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

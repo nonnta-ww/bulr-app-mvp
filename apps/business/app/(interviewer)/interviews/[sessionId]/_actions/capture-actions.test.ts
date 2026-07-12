@@ -131,7 +131,10 @@ describe('startCapture / stopCapture Server Actions', () => {
       updatedAt: new Date(),
     });
 
-    // セッションを idle 状態で作成（consent_obtained_at は DB デフォルト = now()）
+    // セッションを idle 状態で作成。同意ゲート実効化（interview-consent-gate）に伴い
+    // consent_obtained_at の DB デフォルトは撤去された（default null）ため、
+    // ゲート後の挙動（bot作成/mic録音等）を検証するテストのために明示的に同意済み状態で seed する。
+    // 同意未記録セッションのゲート拒否は「同意ゲート」describe 内で spy により個別に検証する。
     await db.insert(schema.interviewSession).values({
       id: sessionId,
       interviewer_id: TEST_USER_ID,
@@ -139,6 +142,9 @@ describe('startCapture / stopCapture Server Actions', () => {
       role: 'backend',
       planned_pattern_codes: [],
       capture_status: 'idle',
+      consent_obtained_at: new Date(),
+      consent_method: 'interviewer_attestation',
+      consent_actor_id: TEST_USER_ID,
     });
 
     // leaveBot はデフォルトで成功を返す
@@ -184,6 +190,8 @@ describe('startCapture / stopCapture Server Actions', () => {
         planned_pattern_codes: [],
         entry_id: null,
         candidate_id: null,
+        consent_method: null,
+        consent_actor_id: null,
       };
 
       const spy = vi

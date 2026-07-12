@@ -7,6 +7,9 @@
  * 面接中ページにリダイレクトする。
  *
  * Requirements: 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 15.2, 20.4
+ * (rtic Requirement 3.8/3.9 の「defaultNow() による自動同意」は
+ *  interview-consent-gate spec が supersede 済み。consent 列は本アクションで
+ *  書き込まず、未同意状態のままセッションを開始する。)
  */
 
 import { redirect } from 'next/navigation';
@@ -83,8 +86,13 @@ export const createSession = authedAction(
           status: 'in_progress',
           role: 'backend',
           planned_pattern_codes: plannedPatternCodes,
-          // consent_obtained_at: defaultNow() により自動設定（Requirement 3.8）
-          // consent_version: 'ja-v1' デフォルト値（Requirement 3.9）
+          // consent 列は意図的に書き込まない。旧 Requirement 3.8/3.9（defaultNow() による
+          // 自動同意）は interview-consent-gate spec が supersede した。
+          // consent_obtained_at は migration 0023 で default 撤去・nullable 化されており、
+          // ここで触れないことで新規セッションは未同意（null）状態で開始する
+          // （interview-consent-gate Requirement 2.4, 5.2）。
+          // consent_version のみ notNull default 'ja-v1' を維持（同意「版」は同意取得前でも
+          // 現行版として意味を持つため）。
         })
         .returning({ id: schema.interviewSession.id });
 
