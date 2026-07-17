@@ -11,40 +11,40 @@
   - _Requirements: 2.4, 9.3_
 
 - [ ] 2. Core: app-local 診断コア（純関数）
-- [ ] 2.1 チームワーク4軸・8極と app-local 型の定義
+- [x] 2.1 チームワーク4軸・8極と app-local 型の定義
   - 4軸（率直さ/判断の重心/距離感/異論への構え）と各軸の第1極・第2極（value-neutral な両極ラベル）・極対応・中点を定義
   - `TeamworkAxis`/`TeamworkPole`/`TeamworkCode` の app-local union 型をここで単一定義する（`@bulr/types` には足さない。RPGクラス診断・ai は消費しない）
   - done: 4軸×2極＝16通りの `TeamworkCode` が型として表現でき、後続コアが本ファイルの型のみを import する
   - _Requirements: 4.1, 4.5, 9.4, 10.3_
   - _Boundary: axes_
-- [ ] 2.2 (P) 二者択一スコアリング
+- [x] 2.2 (P) 二者択一スコアリング
   - 軸ごとに高極ピック率を 0-100 へ正規化・平均し、中点で二値化（同数タイは既定極＝第1極、各軸は奇数問前提）
   - 全4軸判定可→`full`（`TeamworkCode` 確定）／一部→`partial`／皆無→`none` の completeness を算出。純関数・決定論（同一入力→同一出力）
   - done: フル回答で安定した `TeamworkCode` を返し、部分回答でアーキタイプ未確定の `partial` を返すことがテストで確認できる
   - _Requirements: 3.2, 3.3, 3.4, 4.2, 4.3_
   - _Boundary: score_
   - _Depends: 2.1_
-- [ ] 2.3 (P) 回答マッピング
+- [x] 2.3 (P) 回答マッピング
   - サーベイ回答（`SurveyResponseForAnalysis`）のカテゴリ名を4軸（L1）／3成長ディメンション（L2）へ写像。L1 は選択肢 `level`(0/1) から高極ピックを解決、L2 は `level`(0..k) を成長入力へ渡す
   - カテゴリ名の契約キーを本ファイルに定数化し**単一ソース**とする（seed はこの文字列に厳密一致させる）。未知カテゴリ・空回答は無視
   - done: 与えた回答束から scorer 入力と growth 入力が決定論的に生成され、未知カテゴリが除外されることがテストで確認できる
   - _Requirements: 2.4, 4.6, 5.1_
   - _Boundary: answers_
   - _Depends: 2.1_
-- [ ] 2.4 (P) 16タイプ・アーキタイプ内容
+- [x] 2.4 (P) 16タイプ・アーキタイプ内容
   - 16の `TeamworkCode` それぞれに name／description／nextStep のキュレーテッド文言（価値中立）を定義。本ファイルが 16タイプ・コピーの**正本**
   - done: 全16コードに重複のない name/description/nextStep が揃い、`TeamworkCode` から一意に解決できることがテストで確認できる
   - _Requirements: 4.3, 4.5_
   - _Boundary: archetypes_
   - _Depends: 2.1_
-- [ ] 2.5 (P) カルチャー親和性導出
+- [x] 2.5 (P) カルチャー親和性導出
   - 2カルチャー軸で導出: conflict（率直さ×異論→debate/consensus/balanced）、bonding（判断の重心×距離感→results/family/balanced）。象限に対応する description（個人起点のみ・特定企業適合や合否語を含めない）を本ファイルに**正本**として持つ
   - `completeness` 未確定（コード未確定）では導出しない（null 相当を返す）
   - done: 代表コードが期待の conflict/bonding 位置へ写像され、混在コードが balanced になり、コード未確定時に導出されないことがテストで確認できる
   - _Requirements: 6.1, 6.2, 6.3, 10.4_
   - _Boundary: culture-affinity_
   - _Depends: 2.1, 2.2_
-- [ ] 2.6 (P) 成長ディメンション（SJT→非評価アドバイス）
+- [x] 2.6 (P) 成長ディメンション（SJT→非評価アドバイス）
   - 3ディメンション（自己認識/他者視点/感情の自己制御）ごとに SJT の `level` を集約し内部段階を決め、段階→手書きの成長アドバイス文へ写像する leveling rubric とアドバイス文の**正本**を持つ
   - 出力に数値スコア・段階ラベル・他者比較を含めない。回答が1件以上あるディメンションのみ返す
   - done: ディメンション別に伸びしろ文脈のアドバイスが返り、未回答ディメンションが除外され、出力に数値・順位が含まれないことがテストで確認できる
@@ -138,3 +138,4 @@
 - **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
 - **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
 - **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
+- **2.x（Core）**: 型依存は answers.ts → {axes, score, growth}（growth/score/archetypes/culture は axes のみ or 独立）で非循環。GrowthAnswer/GrowthDimension は growth.ts が正本（answers が import）。`TeamworkProfile` は thinking-style の AxisReading 構造を踏襲（design の primary/secondary スケッチより採用）。テストは `noUncheckedIndexedAccess` 有効のため配列添字は型安全ヘルパー（first()）で取り出す。candidate の vitest/tsc は Node 24・DB不要で走る（pure 関数）。eslint bin は root（`../../node_modules/.bin/eslint`）。検証: 28 tests pass / tsc 0 / eslint clean。
