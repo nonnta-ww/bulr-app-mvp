@@ -24,6 +24,7 @@ export const surveyKind = pgEnum('survey_kind', [
   'playstyle',
   'thinking_style',
   'worklife_disposition',
+  'teamwork_style',
 ]);
 
 // --- Tables ---

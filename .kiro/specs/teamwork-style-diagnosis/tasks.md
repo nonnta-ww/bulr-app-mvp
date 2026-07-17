@@ -4,7 +4,7 @@
 > 前提: 既存 thinking-style-diagnosis / worklife-disposition-survey の実装を参照実装とする。既存 playstyle・thinking-style・worklife・スキルアンケート基盤・`answered-surveys-query.ts` は改修しない（加算のみ）。依存方向 types → db → ai → apps を厳守し、診断の型・コンテンツは apps/candidate 側に app-local で置く。
 
 - [ ] 1. Foundation: スキーマ・enum・seed runner 拡張
-- [ ] 1.1 `survey_kind` へ `teamwork_style` を追加
+- [x] 1.1 `survey_kind` へ `teamwork_style` を追加
   - pgEnum 配列（`skill-survey.ts`）へ `'teamwork_style'` を追加し、drizzle-kit で enum 値追加 migration を生成（`ALTER TYPE ... ADD VALUE 'teamwork_style'`、番号は生成時点の最新の次）
   - seed runner の `SkillSurveySeedData.kind` union へ `'teamwork_style'` を追加
   - done: migration がローカル DB に適用でき、TS ビルドが `teamwork_style` を型として認識し、seed runner が当該 kind を受理する
@@ -132,3 +132,9 @@
   - done: none/partial/full と共有の E2E/UI テストが全て pass する
   - _Requirements: 3.2, 3.3, 3.4, 3.5, 4.4, 7.1, 7.2, 7.3, 7.4, 9.2_
   - _Depends: 5.6, 6.1_
+
+## Implementation Notes
+
+- **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
+- **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
+- **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
