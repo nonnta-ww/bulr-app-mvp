@@ -341,26 +341,29 @@ function scoreTeamworkStyle(answers: TeamworkAnswer[]): TeamworkProfile;
 
 ##### Service Interface
 
+カルチャー親和性は **2つの独立したカルチャー軸**で位置づける（1-of-N ではなく、混在時に "中庸" を表現できるため）。
+
+- **対立の扱い方**（`conflict`）＝ 率直さ × 異論への構え から導出: `直言＋多様→debate（議論歓迎）` / `調停＋統一→consensus（合意形成）` / それ以外の混在 → `balanced（中庸）`。
+- **結束の作り方**（`bonding`）＝ 判断の重心 × 距離感 から導出: `課題＋ドライ→results（成果主義）` / `関係＋ウェット→family（家族的）` / 混在 → `balanced（中庸）`。
+
 ```typescript
+type ConflictCulture = "debate" | "consensus" | "balanced";
+type BondingCulture = "results" | "family" | "balanced";
+
 interface CultureAffinity {
-  /** 主たるカルチャー型（少数の固定セットから1つ） */
-  primary: CultureType;
-  /** 相性の良い補助型（任意・0..2件） */
-  secondary: CultureType[];
-  /** 個人起点の説明（特定企業適合・合否を含まない） */
+  /** 対立の扱い方の親和（率直さ×異論から導出） */
+  conflict: ConflictCulture;
+  /** 結束の作り方の親和（判断の重心×距離感から導出） */
+  bonding: BondingCulture;
+  /** conflict×bonding の象限に対応するキュレーテッドな文化像の説明。個人起点で、特定企業適合・合否を含めない */
   description: string;
 }
-
-type CultureType =
-  | "debateOpen"     // 議論歓迎・high-candor
-  | "consensusHarmony" // 合意形成・和
-  | "resultsPro"     // 成果主義・プロフェッショナル
-  | "familyRelational"; // 家族的・関係重視
 
 /** full 未満では呼ばない（呼ばれた場合 null を返す） */
 function deriveCultureAffinity(code: TeamworkCode | undefined): CultureAffinity | null;
 ```
 
+- 象限マップ（description の正本）: `debate×results`＝率直・成果重視のフラット文化 / `debate×family`＝率直で情に厚い少数精鋭文化 / `consensus×results`＝着実なコンセンサス実力主義文化 / `consensus×family`＝和を重んじる家族的文化。中庸軸はその旨を添える。
 - Postconditions: `code` 未確定なら `null`（6.3）。個人起点の記述のみで企業適合・合否を含めない（6.2）。
 
 #### growth.ts
@@ -482,6 +485,8 @@ pgEnum 配列（`skill-survey.ts`）にも `'teamwork_style'` を追加し、TS 
 ## Open Questions / Risks
 
 - **[確定]** isRequired ポリシー: L1＝必須 / L2（SJT）＝任意。各軸の L1 は奇数問。 → seed 構造に反映済み。
+- **[確定]** 16タイプ命名規約（折衷）: **正式名＝機能ラベル**（4役割 ドライバー/カタリスト/コーディネーター/ハーモナイザー ＝率直さ×重心、 × 4修飾 収束型/探索型/求心型/共感型 ＝距離×異論）＋ **キャッチ＝キャラ名**（例：収束型ドライバー「一刀両断の推進者」）。archetypes.ts の name／catch／description／nextStep がこの正本。
+- **[確定]** カルチャー親和性は 2カルチャー軸方式（conflict＝率直さ×異論、bonding＝重心×距離、混在は balanced）。象限 description は culture-affinity.ts が正本。
 - 各軸あたりの L1 問数（奇数）と SJT 問数（各成長ディメンションの最小信頼問数）の具体値は tasks/seed 作成時に確定。
-- **コンテンツ妥当性（要ルーブリック）**: (a) カルチャー型セット（4型）の定義と 16タイプ→カルチャーの割付表、(b) SJT 選択肢の発達段階（level）付けルーブリック、を seed 作成前に design のコンテンツ表として先に固定する。16タイプ名・説明・nextStep のコピーも同様。SJT シナリオは spec B 流用を見据えた汎用シーンに限定。
+- **残コンテンツ**: SJT 選択肢の発達段階（level）付けルーブリックと初期シーン（spec B 流用を見据えた汎用シーン）。16タイプの description／nextStep コピー。
 - migration 番号はマージ時衝突に注意（過去に 0019 振り直しの先例）。生成時点の最新の次番号で採番し、マージ直前に再確認。

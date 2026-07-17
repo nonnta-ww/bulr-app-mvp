@@ -1,5 +1,6 @@
 # Implementation Plan
 
+> コンテンツ正本: `content-canon.md`（16タイプ命名・カルチャー2軸・SJT ルーブリック）。タスク 2.4/2.5/2.6/3.1 はこれを単一ソースとして参照する。
 > 前提: 既存 thinking-style-diagnosis / worklife-disposition-survey の実装を参照実装とする。既存 playstyle・thinking-style・worklife・スキルアンケート基盤・`answered-surveys-query.ts` は改修しない（加算のみ）。依存方向 types → db → ai → apps を厳守し、診断の型・コンテンツは apps/candidate 側に app-local で置く。
 
 - [ ] 1. Foundation: スキーマ・enum・seed runner 拡張
@@ -37,9 +38,9 @@
   - _Boundary: archetypes_
   - _Depends: 2.1_
 - [ ] 2.5 (P) カルチャー親和性導出
-  - カルチャー型セット（議論歓迎/合意形成/成果主義/家族的 の4型）を定義し、`TeamworkCode`→カルチャー親和性の割付表を本ファイルに**正本**として持つ。記述は個人起点のみ（特定企業適合・合否語を含めない）
+  - 2カルチャー軸で導出: conflict（率直さ×異論→debate/consensus/balanced）、bonding（判断の重心×距離感→results/family/balanced）。象限に対応する description（個人起点のみ・特定企業適合や合否語を含めない）を本ファイルに**正本**として持つ
   - `completeness` 未確定（コード未確定）では導出しない（null 相当を返す）
-  - done: 代表コードが期待カルチャー型へ写像され、コード未確定時に導出されないことがテストで確認できる
+  - done: 代表コードが期待の conflict/bonding 位置へ写像され、混在コードが balanced になり、コード未確定時に導出されないことがテストで確認できる
   - _Requirements: 6.1, 6.2, 6.3, 10.4_
   - _Boundary: culture-affinity_
   - _Depends: 2.1, 2.2_
