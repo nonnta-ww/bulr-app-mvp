@@ -10,6 +10,7 @@ export { runAiMlSkillSurveySeed } from './skill-surveys/ai-ml';
 export { runPlaystyleSkillSurveySeed } from './skill-surveys/playstyle';
 export { runThinkingStyleSkillSurveySeed } from './skill-surveys/thinking-style';
 export { runWorklifeDispositionSkillSurveySeed } from './skill-surveys/worklife-disposition';
+export { runTeamworkStyleSkillSurveySeed } from './skill-surveys/teamwork-style';
 
 // ---------------------------------------------------------------------------
 // CLI entry point
@@ -27,6 +28,7 @@ async function main(): Promise<void> {
   const { runPlaystyleSkillSurveySeed } = await import('./skill-surveys/playstyle');
   const { runThinkingStyleSkillSurveySeed } = await import('./skill-surveys/thinking-style');
   const { runWorklifeDispositionSkillSurveySeed } = await import('./skill-surveys/worklife-disposition');
+  const { runTeamworkStyleSkillSurveySeed } = await import('./skill-surveys/teamwork-style');
 
   await runBackendSkillSurveySeed(db);
   await runAiDrivenDevelopmentSkillSurveySeed(db);
@@ -38,6 +40,7 @@ async function main(): Promise<void> {
   await runPlaystyleSkillSurveySeed(db);
   await runThinkingStyleSkillSurveySeed(db);
   await runWorklifeDispositionSkillSurveySeed(db);
+  await runTeamworkStyleSkillSurveySeed(db);
 
   console.log('All seeds completed.');
 }

@@ -53,7 +53,7 @@
   - _Depends: 2.3_
 
 - [ ] 3. Core: アンケート seed 投入
-- [ ] 3.1 `teamwork_style` アンケートの seed と登録
+- [x] 3.1 `teamwork_style` アンケートの seed と登録
   - survey（`kind='teamwork_style'`, `jobType='teamwork_style'`）→ 7カテゴリ（L1 4軸＋L2 3ディメンション）→ 設問 → 選択肢を投入。category 名は 2.3 の契約キーに厳密一致させる
   - L1＝`single_choice` 二者択一で `isRequired: true`・各軸**奇数問**・choice `level`＝0(第1極)/1(第2極)・両選択肢とも好ましい label。L2＝SJT `single_choice` で `isRequired: false`・choice `level`＝発達段階（2.6 の rubric と整合）
   - seed runner のパイプライン（`seeds/index` の static＋dynamic import）へ登録
@@ -138,4 +138,5 @@
 - **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
 - **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
 - **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
+- **3.1（seed）**: local DB へ2回投入し冪等確認（survey=1/categories=7/questions=18/choices=42/required=12）。category 名は answers.ts の契約キーに厳密一致（不一致だと回答が silently drop）。L1=level0/1（第1/2極）・isRequired true、L2 SJT=level0..2・isRequired false。tsx で seed 実行検証する際は client を **動的 import**（`const { db } = await import('./src/client')`）する必要あり（`export const db` の静的 import は tsx で解決失敗）。DB クエリ検証は drizzle `db.execute(sql\`...\`)` を packages/db 内スクリプトで（pg 解決のため worktree 外スクラッチ不可）。
 - **2.x（Core）**: 型依存は answers.ts → {axes, score, growth}（growth/score/archetypes/culture は axes のみ or 独立）で非循環。GrowthAnswer/GrowthDimension は growth.ts が正本（answers が import）。`TeamworkProfile` は thinking-style の AxisReading 構造を踏襲（design の primary/secondary スケッチより採用）。テストは `noUncheckedIndexedAccess` 有効のため配列添字は型安全ヘルパー（first()）で取り出す。candidate の vitest/tsc は Node 24・DB不要で走る（pure 関数）。eslint bin は root（`../../node_modules/.bin/eslint`）。検証: 28 tests pass / tsc 0 / eslint clean。
