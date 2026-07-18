@@ -63,45 +63,45 @@
   - _Depends: 1.1, 2.3, 2.6_
 
 - [ ] 4. Core: DB query
-- [ ] 4.1 survey id 解決 query
+- [x] 4.1 survey id 解決 query
   - `kind='teamwork_style'` の survey id を1件解決（未 seed 時 null）。barrel と `queries/index.ts` で再 export
   - done: seed 済み環境で id を返し、未 seed 環境で null を返すことが確認できる
   - _Requirements: 2.2, 2.3_
   - _Depends: 1.1_
-- [ ] 4.2 本人最新回答取得 query
+- [x] 4.2 本人最新回答取得 query
   - 既存 `getLatestSurveyResponseForAnalysis` を利用し、候補者本人の `teamwork_style` 最新回答のみを取得（無ければ null）
   - done: 本人の最新回答が取得でき、他候補者の回答が混入しないことが確認できる
   - _Requirements: 1.3, 3.6_
   - _Depends: 1.1_
 
 - [ ] 5. UI: 結果ページと表示コンポーネント
-- [ ] 5.1 (P) 4軸バイポーラ表示コンポーネント
+- [x] 5.1 (P) 4軸バイポーラ表示コンポーネント
   - 各軸を両極バーで表示。判定済みはマーカー位置、未回答は淡色トラック＋「未回答」。点数・偏差値・順位・% を一切描画しない
   - done: フル/部分の両状態でバーが描画され、数値指標がどこにも表示されないことが確認できる
   - _Requirements: 4.4, 9.2_
   - _Boundary: axis-bars_
-- [ ] 5.2 (P) カルチャー親和性カード
+- [x] 5.2 (P) カルチャー親和性カード
   - `CultureAffinity` を個人起点の文言で提示（full のみ）。特定企業適合・合否を表示しない
   - done: full 結果でカルチャー型と説明が表示され、企業名・合否表現を含まないことが確認できる
   - _Requirements: 6.1, 6.2_
   - _Boundary: culture-affinity-card_
-- [ ] 5.3 (P) 成長アドバイスセクション
+- [x] 5.3 (P) 成長アドバイスセクション
   - 回答済みディメンションのアドバイスを伸びしろ文脈で提示。数値・順位・他者比較を表示しない
   - done: 回答済みディメンションのみアドバイスが並び、数値・比較表現が無いことが確認できる
   - _Requirements: 5.3, 5.4_
   - _Boundary: growth-advice-section_
-- [ ] 5.4 (P) 共有パネル
+- [x] 5.4 (P) 共有パネル
   - アーキタイプ名のみのテキスト共有。clipboard/share API があれば利用し、無くてもクラッシュしない。回答生データ・成長詳細・数値・PII を含めない
   - done: 共有テキストがアーキタイプ名のみで、API 不在環境でも例外なく表示が維持されることが確認できる
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
   - _Boundary: share-panel_
-- [ ] 5.5 結果ビュー合成（none/partial/full 分岐）
+- [x] 5.5 結果ビュー合成（none/partial/full 分岐）
   - completeness に応じて none（未診断＋回答CTA）／partial（暫定バー＋残設問CTA・アーキタイプ名なし・カルチャーなし）／full（アーキタイプ＋バー＋カルチャー）を合成。成長アドバイスは回答があれば上乗せ表示
   - done: `teamwork-style-result-{none|partial|full}` の各分岐が期待要素で描画されることが確認できる
   - _Requirements: 3.2, 3.3, 3.4, 3.5_
   - _Boundary: teamwork-style-result_
   - _Depends: 5.1, 5.2, 5.3, 5.4_
-- [ ] 5.6 診断ページ（認証・取得・ライブ算出・deep-link）
+- [x] 5.6 診断ページ（認証・取得・ライブ算出・deep-link）
   - `requireCandidate()` で認証ゲート（UNAUTHORIZED→sign-in、CANDIDATE_PROFILE_MISSING→onboarding）。本人回答と survey id を取得し、コアでライブ算出（永続化しない）。回答フォームへの deep-link を解決し、未 seed 時は一覧へフォールバック
   - 面接官向けパターン・RPG給餌・結果永続化を行わない（本 spec スコープ内に閉じる）
   - done: 認証済み本人がアクセスすると最新回答に基づく結果が表示され、未認証/プロフィール無しが適切に遷移し、結果が保存されないことが確認できる
@@ -110,7 +110,7 @@
   - _Depends: 2.2, 2.3, 2.4, 2.5, 2.6, 4.1, 4.2, 5.5_
 
 - [ ] 6. Integration: ナビ導線
-- [ ] 6.1 ナビ入口の追加
+- [x] 6.1 ナビ入口の追加
   - 候補者ナビへ「チームワーク・スタイル診断」→ 診断結果ページ の項目を追加
   - done: ナビから診断ページへ遷移でき、既存ナビ項目の動作が変わらないことが確認できる
   - _Requirements: 2.1_
@@ -138,5 +138,6 @@
 - **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
 - **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
 - **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
+- **4.x–6.1（query/UI/nav）**: thinking-style の page/_components/query を app-local 複製。page は profile（score）＋growthAdvice（growth）＋cultureAffinity（deriveCultureAffinity(profile.code ?? undefined)）をライブ算出し result へ渡す。`@bulr/db` 経由で query を import（queries barrel → @bulr/db）。共有テキストは name＋catch のみ（PII/数値なし）。**_components のコンポーネント/E2E テストは 7.3 に委譲**（5.x では作成しない）。ナビ symbol は `groups`。検証: db/candidate tsc 0・eslint clean・28 unit tests pass・独立レビュー APPROVED（実行時レンダリングは 7.3 で駆動）。
 - **3.1（seed）**: local DB へ2回投入し冪等確認（survey=1/categories=7/questions=18/choices=42/required=12）。category 名は answers.ts の契約キーに厳密一致（不一致だと回答が silently drop）。L1=level0/1（第1/2極）・isRequired true、L2 SJT=level0..2・isRequired false。tsx で seed 実行検証する際は client を **動的 import**（`const { db } = await import('./src/client')`）する必要あり（`export const db` の静的 import は tsx で解決失敗）。DB クエリ検証は drizzle `db.execute(sql\`...\`)` を packages/db 内スクリプトで（pg 解決のため worktree 外スクラッチ不可）。
 - **2.x（Core）**: 型依存は answers.ts → {axes, score, growth}（growth/score/archetypes/culture は axes のみ or 独立）で非循環。GrowthAnswer/GrowthDimension は growth.ts が正本（answers が import）。`TeamworkProfile` は thinking-style の AxisReading 構造を踏襲（design の primary/secondary スケッチより採用）。テストは `noUncheckedIndexedAccess` 有効のため配列添字は型安全ヘルパー（first()）で取り出す。candidate の vitest/tsc は Node 24・DB不要で走る（pure 関数）。eslint bin は root（`../../node_modules/.bin/eslint`）。検証: 28 tests pass / tsc 0 / eslint clean。

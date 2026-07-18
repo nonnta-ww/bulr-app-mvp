@@ -9,3 +9,4 @@ export * from './self-analysis';
 export * from './class-diagnosis/index';
 export * from './thinking-style/index';
 export * from './worklife-disposition/index';
+export * from './teamwork-style/index';
