@@ -117,17 +117,17 @@
   - _Depends: 5.6_
 
 - [ ] 7. Validation: テスト
-- [ ] 7.1 app-core 単体テスト
+- [x] 7.1 app-core 単体テスト
   - score（full/partial/none・決定論・タイ処理）、answers（写像・level 解決・未知除外）、archetypes（16コード網羅）、culture-affinity（写像・未確定時 null・企業/合否語なし）、growth（段階写像・未回答除外・数値/比較なし）を検証
   - done: 上記コア純関数のテストが全て pass する
   - _Requirements: 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.5, 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3_
   - _Depends: 2.2, 2.3, 2.4, 2.5, 2.6_
-- [ ] 7.2 DB integration テスト
+- [x] 7.2 DB integration テスト
   - seed 投入後の4階層生成、survey id 解決（有/無）、本人最新回答取得、および `teamwork_style` 回答が `/self-analysis` 回答済み一覧・自己分析対象に**現れない**ことを検証（既存 `kind='skill'` フィルタで成立、改修なしを固定）
   - done: 一覧除外を含む DB integration テストが全て pass する
   - _Requirements: 2.2, 2.3, 1.3, 3.6, 8.1, 8.2, 8.3_
   - _Depends: 3.1, 4.1, 4.2_
-- [ ] 7.3 E2E/UI テスト
+- [x] 7.3 E2E/UI テスト
   - 未回答→none＋回答CTA、部分→partial＋暫定バー＋残設問CTA（アーキタイプ名なし・カルチャーなし）、フル→full＋アーキタイプ＋カルチャー＋（回答時）成長、**数値非表示**、共有テキストの生データ非含有・API 不在耐性を検証
   - done: none/partial/full と共有の E2E/UI テストが全て pass する
   - _Requirements: 3.2, 3.3, 3.4, 3.5, 4.4, 7.1, 7.2, 7.3, 7.4, 9.2_
@@ -138,6 +138,7 @@
 - **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
 - **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
 - **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
+- **7.x（テスト）**: 7.1=2.x の colocated 単体(28)で充足(新規なし)。7.2=DB integration 4本(seed構造/id解決/本人回答/一覧除外)11 tests、`DATABASE_URL` inline＋`--no-file-parallelism` で実行(共有マスタseedは削除しない)。7.3=E2E 1本9 tests(none/partial/full・数値非表示・culture/growth・nav・共有)。**jsdom は navigator.clipboard/share が元から未定義**＝API不在環境なので mock 不要(spyOn は "property not defined" で失敗する)。合計 candidate 37＋db integration 11＝全緑。
 - **4.x–6.1（query/UI/nav）**: thinking-style の page/_components/query を app-local 複製。page は profile（score）＋growthAdvice（growth）＋cultureAffinity（deriveCultureAffinity(profile.code ?? undefined)）をライブ算出し result へ渡す。`@bulr/db` 経由で query を import（queries barrel → @bulr/db）。共有テキストは name＋catch のみ（PII/数値なし）。**_components のコンポーネント/E2E テストは 7.3 に委譲**（5.x では作成しない）。ナビ symbol は `groups`。検証: db/candidate tsc 0・eslint clean・28 unit tests pass・独立レビュー APPROVED（実行時レンダリングは 7.3 で駆動）。
 - **3.1（seed）**: local DB へ2回投入し冪等確認（survey=1/categories=7/questions=18/choices=42/required=12）。category 名は answers.ts の契約キーに厳密一致（不一致だと回答が silently drop）。L1=level0/1（第1/2極）・isRequired true、L2 SJT=level0..2・isRequired false。tsx で seed 実行検証する際は client を **動的 import**（`const { db } = await import('./src/client')`）する必要あり（`export const db` の静的 import は tsx で解決失敗）。DB クエリ検証は drizzle `db.execute(sql\`...\`)` を packages/db 内スクリプトで（pg 解決のため worktree 外スクラッチ不可）。
 - **2.x（Core）**: 型依存は answers.ts → {axes, score, growth}（growth/score/archetypes/culture は axes のみ or 独立）で非循環。GrowthAnswer/GrowthDimension は growth.ts が正本（answers が import）。`TeamworkProfile` は thinking-style の AxisReading 構造を踏襲（design の primary/secondary スケッチより採用）。テストは `noUncheckedIndexedAccess` 有効のため配列添字は型安全ヘルパー（first()）で取り出す。candidate の vitest/tsc は Node 24・DB不要で走る（pure 関数）。eslint bin は root（`../../node_modules/.bin/eslint`）。検証: 28 tests pass / tsc 0 / eslint clean。
