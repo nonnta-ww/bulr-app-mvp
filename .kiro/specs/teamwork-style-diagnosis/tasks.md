@@ -1,0 +1,144 @@
+# Implementation Plan
+
+> コンテンツ正本: `content-canon.md`（16タイプ命名・カルチャー2軸・SJT ルーブリック）。タスク 2.4/2.5/2.6/3.1 はこれを単一ソースとして参照する。
+> 前提: 既存 thinking-style-diagnosis / worklife-disposition-survey の実装を参照実装とする。既存 playstyle・thinking-style・worklife・スキルアンケート基盤・`answered-surveys-query.ts` は改修しない（加算のみ）。依存方向 types → db → ai → apps を厳守し、診断の型・コンテンツは apps/candidate 側に app-local で置く。
+
+- [ ] 1. Foundation: スキーマ・enum・seed runner 拡張
+- [x] 1.1 `survey_kind` へ `teamwork_style` を追加
+  - pgEnum 配列（`skill-survey.ts`）へ `'teamwork_style'` を追加し、drizzle-kit で enum 値追加 migration を生成（`ALTER TYPE ... ADD VALUE 'teamwork_style'`、番号は生成時点の最新の次）
+  - seed runner の `SkillSurveySeedData.kind` union へ `'teamwork_style'` を追加
+  - done: migration がローカル DB に適用でき、TS ビルドが `teamwork_style` を型として認識し、seed runner が当該 kind を受理する
+  - _Requirements: 2.4, 9.3_
+
+- [ ] 2. Core: app-local 診断コア（純関数）
+- [x] 2.1 チームワーク4軸・8極と app-local 型の定義
+  - 4軸（率直さ/判断の重心/距離感/異論への構え）と各軸の第1極・第2極（value-neutral な両極ラベル）・極対応・中点を定義
+  - `TeamworkAxis`/`TeamworkPole`/`TeamworkCode` の app-local union 型をここで単一定義する（`@bulr/types` には足さない。RPGクラス診断・ai は消費しない）
+  - done: 4軸×2極＝16通りの `TeamworkCode` が型として表現でき、後続コアが本ファイルの型のみを import する
+  - _Requirements: 4.1, 4.5, 9.4, 10.3_
+  - _Boundary: axes_
+- [x] 2.2 (P) 二者択一スコアリング
+  - 軸ごとに高極ピック率を 0-100 へ正規化・平均し、中点で二値化（同数タイは既定極＝第1極、各軸は奇数問前提）
+  - 全4軸判定可→`full`（`TeamworkCode` 確定）／一部→`partial`／皆無→`none` の completeness を算出。純関数・決定論（同一入力→同一出力）
+  - done: フル回答で安定した `TeamworkCode` を返し、部分回答でアーキタイプ未確定の `partial` を返すことがテストで確認できる
+  - _Requirements: 3.2, 3.3, 3.4, 4.2, 4.3_
+  - _Boundary: score_
+  - _Depends: 2.1_
+- [x] 2.3 (P) 回答マッピング
+  - サーベイ回答（`SurveyResponseForAnalysis`）のカテゴリ名を4軸（L1）／3成長ディメンション（L2）へ写像。L1 は選択肢 `level`(0/1) から高極ピックを解決、L2 は `level`(0..k) を成長入力へ渡す
+  - カテゴリ名の契約キーを本ファイルに定数化し**単一ソース**とする（seed はこの文字列に厳密一致させる）。未知カテゴリ・空回答は無視
+  - done: 与えた回答束から scorer 入力と growth 入力が決定論的に生成され、未知カテゴリが除外されることがテストで確認できる
+  - _Requirements: 2.4, 4.6, 5.1_
+  - _Boundary: answers_
+  - _Depends: 2.1_
+- [x] 2.4 (P) 16タイプ・アーキタイプ内容
+  - 16の `TeamworkCode` それぞれに name／description／nextStep のキュレーテッド文言（価値中立）を定義。本ファイルが 16タイプ・コピーの**正本**
+  - done: 全16コードに重複のない name/description/nextStep が揃い、`TeamworkCode` から一意に解決できることがテストで確認できる
+  - _Requirements: 4.3, 4.5_
+  - _Boundary: archetypes_
+  - _Depends: 2.1_
+- [x] 2.5 (P) カルチャー親和性導出
+  - 2カルチャー軸で導出: conflict（率直さ×異論→debate/consensus/balanced）、bonding（判断の重心×距離感→results/family/balanced）。象限に対応する description（個人起点のみ・特定企業適合や合否語を含めない）を本ファイルに**正本**として持つ
+  - `completeness` 未確定（コード未確定）では導出しない（null 相当を返す）
+  - done: 代表コードが期待の conflict/bonding 位置へ写像され、混在コードが balanced になり、コード未確定時に導出されないことがテストで確認できる
+  - _Requirements: 6.1, 6.2, 6.3, 10.4_
+  - _Boundary: culture-affinity_
+  - _Depends: 2.1, 2.2_
+- [x] 2.6 (P) 成長ディメンション（SJT→非評価アドバイス）
+  - 3ディメンション（自己認識/他者視点/感情の自己制御）ごとに SJT の `level` を集約し内部段階を決め、段階→手書きの成長アドバイス文へ写像する leveling rubric とアドバイス文の**正本**を持つ
+  - 出力に数値スコア・段階ラベル・他者比較を含めない。回答が1件以上あるディメンションのみ返す
+  - done: ディメンション別に伸びしろ文脈のアドバイスが返り、未回答ディメンションが除外され、出力に数値・順位が含まれないことがテストで確認できる
+  - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - _Boundary: growth_
+  - _Depends: 2.3_
+
+- [ ] 3. Core: アンケート seed 投入
+- [x] 3.1 `teamwork_style` アンケートの seed と登録
+  - survey（`kind='teamwork_style'`, `jobType='teamwork_style'`）→ 7カテゴリ（L1 4軸＋L2 3ディメンション）→ 設問 → 選択肢を投入。category 名は 2.3 の契約キーに厳密一致させる
+  - L1＝`single_choice` 二者択一で `isRequired: true`・各軸**奇数問**・choice `level`＝0(第1極)/1(第2極)・両選択肢とも好ましい label。L2＝SJT `single_choice` で `isRequired: false`・choice `level`＝発達段階（2.6 の rubric と整合）
+  - seed runner のパイプライン（`seeds/index` の static＋dynamic import）へ登録
+  - done: seed 実行後に `teamwork_style` の4階層が生成され、再実行しても冪等に upsert されることが確認できる
+  - _Requirements: 2.4, 4.6, 5.1, 5.2, 3.5_
+  - _Boundary: teamwork-style seed_
+  - _Depends: 1.1, 2.3, 2.6_
+
+- [ ] 4. Core: DB query
+- [x] 4.1 survey id 解決 query
+  - `kind='teamwork_style'` の survey id を1件解決（未 seed 時 null）。barrel と `queries/index.ts` で再 export
+  - done: seed 済み環境で id を返し、未 seed 環境で null を返すことが確認できる
+  - _Requirements: 2.2, 2.3_
+  - _Depends: 1.1_
+- [x] 4.2 本人最新回答取得 query
+  - 既存 `getLatestSurveyResponseForAnalysis` を利用し、候補者本人の `teamwork_style` 最新回答のみを取得（無ければ null）
+  - done: 本人の最新回答が取得でき、他候補者の回答が混入しないことが確認できる
+  - _Requirements: 1.3, 3.6_
+  - _Depends: 1.1_
+
+- [ ] 5. UI: 結果ページと表示コンポーネント
+- [x] 5.1 (P) 4軸バイポーラ表示コンポーネント
+  - 各軸を両極バーで表示。判定済みはマーカー位置、未回答は淡色トラック＋「未回答」。点数・偏差値・順位・% を一切描画しない
+  - done: フル/部分の両状態でバーが描画され、数値指標がどこにも表示されないことが確認できる
+  - _Requirements: 4.4, 9.2_
+  - _Boundary: axis-bars_
+- [x] 5.2 (P) カルチャー親和性カード
+  - `CultureAffinity` を個人起点の文言で提示（full のみ）。特定企業適合・合否を表示しない
+  - done: full 結果でカルチャー型と説明が表示され、企業名・合否表現を含まないことが確認できる
+  - _Requirements: 6.1, 6.2_
+  - _Boundary: culture-affinity-card_
+- [x] 5.3 (P) 成長アドバイスセクション
+  - 回答済みディメンションのアドバイスを伸びしろ文脈で提示。数値・順位・他者比較を表示しない
+  - done: 回答済みディメンションのみアドバイスが並び、数値・比較表現が無いことが確認できる
+  - _Requirements: 5.3, 5.4_
+  - _Boundary: growth-advice-section_
+- [x] 5.4 (P) 共有パネル
+  - アーキタイプ名のみのテキスト共有。clipboard/share API があれば利用し、無くてもクラッシュしない。回答生データ・成長詳細・数値・PII を含めない
+  - done: 共有テキストがアーキタイプ名のみで、API 不在環境でも例外なく表示が維持されることが確認できる
+  - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - _Boundary: share-panel_
+- [x] 5.5 結果ビュー合成（none/partial/full 分岐）
+  - completeness に応じて none（未診断＋回答CTA）／partial（暫定バー＋残設問CTA・アーキタイプ名なし・カルチャーなし）／full（アーキタイプ＋バー＋カルチャー）を合成。成長アドバイスは回答があれば上乗せ表示
+  - done: `teamwork-style-result-{none|partial|full}` の各分岐が期待要素で描画されることが確認できる
+  - _Requirements: 3.2, 3.3, 3.4, 3.5_
+  - _Boundary: teamwork-style-result_
+  - _Depends: 5.1, 5.2, 5.3, 5.4_
+- [x] 5.6 診断ページ（認証・取得・ライブ算出・deep-link）
+  - `requireCandidate()` で認証ゲート（UNAUTHORIZED→sign-in、CANDIDATE_PROFILE_MISSING→onboarding）。本人回答と survey id を取得し、コアでライブ算出（永続化しない）。回答フォームへの deep-link を解決し、未 seed 時は一覧へフォールバック
+  - 面接官向けパターン・RPG給餌・結果永続化を行わない（本 spec スコープ内に閉じる）
+  - done: 認証済み本人がアクセスすると最新回答に基づく結果が表示され、未認証/プロフィール無しが適切に遷移し、結果が保存されないことが確認できる
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.2, 2.3, 3.1, 3.6, 9.1, 10.1, 10.2_
+  - _Boundary: page_
+  - _Depends: 2.2, 2.3, 2.4, 2.5, 2.6, 4.1, 4.2, 5.5_
+
+- [ ] 6. Integration: ナビ導線
+- [x] 6.1 ナビ入口の追加
+  - 候補者ナビへ「チームワーク・スタイル診断」→ 診断結果ページ の項目を追加
+  - done: ナビから診断ページへ遷移でき、既存ナビ項目の動作が変わらないことが確認できる
+  - _Requirements: 2.1_
+  - _Depends: 5.6_
+
+- [ ] 7. Validation: テスト
+- [x] 7.1 app-core 単体テスト
+  - score（full/partial/none・決定論・タイ処理）、answers（写像・level 解決・未知除外）、archetypes（16コード網羅）、culture-affinity（写像・未確定時 null・企業/合否語なし）、growth（段階写像・未回答除外・数値/比較なし）を検証
+  - done: 上記コア純関数のテストが全て pass する
+  - _Requirements: 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.5, 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3_
+  - _Depends: 2.2, 2.3, 2.4, 2.5, 2.6_
+- [x] 7.2 DB integration テスト
+  - seed 投入後の4階層生成、survey id 解決（有/無）、本人最新回答取得、および `teamwork_style` 回答が `/self-analysis` 回答済み一覧・自己分析対象に**現れない**ことを検証（既存 `kind='skill'` フィルタで成立、改修なしを固定）
+  - done: 一覧除外を含む DB integration テストが全て pass する
+  - _Requirements: 2.2, 2.3, 1.3, 3.6, 8.1, 8.2, 8.3_
+  - _Depends: 3.1, 4.1, 4.2_
+- [x] 7.3 E2E/UI テスト
+  - 未回答→none＋回答CTA、部分→partial＋暫定バー＋残設問CTA（アーキタイプ名なし・カルチャーなし）、フル→full＋アーキタイプ＋カルチャー＋（回答時）成長、**数値非表示**、共有テキストの生データ非含有・API 不在耐性を検証
+  - done: none/partial/full と共有の E2E/UI テストが全て pass する
+  - _Requirements: 3.2, 3.3, 3.4, 3.5, 4.4, 7.1, 7.2, 7.3, 7.4, 9.2_
+  - _Depends: 5.6, 6.1_
+
+## Implementation Notes
+
+- **worktree ツール環境**: 標準 `git` は xcodebuild パスエラーを出すため `/opt/homebrew/bin/git` を使う。Node は 24 が必要（`PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"`、default は v15 で不可）。worktree に `.env.local` が無い（symlink 先欠落）ので main の `.env.local` をコピーして用意（`.env.local` は gitignore 済）。
+- **drizzle-kit の env**: `.env.local` 末尾のコメント/複数行例に引っ張られないよう、`drizzle-kit generate`/`migrate` は local URL(5434) を `DIRECT_URL`/`DATABASE_URL` に inline 上書きして実行する。`generate` は DB 接続不要だが config が env 必須。
+- **1.1**: `drizzle-kit generate` で `0024_amused_loa.sql`（`ALTER TYPE survey_kind ADD VALUE 'teamwork_style'`）＋ `_journal.json`/`0024_snapshot.json` を一括生成。手書きせず生成することで snapshot drift（次回 generate で重複 migration）を防止。local DB へ適用済・enum 反映確認・typecheck 0。
+- **7.x（テスト）**: 7.1=2.x の colocated 単体(28)で充足(新規なし)。7.2=DB integration 4本(seed構造/id解決/本人回答/一覧除外)11 tests、`DATABASE_URL` inline＋`--no-file-parallelism` で実行(共有マスタseedは削除しない)。7.3=E2E 1本9 tests(none/partial/full・数値非表示・culture/growth・nav・共有)。**jsdom は navigator.clipboard/share が元から未定義**＝API不在環境なので mock 不要(spyOn は "property not defined" で失敗する)。合計 candidate 37＋db integration 11＝全緑。
+- **4.x–6.1（query/UI/nav）**: thinking-style の page/_components/query を app-local 複製。page は profile（score）＋growthAdvice（growth）＋cultureAffinity（deriveCultureAffinity(profile.code ?? undefined)）をライブ算出し result へ渡す。`@bulr/db` 経由で query を import（queries barrel → @bulr/db）。共有テキストは name＋catch のみ（PII/数値なし）。**_components のコンポーネント/E2E テストは 7.3 に委譲**（5.x では作成しない）。ナビ symbol は `groups`。検証: db/candidate tsc 0・eslint clean・28 unit tests pass・独立レビュー APPROVED（実行時レンダリングは 7.3 で駆動）。
+- **3.1（seed）**: local DB へ2回投入し冪等確認（survey=1/categories=7/questions=18/choices=42/required=12）。category 名は answers.ts の契約キーに厳密一致（不一致だと回答が silently drop）。L1=level0/1（第1/2極）・isRequired true、L2 SJT=level0..2・isRequired false。tsx で seed 実行検証する際は client を **動的 import**（`const { db } = await import('./src/client')`）する必要あり（`export const db` の静的 import は tsx で解決失敗）。DB クエリ検証は drizzle `db.execute(sql\`...\`)` を packages/db 内スクリプトで（pg 解決のため worktree 外スクラッチ不可）。
+- **2.x（Core）**: 型依存は answers.ts → {axes, score, growth}（growth/score/archetypes/culture は axes のみ or 独立）で非循環。GrowthAnswer/GrowthDimension は growth.ts が正本（answers が import）。`TeamworkProfile` は thinking-style の AxisReading 構造を踏襲（design の primary/secondary スケッチより採用）。テストは `noUncheckedIndexedAccess` 有効のため配列添字は型安全ヘルパー（first()）で取り出す。candidate の vitest/tsc は Node 24・DB不要で走る（pure 関数）。eslint bin は root（`../../node_modules/.bin/eslint`）。検証: 28 tests pass / tsc 0 / eslint clean。
